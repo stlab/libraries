@@ -6,6 +6,21 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 ## <stlab/future>
 
+This is a proof of concept implementation of a packaged task and future to replace the standard components. This is a list of some of the differences from standard (as of C++14) and boost (as of boost 1.58.0).
+
+There is no promise type, packaged_task and futures are created as pairs with the package() function.
+
+package_task is copyable, not just movable, and the call operator is const. This allows packaged_task objects to be
+stored in std::function<>. Once any copy of a packaged_task<> is called, all copies are invalid.
+
+future is also copyable, there is no need for a shared future. If a future is only used as an rvalue and there are no copies then the value returned, by get_try or through a continuation, will be moved.
+
+Multiple continutations may be attached to a single future with then(). then() is declared const since it does not mutate the result object of the future.
+
+The continuation is called with the value type, not the future. A sink argument to a continuation should take the argument by value and move the object as needed. If the continuation reads the argument it should take it by const&. Behavior of modifying the argument through a non-const reference is undefined (may be a compliation error).
+
+If the last copy of a future destructs, the associated task and any held futures for the task arguments are released and the associated packaged_task will become a no-op if called.
+
 ```c++
 template<typename R, typename ...Args >
 class packaged_task<R (Args...)> {
