@@ -25,12 +25,13 @@ There are no wait() or get() function. Instead there is a get_try() which return
 
 If the associated task through an exception, get_try() with rethrow the exception.
 
+For a future<T> if T is move only then the future is move only and can only contain one continuation.
+
 [ TODO - for notification of errors the plan is to add a recover() clause to futures which is passed the exception and may return a value T or rethrow. recover() will be executed prior to continuations. ]
 
 when_all() takes an n'ary function and n futures as arguments.
 
-[ TODO - although futures currently work with limitations on move only types (you can only have one continuation and
-one call to get) I should enable_if future itself so that it T is move only then the future is move only. ]
+
 
 ```c++
 template<typename R, typename ...Args >
