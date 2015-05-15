@@ -29,6 +29,9 @@ If the associated task through an exception, get_try() with rethrow the exceptio
 
 when_all() takes an n'ary function and n futures as arguments.
 
+[ TODO - although futures currently work with limitations on move only types (you can only have one continuation and
+one call to get) I should enable_if future itself so that it T is move only then the future is move only. ]
+
 ```c++
 template<typename R, typename ...Args >
 class packaged_task<R (Args...)> {
