@@ -31,7 +31,30 @@ For a future<T> if T is move only then the future is move only and can only cont
 
 when_all() takes an n'ary function and n futures as arguments.
 
+Here is a trivial scheduler using threads:
 
+```c++
+auto schedule = [](auto f) // F is void() and movable
+{
+    thread(move(f)).detach();
+};
+```
+
+Here is an example scheduler function that uses Apple's libdispatch.
+
+```c++
+auto schedule = [](auto f) // F is void() and movable
+{
+    using f_t = decltype(f);
+
+    dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+            new f_t(std::move(f)), [](void* f_) {
+                auto f = static_cast<f_t*>(f_);
+                (*f)();
+                delete f;
+            });
+};
+```
 
 ```c++
 template<typename R, typename ...Args >
