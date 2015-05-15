@@ -21,6 +21,14 @@ The continuation is called with the value type, not the future. A sink argument 
 
 If the last copy of a future destructs, the associated task and any held futures for the task arguments are released and the associated packaged_task will become a no-op if called.
 
+There are no wait() or get() function. Instead there is a get_try() which returns an optional<T> (or if T is void, the result is a bool with true indicating the associated task has executed.
+
+If the associated task through an exception, get_try() with rethrow the exception.
+
+[ TODO - for notification of errors the plan is to add a recover() clause to futures which is passed the exception and may return a value T or rethrow. recover() will be executed prior to continuations. ]
+
+when_all() takes an n'ary function and n futures as arguments.
+
 ```c++
 template<typename R, typename ...Args >
 class packaged_task<R (Args...)> {
@@ -71,4 +79,7 @@ auto when_all(S, F, future<Ts>... args); // -> future<result_of_t<F(Ts...>>
 
 template <typename Sig, typename S, typename F>
 auto package(S s, F f); // -> pair<packaged_task<Sig>, future<result_of_t<Sig>>>;
+
+template <typename S, typename F, typename ...Args>
+auto async(S s, F&& f, Args&&... args) -> future<std::result_of_t<F (Args...)>>
 ```
