@@ -395,6 +395,20 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 /**************************************************************************************************/
 
+template <typename S, typename F, typename ...Args>
+auto async(S schedule, F&& f, Args&&... args)
+        -> stlab::future<std::result_of_t<F (Args...)>>
+{
+    auto p = stlab::package<std::result_of_t<F(Args...)>()>(schedule,
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+
+    schedule(std::move(p.first));
+    
+    return std::move(p.second);
+}
+
+/**************************************************************************************************/
+
 namespace detail {
 
 /**************************************************************************************************/
