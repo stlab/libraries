@@ -39,7 +39,7 @@ using result_of_t_ = typename result_of_<F>::type;
 /**************************************************************************************************/
 
 template <typename> class packaged_task;
-template <typename> class future;
+template <typename, typename = void> class future;
 
 using schedule_t = std::function<void(std::function<void()>)>;
 
@@ -55,10 +55,10 @@ template <typename> struct shared;
 template <typename, typename = void> struct shared_base;
 
 template <typename T>
-using enable_if_copyable = std::enable_if_t<std::is_copy_assignable<T>::value>;
+using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value>;
 
 template <typename T>
-using enable_if_not_copyable = std::enable_if_t<!std::is_copy_assignable<T>::value>;
+using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
 
 template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
@@ -360,8 +360,9 @@ public:
     }
 };
 
+
 template <typename T>
-class future {
+class future<T, detail::enable_if_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 
@@ -379,6 +380,84 @@ class future {
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& { return _p->then(std::forward<S>(s), std::forward<F>(f)); }
+
+    template <typename F>
+    auto then(F&& f) && { return _p->then_r(_p.unique(), std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto then(S&& s, F&& f) && {
+        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+    }
+
+    bool cancel_try() {
+        if (!_p.unique()) return false;
+        std::weak_ptr<detail::shared_base<T>> p = _p;
+        _p.reset();
+        _p = p.lock();
+        return !_p;
+    }
+
+    auto get_try() const& { return _p->get_try(); }
+    auto get_try() && { return _p->get_try_r(_p.unique()); }
+};
+
+template <>
+class future<void, void> {
+    using ptr_t = std::shared_ptr<detail::shared_base<void>>;
+    ptr_t _p;
+
+    explicit future(ptr_t p) : _p(std::move(p)) { }
+
+    template <typename Signature, typename S, typename F>
+    friend auto package(S, F)
+        -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+
+  public:
+    future() = default;
+
+    template <typename F>
+    auto then(F&& f) const& { return _p->then(std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto then(S&& s, F&& f) const& { return _p->then(std::forward<S>(s), std::forward<F>(f)); }
+
+    template <typename F>
+    auto then(F&& f) && { return _p->then_r(_p.unique(), std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto then(S&& s, F&& f) && {
+        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+    }
+
+    bool cancel_try() {
+        if (!_p.unique()) return false;
+        std::weak_ptr<detail::shared_base<void>> p = _p;
+        _p.reset();
+        _p = p.lock();
+        return !_p;
+    }
+
+    auto get_try() const& { return _p->get_try(); }
+    auto get_try() && { return _p->get_try_r(_p.unique()); }
+};
+
+template <typename T>
+class future<T, detail::enable_if_not_copyable<T>> {
+    using ptr_t = std::shared_ptr<detail::shared_base<T>>;
+    ptr_t _p;
+
+    explicit future(ptr_t p) : _p(std::move(p)) { }
+
+    template <typename Signature, typename S, typename F>
+    friend auto package(S, F)
+        -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+
+  public:
+    future() = default;
+    future(const future&) = delete;
+    future(future&&) noexcept = default;
+    future& operator=(const future&) = delete;
+    future& operator=(future&&) noexcept = default;
 
     template <typename F>
     auto then(F&& f) && { return _p->then_r(_p.unique(), std::forward<F>(f)); }
