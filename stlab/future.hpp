@@ -52,9 +52,16 @@ auto package(S, F)
 namespace detail {
 
 template <typename> struct shared;
+template <typename, typename = void> struct shared_base;
 
 template <typename T>
-struct shared_base : std::enable_shared_from_this<shared_base<T>> {
+using enable_if_copyable = std::enable_if_t<std::is_copy_assignable<T>::value>;
+
+template <typename T>
+using enable_if_not_copyable = std::enable_if_t<!std::is_copy_assignable<T>::value>;
+
+template <typename T>
+struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
     schedule_t                          _schedule;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
@@ -130,6 +137,75 @@ struct shared_base : std::enable_shared_from_this<shared_base<T>> {
     auto get_try_r(bool unique) -> boost::optional<T> {
         if (!unique) return get_try();
 
+        bool ready = false;
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            ready = _ready;
+        }
+        if (ready) {
+            if (_error) std::rethrow_exception(_error.get());
+            return std::move(_result);
+        }
+        return boost::none;
+    }
+};
+
+template <typename T>
+struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
+    schedule_t                          _schedule;
+    boost::optional<T>                  _result;
+    boost::optional<std::exception_ptr> _error;
+    std::mutex                          _mutex;
+    bool                                _ready = false;
+    std::function<void()>               _then;
+
+    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+
+    template <typename F>
+    auto then(F f) { return then_r(true, _schedule, std::move(f)); }
+
+    template <typename S, typename F>
+    auto then(S s, F f) {
+        return then_r(true, std::move(s), std::move(f));
+    }
+
+    template <typename F>
+    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+
+    template <typename S, typename F>
+    auto then_r(bool, S s, F f) {
+        auto p = package<typename std::result_of<F(T)>::type()>(std::move(s),
+            [_f = std::move(f), _p = this->shared_from_this()] {
+                if (_p->_error) std::rethrow_exception(_p->_error.get());
+                return _f(std::move(_p->_result.get()));
+            });
+
+        {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (_ready) _schedule(std::move(p.first));
+        else _then =std::move(p.first);
+        }
+
+        return std::move(p.second);
+    }
+
+    template <typename F>
+    auto error(F f) { // COMPLETE
+    }
+
+    void set_exception(std::exception_ptr error) {
+        _error = std::move(error);
+        std::unique_lock<std::mutex> lock(_mutex);
+        _ready = true;
+    }
+    template <typename F, typename... Args>
+    void set_value(const F& f, Args&&... args);
+
+    auto get_try() -> boost::optional<T> {
+        return get_try_r(true);
+    }
+
+    auto get_try_r(bool) -> boost::optional<T> {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -338,13 +414,9 @@ template <typename F, typename... Ts>
 struct when_all_shared {
     // decay
     std::tuple<boost::optional<Ts>...>      _args;
-    future<void>                            _holds[sizeof...(Ts)] = {};
-    std::atomic_size_t                      _remaining;
-    packaged_task<std::result_of_t<F(Ts...)>()>                      _f;
-
-    when_all_shared() {
-        _remaining = sizeof...(Ts);
-    }
+    future<void>                            _holds[sizeof...(Ts)] {};
+    std::atomic_size_t                      _remaining {sizeof...(Ts)};
+    packaged_task<std::result_of_t<F(Ts...)>()> _f;
 
     void done() { if (--_remaining == 0) _f(); }
 };
@@ -397,9 +469,9 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 template <typename S, typename F, typename ...Args>
 auto async(S schedule, F&& f, Args&&... args)
-        -> stlab::future<std::result_of_t<F (Args...)>>
+        -> future<std::result_of_t<F (Args...)>>
 {
-    auto p = stlab::package<std::result_of_t<F(Args...)>()>(schedule,
+    auto p = package<std::result_of_t<F(Args...)>()>(schedule,
         std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
     schedule(std::move(p.first));
@@ -427,7 +499,7 @@ void shared_base<void>::set_value(const F& f, Args&&... args) {
 
 template <typename T>
 template <typename F, typename... Args>
-void shared_base<T>::set_value(const F& f, Args&&... args) {
+void shared_base<T, enable_if_copyable<T>>::set_value(const F& f, Args&&... args) {
     _result = f(std::forward<Args>(args)...);
     std::vector<std::function<void()>> then;
     {
@@ -436,6 +508,19 @@ void shared_base<T>::set_value(const F& f, Args&&... args) {
         then = std::move(_then);
     }
     for (const auto& e : then) _schedule(e);
+}
+
+template <typename T>
+template <typename F, typename... Args>
+void shared_base<T, enable_if_not_copyable<T>>::set_value(const F& f, Args&&... args) {
+    _result = f(std::forward<Args>(args)...);
+    std::function<void()> then;
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _ready = true;
+        then = std::move(_then);
+    }
+    if (then) _schedule(then);
 }
 
 /**************************************************************************************************/
