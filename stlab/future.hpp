@@ -1,5 +1,5 @@
 /*
-    Copyright 2013 Adobe
+    Copyright 2015 Adobe
     Distributed under the Boost Software License, Version 1.0.
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
@@ -109,15 +109,18 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         return std::move(p.second);
     }
 
-    template <typename F>
-    auto error(F f) { // COMPLETE
-    }
-
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
+        std::vector<std::function<void()>> then;
+        {
         std::unique_lock<std::mutex> lock(_mutex);
+        then = move(_then);
         _ready = true;
+        }
+        // propogate exception without scheduling
+        for (const auto& e : then) e();
     }
+
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
 
@@ -162,14 +165,6 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
 
     template <typename F>
-    auto then(F f) { return then_r(true, _schedule, std::move(f)); }
-
-    template <typename S, typename F>
-    auto then(S s, F f) {
-        return then_r(true, std::move(s), std::move(f));
-    }
-
-    template <typename F>
     auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
 
     template <typename S, typename F>
@@ -189,14 +184,16 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return std::move(p.second);
     }
 
-    template <typename F>
-    auto error(F f) { // COMPLETE
-    }
-
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
+        std::function<void()> then;
+        {
         std::unique_lock<std::mutex> lock(_mutex);
+        then = move(_then);
         _ready = true;
+        }
+        // propogate exception without scheduling
+        then();
     }
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
@@ -251,14 +248,16 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     template <typename S, typename F>
     auto then_r(bool, S s, F f) { return then(std::move(s), std::move(f)); }
 
-    template <typename F>
-    auto error(F f) { // COMPLETE
-    }
-
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
+        std::vector<std::function<void()>> then;
+        {
         std::unique_lock<std::mutex> lock(_mutex);
+        then = move(_then);
         _ready = true;
+        }
+        // propogate exception without scheduling
+        for (const auto& e : then) e();
     }
 
     auto get_try() {
