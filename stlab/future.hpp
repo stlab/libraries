@@ -9,12 +9,21 @@
 #ifndef STLAB_FUTURE_HPP
 #define STLAB_FUTURE_HPP
 
-#include <boost/optional.hpp>
 #include <future>
 #include <initializer_list>
 #include <memory>
 #include <thread>
 #include <vector>
+
+#include <boost/optional.hpp>
+
+#include <stlab/config.hpp>
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#include <dispatch/dispatch.h>
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 /**************************************************************************************************/
 
@@ -62,6 +71,8 @@ using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value
 
 template <typename T>
 using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
+
+/**************************************************************************************************/
 
 template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
@@ -166,6 +177,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 };
 
+/**************************************************************************************************/
+
 template <typename T>
 struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
     using then_t = std::pair<schedule_t, std::function<void()>>;
@@ -233,6 +246,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return boost::none;
     }
 };
+
+/**************************************************************************************************/
 
 template <>
 struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
@@ -348,7 +363,7 @@ struct shared<R (Args...)> : shared_base<R>
 
 /**************************************************************************************************/
 
-template<typename R, typename ...Args >
+template<typename R, typename... Args>
 class packaged_task<R (Args...)> {
     using ptr_t = std::weak_ptr<detail::shared<R (Args...)>>;
 
@@ -385,6 +400,7 @@ public:
     }
 };
 
+/**************************************************************************************************/
 
 template <typename T>
 class future<T, detail::enable_if_copyable<T>> {
@@ -428,6 +444,8 @@ class future<T, detail::enable_if_copyable<T>> {
     auto get_try() && { return _p->get_try_r(_p.unique()); }
 };
 
+/**************************************************************************************************/
+
 template <>
 class future<void, void> {
     using ptr_t = std::shared_ptr<detail::shared_base<void>>;
@@ -469,6 +487,8 @@ class future<void, void> {
     auto get_try() const& { return _p->get_try(); }
     auto get_try() && { return _p->get_try_r(_p.unique()); }
 };
+
+/**************************************************************************************************/
 
 template <typename T>
 class future<T, detail::enable_if_not_copyable<T>> {
@@ -633,9 +653,101 @@ void shared_base<T, enable_if_not_copyable<T>>::set_value(const F& f, Args&&... 
     if (then.first) then.first(then.second);
 }
 
+#if 0
+/*
+    REVIST (sparent) : This is doing reduction on future<void> we also need to do the same for
+    other result types.
+*/
+
+template <>
+template <typename F, typename... Args>
+void shared_base<future<void>>::set_value(const F& f, Args&&... args) {
+    _result = f(std::forward<Args>(args)...).then([_p = this->shared_from_this()]() {
+        auto& self = *_p;
+        then_t then;
+        {
+        std::unique_lock<std::mutex> lock(self._mutex);
+        self._ready = true;
+        then = std::move(self._then);
+        }
+        for (const auto& e : then) e.first(e.second);
+    });
+}
+#endif
+
+/**************************************************************************************************/
+
+void async_(std::function<void()>);
+
 /**************************************************************************************************/
 
 } // namespace detail
+
+/**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+
+struct default_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                new f_t(std::move(f)), [](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                });
+    }
+};
+
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+
+struct default_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        // REVISIT (sparent) : Using a negative timeout may give better performance. Need to test.
+        using f_t = decltype(f);
+
+        emscripten_async_call([](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                }, new f_t(std::move(f)), 0);
+    }
+};
+
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+
+struct default_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        detail::async_(std::move(f));
+    }
+};
+
+#endif
+
+/**************************************************************************************************/
+
+template <typename T>
+future<T> make_ready_future(T&& x) {
+    auto p = package<T(T)>(default_scheduler(), [](auto&& x) { return x; });
+    p.first(x);
+    return p.second;
+}
+
+inline future<void> make_ready_future() {
+    auto p = package<void()>(default_scheduler(), [](){});
+    p.first();
+    return p.second;
+}
 
 /**************************************************************************************************/
 
