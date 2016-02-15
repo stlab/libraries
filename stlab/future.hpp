@@ -35,6 +35,8 @@ namespace detail {
 
 /**************************************************************************************************/
 
+template <typename...> struct type_list { };
+
 template <typename>
 struct result_of_;
 
@@ -44,20 +46,44 @@ struct result_of_<R(Args...)> { using type = R; };
 template <typename F>
 using result_of_t_ = typename result_of_<F>::type;
 
+template <typename>
+struct arguments_of_;
+
+template <typename R, typename... Args>
+struct arguments_of_<R(Args...)> { using type = type_list<Args...>; };
+
 /**************************************************************************************************/
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-template <typename> class packaged_task;
+template <typename...> class packaged_task;
+
 template <typename, typename = void> class future;
 
 using schedule_t = std::function<void(std::function<void()>)>;
 
-template <typename Signature, typename S, typename F>
+/**************************************************************************************************/
+
+namespace detail {
+
+template <typename> struct packaged_task_from_signature;
+
+template <typename R, typename... Args>
+struct packaged_task_from_signature<R (Args...)> {
+    using type = packaged_task<Args...>;
+};
+template <typename T>
+using packaged_task_from_signature_t = typename packaged_task_from_signature<T>::type;
+
+} // namespace detail
+
+/**************************************************************************************************/
+
+template <typename Sig, typename S, typename F>
 auto package(S, F)
-    -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+    -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>>;
 
 /**************************************************************************************************/
 
@@ -71,6 +97,22 @@ using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value
 
 template <typename T>
 using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
+
+/**************************************************************************************************/
+
+template <typename T>
+struct shared_future {
+    virtual ~shared_future() = default;
+};
+
+template <typename... Args>
+struct shared_task {
+    virtual ~shared_task() = default;
+    virtual void remove_promise() = 0;
+    virtual void add_promise() = 0;
+
+    virtual void operator()(Args... args) = 0;
+};
 
 /**************************************************************************************************/
 
@@ -321,7 +363,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 };
 
 template <typename R, typename... Args>
-struct shared<R (Args...)> : shared_base<R>
+struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
 {
     using function_t = std::function<R (Args...)>;
 
@@ -333,7 +375,7 @@ struct shared<R (Args...)> : shared_base<R>
         _promise_count = 1;
     }
 
-    void remove_promise() {
+    void remove_promise() override {
         if (--_promise_count == 0) {
             std::unique_lock<std::mutex> lock(this->_mutex);
             if (!this->_ready) {
@@ -344,12 +386,11 @@ struct shared<R (Args...)> : shared_base<R>
             }
         }
     }
-    void add_promise() { ++_promise_count; }
+    void add_promise() override { ++_promise_count; }
 
-    template <typename... A>
-    void operator()(A&&... args) {
+    void operator()(Args... args) override {
         if (_f) try {
-            this->set_value(_f, std::forward<A>(args)...);
+            this->set_value(_f, std::move(args)...);
         } catch(...) {
             this->set_exception(std::current_exception());
         }
@@ -363,9 +404,9 @@ struct shared<R (Args...)> : shared_base<R>
 
 /**************************************************************************************************/
 
-template<typename R, typename... Args>
-class packaged_task<R (Args...)> {
-    using ptr_t = std::weak_ptr<detail::shared<R (Args...)>>;
+template<typename... Args>
+class packaged_task {
+    using ptr_t = std::weak_ptr<detail::shared_task<Args...>>;
 
     ptr_t _p;
 
@@ -373,7 +414,8 @@ class packaged_task<R (Args...)> {
 
     template <typename Signature, typename S, typename F>
     friend auto package(S, F)
-        -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+        -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                future<detail::result_of_t_<Signature>>>;
 public:
     packaged_task() = default;
 
@@ -411,7 +453,8 @@ class future<T, detail::enable_if_copyable<T>> {
 
     template <typename Signature, typename S, typename F>
     friend auto package(S, F)
-        -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+        -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                future<detail::result_of_t_<Signature>>>;
 
   public:
     future() = default;
@@ -455,7 +498,8 @@ class future<void, void> {
 
     template <typename Signature, typename S, typename F>
     friend auto package(S, F)
-        -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+        -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                future<detail::result_of_t_<Signature>>>;
 
   public:
     future() = default;
@@ -499,7 +543,8 @@ class future<T, detail::enable_if_not_copyable<T>> {
 
     template <typename Signature, typename S, typename F>
     friend auto package(S, F)
-        -> std::pair<packaged_task<Signature>, future<detail::result_of_t_<Signature>>>;
+        -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                future<detail::result_of_t_<Signature>>>;
 
   public:
     future() = default;
@@ -531,9 +576,10 @@ class future<T, detail::enable_if_not_copyable<T>> {
 };
 
 template <typename Sig, typename S, typename F>
-auto package(S s, F f) -> std::pair<packaged_task<Sig>, future<detail::result_of_t_<Sig>>> {
+auto package(S s, F f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
     auto p = std::make_shared<detail::shared<Sig>>(std::move(s), std::move(f));
-    return std::make_pair(packaged_task<Sig>(p), future<detail::result_of_t_<Sig>>(p));
+    return std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
+            future<detail::result_of_t_<Sig>>(p));
 }
 
 /**************************************************************************************************/
