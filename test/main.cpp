@@ -17,12 +17,12 @@ int main() {
     auto f1 = async(default_scheduler(), []{ cout << "Hello from beyond!" << endl; });
     f1.detach();
 
-    cout << "start tasking test" << endl;
-    auto myAnswer = make_ready_future([]() { return 42; });
-    auto myBigAnswer = make_ready_future([]() { return 84; });
-    auto myCombination = [](int a) ->int { return a; };
+    cout << "Let's have a chain of tasks" << endl;
+    auto theAnswer = make_ready_future([]() { return 42; });
+    auto twiceTheAnswer = make_ready_future([]() { return 42 * 42; });
+    auto combinationOfTwoAnswers = [](int a, int b) { return a + b; };
     auto myResult = [](int answer) { std::cout << "The answer is" << answer << std::endl; };
-    auto f2 = when_all(default_scheduler(), myCombination, myAnswer, myBigAnswer).then(myResult);
+    auto f2 = when_all(default_scheduler(), combinationOfTwoAnswers, theAnswer, twiceTheAnswer).then(myResult);
     f2.detach();
     // while (!f.get_try());
 }
