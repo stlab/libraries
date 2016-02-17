@@ -12,12 +12,28 @@
 #include <deque>
 #include <memory>
 #include <thread>
+#include <utility>
 
 #include <stlab/future.hpp>
 
 /**************************************************************************************************/
 
 namespace stlab {
+
+/**************************************************************************************************/
+
+template <typename> class sender;
+template <typename> class receiver;
+
+/**************************************************************************************************/
+
+enum class process_state {
+    await,
+    await_try,
+    yield,
+};
+
+/**************************************************************************************************/
 
 template <typename I, // I models ForwardIterator
           typename N, // N models PositiveInteger
@@ -29,12 +45,9 @@ I for_each_n(I p, N n, F f) {
     return p;
 }
 
-template <typename> class channel;
-
-enum class process_state {
-    await,
-    await_try,
-    yield,
+struct identity {
+    template <typename T>
+    T operator()(T x) { return x; }
 };
 
 /**************************************************************************************************/
@@ -47,11 +60,6 @@ struct result_of_<R(Args...)> { using type = R; };
 
 template <typename F>
 using result_of_t_ = typename result_of_<F>::type;
-
-/**************************************************************************************************/
-
-template <typename T>
-using signature_t = typename T::signature;
 
 /**************************************************************************************************/
 
@@ -68,7 +76,32 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename> struct shared_process;
+class avoid_ { };
+
+template <typename T>
+using avoid = std::conditional_t<std::is_same<void, T>::value, avoid_, T>;
+
+/**************************************************************************************************/
+
+template <typename F, typename... Args>
+auto avoid_invoke(F&& f, Args&&... args)
+        -> std::enable_if_t<!std::is_same<void,
+            decltype(std::forward<F>(f)(std::forward<Args>(args)...))>::value,
+            decltype(std::forward<F>(f)(std::forward<Args>(args)...))>
+{
+    return std::forward<F>(f)(std::forward<Args>(args)...);
+}
+
+template <typename F, typename... Args>
+auto avoid_invoke(F&& f, Args&&... args)
+        -> std::enable_if_t<std::is_same<void,
+            decltype(std::forward<F>(f)(std::forward<Args>(args)...))>::value,
+            avoid_>
+{
+    std::forward<F>(f)(std::forward<Args>(args)...);
+    return avoid_();
+}
+
 
 /**************************************************************************************************/
 
@@ -81,41 +114,104 @@ auto make_weak_ptr(const std::shared_ptr<T>& x) { return std::weak_ptr<T>(x); }
 
 template <typename T>
 struct shared_process_receiver {
-    virtual ~shared_process_receiver() { }
+    virtual ~shared_process_receiver() = default;
 
-    virtual void map(channel<T>) = 0;
+    virtual void map(sender<T>) = 0;
     virtual void cts() = 0;
+    virtual void add_receiver() = 0;
+    virtual void remove_receiver() = 0;
 };
 
 /**************************************************************************************************/
 
 template <typename T>
-struct shared_process_channel {
-    virtual ~shared_process_channel() { }
+struct shared_process_sender {
+    virtual ~shared_process_sender() = default;
 
-    virtual void send(T x) = 0;
-    virtual void add_channel() = 0;
-    virtual void remove_channel() = 0;
+    virtual void send(avoid<T> x) = 0;
+    virtual void add_sender() = 0;
+    virtual void remove_sender() = 0;
 };
-
 
 /**************************************************************************************************/
 
-template<typename T>
-struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
-                        shared_process_channel<argument_of_t<signature_t<T>>>,
-                        std::enable_shared_from_this<shared_process<T>> {
+template <typename T>
+auto test_process_close(decltype(&T::close)) -> std::true_type;
+
+template <typename>
+auto test_process_close(...) -> std::false_type;
+
+template <typename T>
+constexpr bool has_process_close = decltype(test_process_close<T>(0))::value;
+
+template <typename T>
+auto process_close(T& x) -> std::enable_if_t<has_process_close<T>> {
+    x.close();
+}
+
+template <typename T>
+auto process_close(T& x) -> std::enable_if_t<!has_process_close<T>> { }
+
+/**************************************************************************************************/
+
+template <typename T>
+auto test_process_state(decltype(&T::state)) -> std::true_type;
+
+template <typename>
+auto test_process_state(...) -> std::false_type;
+
+template <typename T>
+constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
+
+template <typename T>
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, process_state> {
+    return x.state();
+}
+
+template <typename T>
+auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, process_state> {
+    return process_state::await;
+}
+
+/**************************************************************************************************/
+
+template <typename T>
+auto test_process_yield(decltype(&T::yield)) -> std::true_type;
+
+template <typename>
+auto test_process_yield(...) -> std::false_type;
+
+template <typename T>
+constexpr bool has_process_yield = decltype(test_process_yield<T>(0))::value;
+
+/**************************************************************************************************/
+
+template <typename T, typename>
+auto yield_type_(decltype(&T::yield)) -> decltype(std::declval<T>().yield());
+
+template <typename T, typename Arg>
+auto yield_type_(...) -> decltype(std::declval<T>()(std::declval<Arg>()));
+
+template <typename T, typename Arg>
+using yield_type = decltype(yield_type_<T, Arg>(0));
+
+/**************************************************************************************************/
+
+template<typename T, typename Arg>
+struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
+                        shared_process_sender<Arg>,
+                        std::enable_shared_from_this<shared_process<T, Arg>> {
 
     /*
         the downstream continuations are stored in a deque so we don't get reallocations
         on push back - this allows us to make calls while additional inserts happen.
     */
 
-    using argument = argument_of_t<signature_t<T>>;
-    using result = result_of_t_<signature_t<T>>;
+    using argument = Arg;
+    using result = yield_type<T, Arg>;
 
     std::mutex                    _downstream_mutex;
-    std::deque<channel<result>>   _downstream;
+    std::deque<sender<result>>   _downstream;
 
     T                        _process;
 
@@ -127,7 +223,8 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
 
-    std::atomic_size_t       _channel_count;
+    std::atomic_size_t       _sender_count;
+    std::atomic_size_t       _receiver_count;
 
     /*
         Join is not yet implemented so single upstream for now. We don't just use
@@ -139,28 +236,57 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
     template <typename F>
     shared_process(F&& f) :
         _process(std::forward<F>(f))
-    { _channel_count = 1; }
+    {
+        _sender_count = 1;
+        _receiver_count = !std::is_same<result, void>::value;
+    }
 
     template <typename F>
     shared_process(F&& f, std::shared_ptr<shared_process_receiver<argument>> p) :
         _process(std::forward<F>(f)),
         _upstream(std::move(p))
-    { _channel_count = 1; }
-
-    void add_channel() override {
-        ++_channel_count;
+    {
+        _sender_count = 1;
+        _receiver_count = !std::is_same<result, void>::value;
     }
 
-    void remove_channel() override {
-        if (--_channel_count == 0) {
-            bool running = true;
+    void add_sender() override {
+        ++_sender_count;
+    }
+    void remove_sender() override {
+        if (--_sender_count == 0) {
+            bool do_run;
             {
                 std::unique_lock<std::mutex> lock(_process_mutex);
                 _process_close_queue = true;
-                std::swap(running, _process_running);
-                running = running || _process_suspend_count;
+                do_run = !_receiver_count && !_process_running;
+                _process_running = _process_running || do_run;
             }
-            if (!running) run();
+            if (do_run) run();
+        }
+    }
+
+    void add_receiver() override {
+        if (std::is_same<result, void>::value) return;
+        ++_receiver_count;
+    }
+
+    void remove_receiver() override {
+        if (std::is_same<result, void>::value) return;
+        /*
+            NOTE (sparent) : Decrementing the receiver count can allow this to start running on a
+            send before we can get to the check - so we need to see if we are already running
+            before starting again.
+        */
+
+        if (--_receiver_count == 0) {
+            bool do_run;
+            {
+                std::unique_lock<std::mutex> lock(_process_mutex);
+                do_run = (!_process_message_queue.empty() || _process_close_queue) && !_process_running;
+                _process_running = _process_running || do_run;
+            }
+            if (do_run) run();
         }
     }
 
@@ -193,7 +319,8 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : cts but not running!");
             if (!_process_suspend_count) {
-                if (_process.state() == process_state::yield || !_process_message_queue.empty()
+                // FIXME (sparent): This is calling the process state ender the lock.
+                if (get_process_state(_process) == process_state::yield || !_process_message_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
                 } else {
@@ -204,7 +331,6 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
         }
         // Somebody told me that his name was Bill
         if (do_run) run();
-
     }
 
     bool dequeue() {
@@ -224,18 +350,19 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
         }
         if (cts && _upstream) _upstream->cts();
         if (message) _process.await(std::move(message.get()));
-        else if (do_close) _process.close();
+        else if (do_close) process_close(_process);
         return bool(message);
     }
 
-    void step() {
+    template <typename U>
+    auto step() -> std::enable_if_t<has_process_yield<U>> {
         /*
             REVISIT (sparent) : Put a timer on this loop to limit it?
         */
-        while (_process.state() != process_state::yield) {
+        while (get_process_state(_process) != process_state::yield) {
             if (!dequeue()) break;
         }
-        if (_process.state() == process_state::await) {
+        if (get_process_state(_process) == process_state::await) {
             task_done();
         } else {
             broadcast(_process.yield()); // after this point must call cts()
@@ -243,10 +370,34 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
         }
     }
 
+    template <typename U>
+    auto step() -> std::enable_if_t<!has_process_yield<U>> {
+        boost::optional<argument> message; // TODO : make functional
+        bool do_cts = false;
+        bool do_close = false;
+        {
+            std::unique_lock<std::mutex> lock(_process_mutex);
+            if (_process_message_queue.empty()) {
+                std::swap(do_close, _process_close_queue);
+                _process_final = do_close; // unravel after any yield
+            } else {
+                message = std::move(_process_message_queue.front());
+                _process_message_queue.pop_front();
+                do_cts = _process_message_queue.size() == 0; // TODO (sparent) : queue size - 1.
+            }
+        }
+        if (do_cts && _upstream) _upstream->cts();
+        if (message) {
+            broadcast(avoid_invoke(_process, std::move(message.get())));
+            cts();
+        }
+        else task_done();
+    }
+
     void run() {
         default_scheduler()([_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
-            if (p) p->step();
+            if (p) p->template step<T>();
         });
     }
 
@@ -280,19 +431,24 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
     }
 
     void send(argument arg) override {
-        bool running = true;
+        bool do_run;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
             _process_message_queue.emplace_back(std::move(arg)); // TODO (sparent) : overwrite here.
-            std::swap(running, _process_running);
+            
+            do_run = !_receiver_count && !_process_running;
+            _process_running = _process_running || do_run;
+
+            #if 0
             running = running || _process_suspend_count;
+            #endif
         }
-        if (!running) run();
+        if (do_run) run();
     }
 
-    void map(channel<result> f) override {
+    void map(sender<result> f) override {
         /*
-            REVISIT (sparent) : If we are in a final state then we should destruct the channel
+            REVISIT (sparent) : If we are in a final state then we should destruct the sender
             and not add it here.
         */
         {
@@ -308,82 +464,104 @@ struct shared_process : shared_process_receiver<result_of_t_<signature_t<T>>>,
 
 /**************************************************************************************************/
 
+template <typename T>
+auto channel() -> std::pair<sender<T>, receiver<T>> {
+    auto p = std::make_shared<detail::shared_process<identity, T>>(identity());
+    return std::make_pair(sender<T>(p), receiver<T>(p));
+}
+
+/**************************************************************************************************/
+
 template <typename> class receiver;
 
 template <typename T>
 class receiver {
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
+
     ptr_t _p;
+    bool _ready = false;
 
     template <typename U>
-    friend class channel;
+    friend class sender;
 
     template <typename U>
     friend class receiver; // huh?
 
+    template <typename U>
+    friend auto channel() -> std::pair<sender<U>, receiver<U>>;
+
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
     receiver() = default;
+
+    ~receiver() {
+        if (!_ready && _p) _p->remove_receiver();
+    }
+
+    receiver(const receiver& x) : _p(x._p) {
+        if (_p) _p->add_sender();
+    }
+    receiver(receiver&&) noexcept = default;
+
+    receiver& operator=(const receiver& x) {
+        auto tmp = x; *this = std::move(tmp); return *this;
+    }
+    receiver& operator=(receiver&& x) noexcept = default;
+
+    void set_ready() {
+        if (!_ready && _p) _p->remove_receiver();
+        _ready = true;
+    }
+
+    bool ready() { return _ready; }
 
     template <typename F>
     auto operator|(F&& f) const {
-        auto p = std::make_shared<detail::shared_process<F>>(std::forward<F>(f), _p);
-        _p->map(channel<argument_of_t<signature_t<F>>>(p));
-        return receiver<result_of_t_<signature_t<F>>>(std::move(p));
+        // TODO - report error if not constructed or _ready.
+        auto p = std::make_shared<detail::shared_process<F, T>>(std::forward<F>(f), _p);
+        _p->map(sender<T>(p));
+        return receiver<detail::yield_type<F, T>>(std::move(p));
     }
-};
-
-/**************************************************************************************************/
-
-template <>
-class receiver<void> {
-    using ptr_t = std::shared_ptr<detail::shared_process_receiver<void>>;
-    ptr_t _p;
-
-    template <typename U>
-    friend class channel;
-
-    receiver(ptr_t p) : _p(std::move(p)) { }
-
-  public:
-    receiver() = default;
 };
 
 /**************************************************************************************************/
 
 template <typename T>
-class channel {
-    using ptr_t = std::weak_ptr<detail::shared_process_channel<T>>;
+class sender {
+    using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
     ptr_t _p;
 
     template <typename U>
     friend class receiver;
 
-    channel(ptr_t p) : _p(std::move(p)) { }
+    template <typename U>
+    friend auto channel() -> std::pair<sender<U>, receiver<U>>;
+
+    sender(ptr_t p) : _p(std::move(p)) { }
 
   public:
-    channel() = default;
+    sender() = default;
 
-    ~channel() {
+    ~sender() {
         auto p = _p.lock();
-        if (p) p->remove_channel();
+        if (p) p->remove_sender();
     }
 
-    channel(const channel& x) : _p(x._p) {
+    sender(const sender& x) : _p(x._p) {
         auto p = _p.lock();
-        if (p) p->add_channel();
+        if (p) p->add_sender();
     }
 
-    channel(channel&&) noexcept = default;
-    channel& operator=(const channel& x) {
+    sender(sender&&) noexcept = default;
+    sender& operator=(const sender& x) {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
-    channel& operator=(channel&& x) noexcept = default;
+    sender& operator=(sender&& x) noexcept = default;
 
     void close() {
         auto p = _p.lock();
-        if (p) p->remove_channel();
+        if (p) p->remove_sender();
         _p.reset();
     }
 
@@ -391,13 +569,6 @@ class channel {
     void operator()(A&&... args) const {
         auto p = _p.lock();
         if (p) p->send(std::forward<A>(args)...);
-    }
-
-    template <typename F>
-    auto operator|(F&& f) {
-        auto p = std::make_shared<detail::shared_process<F>>(std::forward<F>(f));
-        _p = p;
-        return receiver<result_of_t_<signature_t<F>>>(std::move(p));
     }
 };
 
@@ -421,8 +592,6 @@ struct function_process<R (Args...)> {
         _bound = std::bind(_f, std::forward<A>(args)...);
         _done = false;
     }
-
-    void close() { }
 
     R yield() { _done = true; return _bound(); }
     process_state state() const { return _done ? process_state::await : process_state::yield; }
