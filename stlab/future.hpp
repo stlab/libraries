@@ -592,7 +592,7 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>      _args;
     future<void>                            _holds[sizeof...(Ts)] {};
     std::atomic_size_t                      _remaining {sizeof...(Ts)};
-    packaged_task<std::result_of_t<F(Ts...)>()> _f;
+    packaged_task<> _f;
 
     void done() { if (--_remaining == 0) _f(); }
 };
