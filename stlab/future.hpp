@@ -589,10 +589,10 @@ namespace detail {
 template <typename F, typename... Ts>
 struct when_all_shared {
     // decay
-    std::tuple<boost::optional<Ts>...>      _args;
-    future<void>                            _holds[sizeof...(Ts)] {};
-    std::atomic_size_t                      _remaining {sizeof...(Ts)};
-    packaged_task<> _f;
+    std::tuple<boost::optional<Ts>...>  _args;
+    future<void>                        _holds[sizeof...(Ts)] {};
+    std::atomic_size_t                  _remaining {sizeof...(Ts)};
+    packaged_task<>                     _f;
 
     void done() { if (--_remaining == 0) _f(); }
 };
@@ -607,6 +607,21 @@ auto apply_when_all_args(const F& f, Args& args) {
     return apply_when_all_args_(f, args, std::make_index_sequence<std::tuple_size<Args>::value>());
 }
 
+template <std::size_t i, typename P, typename T>
+void attach_when_all_arg_(const std::shared_ptr<P>& p, T a) {
+    p->_holds[i] = std::move(a).then([_w = std::weak_ptr<P>(p)](auto x){
+        auto p = _w.lock(); if (!p) return;
+        std::get<i>(p->_args) = std::move(x);
+        p->done();
+    });
+}
+
+template <typename P, typename... Ts, std::size_t... I>
+void attach_when_all_args_(std::index_sequence<I...>, const std::shared_ptr<P>& p, Ts... a) {
+    (void)std::initializer_list<int>{(attach_when_all_arg_<I>(p, a), 0)...};
+}
+
+#if 0
 template <typename P, typename... Ts, std::size_t... I>
 void attach_when_all_args_(std::index_sequence<I...>, const std::shared_ptr<P>& p, Ts... a) {
     std::weak_ptr<P> w = p;
@@ -616,6 +631,7 @@ void attach_when_all_args_(std::index_sequence<I...>, const std::shared_ptr<P>& 
         p->done();
     }), 0)...};
 }
+#endif
 
 template <typename P, typename... Ts>
 void attach_when_all_args(const std::shared_ptr<P>& p, Ts... a) {
