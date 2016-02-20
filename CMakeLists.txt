@@ -7,18 +7,12 @@ if(WIN32)
 ENDIF(WIN32)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")  
-  #set(CMAKE_CXX_FLAGS "-O3 -fsanitize=thread -g -Wall -std=c++11")
   set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14")
   set(CMAKE_LINK_FLAGS "-pthreads")
 endif()
 
-set(BOOST_ROOT D:/boost_1_59_0)
-set(Boost_USE_STATIC_LIBS        OFF)
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME     OFF)
-#set(BOOST_ALL_DYN_LINK           ON) 
-find_package( Boost 1.55.0 REQUIRED COMPONENTS thread)
-
+set(BOOST_ROOT D:/boost_1_60_0)
+find_package( Boost 1.59.0 )
 
 add_subdirectory(src)
 add_subdirectory(test)

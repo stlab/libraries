@@ -9,12 +9,12 @@
 #ifndef STLAB_FUTURE_HPP
 #define STLAB_FUTURE_HPP
 
-#include <future>
 #include <initializer_list>
 #include <memory>
-#include <thread>
+#include <future>
+#include <mutex>
 #include <vector>
-
+#include <atomic>
 #include <boost/optional.hpp>
 
 #include <stlab/config.hpp>
@@ -457,6 +457,8 @@ class future<T, detail::enable_if_copyable<T>> {
                 future<detail::result_of_t_<Signature>>>;
 
   public:
+    using result_type = T;
+
     future() = default;
 
     template <typename F>
@@ -502,6 +504,8 @@ class future<void, void> {
                 future<detail::result_of_t_<Signature>>>;
 
   public:
+    using result_type = void;
+
     future() = default;
 
     template <typename F>
@@ -547,6 +551,8 @@ class future<T, detail::enable_if_not_copyable<T>> {
                 future<detail::result_of_t_<Signature>>>;
 
   public:
+    using result_type = T;
+
     future() = default;
     future(const future&) = delete;
     future(future&&) noexcept = default;
@@ -653,6 +659,66 @@ auto when_all(S s, F f, future<Ts>... args) {
     shared->_f = std::move(p.first);
 
     detail::attach_when_all_args(shared, std::move(args)...);
+
+    return std::move(p.second);
+}
+
+/**************************************************************************************************/
+
+namespace detail
+{
+    template <typename F, typename Input, typename I>
+    struct when_all_context {
+      when_all_context(I first, I last)
+        : _remaining(std::distance(first, last))
+        , _results(_remaining)
+        , _holds(_remaining)
+      {}
+
+      std::atomic_size_t        _remaining;
+      std::vector<Input>        _results;
+      std::vector<future<void>> _holds;
+      packaged_task<>           _f;
+
+      void done() { if (--_remaining == 0) _f(); }
+    };
+
+    template <typename P, typename T>
+    void attach_when_all_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+        p->_holds[index] = std::move(a).then([_w = std::weak_ptr<P>(p), _i = index](auto x){
+            auto p = _w.lock(); if (!p) return;
+            p->_results[_i] = x;
+            p->done();
+        });
+      }
+    }
+
+/**************************************************************************************************/
+
+template <typename S, // models task scheduler
+          typename F, // models functional object
+          typename I> // models ForwardIterator that reference to a future
+auto when_all(S schedule, F f, const std::pair<I, I>& range) {
+    using param_t = typename std::iterator_traits<I>::value_type::result_type;
+    using result_t = typename std::result_of<F(std::vector<param_t>)>::type;
+
+    if (range.first == range.second) {
+        auto p = package<result_t()>(schedule, std::bind(std::forward<F>(f), std::vector<param_t>()));
+        schedule(std::move(p.first));
+        return std::move(p.second);
+    }
+
+    auto context = std::make_shared<detail::when_all_context<F, param_t, I>>(range.first, range.second);
+    auto p = package<result_t()>(std::move(schedule), [_f = std::move(f), _c = context, _r = range]{
+        return _f(_c->_results);
+    });
+
+    context->_f = std::move(p.first);
+
+    size_t index(0);
+    std::for_each(range.first, range.second, [&index, &context](auto item) {
+        detail::attach_when_all_tasks(index++, context, item);
+    });
 
     return std::move(p.second);
 }
