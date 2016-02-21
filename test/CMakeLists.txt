@@ -1,4 +1,4 @@
-project(future_test)
+project(future_test C CXX)
 
 if(WIN32)
   add_definitions(-D_WIN32_WINNT=0x0501)
@@ -19,4 +19,4 @@ add_dependencies(future_test future)
 
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
-target_link_libraries(future_test future)
+target_link_libraries(future_test future ${CMAKE_THREAD_LIBS_INIT})

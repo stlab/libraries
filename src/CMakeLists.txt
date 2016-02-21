@@ -1,4 +1,4 @@
-project(future)
+project(future C CXX)
 
 include_directories("${PROJECT_SOURCE_DIR}/..")
 

@@ -16,7 +16,7 @@ using namespace std;
 int main() {
     cout << "start tasking test" << endl;
     auto f1 = async(default_scheduler(), [] { return 42; }).then( 
-      [](auto answer) { cout << "The Answer to the Ultimate Question of Life, the Universe and Everything is " << answer << endl; });
+      [](auto answer) { cout << "The Answer to the Ultimate Question of Life, the Universe and Everything is " << answer << endl << flush; });
     f1.detach();
     
 
@@ -30,7 +30,7 @@ int main() {
 
     std::vector<stlab::future<int>> emptyFutures;
     auto a5 = when_all(default_scheduler(), [](std::vector<int> v) {
-      cout << "Result of no parallel tasks: " << v.size() << endl;
+      cout << "Result of no parallel tasks: " << v.size() << endl << flush;
     }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
     a5.detach();
 
@@ -45,7 +45,7 @@ int main() {
       for (auto i : v) {
         cout << i << " ";
       } 
-      cout << endl;
+      cout << endl << flush;
     }, std::make_pair(someFutures.begin(), someFutures.end()));
     a6.detach();
 }

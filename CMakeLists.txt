@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(SlabFuture)
+project(SlabFuture C CXX)
 
 if(WIN32)
   add_definitions(-D_WIN32_WINNT=0x0501)
@@ -13,6 +13,7 @@ endif()
 
 set(BOOST_ROOT D:/boost_1_60_0)
 find_package( Boost 1.59.0 )
+find_package( Threads )
 
 add_subdirectory(src)
 add_subdirectory(test)
