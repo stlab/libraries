@@ -134,10 +134,19 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename S, typename F>
     auto then(S s, F f) {
-        auto p = package<typename std::result_of<F(T)>::type()>(s,
-            [_f = std::move(f), _p = this->shared_from_this()] {
-                if (_p->_error) std::rethrow_exception(_p->_error.get());
-                return _f(_p->_result.get());
+        return recover(std::move(s), [_f = std::move(f)](const auto& x){
+            return _f(x.get_try());
+        });
+    }
+
+    template <typename F>
+    auto recover(F f) { return recover(_schedule, std::move(f)); }
+
+    template <typename S, typename F>
+    auto recover(S s, F f) {
+        auto p = package<std::result_of_t<F(future<T>)>()>(s,
+            [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
+                return _f(_p);
             });
 
         bool ready;
@@ -152,16 +161,31 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+    auto then_r(F f) { return then_r(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto then_r(bool unique, S s, F f) {
-        if (!unique) return then(std::move(s), std::move(f));
+    auto then_r(S s, F f) {
+        return recover_r(std::move(s), [_f = std::move(f)](auto x){
+            return _f(std::move(x).get_try());
+        });
+    }
 
-        auto p = package<typename std::result_of<F(T)>::type()>(s,
-            [_f = std::move(f), _p = this->shared_from_this()] {
-                if (_p->_error) std::rethrow_exception(_p->_error.get());
-                return _f(std::move(_p->_result.get()));
+    template <typename F>
+    auto recover_r(bool unique, F f) { return recover_r(unique, _schedule, std::move(f)); }
+
+    /*
+        REVISIT (sparent) : Need to write test cases for all the r-value cases.
+        The logic here is that if this is the only reference and it is an rvalue than this
+        is the last recover clause added and so it can consume the value.
+    */
+
+    template <typename S, typename F>
+    auto recover_r(bool unique, S s, F f) {
+        if (!unique) return recover(std::move(s), std::move(f));
+
+        auto p = package<std::result_of_t<F(future<T>)>()>(s,
+            [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
+                return _f(std::move(_p));
             });
 
         bool ready;
@@ -235,14 +259,23 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
 
     template <typename F>
-    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+    auto then_r(F f) { return then_r(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto then_r(bool, S s, F f) {
-        auto p = package<typename std::result_of<F(T)>::type()>(s,
-            [_f = std::move(f), _p = this->shared_from_this()] {
-                if (_p->_error) std::rethrow_exception(_p->_error.get());
-                return _f(std::move(_p->_result.get()));
+    auto then_r(S s, F f) {
+        return recover_r(std::move(s), [_f = std::move(f)](auto x){
+            return _f(std::move(x).get_try());
+        });
+    }
+
+    template <typename F>
+    auto recover_r(F f) { return recover_r(_schedule, std::move(f)); }
+
+    template <typename S, typename F>
+    auto recover_r(S s, F f) {
+        auto p = package<std::result_of_t<F(future<T>)>()>(s,
+            [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
+                return _f(std::move(_p));
             });
 
 
@@ -308,28 +341,29 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 
     template <typename S, typename F>
     auto then(S s, F f) {
-        auto p = package<typename std::result_of<F()>::type()>(s,
-            [_f = std::move(f), _p = this->shared_from_this()] {
-                if (_p->_error) std::rethrow_exception(_p->_error.get());
-                _f();
-            });
-
-        bool ready;
-        {
-        std::unique_lock<std::mutex> lock(_mutex);
-        ready = _ready;
-        if (!ready) _then.emplace_back(std::move(s), std::move(p.first));
-        }
-        if (ready) s(std::move(p.first));
-
-        return std::move(p.second);
+        return recover(std::move(s), [_f = std::move(f)](auto x){
+            x.get_try(); // throw if error
+            return _f();
+        });
     }
 
     template <typename F>
-    auto then_r(bool, F f) { return then(_schedule, std::move(f)); }
+    auto then_r(F f) { return then(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto then_r(bool, S s, F f) { return then(std::move(s), std::move(f)); }
+    auto then_r(S s, F f) { return then(std::move(s), std::move(f)); }
+
+    template <typename F>
+    auto recover(F f) { return recover(_schedule, std::move(f)); }
+
+    template <typename S, typename F>
+    auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>;
+
+    template <typename F>
+    auto recover_r(F f) { return recover(_schedule, std::move(f)); }
+
+    template <typename S, typename F>
+    auto recover_r(S s, F f) { return recover(std::move(s), std::move(f)); }
 
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
@@ -343,7 +377,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         for (const auto& e : then) e.second();
     }
 
-    auto get_try() {
+    auto get_try() -> bool {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -456,6 +490,8 @@ class future<T, detail::enable_if_copyable<T>> {
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
 
+    friend class detail::shared_base<T>;
+
   public:
     future() = default;
 
@@ -471,6 +507,20 @@ class future<T, detail::enable_if_copyable<T>> {
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto recover(F&& f) const& { return _p->recover(std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) const& { return _p->recover(std::forward<S>(s), std::forward<F>(f)); }
+
+    template <typename F>
+    auto recover(F&& f) && { return _p->recover_r(_p.unique(), std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) && {
+        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const { then([_hold = _p](auto f){ }, [](const auto& x){ }); }
@@ -500,6 +550,8 @@ class future<void, void> {
     friend auto package(S, F)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
+                
+    friend class detail::shared_base<void>;
 
   public:
     future() = default;
@@ -518,6 +570,20 @@ class future<void, void> {
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
+    template <typename F>
+    auto recover(F&& f) const& { return _p->recover(std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) const& { return _p->recover(std::forward<S>(s), std::forward<F>(f)); }
+
+    template <typename F>
+    auto recover(F&& f) && { return _p->recover_r(_p.unique(), std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) && {
+        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+    }
+
     void detach() const { then([_hold = _p](auto f){ }, [](){ }); }
 
     bool cancel_try() {
@@ -528,8 +594,7 @@ class future<void, void> {
         return !_p;
     }
 
-    auto get_try() const& { return _p->get_try(); }
-    auto get_try() && { return _p->get_try_r(_p.unique()); }
+    bool get_try() { return _p->get_try(); }
 };
 
 /**************************************************************************************************/
@@ -545,6 +610,8 @@ class future<T, detail::enable_if_not_copyable<T>> {
     friend auto package(S, F)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
+    
+    friend class detail::shared_base<T>;
 
   public:
     future() = default;
@@ -559,6 +626,14 @@ class future<T, detail::enable_if_not_copyable<T>> {
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto recover(F&& f) && { return _p->recover_r(_p.unique(), std::forward<F>(f)); }
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) && {
+        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const { then([_hold = _p](auto f){ }, [](const auto& x){ }); }
@@ -597,8 +672,18 @@ struct when_all_shared {
     void done() { if (--_remaining == 0) _f(); }
 };
 
+/*
+    REVISIT (sparent) : Need to propogate the actual error here. Need a when_all_recover
+    and implement when_all in terms of it.
+*/
+
+inline void throw_if_false(bool x) {
+    if (!x) throw std::runtime_error("when-all missing value");
+}
+
 template <typename F, typename Args, std::size_t... I>
 auto apply_when_all_args_(const F& f, Args& args, std::index_sequence<I...>) {
+    (void)std::initializer_list<int>{(throw_if_false(std::get<I>(args).is_initialized()), 0)... };
     return f(std::move(std::get<I>(args).get())...);
 }
 
@@ -609,9 +694,16 @@ auto apply_when_all_args(const F& f, Args& args) {
 
 template <std::size_t i, typename P, typename T>
 void attach_when_all_arg_(const std::shared_ptr<P>& p, T a) {
-    p->_holds[i] = std::move(a).then([_w = std::weak_ptr<P>(p)](auto x){
+    p->_holds[i] = std::move(a).recover([_w = std::weak_ptr<P>(p)](auto x){
         auto p = _w.lock(); if (!p) return;
-        std::get<i>(p->_args) = std::move(x);
+
+        // REVISIT (sparent) : should be able to query future for error.
+        try {
+            std::get<i>(p->_args) = std::move(x).get_try();
+        } catch(...) {
+            p->done();
+            throw;
+        }
         p->done();
     });
 }
@@ -620,18 +712,6 @@ template <typename P, typename... Ts, std::size_t... I>
 void attach_when_all_args_(std::index_sequence<I...>, const std::shared_ptr<P>& p, Ts... a) {
     (void)std::initializer_list<int>{(attach_when_all_arg_<I>(p, a), 0)...};
 }
-
-#if 0
-template <typename P, typename... Ts, std::size_t... I>
-void attach_when_all_args_(std::index_sequence<I...>, const std::shared_ptr<P>& p, Ts... a) {
-    std::weak_ptr<P> w = p;
-    (void)std::initializer_list<int>{(p->_holds[I] = std::move(a).then([_w = w](auto x){
-        auto p = _w.lock(); if (!p) return;
-        std::get<I>(p->_args) = std::move(x);
-        p->done();
-    }), 0)...};
-}
-#endif
 
 template <typename P, typename... Ts>
 void attach_when_all_args(const std::shared_ptr<P>& p, Ts... a) {
@@ -648,6 +728,7 @@ auto when_all(S s, F f, future<Ts>... args) {
 
     auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
     auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared] {
+        // REVISIT - check for error here - otherwise we'll rethrow about empty optional
         return detail::apply_when_all_args(_f, _p->_args);
     });
     shared->_f = std::move(p.first);
@@ -687,6 +768,26 @@ void shared_base<void>::set_value(const F& f, Args&&... args) {
         then = std::move(_then);
     }
     for (const auto& e : then) e.first(e.second);
+}
+
+
+template <typename S, typename F>
+auto shared_base<void>::recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>
+ {
+    auto p = package<std::result_of_t<F(future<void>)>()>(s,
+        [_f = std::move(f), _p = future<void>(this->shared_from_this())] {
+            return _f(_p);
+        });
+
+    bool ready;
+    {
+    std::unique_lock<std::mutex> lock(_mutex);
+    ready = _ready;
+    if (!ready) _then.emplace_back(std::move(s), std::move(p.first));
+    }
+    if (ready) s(std::move(p.first));
+
+    return std::move(p.second);
 }
 
 template <typename T>
