@@ -135,7 +135,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then(S s, F f) {
         return recover(std::move(s), [_f = std::move(f)](const auto& x){
-            return _f(x.get_try());
+            return _f(*x.get_try());
         });
     }
 
@@ -166,7 +166,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then_r(S s, F f) {
         return recover_r(std::move(s), [_f = std::move(f)](auto x){
-            return _f(std::move(x).get_try());
+            return _f(*std::move(x).get_try());
         });
     }
 
@@ -490,7 +490,7 @@ class future<T, detail::enable_if_copyable<T>> {
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
 
-    friend class detail::shared_base<T>;
+    friend struct detail::shared_base<T>;
 
   public:
     using result_type = T;
@@ -553,7 +553,7 @@ class future<void, void> {
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
                 
-    friend class detail::shared_base<void>;
+    friend struct detail::shared_base<void>;
 
   public:
     using result_type = void;
@@ -615,7 +615,7 @@ class future<T, detail::enable_if_not_copyable<T>> {
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
     
-    friend class detail::shared_base<T>;
+    friend struct detail::shared_base<T>;
 
   public:
     using result_type = T;
