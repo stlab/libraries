@@ -706,41 +706,40 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>  _args;
     future<void>                        _holds[sizeof...(Ts)] {};
     std::atomic_size_t                  _remaining {sizeof...(Ts)};
+    std::atomic_bool                    _error_happend{ false };
     std::mutex                          _errormutex;
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
-    void done() { if (--_remaining == 0) _f(); }
+    void done() { if (--_remaining == 0 && !_error_happend) _f(); }
 
     void failure(std::exception_ptr error) {
         {
             std::unique_lock<std::mutex> lock(_errormutex);
             _error = std::move(error);
+            _error_happend = true;
         }
         for (auto& h : _holds) {
-            if (h.cancel_try()) {
-                --_remaining;
-            }
+            h.cancel_try();
         }
-        if (_remaining == 0) _f();
+        _f();
     }
 
 };
 
-template <typename P>
-inline void throw_if_false(bool x, P& p) {
-    if (!x) std::rethrow_exception(p->_error.get());;
+inline void throw_if_false(bool x, boost::optional<std::exception_ptr>& p) {
+    if (!x) std::rethrow_exception(p.get());;
 }
 
 template <typename F, typename Args, typename P, std::size_t... I>
 auto apply_when_all_args_(const F& f, Args& args, P& p, std::index_sequence<I...>) {
-    (void)std::initializer_list<int>{(throw_if_false(std::get<I>(args).is_initialized(), p), 0)... };
+    (void)std::initializer_list<int>{(throw_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
     return f(std::move(std::get<I>(args).get())...);
 }
 
-template <typename F, typename Args, typename P>
-auto apply_when_all_args(const F& f, Args& args, P& p) {
-    return apply_when_all_args_(f, args, p, std::make_index_sequence<std::tuple_size<Args>::value>());
+template <typename F, typename P>
+auto apply_when_all_args(const F& f, P& p) {
+    return apply_when_all_args_(f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
 }
 
 template <std::size_t i, typename P, typename T>
@@ -779,7 +778,7 @@ auto when_all(S s, F f, future<Ts>... args) {
 
     auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
     auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared] {
-        return detail::apply_when_all_args(_f, _p->_args, _p);
+        return detail::apply_when_all_args(_f, _p);
     });
     shared->_f = std::move(p.first);
 
@@ -801,25 +800,25 @@ namespace detail
       {}
 
       std::atomic_size_t                    _remaining;
+      std::atomic_bool                      _error_happened{false};
       std::vector<Input>                    _results;
       std::vector<future<void>>             _holds;
       std::mutex                            _errormutex;
       boost::optional<std::exception_ptr>   _error;
       packaged_task<>                       _f;
 
-      void done() { if (--_remaining == 0) _f(); }
+      void done() { if (--_remaining == 0 && !_error_happened) _f(); }
 
       void failure(std::exception_ptr error) {
           {
               std::unique_lock<std::mutex> lock(_errormutex);
               _error = std::move(error);
+              _error_happened = true;
           }
           for (auto& h : _holds) {
-              if (h.cancel_try()) {
-                  --_remaining;
-              }
+              h.cancel_try();
           }
-          if (_remaining == 0) _f();
+          _f();
       }
     };
 
