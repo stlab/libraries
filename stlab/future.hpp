@@ -9,9 +9,10 @@
 #ifndef STLAB_FUTURE_HPP
 #define STLAB_FUTURE_HPP
 
+#include <future>
 #include <initializer_list>
 #include <memory>
-#include <future>
+#include <thread>
 #include <mutex>
 #include <vector>
 #include <atomic>
@@ -161,11 +162,11 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto then_r(F f) { return then_r(_schedule, std::move(f)); }
+    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto then_r(S s, F f) {
-        return recover_r(std::move(s), [_f = std::move(f)](auto x){
+    auto then_r(bool unique, S s, F f) {
+        return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
             return _f(*std::move(x).get_try());
         });
     }
@@ -181,7 +182,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename S, typename F>
     auto recover_r(bool unique, S s, F f) {
-        if (!unique) return recover(std::move(s), std::move(f));
+        if (!unique) return recover(std::move(s),std::move(f));
 
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
             [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
@@ -259,20 +260,21 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
 
     template <typename F>
-    auto then_r(F f) { return then_r(_schedule, std::move(f)); }
+    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto then_r(S s, F f) {
-        return recover_r(std::move(s), [_f = std::move(f)](auto x){
-            return _f(std::move(x).get_try());
+    auto then_r(bool unique, S s, F f) {
+        return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
+            return _f(*std::move(x).get_try());
         });
     }
 
     template <typename F>
-    auto recover_r(F f) { return recover_r(_schedule, std::move(f)); }
+    auto recover_r(bool unique, F f) { return recover_r(unique, _schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto recover_r(S s, F f) {
+    auto recover_r(bool, S s, F f) {
+        // rvalue case unique is assumed.
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
             [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
                 return _f(std::move(_p));
@@ -348,10 +350,10 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     }
 
     template <typename F>
-    auto then_r(F f) { return then(_schedule, std::move(f)); }
+    auto then_r(bool, F f) { return then(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto then_r(S s, F f) { return then(std::move(s), std::move(f)); }
+    auto then_r(bool, S s, F f) { return then(std::move(s), std::move(f)); }
 
     template <typename F>
     auto recover(F f) { return recover(_schedule, std::move(f)); }
@@ -360,10 +362,10 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>;
 
     template <typename F>
-    auto recover_r(F f) { return recover(_schedule, std::move(f)); }
+    auto recover_r(bool, F f) { return recover(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto recover_r(S s, F f) { return recover(std::move(s), std::move(f)); }
+    auto recover_r(bool, S s, F f) { return recover(std::move(s), std::move(f)); }
 
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
@@ -504,7 +506,9 @@ class future<T, detail::enable_if_copyable<T>> {
     auto then(S&& s, F&& f) const& { return _p->then(std::forward<S>(s), std::forward<F>(f)); }
 
     template <typename F>
-    auto then(F&& f) && { return _p->then_r(_p.unique(), std::forward<F>(f)); }
+    auto then(F&& f) && {
+        return _p->then_r(_p.unique(), std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
@@ -515,10 +519,14 @@ class future<T, detail::enable_if_copyable<T>> {
     auto recover(F&& f) const& { return _p->recover(std::forward<F>(f)); }
 
     template <typename S, typename F>
-    auto recover(S&& s, F&& f) const& { return _p->recover(std::forward<S>(s), std::forward<F>(f)); }
+    auto recover(S&& s, F&& f) const& {
+        return _p->recover(std::forward<S>(s), std::forward<F>(f));
+    }
 
     template <typename F>
-    auto recover(F&& f) && { return _p->recover_r(_p.unique(), std::forward<F>(f)); }
+    auto recover(F&& f) && {
+        return _p->recover_r(_p.unique(), std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
@@ -567,7 +575,9 @@ class future<void, void> {
     auto then(S&& s, F&& f) const& { return _p->then(std::forward<S>(s), std::forward<F>(f)); }
 
     template <typename F>
-    auto then(F&& f) && { return _p->then_r(_p.unique(), std::forward<F>(f)); }
+    auto then(F&& f) && {
+        return _p->then_r(_p.unique(), std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
@@ -578,10 +588,14 @@ class future<void, void> {
     auto recover(F&& f) const& { return _p->recover(std::forward<F>(f)); }
 
     template <typename S, typename F>
-    auto recover(S&& s, F&& f) const& { return _p->recover(std::forward<S>(s), std::forward<F>(f)); }
+    auto recover(S&& s, F&& f) const& {
+        return _p->recover(std::forward<S>(s), std::forward<F>(f));
+    }
 
     template <typename F>
-    auto recover(F&& f) && { return _p->recover_r(_p.unique(), std::forward<F>(f)); }
+    auto recover(F&& f) && {
+        return _p->recover_r(_p.unique(), std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
@@ -615,7 +629,7 @@ class future<T, detail::enable_if_not_copyable<T>> {
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
     
-    friend struct detail::shared_base<T>;
+    friend class detail::shared_base<T>;
 
   public:
     using result_type = T;
@@ -627,7 +641,9 @@ class future<T, detail::enable_if_not_copyable<T>> {
     future& operator=(future&&) noexcept = default;
 
     template <typename F>
-    auto then(F&& f) && { return _p->then_r(_p.unique(), std::forward<F>(f)); }
+    auto then(F&& f) && {
+        return _p->then_r(_p.unique(), std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
@@ -635,7 +651,9 @@ class future<T, detail::enable_if_not_copyable<T>> {
     }
 
     template <typename F>
-    auto recover(F&& f) && { return _p->recover_r(_p.unique(), std::forward<F>(f)); }
+    auto recover(F&& f) && {
+        return _p->recover_r(_p.unique(), std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
