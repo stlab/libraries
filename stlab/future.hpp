@@ -152,11 +152,13 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
         bool ready;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        ready = _ready;
-        if (!ready) _then.emplace_back(std::move(s), std::move(p.first));
+            std::unique_lock<std::mutex> lock(_mutex);
+            ready = _ready;
+            if (!ready) 
+                _then.emplace_back(std::move(s), std::move(p.first));
         }
-        if (ready) s(std::move(p.first));
+        if (ready) 
+            s(std::move(p.first));
 
         return std::move(p.second);
     }
@@ -204,9 +206,9 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         _error = std::move(error);
         then_t then;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        then = move(_then);
-        _ready = true;
+            std::unique_lock<std::mutex> lock(_mutex);
+            then = move(_then);
+            _ready = true;
         }
         // propogate exception without scheduling
         for (const auto& e : then) e.second();
@@ -545,6 +547,10 @@ class future<T, detail::enable_if_copyable<T>> {
 
     auto get_try() const& { return _p->get_try(); }
     auto get_try() && { return _p->get_try_r(_p.unique()); }
+
+    boost::optional<std::exception_ptr> error() const {
+        return _p->_error;
+    }
 };
 
 /**************************************************************************************************/
@@ -613,6 +619,11 @@ class future<void, void> {
     }
 
     bool get_try() { return _p->get_try(); }
+
+    boost::optional<std::exception_ptr> error() const {
+        return _p->_error;
+    }
+
 };
 
 /**************************************************************************************************/
@@ -629,7 +640,7 @@ class future<T, detail::enable_if_not_copyable<T>> {
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
     
-    friend class detail::shared_base<T>;
+    friend struct detail::shared_base<T>;
 
   public:
     using result_type = T;
@@ -672,6 +683,10 @@ class future<T, detail::enable_if_not_copyable<T>> {
 
     auto get_try() const& { return _p->get_try(); }
     auto get_try() && { return _p->get_try_r(_p.unique()); }
+
+    boost::optional<std::exception_ptr> error() const {
+        return _p->_error;
+    }
 };
 
 template <typename Sig, typename S, typename F>
@@ -691,29 +706,41 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>  _args;
     future<void>                        _holds[sizeof...(Ts)] {};
     std::atomic_size_t                  _remaining {sizeof...(Ts)};
+    std::mutex                          _errormutex;
+    boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
     void done() { if (--_remaining == 0) _f(); }
+
+    void failure(std::exception_ptr error) {
+        {
+            std::unique_lock<std::mutex> lock(_errormutex);
+            _error = std::move(error);
+        }
+        for (auto& h : _holds) {
+            if (h.cancel_try()) {
+                --_remaining;
+            }
+        }
+        if (_remaining == 0) _f();
+    }
+
 };
 
-/*
-    REVISIT (sparent) : Need to propogate the actual error here. Need a when_all_recover
-    and implement when_all in terms of it.
-*/
-
-inline void throw_if_false(bool x) {
-    if (!x) throw std::runtime_error("when-all missing value");
+template <typename P>
+inline void throw_if_false(bool x, P& p) {
+    if (!x) std::rethrow_exception(p->_error.get());;
 }
 
-template <typename F, typename Args, std::size_t... I>
-auto apply_when_all_args_(const F& f, Args& args, std::index_sequence<I...>) {
-    (void)std::initializer_list<int>{(throw_if_false(std::get<I>(args).is_initialized()), 0)... };
+template <typename F, typename Args, typename P, std::size_t... I>
+auto apply_when_all_args_(const F& f, Args& args, P& p, std::index_sequence<I...>) {
+    (void)std::initializer_list<int>{(throw_if_false(std::get<I>(args).is_initialized(), p), 0)... };
     return f(std::move(std::get<I>(args).get())...);
 }
 
-template <typename F, typename Args>
-auto apply_when_all_args(const F& f, Args& args) {
-    return apply_when_all_args_(f, args, std::make_index_sequence<std::tuple_size<Args>::value>());
+template <typename F, typename Args, typename P>
+auto apply_when_all_args(const F& f, Args& args, P& p) {
+    return apply_when_all_args_(f, args, p, std::make_index_sequence<std::tuple_size<Args>::value>());
 }
 
 template <std::size_t i, typename P, typename T>
@@ -721,14 +748,14 @@ void attach_when_all_arg_(const std::shared_ptr<P>& p, T a) {
     p->_holds[i] = std::move(a).recover([_w = std::weak_ptr<P>(p)](auto x){
         auto p = _w.lock(); if (!p) return;
 
-        // REVISIT (sparent) : should be able to query future for error.
-        try {
-            std::get<i>(p->_args) = std::move(x).get_try();
-        } catch(...) {
-            p->done();
-            throw;
+        auto error = x.error();
+        if (error) {
+            p->failure(*error);
         }
-        p->done();
+        else {
+            std::get<i>(p->_args) = *std::move(x).get_try();
+            p->done();
+        }
     });
 }
 
@@ -752,8 +779,7 @@ auto when_all(S s, F f, future<Ts>... args) {
 
     auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
     auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared] {
-        // REVISIT - check for error here - otherwise we'll rethrow about empty optional
-        return detail::apply_when_all_args(_f, _p->_args);
+        return detail::apply_when_all_args(_f, _p->_args, _p);
     });
     shared->_f = std::move(p.first);
 
@@ -774,29 +800,51 @@ namespace detail
         , _holds(_remaining)
       {}
 
-      std::atomic_size_t        _remaining;
-      std::vector<Input>        _results;
-      std::vector<future<void>> _holds;
-      packaged_task<>           _f;
+      std::atomic_size_t                    _remaining;
+      std::vector<Input>                    _results;
+      std::vector<future<void>>             _holds;
+      std::mutex                            _errormutex;
+      boost::optional<std::exception_ptr>   _error;
+      packaged_task<>                       _f;
 
       void done() { if (--_remaining == 0) _f(); }
+
+      void failure(std::exception_ptr error) {
+          {
+              std::unique_lock<std::mutex> lock(_errormutex);
+              _error = std::move(error);
+          }
+          for (auto& h : _holds) {
+              if (h.cancel_try()) {
+                  --_remaining;
+              }
+          }
+          if (_remaining == 0) _f();
+      }
     };
 
     template <typename P, typename T>
     void attach_when_all_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
-        p->_holds[index] = std::move(a).then([_w = std::weak_ptr<P>(p), _i = index](auto x){
+        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
             auto p = _w.lock(); if (!p) return;
-            p->_results[_i] = x;
-            p->done();
+            auto error = x.error();
+            if (error) {
+                p->failure(*error);
+            }
+            else {
+                p->_results[_i] = std::move(*x.get_try());
+                p->done();
+            }
         });
       }
     }
+
 
 /**************************************************************************************************/
 
 template <typename S, // models task scheduler
           typename F, // models functional object
-          typename I> // models ForwardIterator that reference to a future
+          typename I> // models ForwardIterator that reference to a range of futures
 auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename std::result_of<F(std::vector<param_t>)>::type;
@@ -808,7 +856,10 @@ auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     }
 
     auto context = std::make_shared<detail::when_all_context<F, param_t, I>>(range.first, range.second);
-    auto p = package<result_t()>(std::move(schedule), [_f = std::move(f), _c = context, _r = range]{
+    auto p = package<result_t()>(std::move(schedule), [_f = std::move(f), _c = context, _r = range] {
+        if (_c->_error) {
+            std::rethrow_exception(_c->_error.get());
+        }
         return _f(_c->_results);
     });
 
