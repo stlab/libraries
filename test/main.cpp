@@ -117,7 +117,15 @@ void when_all_with_failing_range() {
     }
 }
 
-
+void recover_with_a_continuation() {
+    auto f1 = async(default_scheduler(), []() -> int { throw std::exception("My fault"); });
+    f1.then([](auto x) { return 2; }).then([](auto x) { cout << x << endl; });
+    auto a2 = f1.recover([](auto x) { return 3; }).then([] (auto x) {
+        cout << "Recovered from error and got: " << x << endl;
+    });
+    //a4.detach();
+    while (!a2.get_try()) {}
+}
 int main(int argc, char **argv)
 {
     //std::cout << "Running main() from gtest_main.cc\n";
@@ -130,6 +138,6 @@ int main(int argc, char **argv)
     continuation_with_error();
     when_all_with_multiple_failing_arguments();
     when_all_with_failing_range();
-
+    recover_with_a_continuation();
     //return RUN_ALL_TESTS();
 }

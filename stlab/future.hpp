@@ -193,9 +193,10 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
         bool ready;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        ready = _ready;
-        if (!ready) _then.emplace_back(std::move(s), std::move(p.first));
+            std::unique_lock<std::mutex> lock(_mutex);
+            ready = _ready;
+            if (!ready) 
+                _then.emplace_back(std::move(s), std::move(p.first));
         }
         if (ready) s(std::move(p.first));
 
@@ -282,14 +283,15 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
                 return _f(std::move(_p));
             });
 
-
         bool ready;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        ready = _ready;
-        if (!ready) _then = { std::move(s), std::move(p.first) };
+            std::unique_lock<std::mutex> lock(_mutex);
+            ready = _ready;
+            if (!ready) 
+                _then = { std::move(s), std::move(p.first) };
         }
-        if (ready) s(std::move(p.first));
+        if (ready) 
+            s(std::move(p.first));
 
         return std::move(p.second);
     }
@@ -298,13 +300,14 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         _error = std::move(error);
         then_t then;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        then = std::move(_then);
-        _ready = true;
+            std::unique_lock<std::mutex> lock(_mutex);
+            then = std::move(_then);
+            _ready = true;
         }
         // propogate exception without scheduling
         then.second();
     }
+
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
 
@@ -373,9 +376,9 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         _error = std::move(error);
         then_t then;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        then = std::move(_then);
-        _ready = true;
+            std::unique_lock<std::mutex> lock(_mutex);
+            then = std::move(_then);
+            _ready = true;
         }
         // propogate exception without scheduling
         for (const auto& e : then) e.second();
