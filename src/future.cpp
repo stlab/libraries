@@ -12,6 +12,9 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
 
 using namespace std;
 
