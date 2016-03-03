@@ -504,41 +504,60 @@ class future<T, detail::enable_if_copyable<T>> {
 
     future() = default;
 
+    bool valid() const { return static_cast<bool>(_p); }
+
     template <typename F>
-    auto then(F&& f) const& { return _p->then(std::forward<F>(f)); }
+    auto then(F&& f) const& {
+        assert(_p);
+        return _p->then(std::forward<F>(f));
+    }
 
     template <typename S, typename F>
-    auto then(S&& s, F&& f) const& { return _p->then(std::forward<S>(s), std::forward<F>(f)); }
+    auto then(S&& s, F&& f) const& {
+        assert(_p);
+        return _p->then(std::forward<S>(s), std::forward<F>(f));
+    }
 
     template <typename F>
     auto then(F&& f) && {
+        assert(_p);
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
+        assert(_p);
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
-    auto recover(F&& f) const& { return _p->recover(std::forward<F>(f)); }
+    auto recover(F&& f) const& {
+        assert(_p);
+        return _p->recover(std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
+        assert(_p);
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
+        assert(_p);
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
+        assert(_p);
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
-    void detach() const { then([_hold = _p](auto f){ }, [](const auto& x){ }); }
+    void detach() const {
+        assert(_p); 
+        then([_hold = _p](auto f){ }, [](const auto& x){ });
+    }
 
     bool cancel_try() {
         if (!_p.unique()) return false;
@@ -548,10 +567,18 @@ class future<T, detail::enable_if_copyable<T>> {
         return !_p;
     }
 
-    auto get_try() const& { return _p->get_try(); }
-    auto get_try() && { return _p->get_try_r(_p.unique()); }
+    auto get_try() const& {
+        assert(_p); 
+        return _p->get_try();
+    }
+
+    auto get_try() && {
+        assert(_p); 
+        return _p->get_try_r(_p.unique());
+    }
 
     boost::optional<std::exception_ptr> error() const {
+        assert(_p);
         return _p->_error;
     }
 };
@@ -577,41 +604,60 @@ class future<void, void> {
 
     future() = default;
 
+    bool valid() const { return static_cast<bool>(_p); }
+
     template <typename F>
-    auto then(F&& f) const& { return _p->then(std::forward<F>(f)); }
+    auto then(F&& f) const& {
+        assert(_p); 
+        return _p->then(std::forward<F>(f));
+    }
 
     template <typename S, typename F>
-    auto then(S&& s, F&& f) const& { return _p->then(std::forward<S>(s), std::forward<F>(f)); }
+    auto then(S&& s, F&& f) const& {
+        assert(_p);
+        return _p->then(std::forward<S>(s), std::forward<F>(f));
+    }
 
     template <typename F>
     auto then(F&& f) && {
+        assert(_p);
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
+        assert(_p);
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
-    auto recover(F&& f) const& { return _p->recover(std::forward<F>(f)); }
+    auto recover(F&& f) const& {
+        assert(_p); 
+        return _p->recover(std::forward<F>(f));
+    }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
+        assert(_p);
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
+        assert(_p);
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
+        assert(_p);
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
-    void detach() const { then([_hold = _p](auto f){ }, [](){ }); }
+    void detach() const {
+        assert(_p); 
+        then([_hold = _p](auto f){ }, [](){ });
+    }
 
     bool cancel_try() {
         if (!_p.unique()) return false;
@@ -621,9 +667,13 @@ class future<void, void> {
         return !_p;
     }
 
-    bool get_try() { return _p->get_try(); }
+    bool get_try() {
+        assert(_p);
+        return _p->get_try();
+    }
 
     boost::optional<std::exception_ptr> error() const {
+        assert(_p);
         return _p->_error;
     }
 
@@ -654,27 +704,36 @@ class future<T, detail::enable_if_not_copyable<T>> {
     future& operator=(const future&) = delete;
     future& operator=(future&&) noexcept = default;
 
+    bool valid() const { return static_cast<bool>(_p); }
+
     template <typename F>
     auto then(F&& f) && {
+        assert(_p);
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
+        assert(_p);
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
+        assert(_p);
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
+        assert(_p);
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
-    void detach() const { then([_hold = _p](auto f){ }, [](const auto& x){ }); }
+    void detach() const {
+        assert(_p); 
+        then([_hold = _p](auto f){ }, [](const auto& x){ });
+    }
 
     bool cancel_try() {
         if (!_p.unique()) return false;
@@ -684,10 +743,18 @@ class future<T, detail::enable_if_not_copyable<T>> {
         return !_p;
     }
 
-    auto get_try() const& { return _p->get_try(); }
-    auto get_try() && { return _p->get_try_r(_p.unique()); }
+    auto get_try() const& {
+        assert(_p); 
+        return _p->get_try();
+    }
+
+    auto get_try() && {
+        assert(_p);
+        return _p->get_try_r(_p.unique());
+    }
 
     boost::optional<std::exception_ptr> error() const {
+        assert(_p);
         return _p->_error;
     }
 };

@@ -13,6 +13,7 @@ set(SOURCE
 set(HEADERS
   ../stlab/config.hpp
   ../stlab/channel.hpp
+  ../stlab/expected.hpp
   ../stlab/future.hpp
 )
 

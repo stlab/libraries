@@ -1,22 +1,27 @@
-project(future_test C CXX)
 
-if(WIN32)
-  add_definitions(-D_WIN32_WINNT=0x0501)
-ENDIF(WIN32)
-
-set(SOURCE
+add_executable(future_test
+  future_recover_tests.cpp
+  future_tests.cpp
+  future_then_tests.cpp
+  future_when_all_arguments_test.cpp
+  future_when_all_range_tests.cpp
+  future_when_any_tests.cpp
   main.cpp
 )
 
-include_directories("${PROJECT_SOURCE_DIR}/..")
 
-add_executable(future_test ${SOURCE} ${HEADERS})
+#add_dependencies(future_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
 include_directories(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
-add_dependencies(future_test future)
+target_link_libraries(
+    future_test
+    future
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_THREAD_LIBRARY}
+    ${CMAKE_THREAD_LIBS_INIT})
+
 
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
-target_link_libraries(future_test future ${CMAKE_THREAD_LIBS_INIT})

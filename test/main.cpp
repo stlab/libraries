@@ -6,10 +6,15 @@
 
 /**************************************************************************************************/
 
+#define BOOST_TEST_MODULE stlab_libraries_tests
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
+#if 0
 #include <iostream>
 #include <stlab/future.hpp>
 #include <utility>
-//#include <gtest/gtest.h>
+#include <exception>
 
 using namespace stlab;
 using namespace std;
@@ -126,7 +131,10 @@ void recover_with_a_continuation() {
     //a4.detach();
     while (!a2.get_try()) {}
 }
-int main(int argc, char **argv)
+
+#endif
+
+/*int main(int argc, char **argv)
 {
     //std::cout << "Running main() from gtest_main.cc\n";
     //::testing::InitGoogleTest(&argc, argv);
@@ -141,3 +149,4 @@ int main(int argc, char **argv)
     recover_with_a_continuation();
     //return RUN_ALL_TESTS();
 }
+*/
