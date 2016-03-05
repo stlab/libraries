@@ -7,6 +7,6 @@ Distributed under the Boost Software License, Version 1.0.
 
 #include "test_helper.hpp"
 
-int test_helper::custom_scheduler<0>::_usage_counter = 0;
-int test_helper::custom_scheduler<1>::_usage_counter = 0;
+std::atomic_int test_helper::custom_scheduler<0>::_usage_counter = 0;
+std::atomic_int test_helper::custom_scheduler<1>::_usage_counter = 0;
 

@@ -9,6 +9,7 @@ Distributed under the Boost Software License, Version 1.0.
 #define _TEST_HELPER_HPP_
 
 #include <thread>
+#include <atomic>
 
 namespace test_helper
 {
@@ -22,11 +23,11 @@ namespace test_helper
              std::thread(std::move(f)).detach();
         }
 
-        static int usage_counter() { return _usage_counter; }
+        static int usage_counter() { return _usage_counter.load(); }
         static void reset_usage_counter() { _usage_counter = 0; }
 
     private:
-        static int _usage_counter;
+        static std::atomic_int _usage_counter;
     };
 
     struct test_setup
