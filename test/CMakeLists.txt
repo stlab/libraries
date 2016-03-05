@@ -1,14 +1,21 @@
+PROJECT(future_test)
 
-add_executable(future_test
+set(SOURCE
   future_recover_tests.cpp
   future_tests.cpp
   future_then_tests.cpp
   future_when_all_arguments_test.cpp
   future_when_all_range_tests.cpp
   future_when_any_tests.cpp
+  test_helper.cpp
   main.cpp
 )
 
+set(HEADERS
+  test_helper.hpp
+)
+
+add_executable(future_test ${SOURCE} ${HEADERS})
 
 #add_dependencies(future_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
