@@ -18,6 +18,8 @@ using namespace test_helper;
 BOOST_FIXTURE_TEST_SUITE(future_void, success_fixture<void>)
 
     BOOST_AUTO_TEST_CASE(future_void_single_task) {
+        BOOST_TEST_MESSAGE("running future void single task");
+
         int p = 0;
 
         sut = async(custom_scheduler<0>(), [&p] { p = 42; });
@@ -30,6 +32,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void, success_fixture<void>)
     }
 
     BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future void with two task on same scheduler");
+
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
@@ -43,6 +47,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void, success_fixture<void>)
     }
 
     BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future int void tasks with same scheduler");
+
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), [_p = &p] { return 42; })
@@ -56,6 +62,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void, success_fixture<void>)
     }
 
     BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_different_scheduler) {
+        BOOST_TEST_MESSAGE("running future int void tasks with different schedulers");
+
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), [_p = &p] { return 42; })
@@ -70,6 +78,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void, success_fixture<void>)
     }
 
     BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_different_scheduler) {
+        BOOST_TEST_MESSAGE("running future void two tasks with different schedulers");
+
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
@@ -91,6 +101,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void, success_fixture<void>)
             f2
     */
     BOOST_AUTO_TEST_CASE(future_void_Y_formation_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future void with Y formation with same scheduler");
+
         std::atomic_int p = 0;
         int r1 = 0;
         int r2 = 0;
@@ -113,6 +125,8 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_int_single_task) {
+        BOOST_TEST_MESSAGE("running future int single tasks");
+
         sut = async(custom_scheduler<0>(), [] { return 42; });
         check_valid_future(sut);
 
@@ -123,6 +137,8 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
     }
 
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future int two tasks with same scheduler");
+
         sut = async(custom_scheduler<0>(), [] { return 42; })
             .then([](auto x) { return x + 42; });
         check_valid_future(sut);
@@ -134,6 +150,8 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
     }
 
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_different_scheduler) {
+        BOOST_TEST_MESSAGE("running future int two tasks with different scheduler");
+
         auto sut = async(custom_scheduler<0>(), [] { return 42; })
             .then(custom_scheduler<1>(), [](auto x) { return x + 42; });
         check_valid_future(sut);
@@ -146,6 +164,8 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
     }
 
     BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future void int tasks with same scheduler");
+
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
@@ -159,6 +179,7 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
     }
 
     BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_different_scheduler) {
+        BOOST_TEST_MESSAGE("running future void int tasks with different schedulers");
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
@@ -177,6 +198,8 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
         sut - f - f
     */
     BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future int with three tasks with same scheduler");
+
         auto sut = async(custom_scheduler<0>(), [] { return 42; })
             .then(custom_scheduler<0>(), [](auto x) { return x + 42; })
             .then(custom_scheduler<0>(), [](auto x) { return x + 42; });
@@ -196,6 +219,8 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
             f2
     */
     BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future int Y formation tasks with same scheduler");
+
         auto sut = async(custom_scheduler<0>(), [] { return 42; });
         auto f1 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 42; });
         auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 4177; });
