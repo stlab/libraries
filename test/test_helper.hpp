@@ -109,15 +109,20 @@ namespace test_helper
             BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(e.what()) == _m; }));
         }
 
+        template <typename E, typename... F>
+        void wait_until_future_fails(F&... f) {
+            (void)std::initializer_list<int>{ (wait_until_this_future_fails<E>(f), 0)... };
+        }
+
+    private:
         template <typename E, typename F>
-        void wait_until_future_fails(F& f) {
+        void wait_until_this_future_fails(F& f) {
             try {
                 while (!f.get_try()) {}
             }
             catch (const E&) {
-            }            
+            }
         }
-
     };
 }
 

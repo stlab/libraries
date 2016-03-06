@@ -232,8 +232,7 @@ BOOST_FIXTURE_TEST_SUITE(future_int, success_fixture<int>)
         BOOST_REQUIRE_EQUAL(42 + 4177, *f2.get_try());
         BOOST_REQUIRE_EQUAL(3, custom_scheduler<0>::usage_counter());
     }
- 
-BOOST_AUTO_TEST_SUITE_END()
+ BOOST_AUTO_TEST_SUITE_END()
 
 // ----------------------------------------------------------------------------
 //                             Error cases
@@ -254,7 +253,8 @@ BOOST_FIXTURE_TEST_SUITE(void_error, failure_fixture<void>)
         BOOST_TEST_MESSAGE("running future void with two tasks which first fails");
         std::atomic_int p = 0;
 
-        auto sut = async(custom_scheduler<0>(), [_p = &p] { throw test_exception("failure"); }).then([_p = &p] { *_p += 42; });
+        auto sut = async(custom_scheduler<0>(), [_p = &p] { throw test_exception("failure"); })
+            .then([_p = &p] { *_p += 42; });
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -267,7 +267,8 @@ BOOST_FIXTURE_TEST_SUITE(void_error, failure_fixture<void>)
         BOOST_TEST_MESSAGE("running future void with two tasks which second fails");
         std::atomic_int p = 0;
 
-        auto sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; }).then([_p = &p] { throw test_exception("failure"); });
+        auto sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
+            .then([_p = &p] { throw test_exception("failure"); });
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -275,6 +276,92 @@ BOOST_FIXTURE_TEST_SUITE(void_error, failure_fixture<void>)
         BOOST_REQUIRE_EQUAL(42, p);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
     }
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE(int_error, failure_fixture<int>)
+
+    BOOST_AUTO_TEST_CASE(future_int_single_task_error) {
+        BOOST_TEST_MESSAGE("running future int with single tasks that fails");
+
+        sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
+        wait_until_future_fails<test_exception>(sut);
+
+        check_failure<test_exception>(sut, std::string("failure"));
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future int with two tasks which first fails");
+        int p = 0;
+
+        auto sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); })
+            .then([_p = &p]()->int { *_p = 42; return *_p; });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        check_failure<test_exception>(sut, std::string("failure"));
+        BOOST_REQUIRE_EQUAL(0, p);
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_2nd_task_with_same_scheduler) {
+        BOOST_TEST_MESSAGE("running future void with two tasks which second fails");
+        std::atomic_int p = 0;
+
+        auto sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
+            .then([]()->int { throw test_exception("failure"); });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        check_failure<test_exception>(sut, std::string("failure"));
+        BOOST_REQUIRE_EQUAL(42, p);
+        BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_failing_1st_task) {
+        BOOST_TEST_MESSAGE("running future int Y formation tasks where the 1st tasks fails");
+
+        sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
+        auto f1 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 42; });
+        auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 4177; });
+
+        wait_until_future_fails<test_exception>(f1, f2);
+
+        check_failure<test_exception>(f1, std::string("failure"));
+        check_failure<test_exception>(f2, std::string("failure"));
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_where_one_of_the_2nd_task_failing) {
+        BOOST_TEST_MESSAGE("running future int Y formation tasks where one of the 2nd tasks fails");
+
+        sut = async(custom_scheduler<0>(), []()->int { return 42; });
+        auto f1 = sut.then(custom_scheduler<0>(), [](auto x) -> int { throw test_exception("failure"); });
+        auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 4711; });
+
+        wait_until_future_completed(f2);
+        wait_until_future_fails<test_exception>(f1);
+
+        check_failure<test_exception>(f1, std::string("failure"));
+        BOOST_REQUIRE_EQUAL(42 + 4711, *f2.get_try());
+        BOOST_REQUIRE_EQUAL(3, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_where_both_of_the_2nd_task_failing) {
+        BOOST_TEST_MESSAGE("running future int Y formation tasks where both of the 2nd tasks fails");
+
+        sut = async(custom_scheduler<0>(), []()->int { return 42; });
+        auto f1 = sut.then(custom_scheduler<0>(), [](auto x) -> int { throw test_exception("failure"); });
+        auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { throw test_exception("failure"); });
+
+        wait_until_future_fails<test_exception>(f1, f2);
+
+        check_failure<test_exception>(f1, std::string("failure"));
+        check_failure<test_exception>(f2, std::string("failure"));
+        BOOST_REQUIRE_EQUAL(3, custom_scheduler<0>::usage_counter());
+    }
+
 
 
 BOOST_AUTO_TEST_SUITE_END()
