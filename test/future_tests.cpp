@@ -20,6 +20,8 @@ using all_test_types = boost::mpl::list<void, int, std::unique_ptr<int>>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(future_default_constructed, T, all_test_types)
 {
+    BOOST_TEST_MESSAGE("running future default constructed of type " << typeid(T).name());
+
     auto sut = future<T>();
     BOOST_REQUIRE(sut.valid() == false);
     BOOST_REQUIRE(sut.cancel_try() == false);
@@ -28,14 +30,16 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_default_constructed, T, all_test_types)
 using copyable_test_types = boost::mpl::list<void, int>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_types) {
+    BOOST_TEST_MESSAGE("running future with mininmal copyable type " << typeid(T).name());
+
     test_setup setup;
     {
-        auto sut = async(custom_scheduler<0>(), std::function<T()>());
+        auto sut = async(custom_scheduler<0>(), []()->T { return T(); });
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(sut.error().is_initialized() == false);
 
-        BOOST_REQUIRE(sut.cancel_try() == false);
-        BOOST_REQUIRE(sut.valid() == true);
+        sut.cancel_try();
+        BOOST_REQUIRE(sut.valid() == false);
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }

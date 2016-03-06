@@ -56,14 +56,31 @@ namespace test_helper
     };
 
     template <typename T>
-    struct success_fixture
+    struct fixture_base
     {
-        success_fixture() {
+        fixture_base() {
             custom_scheduler<0>::reset_usage_counter();
             custom_scheduler<1>::reset_usage_counter();
         }
 
         stlab::future<T> sut;
+
+        template <typename... F>
+        void wait_until_future_completed(F&... f) {
+            (void)std::initializer_list<int>{ (wait_until_future_is_ready(f), 0)... };
+        }
+
+    private:
+        template <typename F>
+        void wait_until_future_is_ready(F& f) {
+            while (!f.get_try()) {}
+        }
+    };
+
+    template <typename T>
+    struct success_fixture : public fixture_base<T>
+    {
+        success_fixture() {}
 
         void check_valid_future() {}
 
@@ -79,15 +96,28 @@ namespace test_helper
             check_valid_future(fs...);
         }
 
-        template <typename... F>
-        void wait_until_future_completed(F&... f) {
-            (void)std::initializer_list<int>{ (wait_until_future_is_ready(f), 0)... };
+
+    };
+
+    template <typename T>
+    struct failure_fixture : public fixture_base<T>
+    {
+        failure_fixture() {}
+
+        template <typename E, typename F>
+        void check_failure(F& f, const std::string& message) {
+            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(e.what()) == _m; }));
         }
-    private:
-        template <typename F>
-        void wait_until_future_is_ready(F& f) {
-            while (!f.get_try()) {}
+
+        template <typename E, typename F>
+        void wait_until_future_fails(F& f) {
+            try {
+                while (!f.get_try()) {}
+            }
+            catch (const E&) {
+            }            
         }
+
     };
 }
 
