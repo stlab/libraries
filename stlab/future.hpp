@@ -1013,7 +1013,9 @@ template <typename S, // models task scheduler
 auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
 
-    return detail::when_all_base_collector<param_t>::collect(std::forward<S>(schedule), std::forward<F>(f), range.first, range.second);
+    return detail::when_all_base_collector<param_t>::collect(std::forward<S>(schedule), 
+                                                             std::forward<F>(f), 
+                                                             range.first, range.second);
 }
 
 /**************************************************************************************************/
@@ -1045,7 +1047,8 @@ void shared_base<void>::set_value(const F& f, Args&&... args) {
         _ready = true;
         then = std::move(_then);
     }
-    for (const auto& e : then) e.first(e.second);
+    for (const auto& e : then) 
+        e.first(e.second);
 }
 
 
