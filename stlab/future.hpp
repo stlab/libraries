@@ -861,40 +861,9 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 namespace detail
 {
-    template <typename F, typename I, typename Input>
-    struct when_all_context {
-      when_all_context(I first, I last)
-        : _remaining(std::distance(first, last))
-        , _results(_remaining)
-        , _holds(_remaining)
-      {}
-
-      std::atomic_size_t                    _remaining;
-      std::atomic_bool                      _error_happened{false};
-      std::vector<Input>                    _results;
-      std::vector<future<void>>             _holds;
-      std::mutex                            _errormutex;
-      boost::optional<std::exception_ptr>   _error;
-      packaged_task<>                       _f;
-
-      void done() { if (--_remaining == 0 && !_error_happened) _f(); }
-
-      void failure(std::exception_ptr error) {
-          {
-              std::unique_lock<std::mutex> lock(_errormutex);
-              _error = std::move(error);
-              _error_happened = true;
-          }
-          for (auto& h : _holds) {
-              h.cancel_try();
-          }
-          _f();
-      }
-    };
-
     template <typename F, typename I>
-    struct when_all_context<F, I, void> {
-        when_all_context(I first, I last)
+    struct when_all_context_base {
+        when_all_context_base(I first, I last)
             : _remaining(std::distance(first, last))
             , _holds(_remaining)
         {}
@@ -920,6 +889,24 @@ namespace detail
             _f();
         }
     };
+
+    template <typename F, typename I, typename Input>
+    struct when_all_context : when_all_context_base<F, I> {
+        when_all_context(I first, I last) 
+            : when_all_context_base<F, I>(first, last)
+            , _results(_remaining)
+        {}
+
+        std::vector<Input>  _results;
+    };
+
+    template <typename F, typename I>
+    struct when_all_context<F, I, void> : when_all_context_base<F, I> {
+        when_all_context(I first, I last)
+            : when_all_context_base<F, I>(first, last)
+        {}
+    };
+
 
     template <typename P, typename T>
     void attach_when_all_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
@@ -949,9 +936,6 @@ namespace detail
             }
         });
     }
-
-    template <typename R>
-    struct when_all_base_collector;
 
     template <typename R>
     struct when_all_base_collector {
