@@ -9,13 +9,13 @@ Distributed under the Boost Software License, Version 1.0.
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include <stlab/future.hpp>
+#include <array>
 #include "test_helper.hpp"
 
 using namespace stlab;
 using namespace test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
-
     BOOST_AUTO_TEST_CASE(future_when_all_void_empty_range) {
         BOOST_TEST_MESSAGE("running future when_all void with empty range");
         size_t p = 0;
@@ -75,6 +75,42 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
+
+    
+    /*
+           /  F1  \
+          / / F2 \ \
+    start           sut
+          \ \ F3 / /
+           \  F4  /
+    */
+    BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements) {
+        BOOST_TEST_MESSAGE("running future when_all void with range with diamond formation");
+        int v[4] = { 0, 0, 0, 0 };
+        int r = 0;
+
+        auto start = async(custom_scheduler<0>(), [] { return 4711; });
+        std::vector<stlab::future<void>> futures(4);
+        futures[0] = start.then(custom_scheduler<0>(), [_p = &v[0]](auto x) { *_p = x + 1; });
+        futures[1] = start.then(custom_scheduler<1>(), [_p = &v[1]](auto x) { *_p = x + 2; });
+        futures[2] = start.then(custom_scheduler<0>(), [_p = &v[2]](auto x) { *_p = x + 3; });
+        futures[3] = start.then(custom_scheduler<1>(), [_p = &v[3]](auto x) { *_p = x + 5; });
+
+        sut = when_all(custom_scheduler<0>(), [_r = &r, &v]() {
+            for (auto i : v) {
+                *_r += i;
+            }
+        }, std::make_pair(futures.begin(), futures.end()));
+        check_valid_future(sut);
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(4711+1 + 4711+2 +  4711+3 + 4711+5, r);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    }
+    
+    
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -140,6 +176,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
+
     /*
            /  F1  \
           / / F2 \ \

@@ -861,7 +861,7 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 namespace detail
 {
-    template <typename F, typename Input, typename I>
+    template <typename F, typename I, typename Input>
     struct when_all_context {
       when_all_context(I first, I last)
         : _remaining(std::distance(first, last))
@@ -892,6 +892,35 @@ namespace detail
       }
     };
 
+    template <typename F, typename I>
+    struct when_all_context<F, I, void> {
+        when_all_context(I first, I last)
+            : _remaining(std::distance(first, last))
+            , _holds(_remaining)
+        {}
+
+        std::atomic_size_t                    _remaining;
+        std::atomic_bool                      _error_happened{ false };
+        std::vector<future<void>>             _holds;
+        std::mutex                            _errormutex;
+        boost::optional<std::exception_ptr>   _error;
+        packaged_task<>                       _f;
+
+        void done() { if (--_remaining == 0 && !_error_happened) _f(); }
+
+        void failure(std::exception_ptr error) {
+            {
+                std::unique_lock<std::mutex> lock(_errormutex);
+                _error = std::move(error);
+                _error_happened = true;
+            }
+            for (auto& h : _holds) {
+                h.cancel_try();
+            }
+            _f();
+        }
+    };
+
     template <typename P, typename T>
     void attach_when_all_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
         p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
@@ -905,8 +934,91 @@ namespace detail
                 p->done();
             }
         });
-      }
     }
+
+    template <typename P, typename T>
+    void attach_when_all_void_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p)](auto x){
+            auto p = _w.lock(); if (!p) return;
+            auto error = x.error();
+            if (error) {
+                p->failure(*error);
+            }
+            else {
+                p->done();
+            }
+        });
+    }
+
+    template <typename R>
+    struct when_all_base_collector;
+
+    template <typename R>
+    struct when_all_base_collector {
+
+        template<typename S, typename F, typename I>
+        static auto collect(S&& s, F&& f, I first, I last) {
+            using result_t = typename std::result_of<F(std::vector<R>)>::type;
+
+            if (first == last) {
+                auto p = package<result_t()>(std::forward<S>(s), std::bind(std::forward<F>(f), std::vector<R>()));
+                s(std::move(p.first));
+                return std::move(p.second);
+            }
+
+            auto context = std::make_shared<detail::when_all_context<F, I, R>>(first, last);
+            auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context] {
+                if (_c->_error) {
+                    std::rethrow_exception(_c->_error.get());
+                }
+                return _f(_c->_results);
+            });
+
+            context->_f = std::move(p.first);
+
+            size_t index(0);
+            std::for_each(first, last, [&index, &context](auto item) {
+                detail::attach_when_all_tasks(index++, context, item);
+            });
+
+            return std::move(p.second);
+
+        }
+    };
+
+    template <>
+    struct when_all_base_collector<void> {
+
+        template<typename S, typename F, typename I>
+        static auto collect(S&& s, F&& f, I first, I last) {
+            using result_t = typename std::result_of<F()>::type;
+
+            if (first == last) {
+                auto p = package<void()>(std::forward<S>(s), std::forward<F>(f));
+                s(std::move(p.first));
+                return std::move(p.second);
+            }
+
+            auto context = std::make_shared<detail::when_all_context<F, I, void>>(first, last);
+            auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context]{
+                if (_c->_error) {
+                    std::rethrow_exception(_c->_error.get());
+                }
+                return _f();
+            });
+
+            context->_f = std::move(p.first);
+
+            size_t index(0);
+            std::for_each(first, last, [&index, &context](auto item) {
+                detail::attach_when_all_void_tasks(index++, context, item);
+            });
+
+            return std::move(p.second);
+
+        }
+    };
+}
 
 
 /**************************************************************************************************/
@@ -916,30 +1028,8 @@ template <typename S, // models task scheduler
           typename I> // models ForwardIterator that reference to a range of futures
 auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
-    using result_t = typename std::result_of<F(std::vector<param_t>)>::type;
 
-    if (range.first == range.second) {
-        auto p = package<result_t()>(schedule, std::bind(std::forward<F>(f), std::vector<param_t>()));
-        schedule(std::move(p.first));
-        return std::move(p.second);
-    }
-
-    auto context = std::make_shared<detail::when_all_context<F, param_t, I>>(range.first, range.second);
-    auto p = package<result_t()>(std::move(schedule), [_f = std::move(f), _c = context, _r = range] {
-        if (_c->_error) {
-            std::rethrow_exception(_c->_error.get());
-        }
-        return _f(_c->_results);
-    });
-
-    context->_f = std::move(p.first);
-
-    size_t index(0);
-    std::for_each(range.first, range.second, [&index, &context](auto item) {
-        detail::attach_when_all_tasks(index++, context, item);
-    });
-
-    return std::move(p.second);
+    return detail::when_all_base_collector<param_t>::collect(std::forward<S>(schedule), std::forward<F>(f), range.first, range.second);
 }
 
 /**************************************************************************************************/
@@ -985,11 +1075,13 @@ auto shared_base<void>::recover(S s, F f) -> future<std::result_of_t<F(future<vo
 
     bool ready;
     {
-    std::unique_lock<std::mutex> lock(_mutex);
-    ready = _ready;
-    if (!ready) _then.emplace_back(std::move(s), std::move(p.first));
+        std::unique_lock<std::mutex> lock(_mutex);
+        ready = _ready;
+        if (!ready) 
+            _then.emplace_back(std::move(s), std::move(p.first));
     }
-    if (ready) s(std::move(p.first));
+    if (ready) 
+        s(std::move(p.first));
 
     return std::move(p.second);
 }
