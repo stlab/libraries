@@ -364,7 +364,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     auto recover(F f) { return recover(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>;
+    auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>; // REVISIT Fp The implementation seems to be missing
 
     template <typename F>
     auto recover_r(bool, F f) { return recover(_schedule, std::move(f)); }
@@ -862,8 +862,8 @@ auto when_all(S s, F f, future<Ts>... args) {
 namespace detail
 {
     template <typename F, typename I>
-    struct when_all_context_base {
-        when_all_context_base(I first, I last)
+    struct when_all_range_context_base {
+        when_all_range_context_base(I first, I last)
             : _remaining(std::distance(first, last))
             , _holds(_remaining)
         {}
@@ -891,9 +891,9 @@ namespace detail
     };
 
     template <typename F, typename I, typename Input>
-    struct when_all_context : when_all_context_base<F, I> {
-        when_all_context(I first, I last) 
-            : when_all_context_base<F, I>(first, last)
+    struct when_all_range_context : when_all_range_context_base<F, I> {
+        when_all_range_context(I first, I last) 
+            : when_all_range_context_base<F, I>(first, last)
             , _results(_remaining)
         {}
 
@@ -901,15 +901,15 @@ namespace detail
     };
 
     template <typename F, typename I>
-    struct when_all_context<F, I, void> : when_all_context_base<F, I> {
-        when_all_context(I first, I last)
-            : when_all_context_base<F, I>(first, last)
+    struct when_all_range_context<F, I, void> : when_all_range_context_base<F, I> {
+        when_all_range_context(I first, I last)
+            : when_all_range_context_base<F, I>(first, last)
         {}
     };
 
 
     template <typename P, typename T>
-    void attach_when_all_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+    void attach_when_all_range_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
         p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
             auto p = _w.lock(); if (!p) return;
             auto error = x.error();
@@ -924,7 +924,7 @@ namespace detail
     }
 
     template <typename P, typename T>
-    void attach_when_all_void_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+    void attach_when_all_range_void_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
         p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p)](auto x){
             auto p = _w.lock(); if (!p) return;
             auto error = x.error();
@@ -938,10 +938,10 @@ namespace detail
     }
 
     template <typename R>
-    struct when_all_base_collector {
+    struct create_when_all_range_future {
 
         template<typename S, typename F, typename I>
-        static auto collect(S&& s, F&& f, I first, I last) {
+        static auto do_it(S&& s, F&& f, I first, I last) {
             using result_t = typename std::result_of<F(std::vector<R>)>::type;
 
             if (first == last) {
@@ -950,7 +950,7 @@ namespace detail
                 return std::move(p.second);
             }
 
-            auto context = std::make_shared<detail::when_all_context<F, I, R>>(first, last);
+            auto context = std::make_shared<detail::when_all_range_context<F, I, R>>(first, last);
             auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context] {
                 if (_c->_error) {
                     std::rethrow_exception(_c->_error.get());
@@ -962,7 +962,7 @@ namespace detail
 
             size_t index(0);
             std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_when_all_tasks(index++, context, item);
+                detail::attach_when_all_range_tasks(index++, context, item);
             });
 
             return std::move(p.second);
@@ -971,10 +971,10 @@ namespace detail
     };
 
     template <>
-    struct when_all_base_collector<void> {
+    struct create_when_all_range_future<void> {
 
         template<typename S, typename F, typename I>
-        static auto collect(S&& s, F&& f, I first, I last) {
+        static auto do_it(S&& s, F&& f, I first, I last) {
             using result_t = typename std::result_of<F()>::type;
 
             if (first == last) {
@@ -983,7 +983,7 @@ namespace detail
                 return std::move(p.second);
             }
 
-            auto context = std::make_shared<detail::when_all_context<F, I, void>>(first, last);
+            auto context = std::make_shared<detail::when_all_range_context<F, I, void>>(first, last);
             auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context]{
                 if (_c->_error) {
                     std::rethrow_exception(_c->_error.get());
@@ -995,13 +995,187 @@ namespace detail
 
             size_t index(0);
             std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_when_all_void_tasks(index++, context, item);
+                detail::attach_when_all_range_void_tasks(index++, context, item);
             });
 
             return std::move(p.second);
 
         }
     };
+
+    /**************************************************************************************************/
+    template <typename F, typename I>
+    struct when_any_range_context_base {
+        when_any_range_context_base(I first, I last)
+            : _holds(std::distance(first, last))
+        {}
+
+        std::atomic_bool                      _done{ false };
+        std::atomic_bool                      _error_happened{ false };
+        std::vector<future<void>>             _holds;
+        std::mutex                            _mutex;
+        boost::optional<std::exception_ptr>   _error;
+        size_t                                _index;
+        packaged_task<>                       _f;
+
+        void failure(std::exception_ptr error, size_t index) {
+            {
+                std::unique_lock<std::mutex> lock(_mutex);
+                _error = std::move(error);
+                _done = true;
+                _index = index;
+            }
+            for (auto& h : _holds) {
+                h.cancel_try();
+            }
+            _f();
+        }
+    };
+
+    template <typename F, typename I, typename Input>
+    struct when_any_range_context : when_any_range_context_base<F, I> {
+        when_any_range_context(I first, I last)
+            : when_all_range_context_base<F, I>(first, last)
+        {}
+        
+        void done(Input r, size_t index) {
+            if (_done)
+                return;
+            {
+                auto first_result = false;
+                std::unique_lock<std::mutex> lock(_mutex);
+                if (!_done) {
+                    _done = true;
+                    _result = std::move(r);
+                    _index = index;
+                    first_result = true;
+                }
+                if (first_result)
+                    _f();
+            }
+        }
+
+        Input  _result;
+   };
+
+    template <typename F, typename I>
+    struct when_any_range_context<F, I, void> : when_any_range_context_base<F, I> {
+        when_any_range_context(I first, I last)
+            : when_any_range_context_base<F, I>(first, last)
+        {}
+
+        void done(size_t index) {
+            if (_done)
+                return;
+            {
+                auto first_result = false;
+                std::unique_lock<std::mutex> lock(_mutex);
+                if (!_done) {
+                    _done = true;
+                    _index = index;
+                    first_result = true;
+                }
+                if (first_result)
+                    _f();
+            }
+        }
+
+    };
+
+    template <typename P, typename T>
+    void attach_when_any_range_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
+            auto p = _w.lock(); if (!p) return;
+            auto error = x.error();
+            if (error) {
+                p->failure(*error, _i);
+            }
+            else {
+                p->done(std::move(*x.get_try()), _i);
+            }
+        });
+    }
+
+    template <typename P, typename T>
+    void attach_when_any_range_void_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
+            auto p = _w.lock(); if (!p) return;
+            auto error = x.error();
+            if (error) {
+                p->failure(*error, _i);
+            }
+            else {
+                p->done(_i);
+            }
+        });
+    }
+
+    template <typename R>
+    struct create_when_any_range_future {
+
+        template<typename S, typename F, typename I>
+        static auto do_it(S&& s, F&& f, I first, I last) {
+            using result_t = typename std::result_of<F(std::vector<R>)>::type;
+
+            if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
+                auto p = package<result_t()>(std::forward<S>(s), std::bind(std::forward<F>(f), R(), 0));
+                s(std::move(p.first));
+                return std::move(p.second);
+            }
+
+            auto context = std::make_shared<detail::when_any_range_context<F, I, R>>(first, last);
+            auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context]{
+                if (_c->_error) {
+                    std::rethrow_exception(_c->_error.get());
+                }
+                return _f(_c->_result, _c->_index);
+            });
+
+            context->_f = std::move(p.first);
+
+            size_t index(0);
+            std::for_each(first, last, [&index, &context](auto item) {
+                detail::attach_when_any_range_tasks(index++, context, item);
+            });
+
+            return std::move(p.second);
+        }
+    };
+
+    template <>
+    struct create_when_any_range_future<void> {
+
+        template<typename S, typename F, typename I>
+        static auto do_it(S&& s, F&& f, I first, I last) {
+            using result_t = typename std::result_of<F()>::type;
+
+            if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
+                auto p = package<void()>(std::forward<S>(s), std::forward<F>(f));
+                s(std::move(p.first));
+                return std::move(p.second);
+            }
+
+            auto context = std::make_shared<detail::when_any_range_context<F, I, void>>(first, last);
+            auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context]{
+                if (_c->_error) {
+                    std::rethrow_exception(_c->_error.get());
+                }
+                return _f(_c->_index);
+            });
+
+            context->_f = std::move(p.first);
+
+            size_t index(0);
+            std::for_each(first, last, [&index, &context](auto item) {
+                detail::attach_when_any_range_void_tasks(index++, context, item);
+            });
+
+            return std::move(p.second);
+        }
+    };
+
+
+
 }
 
 
@@ -1009,13 +1183,26 @@ namespace detail
 
 template <typename S, // models task scheduler
           typename F, // models functional object
-          typename I> // models ForwardIterator that reference to a range of futures
+          typename I> // models ForwardIterator that reference to a range of futures of the same type
 auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
 
-    return detail::when_all_base_collector<param_t>::collect(std::forward<S>(schedule), 
+    return detail::create_when_all_range_future<param_t>::do_it(std::forward<S>(schedule), 
                                                              std::forward<F>(f), 
                                                              range.first, range.second);
+}
+
+/**************************************************************************************************/
+
+template <typename S, // models task scheduler
+          typename F, // models functional object
+          typename I> // models ForwardIterator that reference to a range of futures of the same type
+auto when_any(S schedule, F f, const std::pair<I, I>& range) {
+    using param_t = typename std::iterator_traits<I>::value_type::result_type;
+
+    return detail::create_when_any_range_future<param_t>::do_it(std::forward<S>(schedule),
+                                                         std::forward<F>(f),
+                                                         range.first, range.second);
 }
 
 /**************************************************************************************************/
