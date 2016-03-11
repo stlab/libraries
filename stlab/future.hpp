@@ -1002,22 +1002,18 @@ namespace detail
         {}
 
         std::atomic_size_t                    _remaining;
-        std::atomic_bool                      _error_happened{ false };
         std::vector<future<void>>             _holds;
         std::mutex                            _mutex;
         boost::optional<std::exception_ptr>   _error;
         size_t                                _index;
         packaged_task<>                       _f;
 
-        void failure(std::exception_ptr error, size_t index) {
-            {
-                std::unique_lock<std::mutex> lock(_mutex);
+        void failure(std::exception_ptr error) {
+            // only the last error is of any interest
+            if (_remaining == 1) {
                 _error = std::move(error);
-                --_remaining;
-                _index = index;
-            }
-            if (_remaining == 0)
                 _f();
+            }
         }
     };
 
@@ -1046,7 +1042,7 @@ namespace detail
         }
 
         Input  _result;
-   };
+    };
 
     template <typename F, typename I>
     struct when_any_range_context<F, I, void> : when_any_range_context_base<F, I> {
@@ -1079,7 +1075,7 @@ namespace detail
             auto p = _w.lock(); if (!p) return;
             auto error = x.error();
             if (error) {
-                p->failure(*error, _i);
+                p->failure(*error);
             }
             else {
                 p->done(std::move(*x.get_try()), _i);
@@ -1093,7 +1089,7 @@ namespace detail
             auto p = _w.lock(); if (!p) return;
             auto error = x.error();
             if (error) {
-                p->failure(*error, _i);
+                p->failure(*error);
             }
             else {
                 p->done(_i);
@@ -1141,7 +1137,7 @@ namespace detail
             using result_t = typename std::result_of<F(size_t)>::type;
 
             if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
-                auto p = package<void()>(std::forward<S>(s), std::forward<F>(f));
+                auto p = package<void()>(std::forward<S>(s), std::bind(std::forward<F>(f), 0));
                 s(std::move(p.first));
                 return std::move(p.second);
             }
