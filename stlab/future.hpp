@@ -1007,10 +1007,11 @@ namespace detail
     template <typename F, typename I>
     struct when_any_range_context_base {
         when_any_range_context_base(I first, I last)
-            : _holds(std::distance(first, last))
+            : _remaining(std::distance(first, last))
+            , _holds(_remaining)
         {}
 
-        std::atomic_bool                      _done{ false };
+        std::atomic_size_t                    _remaining;
         std::atomic_bool                      _error_happened{ false };
         std::vector<future<void>>             _holds;
         std::mutex                            _mutex;
@@ -1022,37 +1023,36 @@ namespace detail
             {
                 std::unique_lock<std::mutex> lock(_mutex);
                 _error = std::move(error);
-                _done = true;
+                --_remaining;
                 _index = index;
             }
-            for (auto& h : _holds) {
-                h.cancel_try();
-            }
-            _f();
+            if (_remaining == 0)
+                _f();
         }
     };
 
     template <typename F, typename I, typename Input>
     struct when_any_range_context : when_any_range_context_base<F, I> {
         when_any_range_context(I first, I last)
-            : when_all_range_context_base<F, I>(first, last)
+            : when_any_range_context_base<F, I>(first, last)
         {}
         
         void done(Input r, size_t index) {
-            if (_done)
+            if (_remaining == 0)
                 return;
             {
-                auto first_result = false;
                 std::unique_lock<std::mutex> lock(_mutex);
-                if (!_done) {
-                    _done = true;
+                if (_remaining != 0) {
+                    _remaining = 0;
                     _result = std::move(r);
                     _index = index;
-                    first_result = true;
                 }
-                if (first_result)
-                    _f();
+                else {
+                    return;
+                }
             }
+            if (_remaining == 0)
+                _f();
         }
 
         Input  _result;
@@ -1065,19 +1065,20 @@ namespace detail
         {}
 
         void done(size_t index) {
-            if (_done)
+            if (_remaining == 0)
                 return;
             {
-                auto first_result = false;
                 std::unique_lock<std::mutex> lock(_mutex);
-                if (!_done) {
-                    _done = true;
+                if (_remaining != 0) {
+                    _remaining = 0;
                     _index = index;
-                    first_result = true;
                 }
-                if (first_result)
-                    _f();
+                else {
+                    return;
+                }
             }
+            if (_remaining == 0)
+                _f();
         }
 
     };
@@ -1115,7 +1116,7 @@ namespace detail
 
         template<typename S, typename F, typename I>
         static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename std::result_of<F(std::vector<R>)>::type;
+            using result_t = typename std::result_of<F(R, size_t)>::type;
 
             if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
                 auto p = package<result_t()>(std::forward<S>(s), std::bind(std::forward<F>(f), R(), 0));
@@ -1147,7 +1148,7 @@ namespace detail
 
         template<typename S, typename F, typename I>
         static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename std::result_of<F()>::type;
+            using result_t = typename std::result_of<F(size_t)>::type;
 
             if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
                 auto p = package<void()>(std::forward<S>(s), std::forward<F>(f));
@@ -1173,9 +1174,6 @@ namespace detail
             return std::move(p.second);
         }
     };
-
-
-
 }
 
 
