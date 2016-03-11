@@ -22,7 +22,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 
         int p = 0;
 
-        sut = async(custom_scheduler<0>(), [&p] { p = 42; });
+        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -36,8 +36,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 
         std::atomic_int p = 0;
 
-        sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
-            .then([_p = &p] { *_p += 42; });
+        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
+            .then([&_p = p] { _p += 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -51,8 +51,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 
         std::atomic_int p = 0;
 
-        sut = async(custom_scheduler<0>(), [_p = &p] { return 42; })
-            .then([_p = &p](auto x) { *_p = x + 42; });
+        sut = async(custom_scheduler<0>(), [] { return 42; })
+            .then([&_p = p](auto x) { _p = x + 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -66,8 +66,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 
         std::atomic_int p = 0;
 
-        sut = async(custom_scheduler<0>(), [_p = &p] { return 42; })
-            .then(custom_scheduler<1>(), [_p = &p](auto x) { *_p = x + 42; });
+        sut = async(custom_scheduler<0>(), [] { return 42; })
+            .then(custom_scheduler<1>(), [&_p = p](auto x) { _p = x + 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -82,8 +82,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 
         std::atomic_int p = 0;
 
-        sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
-            .then(custom_scheduler<1>(), [_p = &p] { *_p += 42; });
+        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
+            .then(custom_scheduler<1>(), [&_p = p] { _p += 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -107,9 +107,9 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
         int r1 = 0;
         int r2 = 0;
 
-        auto sut = async(custom_scheduler<0>(), [_p = &p ] { *_p = 42; });
-        auto f1 = sut.then(custom_scheduler<0>(), [_p = &p, _r = &r1 ] { *_r = 42 + *_p; });
-        auto f2 = sut.then(custom_scheduler<0>(), [_p = &p, _r = &r2 ] { *_r = 4711 + *_p; });
+        auto sut = async(custom_scheduler<0>(), [&_p = p ] { _p = 42; });
+        auto f1 = sut.then(custom_scheduler<0>(), [&_p = p, &_r = r1 ] { _r = 42 + _p; });
+        auto f2 = sut.then(custom_scheduler<0>(), [&_p = p, &_r = r2 ] { _r = 4711 + _p; });
         check_valid_future(sut, f1, f2);
 
         wait_until_future_completed(f1, f2);
@@ -168,8 +168,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, success_fixture<int>)
 
         std::atomic_int p = 0;
 
-        sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
-            .then([_p = &p] { *_p += 42; return _p->load(); });
+        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
+            .then([&_p = p] { _p += 42; return _p.load(); });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -182,8 +182,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, success_fixture<int>)
         BOOST_TEST_MESSAGE("running future void int tasks with different schedulers");
         std::atomic_int p = 0;
 
-        sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
-            .then(custom_scheduler<1>(), [_p = &p] { *_p += 42; return _p->load(); });
+        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
+            .then(custom_scheduler<1>(), [&_p = p] { _p += 42; return _p.load(); });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -254,8 +254,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, failure_fixture<void>)
         BOOST_TEST_MESSAGE("running future void with two tasks which first fails");
         std::atomic_int p = 0;
 
-        auto sut = async(custom_scheduler<0>(), [_p = &p] { throw test_exception("failure"); })
-            .then([_p = &p] { *_p = 42; });
+        auto sut = async(custom_scheduler<0>(), [&_p = p] { throw test_exception("failure"); })
+            .then([&_p = p] { _p = 42; });
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -268,8 +268,8 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, failure_fixture<void>)
         BOOST_TEST_MESSAGE("running future void with two tasks which second fails");
         std::atomic_int p = 0;
 
-        auto sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
-            .then([_p = &p] { throw test_exception("failure"); });
+        auto sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
+            .then([&_p = p] { throw test_exception("failure"); });
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -297,7 +297,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
         int p = 0;
 
         auto sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); })
-            .then([_p = &p]()->int { *_p = 42; return *_p; });
+            .then([&_p = p]()->int { _p = 42; return _p; });
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -310,7 +310,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
         BOOST_TEST_MESSAGE("running future void with two tasks which second fails");
         std::atomic_int p = 0;
 
-        auto sut = async(custom_scheduler<0>(), [_p = &p] { *_p = 42; })
+        auto sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
             .then([]()->int { throw test_exception("failure"); });
 
         wait_until_future_fails<test_exception>(sut);
@@ -325,8 +325,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
         std::atomic_int p = 0;
 
         sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
-        auto f1 = sut.then(custom_scheduler<0>(), [_p = &p](auto x) -> int { *_p += 1; return x + 42; });
-        auto f2 = sut.then(custom_scheduler<0>(), [_p = &p](auto x) -> int { *_p += 1;  return x + 4177; });
+        auto f1 = sut.then(custom_scheduler<0>(), [&_p = p](auto x) -> int { _p += 1; return x + 42; });
+        auto f2 = sut.then(custom_scheduler<0>(), [&_p = p](auto x) -> int { _p += 1;  return x + 4177; });
 
         wait_until_future_fails<test_exception>(f1, f2);
 

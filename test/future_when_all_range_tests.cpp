@@ -20,7 +20,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
         BOOST_TEST_MESSAGE("running future when_all void with empty range");
         size_t p = 0;
         std::vector<stlab::future<int>> emptyFutures;
-        sut = when_all(custom_scheduler<0>(), [_p = &p](std::vector<int> v) { *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p](std::vector<int> v) { _p = v.size();
             }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
         check_valid_future(sut);
@@ -37,9 +37,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
         std::vector<stlab::future<int>> futures;
         futures.push_back(async(custom_scheduler<0>(), [] { return 42; }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p, _r = &r](std::vector<int> v) { 
-            *_p = v.size();
-            *_r = v[0];
+        sut = when_all(custom_scheduler<0>(), [&_p = p, &_r = r](std::vector<int> v) { 
+            _p = v.size();
+            _r = v[0];
         }, std::make_pair(futures.begin(), futures.end()));
 
         check_valid_future(sut);
@@ -60,10 +60,10 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
         futures.push_back(async(custom_scheduler<0>(), [] { return 3; }));
         futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p, _r = &r](std::vector<int> v) {
-                *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p, &_r = r](std::vector<int> v) {
+                _p = v.size();
                 for (auto i : v) {
-                    *_r += i;
+                    _r += i;
                 }
             }, std::make_pair(futures.begin(), futures.end()));
         check_valid_future(sut);
@@ -91,14 +91,14 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
 
         auto start = async(custom_scheduler<0>(), [] { return 4711; });
         std::vector<stlab::future<void>> futures(4);
-        futures[0] = start.then(custom_scheduler<0>(), [_p = &v[0]](auto x) { *_p = x + 1; });
-        futures[1] = start.then(custom_scheduler<1>(), [_p = &v[1]](auto x) { *_p = x + 2; });
-        futures[2] = start.then(custom_scheduler<0>(), [_p = &v[2]](auto x) { *_p = x + 3; });
-        futures[3] = start.then(custom_scheduler<1>(), [_p = &v[3]](auto x) { *_p = x + 5; });
+        futures[0] = start.then(custom_scheduler<0>(), [&_p = v[0]](auto x) { _p = x + 1; });
+        futures[1] = start.then(custom_scheduler<1>(), [&_p = v[1]](auto x) { _p = x + 2; });
+        futures[2] = start.then(custom_scheduler<0>(), [&_p = v[2]](auto x) { _p = x + 3; });
+        futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 
-        sut = when_all(custom_scheduler<0>(), [_r = &r, &v]() {
+        sut = when_all(custom_scheduler<0>(), [&_r = r, &v]() {
             for (auto i : v) {
-                *_r += i;
+                _r += i;
             }
         }, std::make_pair(futures.begin(), futures.end()));
         check_valid_future(sut);
@@ -137,8 +137,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
         std::vector<stlab::future<int>> futures;
         futures.push_back(async(custom_scheduler<0>(), [] { return 42; }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p](std::vector<int> v) {
-                *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p](std::vector<int> v) {
+                _p = v.size();
                 return v[0];
             }, std::make_pair(futures.begin(), futures.end()));
         check_valid_future(sut);
@@ -159,8 +159,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
         futures.push_back(async(custom_scheduler<0>(), [] { return 3; }));
         futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p](std::vector<int> v) {
-            *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p](std::vector<int> v) {
+            _p = v.size();
             auto r = 0;
             for (auto i : v) {
                 r += i;
@@ -195,8 +195,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
         futures[2] = start.then(custom_scheduler<0>(), [](auto x) { return x + 3; });
         futures[3] = start.then(custom_scheduler<1>(), [](auto x) { return x + 5; });
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p](std::vector<int> v) {
-            *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p](std::vector<int> v) {
+            _p = v.size();
             auto r = 0;
             for (auto i : v) {
                 r += i;
@@ -229,9 +229,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
         std::vector<stlab::future<int>> futures;
         futures.push_back(async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p, _r = &r](std::vector<int> v) {
-            *_p = v.size();
-            *_r = v[0];
+        sut = when_all(custom_scheduler<0>(), [&_p = p, &_r = r](std::vector<int> v) {
+            _p = v.size();
+            _r = v[0];
         }, std::make_pair(futures.begin(), futures.end()));
 
         wait_until_future_fails<test_exception>(sut);
@@ -252,10 +252,10 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
         futures.push_back(async(custom_scheduler<0>(), [] { return 3; }));
         futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p, _r = &r](std::vector<int> v) {
-            *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p, &_r = r](std::vector<int> v) {
+            _p = v.size();
             for (auto i : v) {
-                *_r += i;
+                _r += i;
             }
         }, std::make_pair(futures.begin(), futures.end()));
 
@@ -275,10 +275,10 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
         futures.push_back(async(custom_scheduler<0>(), []()-> int { throw test_exception("failure"); }));
         futures.push_back(async(custom_scheduler<1>(), []()-> int { throw test_exception("failure"); }));
 
-        sut = when_all(custom_scheduler<0>(), [_p = &p, _r = &r](std::vector<int> v) {
-            *_p = v.size();
+        sut = when_all(custom_scheduler<0>(), [&_p = p, &_r = r](std::vector<int> v) {
+            _p = v.size();
             for (auto i : v) {
-                *_r += i;
+                _r += i;
             }
         }, std::make_pair(futures.begin(), futures.end()));
 
@@ -304,14 +304,14 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         auto start = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
         std::vector<stlab::future<void>> futures(4);
-        futures[0] = start.then(custom_scheduler<1>(), [_p = &v[0]](auto x) { *_p = x + 1; });
-        futures[1] = start.then(custom_scheduler<1>(), [_p = &v[1]](auto x) { *_p = x + 2; });
-        futures[2] = start.then(custom_scheduler<1>(), [_p = &v[2]](auto x) { *_p = x + 3; });
-        futures[3] = start.then(custom_scheduler<1>(), [_p = &v[3]](auto x) { *_p = x + 5; });
+        futures[0] = start.then(custom_scheduler<1>(), [&_p = v[0]](auto x) { _p = x + 1; });
+        futures[1] = start.then(custom_scheduler<1>(), [&_p = v[1]](auto x) { _p = x + 2; });
+        futures[2] = start.then(custom_scheduler<1>(), [&_p = v[2]](auto x) { _p = x + 3; });
+        futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 
-        sut = when_all(custom_scheduler<0>(), [_r = &r, &v]() {
+        sut = when_all(custom_scheduler<0>(), [&_r = r, &v]() {
             for (auto i : v) {
-                *_r += i;
+                _r += i;
             }
         }, std::make_pair(futures.begin(), futures.end()));
 
@@ -331,14 +331,14 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         auto start = async(custom_scheduler<0>(), []()->int { return 42; });
         std::vector<stlab::future<void>> futures(4);
-        futures[0] = start.then(custom_scheduler<1>(), [_p = &v[0]](auto x) { *_p = x + 1; });
-        futures[1] = start.then(custom_scheduler<1>(), [_p = &v[1]](auto x) { throw test_exception("failure"); });
-        futures[2] = start.then(custom_scheduler<1>(), [_p = &v[2]](auto x) { *_p = x + 3; });
-        futures[3] = start.then(custom_scheduler<1>(), [_p = &v[3]](auto x) { *_p = x + 5; });
+        futures[0] = start.then(custom_scheduler<1>(), [&_p = v[0]](auto x) { _p = x + 1; });
+        futures[1] = start.then(custom_scheduler<1>(), [&_p = v[1]](auto x) { throw test_exception("failure"); });
+        futures[2] = start.then(custom_scheduler<1>(), [&_p = v[2]](auto x) { _p = x + 3; });
+        futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 
-        sut = when_all(custom_scheduler<0>(), [_r = &r, &v]() {
+        sut = when_all(custom_scheduler<0>(), [&_r = r, &v]() {
             for (auto i : v) {
-                *_r += i;
+                _r += i;
             }
         }, std::make_pair(futures.begin(), futures.end()));
 
@@ -355,12 +355,12 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         auto start = async(custom_scheduler<0>(), []()->int { return 42; });
         std::vector<stlab::future<void>> futures(4);
-        futures[0] = start.then(custom_scheduler<1>(), [_p = &v[0]](auto x) { *_p = x + 1; });
-        futures[1] = start.then(custom_scheduler<1>(), [_p = &v[1]](auto x) { *_p = x + 2; });
-        futures[2] = start.then(custom_scheduler<1>(), [_p = &v[2]](auto x) { *_p = x + 3; });
-        futures[3] = start.then(custom_scheduler<1>(), [_p = &v[3]](auto x) { *_p = x + 5; });
+        futures[0] = start.then(custom_scheduler<1>(), [&_p = v[0]](auto x) { _p = x + 1; });
+        futures[1] = start.then(custom_scheduler<1>(), [&_p = v[1]](auto x) { _p = x + 2; });
+        futures[2] = start.then(custom_scheduler<1>(), [&_p = v[2]](auto x) { _p = x + 3; });
+        futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 
-        sut = when_all(custom_scheduler<0>(), [_r = &r, &v]() { throw test_exception("failure"); }, 
+        sut = when_all(custom_scheduler<0>(), [&_r = r, &v]() { throw test_exception("failure"); }, 
             std::make_pair(futures.begin(), futures.end()));
 
         wait_until_future_fails<test_exception>(sut);
