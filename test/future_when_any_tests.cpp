@@ -56,13 +56,13 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         BOOST_TEST_MESSAGE("running future when_any void with range with many elements and the first succeeds");
         size_t index = 4711;
         size_t r = 0;
-        std::mutex threadBlock;
-        threadBlock.lock();
+        auto threadBlock = std::make_shared<std::mutex>();
+        threadBlock->lock();
         std::vector<stlab::future<int>> futures;
         futures.push_back(async(custom_scheduler<0>(), [] { return 1; }));
-        futures.push_back(async(custom_scheduler<1>(), [&threadBlock] { std::unique_lock<std::mutex> block(threadBlock); return 2; }));
-        futures.push_back(async(custom_scheduler<0>(), [&threadBlock] { std::unique_lock<std::mutex> block(threadBlock); return 3; }));
-        futures.push_back(async(custom_scheduler<1>(), [&threadBlock] { std::unique_lock<std::mutex> block(threadBlock); return 5; }));
+        futures.push_back(async(custom_scheduler<1>(), [_tb = threadBlock] { std::unique_lock<std::mutex> block(*_tb); return 2; }));
+        futures.push_back(async(custom_scheduler<0>(), [_tb = threadBlock] { std::unique_lock<std::mutex> block(*_tb); return 3; }));
+        futures.push_back(async(custom_scheduler<1>(), [_tb = threadBlock] { std::unique_lock<std::mutex> block(*_tb); return 5; }));
 
         sut = when_any(custom_scheduler<0>(), [_i = &index, _r = &r](int x, size_t index) {
             *_i = index;
@@ -71,7 +71,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
-        threadBlock.unlock();
+        threadBlock->unlock();
 
         BOOST_REQUIRE_EQUAL(0, index);
         BOOST_REQUIRE_EQUAL(1, r);
@@ -83,13 +83,13 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         BOOST_TEST_MESSAGE("running future when_any void with range with many elements and one in the middle succeeds");
         size_t index = 4711;
         size_t r = 0;
-        std::mutex threadBlock;
-        threadBlock.lock();
+        auto threadBlock = std::make_shared<std::mutex>();
+        threadBlock->lock();
         std::vector<stlab::future<int>> futures;
-        futures.push_back(async(custom_scheduler<1>(), [&threadBlock] { std::unique_lock<std::mutex> block(threadBlock); return 1; }));
-        futures.push_back(async(custom_scheduler<0>(), [&threadBlock] { std::unique_lock<std::mutex> block(threadBlock); return 2; }));
+        futures.push_back(async(custom_scheduler<1>(), [_tb = threadBlock] { std::unique_lock<std::mutex> block(*_tb); return 1; }));
+        futures.push_back(async(custom_scheduler<0>(), [_tb = threadBlock] { std::unique_lock<std::mutex> block(*_tb); return 2; }));
         futures.push_back(async(custom_scheduler<1>(), [] { return 3; }));
-        futures.push_back(async(custom_scheduler<0>(), [&threadBlock] { std::unique_lock<std::mutex> block(threadBlock); return 5; }));
+        futures.push_back(async(custom_scheduler<0>(), [_tb = threadBlock] { std::unique_lock<std::mutex> block(*_tb); return 5; }));
 
         sut = when_any(custom_scheduler<0>(), [_i = &index, _r = &r](int x, size_t index) {
             *_i = index;
@@ -98,7 +98,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
-        threadBlock.unlock();
+        threadBlock->unlock();
 
         BOOST_REQUIRE_EQUAL(2, index);
         BOOST_REQUIRE_EQUAL(3, r);
