@@ -709,7 +709,7 @@ class future<T, detail::enable_if_not_copyable<T>> {
     template <typename F>
     auto then(F&& f) && {
         assert(_p);
-        return _p->then_r(_p.unique(), std::forward<F>(f));
+        return _p->then_r(_p.unique(), std::forward<F>(f)); 
     }
 
     template <typename S, typename F>
