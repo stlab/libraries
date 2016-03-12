@@ -121,6 +121,24 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 BOOST_AUTO_TEST_SUITE_END()
 
 
+BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, success_fixture<std::unique_ptr<int>>)
+    BOOST_AUTO_TEST_CASE(future_non_copyable_single_task) {
+        BOOST_TEST_MESSAGE("running future non copyable single task");
+
+        sut = async(custom_scheduler<0>(), [] { 
+            auto r = std::make_unique<int>(); 
+            *r = 42; 
+            return std::move(r); 
+        });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+BOOST_AUTO_TEST_SUITE_END()
+
 
 BOOST_FIXTURE_TEST_SUITE(future_then_int, success_fixture<int>)
 

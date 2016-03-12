@@ -70,6 +70,15 @@ namespace test_helper
             (void)std::initializer_list<int>{ (wait_until_future_is_ready(f), 0)... };
         }
 
+        template <typename F>
+        auto wait_until_future_r_completed(F& f) {
+            auto result = f.get_try();
+            while (!result.is_initialized()) {
+                result = f.get_try();
+            }
+            return std::move(result);
+        }
+
     private:
         template <typename F>
         void wait_until_future_is_ready(F& f) {
