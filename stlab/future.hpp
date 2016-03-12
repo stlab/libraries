@@ -882,7 +882,7 @@ namespace detail
     };
 
     template <typename ResultApplier, typename F, typename I, typename R>
-    struct when_all_range_context : ResultApplier{
+    struct when_all_range_context : ResultApplier {
         when_all_range_context(I first, I last)
             : ResultApplier(std::distance(first, last))
             , _remaining(std::distance(first, last))
@@ -931,7 +931,7 @@ namespace detail
 
         template<typename S, typename F, typename I>
         static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename std::result_of<F(std::vector<R>)>::type;
+            using result_t = typename std::result_of<F(const std::vector<R>&)>::type;
             using context_t = detail::when_all_range_context<context_apply_result<R>, F, I, R >;
 
             if (first == last) {

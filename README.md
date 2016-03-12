@@ -29,7 +29,9 @@ For a future<T> if T is move only then the future is move only and can only cont
 
 [ TODO - for notification of errors the plan is to add a recover() clause to futures which is passed the exception and may return a value T or rethrow. recover() will be executed prior to continuations. ]
 
-when_all() takes an n'ary function and n futures as arguments.
+when_all() takes either an n'ary function and n futures as arguments or a variable range of futures
+
+when_any() takes as argument avariable range of futures and proceeds when at least one of the futures successds.
 
 Here is a trivial scheduler using threads:
 
@@ -95,6 +97,18 @@ class future {
     template <typename S, typename F>
     auto then(S&& s, F&& f) &&; // -> future<result_of_t<F(T)>>
 
+    template <typename F>
+    auto recover(F&& f) const&; // -> future<result_of_t<F(T)>>
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) const&; // -> future<result_of_t<F(T)>>
+
+    template <typename F>
+    auto recover(F&& f) &&; // -> future<result_of_t<F(T)>>
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) &&; // -> future<result_of_t<F(T)>>
+
     bool cancel_try();
 
     auto get_try() const&; // -> T == void ? bool : optional<T>
@@ -103,6 +117,17 @@ class future {
 
 template <typename S, typename F, typename... Ts>
 auto when_all(S, F, future<Ts>... args); // -> future<result_of_t<F(Ts...>>
+
+template <typename S, // models task scheduler
+          typename F, // models functional object
+          typename I> // models ForwardIterator that reference to a range of futures of the same type
+auto when_all(S schedule, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(const std::vector<typename std::iterator_traits<I>::value_type::result_type>)>>
+
+template <typename S, // models task scheduler
+          typename F, // models functional object
+          typename I> // models ForwardIterator that reference to a range of futures of the same type
+auto when_any(S schedule, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(typename std::iterator_traits<I>::value_type::result_type, size_t)>>
+
 
 template <typename Sig, typename S, typename F>
 auto package(S s, F f); // -> pair<packaged_task<Sig>, future<result_of_t<Sig>>>;
