@@ -137,6 +137,23 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, success_fixture<std::unique_p
         BOOST_REQUIRE_EQUAL(42, **result);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
+
+    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation) {
+        BOOST_TEST_MESSAGE("running future non copyable as contination");
+
+        sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) {
+            auto r = std::make_unique<int>();
+            *r = x;
+            return std::move(r);
+        });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
