@@ -15,7 +15,7 @@ namespace stlab
 {
     namespace detail 
     {
-        class tracker_server : public std::enable_shared_from_this<tracker_server>
+        class tracker_server
         {
             std::atomic_size_t _task_number = {0};
             std::atomic_size_t _done_tasks = {0};
