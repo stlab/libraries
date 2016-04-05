@@ -863,6 +863,8 @@ namespace detail
 {
     template <typename R>
     struct context_apply_result {
+        using result_type = std::vector<R>;
+
         context_apply_result(size_t size) : _results(size) {}
 
         template <typename C, typename F>
@@ -874,6 +876,8 @@ namespace detail
     };
 
     struct context_apply_void {
+        using result_type = void;
+
         context_apply_void(size_t) {}
 
         template <typename C, typename F>
@@ -881,10 +885,10 @@ namespace detail
         }
     };
 
-    template <typename ResultApplier, typename F, typename I, typename R>
-    struct when_all_range_context : ResultApplier {
+    template <typename ApplyPolicy, typename F, typename I, typename R>
+    struct when_all_range_context : ApplyPolicy {
         when_all_range_context(I first, I last)
-            : ResultApplier(std::distance(first, last))
+            : ApplyPolicy(std::distance(first, last))
             , _remaining(std::distance(first, last))
             , _holds(_remaining)
         {}
@@ -1024,21 +1028,21 @@ namespace detail
         {}
         
         void done(Input r, size_t index) {
-            if (_remaining == 0)
+            if (when_any_range_context_base<F,I>::_remaining == 0)
                 return;
             {
-                std::unique_lock<std::mutex> lock(_mutex);
-                if (_remaining != 0) {
-                    _remaining = 0;
+                std::unique_lock<std::mutex> lock(when_any_range_context_base<F, I>::_mutex);
+                if (when_any_range_context_base<F, I>::_remaining != 0) {
+                    when_any_range_context_base<F, I>::_remaining = 0;
                     _result = std::move(r);
-                    _index = index;
+                    when_any_range_context_base<F, I>::_index = index;
                 }
                 else {
                     return;
                 }
             }
-            if (_remaining == 0)
-                _f();
+            if (when_any_range_context_base<F, I>::_remaining == 0)
+                when_any_range_context_base<F, I>::_f();
         }
 
         Input  _result;
@@ -1051,22 +1055,21 @@ namespace detail
         {}
 
         void done(size_t index) {
-            if (_remaining == 0)
+            if (when_any_range_context_base<F, I>::_remaining == 0)
                 return;
             {
-                std::unique_lock<std::mutex> lock(_mutex);
-                if (_remaining != 0) {
-                    _remaining = 0;
-                    _index = index;
+                std::unique_lock<std::mutex> lock(when_any_range_context_base<F, I>::_mutex);
+                if (when_any_range_context_base<F, I>::_remaining != 0) {
+                    when_any_range_context_base<F, I>::_remaining = 0;
+                    when_any_range_context_base<F, I>::_index = index;
                 }
                 else {
                     return;
                 }
             }
-            if (_remaining == 0)
-                _f();
+            if (when_any_range_context_base<F, I>::_remaining == 0)
+                when_any_range_context_base<F, I>::_f();
         }
-
     };
 
     template <typename P, typename T>

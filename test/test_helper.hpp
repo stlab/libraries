@@ -8,6 +8,9 @@ Distributed under the Boost Software License, Version 1.0.
 #ifndef _TEST_HELPER_HPP_
 #define _TEST_HELPER_HPP_
 
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
 #include <thread>
 #include <atomic>
 #include <exception>
@@ -43,7 +46,7 @@ namespace test_helper
 
         explicit test_exception(const char* error);
 
-        const char* what() const override;
+        const char* what() const noexcept override;
     };
 
 

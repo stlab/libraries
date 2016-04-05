@@ -108,7 +108,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
 
     BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_one_succeeds_all_other_fails) {
         BOOST_TEST_MESSAGE("running future when_any void with range with many elements and one succeeds all other fails");
-        std::atomic_size_t failures = 0;
+        std::atomic_size_t failures{ 0 };
         size_t index = 4711;
         int r = 0;
 
@@ -142,7 +142,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements) {
         BOOST_TEST_MESSAGE("running future when_all void with range with diamond formation");
         auto threadBlock = std::make_shared<std::mutex>();
-        std::atomic_int r = 0;
+        std::atomic_int r{ 0 };
         size_t index = 0;
         threadBlock->lock();
         auto start = async(custom_scheduler<0>(), [] { return 4711; });
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
     BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_many_elements_all_but_all_one_failing) {
         BOOST_TEST_MESSAGE("running future when_any int with range with many elements all but one is failing");
         size_t index = 0;
-        std::atomic_int failures = 0;
+        std::atomic_int failures{ 0 };
         std::vector<stlab::future<int>> futures;
         futures.push_back(async(custom_scheduler<0>(), [&_f = failures]()->int { _f += 1; throw test_exception("failure"); }));
         futures.push_back(async(custom_scheduler<1>(), [&_f = failures]()->int { _f += 1; throw test_exception("failure"); }));

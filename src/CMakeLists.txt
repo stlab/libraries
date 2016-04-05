@@ -15,6 +15,7 @@ set(HEADERS
   ../stlab/channel.hpp
   ../stlab/expected.hpp
   ../stlab/future.hpp
+  ../stlab/progress.hpp
 )
 
 include_directories(${Boost_INCLUDE_DIRS})

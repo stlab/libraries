@@ -17,8 +17,6 @@ set(HEADERS
 
 add_executable(future_test ${SOURCE} ${HEADERS})
 
-#add_dependencies(future_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
-
 include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(
