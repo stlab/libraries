@@ -166,7 +166,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
-            return _f(std::move(x).get_try());
+            return _f(std::move(x).get_try().get());
         });
     }
 

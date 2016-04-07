@@ -500,7 +500,7 @@ class receiver {
     }
 
     receiver(const receiver& x) : _p(x._p) {
-        if (_p) _p->add_sender();
+        if (_p) _p->add_receiver();
     }
     receiver(receiver&&) noexcept = default;
 
