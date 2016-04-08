@@ -9,13 +9,14 @@
 #ifndef STLAB_FUTURE_HPP
 #define STLAB_FUTURE_HPP
 
+#include <atomic>
 #include <future>
 #include <initializer_list>
 #include <memory>
-#include <thread>
 #include <mutex>
+#include <thread>
 #include <vector>
-#include <atomic>
+
 #include <boost/optional.hpp>
 
 #include <stlab/config.hpp>
@@ -136,7 +137,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then(S s, F f) {
         return recover(std::move(s), [_f = std::move(f)](const auto& x){
-            return _f(*x.get_try());
+            return _f(x.get_try().value());
         });
     }
 
@@ -169,7 +170,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
-            return _f(*std::move(x).get_try());
+            return _f(std::move(x).get_try().value());
         });
     }
 
@@ -268,7 +269,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
-            return _f(*std::move(x).get_try());
+            return _f(std::move(x).get_try().value());
         });
     }
 
@@ -508,54 +509,54 @@ class future<T, detail::enable_if_copyable<T>> {
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(_p);
+        assert(valid());
         return _p->then(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& {
-        assert(_p);
+        assert(valid());
         return _p->then(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto then(F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(_p);
+        assert(valid());
         return _p->recover(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(_p);
+        assert(valid());
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(_p); 
+        assert(valid()); 
         then([_hold = _p](auto f){ }, [](const auto& x){ });
     }
 
@@ -568,17 +569,17 @@ class future<T, detail::enable_if_copyable<T>> {
     }
 
     auto get_try() const& {
-        assert(_p); 
+        assert(valid()); 
         return _p->get_try();
     }
 
     auto get_try() && {
-        assert(_p); 
+        assert(valid()); 
         return _p->get_try_r(_p.unique());
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(_p);
+        assert(valid());
         return _p->_error;
     }
 };
@@ -608,54 +609,54 @@ class future<void, void> {
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(_p); 
+        assert(valid()); 
         return _p->then(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& {
-        assert(_p);
+        assert(valid());
         return _p->then(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto then(F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(_p); 
+        assert(valid()); 
         return _p->recover(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(_p);
+        assert(valid());
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(_p); 
+        assert(valid()); 
         then([_hold = _p](auto f){ }, [](){ });
     }
 
@@ -668,12 +669,12 @@ class future<void, void> {
     }
 
     bool get_try() {
-        assert(_p);
+        assert(valid());
         return _p->get_try();
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(_p);
+        assert(valid());
         return _p->_error;
     }
 
@@ -708,30 +709,30 @@ class future<T, detail::enable_if_not_copyable<T>> {
 
     template <typename F>
     auto then(F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->then_r(_p.unique(), std::forward<F>(f)); 
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(_p);
+        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(_p); 
+        assert(valid()); 
         then([_hold = _p](auto f){ }, [](const auto& x){ });
     }
 
@@ -744,17 +745,17 @@ class future<T, detail::enable_if_not_copyable<T>> {
     }
 
     auto get_try() const& {
-        assert(_p); 
+        assert(valid()); 
         return _p->get_try();
     }
 
     auto get_try() && {
-        assert(_p);
+        assert(valid());
         return _p->get_try_r(_p.unique());
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(_p);
+        assert(valid());
         return _p->_error;
     }
 };
@@ -822,7 +823,7 @@ void attach_when_all_arg_(const std::shared_ptr<P>& p, T a) {
             p->failure(*error);
         }
         else {
-            std::get<i>(p->_args) = *std::move(x).get_try();
+            std::get<i>(p->_args) = std::move(x).get_try().value();
             p->done();
         }
     });
