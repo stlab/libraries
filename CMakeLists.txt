@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.0)
 project(SlabFuture C CXX)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")  
-  set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14")
+  set(CMAKE_CXX_FLAGS "-g -Wall -std=c++14 -fexceptions")
+  #set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions")
   set(CMAKE_LINK_FLAGS "-pthreads")
 endif()
 
@@ -13,8 +14,14 @@ endif()
 
 set (Boost_MULTITHREADED ON) 
 
-find_package( Boost 1.55.0 COMPONENTS unit_test_framework system thread)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package( Threads )
+if(CMAKE_USE_PTHREADS_INIT)
+    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-pthread")
+endif()
+
+find_package( Boost 1.60.0 COMPONENTS unit_test_framework system thread)
+
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
 include_directories(.)

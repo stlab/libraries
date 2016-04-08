@@ -47,8 +47,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         check_valid_future(sut);
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(0, index);
-        BOOST_REQUIRE_EQUAL(42, r);
+        BOOST_REQUIRE_EQUAL(size_t(0), index);
+        BOOST_REQUIRE_EQUAL(size_t(42), r);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
     }
 
@@ -73,8 +73,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         wait_until_future_completed(sut);
         threadBlock->unlock();
 
-        BOOST_REQUIRE_EQUAL(0, index);
-        BOOST_REQUIRE_EQUAL(1, r);
+        BOOST_REQUIRE_EQUAL(size_t(0), index);
+        BOOST_REQUIRE_EQUAL(size_t(1), r);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -100,8 +100,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         wait_until_future_completed(sut);
         threadBlock->unlock();
 
-        BOOST_REQUIRE_EQUAL(2, index);
-        BOOST_REQUIRE_EQUAL(3, r);
+        BOOST_REQUIRE_EQUAL(size_t(2), index);
+        BOOST_REQUIRE_EQUAL(size_t(3), r);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -126,9 +126,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(2, index);
+        BOOST_REQUIRE_EQUAL(size_t(2), index);
         BOOST_REQUIRE_EQUAL(3, r);
-        BOOST_REQUIRE_EQUAL(3, failures);
+        BOOST_REQUIRE_GE(size_t(3), failures.load());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -140,7 +140,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
          \  F4  /
     */
     BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements) {
-        BOOST_TEST_MESSAGE("running future when_all void with range with diamond formation");
+        BOOST_TEST_MESSAGE("running future when_any void with range with diamond formation");
         auto threadBlock = std::make_shared<std::mutex>();
         std::atomic_int r{ 0 };
         size_t index = 0;
@@ -160,9 +160,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(4711 + 4711, r);
+        BOOST_REQUIRE_EQUAL(4711 + 4711, r.load());
         threadBlock->unlock();
-        BOOST_REQUIRE_EQUAL(3, index);
+        BOOST_REQUIRE_EQUAL(size_t(3), index);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -202,14 +202,14 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(0, index);
+        BOOST_REQUIRE_EQUAL(size_t(0), index);
         BOOST_REQUIRE_EQUAL(4711, *sut.get_try());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
 
     BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_many_elements) {
-        BOOST_TEST_MESSAGE("running future when_any int with range with many elements and the first suceeds");
+        BOOST_TEST_MESSAGE("running future when_any int with range with many elements and the last suceeds");
         size_t index = 0;
         auto threadBlock = std::make_shared<std::mutex>();
         threadBlock->lock();
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
         wait_until_future_completed(sut);
         threadBlock->unlock();
 
-        BOOST_REQUIRE_EQUAL(3, index);
+        BOOST_REQUIRE_EQUAL(size_t(3), index);
         BOOST_REQUIRE_EQUAL(5, *sut.get_try());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
@@ -252,9 +252,9 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(2, index);
+        BOOST_REQUIRE_EQUAL(size_t(2), index);
         BOOST_REQUIRE_EQUAL(3, *sut.get_try());
-        BOOST_REQUIRE_EQUAL(3, failures);
+        BOOST_REQUIRE_GE(3, failures.load());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
         wait_until_future_completed(sut);
         threadBlock->unlock();
 
-        BOOST_REQUIRE_EQUAL(1, index);
+        BOOST_REQUIRE_EQUAL(size_t(1), index);
         BOOST_REQUIRE_EQUAL(4711 + 2, *sut.get_try());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());

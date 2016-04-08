@@ -26,7 +26,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
         check_valid_future(sut);
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(0, p);
+        BOOST_REQUIRE_EQUAL(size_t(0), p);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -45,8 +45,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
         check_valid_future(sut);
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(1, p);
-        BOOST_REQUIRE_EQUAL(42, r);
+        BOOST_REQUIRE_EQUAL(size_t(1), p);
+        BOOST_REQUIRE_EQUAL(size_t(42), r);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
     }
 
@@ -70,8 +70,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(4, p);
-        BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, r);
+        BOOST_REQUIRE_EQUAL(size_t(4), p);
+        BOOST_REQUIRE_EQUAL(size_t(1 + 2 + 3 + 5), r);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
