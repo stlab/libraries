@@ -170,7 +170,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
-            return _f(std::move(x).get_try().value());
+            return _f(std::move(x).get_try().get());
         });
     }
 
@@ -301,14 +301,13 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         _error = std::move(error);
         then_t then;
         {
-            std::unique_lock<std::mutex> lock(_mutex);
-            then = std::move(_then);
-            _ready = true;
+        std::unique_lock<std::mutex> lock(_mutex);
+        then = std::move(_then);
+        _ready = true;
         }
         // propogate exception without scheduling
         then.second();
     }
-
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
 
@@ -377,9 +376,9 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         _error = std::move(error);
         then_t then;
         {
-            std::unique_lock<std::mutex> lock(_mutex);
-            then = std::move(_then);
-            _ready = true;
+        std::unique_lock<std::mutex> lock(_mutex);
+        then = std::move(_then);
+        _ready = true;
         }
         // propogate exception without scheduling
         for (const auto& e : then) e.second();
