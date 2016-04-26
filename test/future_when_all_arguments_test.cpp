@@ -15,7 +15,7 @@ Distributed under the Boost Software License, Version 1.0.
 using namespace stlab;
 using namespace test_helper;
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int, success_fixture<int>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_when_all_args_int_with_one_element) {
         BOOST_TEST_MESSAGE("running future when_all int with one element");
 
@@ -53,7 +53,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int, success_fixture<int>)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string, success_fixture<std::string>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string, test_fixture<std::string>)
     BOOST_AUTO_TEST_CASE(future_when_all_args_with_different_types) {
         BOOST_TEST_MESSAGE("running future when_all args with different types");
 
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_SUITE_END()
 // ----------------------------------------------------------------------------
 
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, failure_fixture<int>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_when_all_args_int_failure_with_one_element) {
         BOOST_TEST_MESSAGE("running future when_all int with range of one element");
 
@@ -93,7 +93,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, failure_fixture<int>)
         }, f1);
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
 
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
@@ -111,7 +111,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, failure_fixture<int>)
         }, f1, f2, f3, f4);
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -129,7 +129,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, failure_fixture<int>)
         }, f1, f2, f3, f4);
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -137,7 +137,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, failure_fixture<int>)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string_failure, failure_fixture<std::string>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string_failure, test_fixture<std::string>)
     BOOST_AUTO_TEST_CASE(future_when_all_args_with_different_types_one_failing) {
         BOOST_TEST_MESSAGE("running future when_all args with different types one failing");
 
@@ -153,7 +153,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string_failure, failure_fixture<st
         }, f1, f2, f3, f4);
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
@@ -173,7 +173,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string_failure, failure_fixture<st
         }, f1, f2, f3, f4);
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }

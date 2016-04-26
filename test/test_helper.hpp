@@ -34,6 +34,7 @@ namespace test_helper
         static void reset_usage_counter() { _usage_counter = 0; }
 
     private:
+        const size_t _id = no; // only used for debugging purpose
         static std::atomic_int _usage_counter;
     };
 
@@ -59,9 +60,9 @@ namespace test_helper
     };
 
     template <typename T>
-    struct fixture_base
+    struct test_fixture
     {
-        fixture_base() {
+        test_fixture() {
             custom_scheduler<0>::reset_usage_counter();
             custom_scheduler<1>::reset_usage_counter();
         }
@@ -82,18 +83,6 @@ namespace test_helper
             return std::move(result);
         }
 
-    private:
-        template <typename F>
-        void wait_until_future_is_ready(F& f) {
-            while (!f.get_try()) {}
-        }
-    };
-
-    template <typename T>
-    struct success_fixture : public fixture_base<T>
-    {
-        success_fixture() {}
-
         void check_valid_future() {}
 
         void check_valid_future(const std::future<T>& f) {
@@ -108,17 +97,9 @@ namespace test_helper
             check_valid_future(fs...);
         }
 
-
-    };
-
-    template <typename T>
-    struct failure_fixture : public fixture_base<T>
-    {
-        failure_fixture() {}
-
         template <typename E, typename F>
-        void check_failure(F& f, const std::string& message) {
-            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(e.what()) == _m; }));
+        static void check_failure(F& f, const char* message) {
+            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(_m) == std::string(e.what()); }));
         }
 
         template <typename E, typename... F>
@@ -126,7 +107,13 @@ namespace test_helper
             (void)std::initializer_list<int>{ (wait_until_this_future_fails<E>(f), 0)... };
         }
 
+
     private:
+        template <typename F>
+        void wait_until_future_is_ready(F& f) {
+            while (!f.get_try()) {}
+        }
+
         template <typename E, typename F>
         void wait_until_this_future_fails(F& f) {
             try {
@@ -136,6 +123,7 @@ namespace test_helper
             }
         }
     };
+
 }
 
 #endif

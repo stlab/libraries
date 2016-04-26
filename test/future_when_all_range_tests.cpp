@@ -15,7 +15,7 @@ Distributed under the Boost Software License, Version 1.0.
 using namespace stlab;
 using namespace test_helper;
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_when_all_void_empty_range) {
         BOOST_TEST_MESSAGE("running future when_all void with empty range");
         size_t p = 0;
@@ -114,7 +114,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, success_fixture<void>)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_when_all_int_empty_range) {
         BOOST_TEST_MESSAGE("running future when_all int with empty range");
         
@@ -145,7 +145,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(1, p);
+        BOOST_REQUIRE_EQUAL(size_t(1), p);
         BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
@@ -171,7 +171,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(4, p);
+        BOOST_REQUIRE_EQUAL(size_t(4), p);
         BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, *sut.get_try());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
@@ -207,7 +207,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, success_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(4, p);
+        BOOST_REQUIRE_EQUAL(size_t(4), p);
         BOOST_REQUIRE_EQUAL(4711+1 + 4711+2 +  4711+3 + 4711+5, *sut.get_try());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_SUITE_END()
 // ----------------------------------------------------------------------------
 
 
-BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>)
+BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
         BOOST_TEST_MESSAGE("running future when_all void with range of one failing element");
         size_t p = 0;
@@ -236,9 +236,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
-        BOOST_REQUIRE_EQUAL(0, p);
-        BOOST_REQUIRE_EQUAL(0, r);
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(size_t(0), p);
+        BOOST_REQUIRE_EQUAL(size_t(0), r);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -261,9 +261,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
-        BOOST_REQUIRE_EQUAL(0, p);
-        BOOST_REQUIRE_EQUAL(0, r);
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(size_t(0), p);
+        BOOST_REQUIRE_EQUAL(size_t(0), r);
     }
     BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_all_failing) {
         BOOST_TEST_MESSAGE("running future when_all void with range with many elements and all failing");
@@ -284,9 +284,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
-        BOOST_REQUIRE_EQUAL(0, p);
-        BOOST_REQUIRE_EQUAL(0, r);
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(size_t(0), p);
+        BOOST_REQUIRE_EQUAL(size_t(0), r);
     }
 
 
@@ -317,7 +317,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(0, r);
         for (auto d : v) {
             BOOST_REQUIRE_EQUAL(0, d);
@@ -344,7 +344,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(0, r);
     }
 
@@ -365,7 +365,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, failure_fixture<void>
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(0, r);
     }
 

@@ -15,7 +15,7 @@ Distributed under the Boost Software License, Version 1.0.
 using namespace stlab;
 using namespace test_helper;
 
-BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
+BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
 #if 0 
     // REVISIT what to do in this case
     BOOST_AUTO_TEST_CASE(future_when_any_void_empty_range) {
@@ -144,32 +144,34 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, success_fixture<void>)
         auto threadBlock = std::make_shared<std::mutex>();
         std::atomic_int r{ 0 };
         size_t index = 0;
-        threadBlock->lock();
-        auto start = async(custom_scheduler<0>(), [] { return 4711; });
-        std::vector<stlab::future<void>> futures(4);
-        futures[0] = start.then(custom_scheduler<0>(), [&_tb = threadBlock, &_r = r](auto x) { std::unique_lock<std::mutex> lock(*_tb); _r = x + 42; }); 
-        futures[1] = start.then(custom_scheduler<1>(), [&_tb = threadBlock, &_r = r](auto x) { std::unique_lock<std::mutex> lock(*_tb); _r = x + 42; });
-        futures[2] = start.then(custom_scheduler<0>(), [&_tb = threadBlock, &_r = r](auto x) { std::unique_lock<std::mutex> lock(*_tb); _r = x + 42; });
-        futures[3] = start.then(custom_scheduler<1>(), [&_tb = threadBlock, &_r = r](auto x) { _r = x; }); 
+        {
+            std::unique_lock<std::mutex> block(*threadBlock);
+            auto start = async(custom_scheduler<0>(), [] { return 4711; });
+            std::vector<stlab::future<void>> futures(4);
+            futures[0] = start.then(custom_scheduler<0>(), [&_tb = threadBlock, &_r = r](auto x) { std::unique_lock<std::mutex> lock(*_tb); _r = x + 42; });
+            futures[1] = start.then(custom_scheduler<1>(), [&_tb = threadBlock, &_r = r](auto x) { std::unique_lock<std::mutex> lock(*_tb); _r = x + 42; });
+            futures[2] = start.then(custom_scheduler<0>(), [&_tb = threadBlock, &_r = r](auto x) { std::unique_lock<std::mutex> lock(*_tb); _r = x + 42; });
+            futures[3] = start.then(custom_scheduler<1>(), [&_tb = threadBlock, &_r = r](auto x) { _r = x; });
 
-        sut = when_any(custom_scheduler<0>(), [&_r = r, &_i = index](size_t index) {
-            _r += _r;
-            _i = index;
-        }, std::make_pair(futures.begin(), futures.end()));
-        check_valid_future(sut);
+            sut = when_any(custom_scheduler<0>(), [&_r = r, &_i = index](size_t index) {
+                _r += _r;
+                _i = index;
+            }, std::make_pair(futures.begin(), futures.end()));
+            check_valid_future(sut);
 
-        wait_until_future_completed(sut);
+            wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(4711 + 4711, r.load());
-        threadBlock->unlock();
+            BOOST_REQUIRE_EQUAL(4711 + 4711, r.load());
+        }
         BOOST_REQUIRE_EQUAL(size_t(3), index);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+        while(threadBlock.use_count() > 1) {}
     }
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, success_fixture<int>)
+BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
 #if 0
 BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
         BOOST_TEST_MESSAGE("running future when_any int with empty range");

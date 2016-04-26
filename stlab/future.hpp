@@ -212,8 +212,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             then = move(_then);
             _ready = true;
         }
-        // propogate exception without scheduling
-        for (const auto& e : then) e.second();
+        // propagate exception without scheduling // FP After usage of recover with scheduling
+        for (const auto& e : then) { e.first(std::move(e.second)); }
     }
 
     template <typename F, typename... Args>
@@ -301,12 +301,12 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         _error = std::move(error);
         then_t then;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        then = std::move(_then);
-        _ready = true;
+            std::unique_lock<std::mutex> lock(_mutex);
+            then = std::move(_then);
+            _ready = true;
         }
-        // propogate exception without scheduling
-        then.second();
+        // propagate exception without scheduling // FP After usage of recover with scheduling
+        then.first(std::move(then.second));
     }
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
@@ -364,7 +364,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     auto recover(F f) { return recover(_schedule, std::move(f)); }
 
     template <typename S, typename F>
-    auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>; // REVISIT Fp The implementation seems to be missing
+    auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>; 
 
     template <typename F>
     auto recover_r(bool, F f) { return recover(_schedule, std::move(f)); }
@@ -376,12 +376,12 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         _error = std::move(error);
         then_t then;
         {
-        std::unique_lock<std::mutex> lock(_mutex);
-        then = std::move(_then);
-        _ready = true;
+            std::unique_lock<std::mutex> lock(_mutex);
+            then = std::move(_then);
+            _ready = true;
         }
-        // propogate exception without scheduling
-        for (const auto& e : then) e.second();
+        // propagate exception without scheduling // FP After usage of recover with scheduling
+        for (const auto& e : then) { e.first(std::move(e.second)); }
     }
 
     auto get_try() -> bool {

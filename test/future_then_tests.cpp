@@ -15,7 +15,7 @@ Distributed under the Boost Software License, Version 1.0.
 using namespace stlab;
 using namespace test_helper;
 
-BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
+BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
 
     BOOST_AUTO_TEST_CASE(future_void_single_task) {
         BOOST_TEST_MESSAGE("running future void single task");
@@ -31,13 +31,28 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler) {
-        BOOST_TEST_MESSAGE("running future void with two task on same scheduler");
+    BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on r-value");
 
         std::atomic_int p{ 0 };
 
         sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
             .then([&_p = p] { _p += 42; });
+        check_valid_future(sut);
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_lvalue) {
+        BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on l-value");
+
+        std::atomic_int p{ 0 };
+
+        auto interim = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
+        sut = interim.then([&_p = p] { _p += 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -121,7 +136,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, success_fixture<void>)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, success_fixture<std::unique_ptr<int>>)
+BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<int>>)
     BOOST_AUTO_TEST_CASE(future_non_copyable_single_task) {
         BOOST_TEST_MESSAGE("running future non copyable single task");
 
@@ -138,10 +153,27 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, success_fixture<std::unique_p
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation) {
-        BOOST_TEST_MESSAGE("running future non copyable as contination");
+    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future non copyable as contination, then on r-value");
 
         sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) {
+            auto r = std::make_unique<int>();
+            *r = x;
+            return std::move(r);
+        });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_then_on_lvalue) {
+        BOOST_TEST_MESSAGE("running future non copyable as contination, then on l-value");
+
+        auto interim = async(custom_scheduler<0>(), [] { return 42; });
+        sut = interim.then([](auto x) {
             auto r = std::make_unique<int>();
             *r = x;
             return std::move(r);
@@ -157,7 +189,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, success_fixture<std::unique_p
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_then_int, success_fixture<int>)
+BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_int_single_task) {
         BOOST_TEST_MESSAGE("running future int single tasks");
@@ -171,11 +203,26 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, success_fixture<int>)
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler) {
-        BOOST_TEST_MESSAGE("running future int two tasks with same scheduler");
+    BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on r-value");
 
         sut = async(custom_scheduler<0>(), [] { return 42; })
             .then([](auto x) { return x + 42; });
+        check_valid_future(sut);
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_lvalue) {
+        BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on l-value");
+
+
+        auto interim = async(custom_scheduler<0>(), [] { return 42; });
+        sut = interim.then([](auto x) { return x + 42; });
+
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -274,7 +321,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, success_fixture<int>)
 //                             Error cases
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(future_void_then_error, failure_fixture<void>)
+BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_void_single_task_error) {
         BOOST_TEST_MESSAGE("running future void with single tasks that fails");
 
@@ -282,7 +329,7 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, failure_fixture<void>)
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -296,7 +343,7 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, failure_fixture<void>)
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(0, p);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
@@ -311,14 +358,14 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, failure_fixture<void>)
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(42, p);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
     }
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
+BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_int_single_task_error) {
         BOOST_TEST_MESSAGE("running future int with single tasks that fails");
@@ -326,7 +373,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
         sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -339,7 +386,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(0, p);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
@@ -354,7 +401,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
 
         wait_until_future_fails<test_exception>(sut);
 
-        check_failure<test_exception>(sut, std::string("failure"));
+        check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(42, p);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
     }
@@ -370,8 +417,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
 
         wait_until_future_fails<test_exception>(f1, f2);
 
-        check_failure<test_exception>(f1, std::string("failure"));
-        check_failure<test_exception>(f2, std::string("failure"));
+        check_failure<test_exception>(f1, "failure");
+        check_failure<test_exception>(f2, "failure");
         BOOST_REQUIRE_EQUAL(0, p);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
@@ -386,7 +433,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
         wait_until_future_completed(f2);
         wait_until_future_fails<test_exception>(f1);
 
-        check_failure<test_exception>(f1, std::string("failure"));
+        check_failure<test_exception>(f1, "failure");
         BOOST_REQUIRE_EQUAL(42 + 4711, *f2.get_try());
         BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
     }
@@ -400,8 +447,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, failure_fixture<int>)
 
         wait_until_future_fails<test_exception>(f1, f2);
 
-        check_failure<test_exception>(f1, std::string("failure"));
-        check_failure<test_exception>(f2, std::string("failure"));
+        check_failure<test_exception>(f1, "failure");
+        check_failure<test_exception>(f2, "failure");
         BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
     }
 
