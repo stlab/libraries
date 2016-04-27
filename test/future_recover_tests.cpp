@@ -14,38 +14,21 @@ Distributed under the Boost Software License, Version 1.0.
 using namespace stlab;
 using namespace test_helper;
 
-namespace
-{
-    template <typename T>
-    class scoped_bool_setter
-    {
-        T& _v;
-    public:
-        explicit scoped_bool_setter(T& v) : _v(v) {}
-
-        ~scoped_bool_setter() { _v = true; }
-    };
-}
-
 BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_before_recover_initialized_on_rvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on r-value");
 
-        std::atomic_bool check{ false };
         auto error = false;
 
         sut = async(custom_scheduler<0>(), [&_error = error] {
-            _error = true;
-            throw test_exception("failure"); })
-            .recover([&_check = check](auto failedFuture) {
+                _error = true;
+                throw test_exception("failure"); })
+            .recover([](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
             });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
     }
@@ -53,22 +36,18 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_before_recover_initialized_on_lvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on l-value");
 
-        std::atomic_bool check{ false };
         auto error = false;
 
         auto interim = async(custom_scheduler<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure"); });
 
-        sut = interim.recover([&_check = check](auto failedFuture) {
+        sut = interim.recover([](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
             });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
     }
@@ -76,20 +55,17 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_before_recover_initialized_with_custom_scheduler_on_rvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure before recover initialized, with custom scheduler on r-value");
 
-        std::atomic_bool check{ false };
         auto error = false;
 
         sut = async(custom_scheduler<0>(), [&_error = error] {
-                                            _error = true;
-                                            throw test_exception("failure");})
-            .recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
-                                            check_failure<test_exception>(failedFuture, "failure");
-                                            _check = true;});
+                _error = true;
+                throw test_exception("failure");})
+            .recover(custom_scheduler<1>(), [](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+                });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -98,20 +74,17 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_before_recover_initialized_with_custom_scheduler_on_lvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure before recover initialized, with custom scheduler on l-value");
 
-        std::atomic_bool check{ false };
         auto error = false;
 
         auto interim = async(custom_scheduler<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure"); });
-        sut = interim.recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+        sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true; });
+            });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -120,7 +93,6 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_after_recover_initialized_on_rvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure after recover initialized on r-value");
 
-        std::atomic_bool check{ false };
         auto error = false;
         std::mutex block;
 
@@ -130,22 +102,18 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 std::unique_lock<std::mutex> lock(_block);
                 _error = true;
                 throw test_exception("failure");
-            }).recover([&_check = check](auto failedFuture) {
+            }).recover([](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
             });
         }
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_after_recover_initialized_on_lvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure after recover initialized on l-value");
 
-        std::atomic_bool check{ false };
         auto error = false;
         std::mutex block;
 
@@ -156,21 +124,19 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 _error = true;
                 throw test_exception("failure");
             });
-            sut = interim.recover([&_check = check](auto failedFuture) {
+            sut = interim.recover([](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
             });
         }
-        wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
+        wait_until_future_completed(sut);
+
         BOOST_REQUIRE(error);
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_after_recover_initialized_with_custom_scheduler_on_rvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure after recover initialized with custom scheduler on r-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         std::mutex block;
 
@@ -180,15 +146,13 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 std::unique_lock<std::mutex> lock(_block);
                 _error = true;
                 throw test_exception("failure");
-            }).recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+            }).recover(custom_scheduler<1>(), [](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
             });
         }
-        wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
+        wait_until_future_completed(sut);
+
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -196,7 +160,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 
     BOOST_AUTO_TEST_CASE(future_recover_recover_failure_after_recover_initialized_with_custom_scheduler_on_lvalue) {
         BOOST_TEST_MESSAGE("running future recover, failure after recover initialized with custom scheduler on l-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         std::mutex block;
 
@@ -207,15 +171,13 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 _error = true;
                 throw test_exception("failure");
             });
-            sut = interim.recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+            sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
             });
         }
-        wait_until_future_completed(sut);
-        while (!check.load()) {}
 
-        BOOST_REQUIRE(check);
+        wait_until_future_completed(sut);
+
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -227,52 +189,46 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_before_recover_initialized_on_rvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure before recover initialized on r-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         
         sut = async(custom_scheduler<0>(), [&_error = error]()->int {
             _error = true;
             throw test_exception("failure");
-        }).recover([&_check = check](auto&& failedFuture) {
+        }).recover([](auto&& failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
-            _check = true;
             return 42;
         });
 
         wait_until_future_completed(sut);
-        while(!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_before_recover_initialized_on_lvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure before recover initialized on l-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
 
         auto interim = async(custom_scheduler<0>(), [&_error = error]()->int {
             _error = true;
             throw test_exception("failure");
         });
-        sut = interim.recover([&_check = check](auto failedFuture) {
+        sut = interim.recover([](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
-            _check = true;
             return 42;
         });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_after_recover_initialized_on_rvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure after recover initialized on r-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         std::mutex block;
 
@@ -282,24 +238,21 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
                 std::unique_lock<std::mutex> lock(_block);
                 _error = true;
                 throw test_exception("failure");
-            }).recover([&_check = check](auto failedFuture) {
+            }).recover([](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
                 return 42;
             });
         }
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_after_recover_initialized_on_lvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure after recover initialized on l-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         std::mutex block;
 
@@ -310,41 +263,35 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
                 _error = true;
                 throw test_exception("failure");
             });
-            sut = interim.recover([&_check = check](auto failedFuture) {
+            sut = interim.recover([](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
                 return 42;
             });
         }
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
     }
 
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_before_recover_initialized_with_custom_scheduler_on_rvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure before recover initialized with custom scheduler on r-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
 
         sut = async(custom_scheduler<0>(), [&_error = error]()->int {
             _error = true;
             throw test_exception("failure");
-        }).recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+        }).recover(custom_scheduler<1>(), [](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
-            _check = true;
             return 42;
         });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -352,24 +299,21 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_before_recover_initialized_with_custom_scheduler_on_lvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure before recover initialized with custom scheduler on l-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
 
         auto interim = async(custom_scheduler<0>(), [&_error = error]()->int {
             _error = true;
             throw test_exception("failure");
         });
-        sut = interim.recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+        sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
-            _check = true;
             return 42;
         });
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -377,7 +321,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_after_recover_initialized_with_custom_scheduler_on_rvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure after recover initialized with custom scheduler on r-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         std::mutex block;
 
@@ -387,18 +331,15 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
                 std::unique_lock<std::mutex> lock(_block);
                 _error = true;
                 throw test_exception("failure");
-            }).recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+            }).recover(custom_scheduler<1>(), [](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
                 return 42;
             });
         }
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -406,7 +347,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_after_recover_initialized_with_custom_scheduler_on_lvalue) {
         BOOST_TEST_MESSAGE("running future int recover, failure after recover initialized with custom scheduler on l-value");
-        std::atomic_bool check{ false };
+
         auto error = false;
         std::mutex block;
 
@@ -417,18 +358,15 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
                 _error = true;
                 throw test_exception("failure");
             });
-            sut = interim.recover(custom_scheduler<1>(), [&_check = check](auto failedFuture) {
+            sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
                 check_failure<test_exception>(failedFuture, "failure");
-                _check = true;
                 return 42;
             });
         }
 
         wait_until_future_completed(sut);
-        while (!check.load()) {}
 
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
-        BOOST_REQUIRE(check);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
