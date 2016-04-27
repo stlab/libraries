@@ -153,8 +153,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_then_on_rvalue) {
-        BOOST_TEST_MESSAGE("running future non copyable as contination, then on r-value");
+    BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with same scheduler, then on r-value");
 
         sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) {
             auto r = std::make_unique<int>();
@@ -169,8 +169,26 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_then_on_lvalue) {
-        BOOST_TEST_MESSAGE("running future non copyable as contination, then on l-value");
+    BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_different_scheduler_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with different scheduler, then on r-value");
+
+        sut = async(custom_scheduler<0>(), [] { return 42; })
+            .then(custom_scheduler<1>(), [](auto x) {
+                auto r = std::make_unique<int>();
+                *r = x;
+                return std::move(r);
+            });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_same_scheduler_then_on_lvalue) {
+        BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with same scheduler, then on l-value");
 
         auto interim = async(custom_scheduler<0>(), [] { return 42; });
         sut = interim.then([](auto x) {
@@ -184,6 +202,65 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
 
         BOOST_REQUIRE_EQUAL(42, **result);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_different_scheduler_then_on_lvalue) {
+        BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with different scheduler, then on l-value");
+
+        auto interim = async(custom_scheduler<0>(), [] { return 42; });
+        sut = interim.then(custom_scheduler<1>(), [](auto x) {
+            auto r = std::make_unique<int>();
+            *r = x;
+            return std::move(r);
+        });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future non copyable as contination with same scheduler, then on r-value");
+
+        sut = async(custom_scheduler<0>(), [] {
+                auto result = std::make_unique<int>();
+                *result = 42;
+                return std::move(result); })
+            .then([](auto x) {
+                auto r = std::make_unique<int>();
+                *r = *x * 2;
+                return std::move(r);
+            });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 * 2, **result);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_scheduler_then_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future non copyable as contination with different scheduler, then on r-value");
+
+        sut = async(custom_scheduler<0>(), [] {
+                auto result = std::make_unique<int>();
+                *result = 42;
+                return std::move(result); })
+            .then(custom_scheduler<1>(), [](auto x) {
+                auto r = std::make_unique<int>();
+                *r = *x * 2;
+                return std::move(r);
+            });
+        check_valid_future(sut);
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 * 2, **result);
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
     }
 
 BOOST_AUTO_TEST_SUITE_END()

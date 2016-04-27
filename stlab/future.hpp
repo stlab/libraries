@@ -687,6 +687,7 @@ class future<T, detail::enable_if_not_copyable<T>> {
     ptr_t _p;
 
     explicit future(ptr_t p) : _p(std::move(p)) { }
+    future(const future&) = default;
 
     template <typename Signature, typename S, typename F>
     friend auto package(S, F)
@@ -699,7 +700,6 @@ class future<T, detail::enable_if_not_copyable<T>> {
     using result_type = T;
 
     future() = default;
-    future(const future&) = delete;
     future(future&&) noexcept = default;
     future& operator=(const future&) = delete;
     future& operator=(future&&) noexcept = default;
@@ -865,7 +865,7 @@ namespace detail
     struct context_apply_result {
         using result_type = std::vector<R>;
 
-        context_apply_result(size_t size) : _results(size) {}
+        explicit context_apply_result(size_t size) : _results(size) {}
 
         template <typename C, typename F>
         void apply_result(C& c, F& f, size_t index) {
@@ -878,7 +878,7 @@ namespace detail
     struct context_apply_void {
         using result_type = void;
 
-        context_apply_void(size_t) {}
+        explicit context_apply_void(size_t) {}
 
         template <typename C, typename F>
         void apply_result(C&, F&, size_t) {
@@ -1018,6 +1018,7 @@ namespace detail
                 _error = std::move(error);
                 _f();
             }
+            --_remaining;
         }
     };
 

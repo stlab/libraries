@@ -132,6 +132,34 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }
+
+    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_all_fails) {
+        BOOST_TEST_MESSAGE("running future when_any void with range all fails");
+        std::atomic_size_t failures{ 0 };
+        size_t index = 4711;
+        int r = 0;
+
+        std::vector<stlab::future<int>> futures;
+        futures.push_back(async(custom_scheduler<1>(), [&_f = failures]()->int { _f += 1; throw test_exception("failure"); }));
+        futures.push_back(async(custom_scheduler<0>(), [&_f = failures]()->int { _f += 1; throw test_exception("failure"); }));
+        futures.push_back(async(custom_scheduler<1>(), [&_f = failures]()->int { _f += 1; throw test_exception("failure"); }));
+        futures.push_back(async(custom_scheduler<0>(), [&_f = failures]()->int { _f += 1; throw test_exception("failure"); }));
+
+        sut = when_any(custom_scheduler<0>(), [&_i = index, &_r = r](int x, size_t index) {
+            _i = index;
+            _r = x;
+        }, std::make_pair(futures.begin(), futures.end()));
+        check_valid_future(sut);
+
+        wait_until_future_fails<test_exception>(sut);
+
+        BOOST_REQUIRE_EQUAL(size_t(4711), index);
+        BOOST_REQUIRE_EQUAL(0, r);
+        BOOST_REQUIRE_GE(size_t(4), failures.load());
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    }
+
     /*
          /  F1  \
         / / F2 \ \
