@@ -31,6 +31,17 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
+    BOOST_AUTO_TEST_CASE(future_void_single_task_detached) {
+        BOOST_TEST_MESSAGE("running future void single task detached");
+
+        std::atomic_int p = 0;
+
+        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
+        sut.detach();
+
+        while (p.load() != 42) {}
+    }
+
     BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_rvalue) {
         BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on r-value");
 
@@ -278,6 +289,14 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
+        BOOST_TEST_MESSAGE("running future int single tasks, detached");
+        std::atomic_bool check{ false };
+        sut = async(custom_scheduler<0>(), [&_check = check] { _check = true;  return 42; });
+        sut.detach();
+        while (!check) {}
     }
 
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
