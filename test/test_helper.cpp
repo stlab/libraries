@@ -12,6 +12,10 @@ template<>
 std::atomic_int custom_scheduler<0>::_usage_counter{ 0 };
 template<>
 std::atomic_int custom_scheduler<1>::_usage_counter{ 0 };
+template<>
+std::atomic_int custom_scheduler<0>::_current_tasks_in_execution{ 0 };
+template<>
+std::atomic_int custom_scheduler<1>::_current_tasks_in_execution{ 0 };
 
 test_exception::test_exception(const std::string& error)
     : _error(error)

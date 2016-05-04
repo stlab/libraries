@@ -27,15 +27,18 @@ namespace test_helper
         template <typename F>
         void operator()(F f) {
             ++_usage_counter;
-             std::thread(std::move(f)).detach();
+            ++_current_tasks_in_execution;
+            std::thread([&_current_count = _current_tasks_in_execution, _f = std::move(f)]{ _f(); --_current_count; }).detach();
         }
 
         static int usage_counter() { return _usage_counter.load(); }
-        static void reset_usage_counter() { _usage_counter = 0; }
+        static void reset() { _usage_counter = 0; _current_tasks_in_execution = 0; }
+        static int current_tasks_in_execution() { return _current_tasks_in_execution.load(); }
 
     private:
         const size_t _id = no; // only used for debugging purpose
         static std::atomic_int _usage_counter;
+        static std::atomic_int _current_tasks_in_execution;
     };
 
 
@@ -54,8 +57,8 @@ namespace test_helper
     struct test_setup
     {
         test_setup() {
-            custom_scheduler<0>::reset_usage_counter();
-            custom_scheduler<1>::reset_usage_counter();
+            custom_scheduler<0>::reset();
+            custom_scheduler<1>::reset();
         }
     };
 
@@ -63,8 +66,15 @@ namespace test_helper
     struct test_fixture
     {
         test_fixture() {
-            custom_scheduler<0>::reset_usage_counter();
-            custom_scheduler<1>::reset_usage_counter();
+            custom_scheduler<0>::reset();
+            custom_scheduler<1>::reset();
+        }
+
+        ~test_fixture() {
+		    // work in progress: ensure that all futures have finished before end of 
+			// text fixture ends, otherwise boost.test complains about memory leaks
+            //sut = stlab::future<T>();
+            //while (custom_scheduler<0>::current_tasks_in_execution() && custom_scheduler<1>::current_tasks_in_execution());
         }
 
         stlab::future<T> sut;

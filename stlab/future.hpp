@@ -457,6 +457,12 @@ class packaged_task {
     friend auto package(S, F)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
+
+    template <typename Signature, typename S, typename F>
+    friend auto package_with_broken_promise(S, F)
+        ->std::pair<detail::packaged_task_from_signature_t<Signature>,
+        future<detail::result_of_t_<Signature>>>;
+
 public:
     packaged_task() = default;
 
@@ -496,6 +502,11 @@ class future<T, detail::enable_if_copyable<T>> {
     friend auto package(S, F)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
+
+    template <typename Signature, typename S, typename F>
+    friend auto package_with_broken_promise(S, F)
+        ->std::pair<detail::packaged_task_from_signature_t<Signature>,
+        future<detail::result_of_t_<Signature>>>;
 
     friend struct detail::shared_base<T>;
 
@@ -596,7 +607,12 @@ class future<void, void> {
     friend auto package(S, F)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
-                
+
+    template <typename Signature, typename S, typename F>
+    friend auto package_with_broken_promise(S, F)
+        ->std::pair<detail::packaged_task_from_signature_t<Signature>,
+        future<detail::result_of_t_<Signature>>>;
+
     friend struct detail::shared_base<void>;
 
   public:
@@ -693,7 +709,12 @@ class future<T, detail::enable_if_not_copyable<T>> {
     friend auto package(S, F)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                 future<detail::result_of_t_<Signature>>>;
-    
+
+    template <typename Signature, typename S, typename F>
+    friend auto package_with_broken_promise(S, F)
+        ->std::pair<detail::packaged_task_from_signature_t<Signature>,
+        future<detail::result_of_t_<Signature>>>;
+
     friend struct detail::shared_base<T>;
 
   public:
@@ -764,6 +785,16 @@ auto package(S s, F f) -> std::pair<detail::packaged_task_from_signature_t<Sig>,
     auto p = std::make_shared<detail::shared<Sig>>(std::move(s), std::move(f));
     return std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
             future<detail::result_of_t_<Sig>>(p));
+}
+
+template <typename Sig, typename S, typename F>
+auto package_with_broken_promise(S s, F f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
+    auto p = std::make_shared<detail::shared<Sig>>(std::move(s), std::move(f));
+    auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
+        future<detail::result_of_t_<Sig>>(p));
+    result.second._p->_error = std::make_exception_ptr(std::future_error(std::future_errc::broken_promise));
+    result.second._p->_ready = true;
+    return result;
 }
 
 /**************************************************************************************************/
@@ -1108,9 +1139,8 @@ namespace detail
         static auto do_it(S&& s, F&& f, I first, I last) {
             using result_t = typename std::result_of<F(R, size_t)>::type;
 
-            if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
-                auto p = package<result_t()>(std::forward<S>(s), std::bind(std::forward<F>(f), R(), 0));
-                s(std::move(p.first));
+            if (first == last) {
+                auto p = package_with_broken_promise<result_t()>(std::forward<S>(s), std::bind(std::forward<F>(f), R(), 0));
                 return std::move(p.second);
             }
 
@@ -1140,9 +1170,8 @@ namespace detail
         static auto do_it(S&& s, F&& f, I first, I last) {
             using result_t = typename std::result_of<F(size_t)>::type;
 
-            if (first == last) { // REVISIT Fp Does it make sense to have a when_any with an empty range
-                auto p = package<void()>(std::forward<S>(s), std::bind(std::forward<F>(f), 0));
-                s(std::move(p.first));
+            if (first == last) {
+                auto p = package_with_broken_promise<void()>(std::forward<S>(s), std::bind(std::forward<F>(f), 0));                
                 return std::move(p.second);
             }
 

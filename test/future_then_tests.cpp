@@ -35,10 +35,10 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         BOOST_TEST_MESSAGE("running future void single task detached");
 
         std::atomic_int p = 0;
-
-        sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
-        sut.detach();
-
+        {
+            auto detached = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
+            detached.detach();
+        }
         while (p.load() != 42) {}
     }
 
@@ -294,8 +294,10 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
         BOOST_TEST_MESSAGE("running future int single tasks, detached");
         std::atomic_bool check{ false };
-        sut = async(custom_scheduler<0>(), [&_check = check] { _check = true;  return 42; });
-        sut.detach();
+        {
+            auto detached = async(custom_scheduler<0>(), [&_check = check] { _check = true;  return 42; });
+            detached.detach();
+        }
         while (!check) {}
     }
 
