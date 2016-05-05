@@ -1371,6 +1371,17 @@ struct default_scheduler {
     }
 };
 
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+struct default_scheduler
+{
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        detail::async_(std::move(f));
+    }
+};
+
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 struct default_scheduler {
