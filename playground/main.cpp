@@ -11,7 +11,6 @@
 #include <utility>
 #include <exception>
 #include <stlab/channel.hpp>
-#include <Windows.h>
 
 using namespace stlab;
 using namespace std;
@@ -216,7 +215,7 @@ void channelExample()
     receiver.set_ready(); // close this end of the pipe
 
     // Wait for everything to execute (just for demonstration)
-    Sleep(100);
+    //Sleep(100);
 }
 
 

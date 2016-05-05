@@ -34,7 +34,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_void_single_task_detached) {
         BOOST_TEST_MESSAGE("running future void single task detached");
 
-        std::atomic_int p = 0;
+        std::atomic_int p{ 0 };
         {
             auto detached = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
             detached.detach();

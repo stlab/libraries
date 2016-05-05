@@ -28,9 +28,11 @@
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_EMSCRIPTEN
 #endif
 
-#endif _MSC_VER
+#elif _MSC_VER
 #ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_WINDOWS
+#endif
+
 #endif
 
 // Default configuration
