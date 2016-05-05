@@ -12,6 +12,10 @@ if (APPLE OR WIN32)
     set(Boost_USE_STATIC_LIBS TRUE)
 endif()
 
+if(WIN32)
+  add_definitions(-D_WIN32_WINNT=0x0601)
+endif(WIN32)
+
 set (Boost_MULTITHREADED ON) 
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)

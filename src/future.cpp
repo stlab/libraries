@@ -24,8 +24,7 @@
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-#include <windows.h>
-#include <Threadpoolapiset.h>
+#include <Windows.h>
 
 #endif
 
@@ -207,9 +206,11 @@ struct timed_queue {
 
 class task_system
 {
-    PTP_POOL _thread_pool;
+    PTP_POOL            _thread_pool;
     TP_CALLBACK_ENVIRON _callback_environment;
+
 public:
+
     task_system() {
         InitializeThreadpoolEnvironment(&_callback_environment);
         _thread_pool = CreateThreadpool(NULL);
@@ -226,25 +227,25 @@ public:
     }
 
     template <typename F>
-    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE instance,
-        PVOID                 parameter,
-        PTP_WORK              Work) {
-        auto f = static_cast<F*>(parameter);
-        (*f)();
-        delete f;
-    }
-
-    template <typename F>
-    void async_(F&& f) {
-        using f_t = decltype(f);
-        
-        auto work = CreateThreadpoolWork((&callback_impl<F>), new F(std::move(f)), &_callback_environment);
-
+    void async_(F&& f) {     
+        auto work = CreateThreadpoolWork(&callback_impl<F>, 
+                                         new F(std::forward<F>(f)), 
+                                         &_callback_environment);
         if (NULL == work) {
             // todo throw?
         }
-
         SubmitThreadpoolWork(work);
+    }
+
+private:
+
+    template <typename F>
+    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE instance,
+                                       PVOID                 parameter,
+                                       PTP_WORK              Work) {
+        auto f = static_cast<F*>(parameter);
+        (*f)();
+        delete f;
     }
 };
 
