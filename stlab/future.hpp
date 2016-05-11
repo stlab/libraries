@@ -828,13 +828,13 @@ struct when_all_shared {
 
 };
 
-inline void throw_if_false(bool x, boost::optional<std::exception_ptr>& p) {
+inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
     if (!x) std::rethrow_exception(p.get());;
 }
 
 template <typename F, typename Args, typename P, std::size_t... I>
 auto apply_when_all_args_(const F& f, Args& args, P& p, std::index_sequence<I...>) {
-    (void)std::initializer_list<int>{(throw_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
+    (void)std::initializer_list<int>{(rethrow_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
     return f(std::move(std::get<I>(args).get())...);
 }
 
@@ -991,7 +991,6 @@ namespace detail
             });
 
             return std::move(p.second);
-
         }
     };
 

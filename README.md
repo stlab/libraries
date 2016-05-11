@@ -27,7 +27,7 @@ If the associated task through an exception, get_try() with rethrow the exceptio
 
 For a future<T> if T is move only then the future is move only and can only contain one continuation.
 
-[ TODO - for notification of errors the plan is to add a recover() clause to futures which is passed the exception and may return a value T or rethrow. recover() will be executed prior to continuations. ]
+In case a recover() clause is defined, then a failed future is passed to it an offers an appropriate error handling. recover() will be executed prior to continuations. ]
 
 when_all() takes either an n'ary function and n futures as arguments or a variable range of futures
 
@@ -58,6 +58,55 @@ auto schedule = [](auto f) // F is void() and movable
 };
 ```
 
+Here is an example scheduler that executes the task in the Qt main loop, e.g. to
+update a UI element.
+```C++
+class QtScheduler
+{
+    class EventReceiver;
+
+    class SchedulerEvent : public QEvent
+    {
+        std::function<void()> _f;
+        std::unique_ptr<EventReceiver> _receiver;
+
+    public:
+        explicit SchedulerEvent(std::function<void()> f)
+            : QEvent(QEvent::User)
+            , _f(std::move(f))
+            , _receiver(new EventReceiver()) {
+        }
+
+        void execute() {
+            _f();
+        }
+
+        QObject *receiver() const { return _receiver.get(); }
+    };
+
+    class EventReceiver : public QObject
+    {
+    public:
+        bool event(QEvent *event) override {
+            auto myEvent = dynamic_cast<SchedulerEvent*>(event);
+            if (myEvent) {
+                myEvent->execute();
+                return true;
+            }
+            return false;
+        }
+    };
+
+public:
+    template <typename F>
+    void operator()(F&& f) {
+        auto event = new SchedulerEvent(std::forward<F>(f));
+        QApplication::postEvent(event->receiver(), event);
+    }
+};
+
+```
+Future interface
 ```c++
 template<typename R, typename ...Args >
 class packaged_task<R (Args...)> {

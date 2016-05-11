@@ -221,8 +221,7 @@ public:
         SetThreadpoolCallbackPool(&_callback_environment, _thread_pool);
     }
 
-    ~task_system()
-    {
+    ~task_system() {
         CloseThreadpool(_thread_pool);
     }
 
