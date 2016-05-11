@@ -27,18 +27,15 @@ namespace test_helper
         template <typename F>
         void operator()(F f) {
             ++_usage_counter;
-            ++_current_tasks_in_execution;
-            std::thread([&_current_count = _current_tasks_in_execution, _f = std::move(f)]{ _f(); --_current_count; }).detach();
+            stlab::default_scheduler()(std::move(f));
         }
 
         static int usage_counter() { return _usage_counter.load(); }
-        static void reset() { _usage_counter = 0; _current_tasks_in_execution = 0; }
-        static int current_tasks_in_execution() { return _current_tasks_in_execution.load(); }
+        static void reset() { _usage_counter = 0; }
 
     private:
         const size_t _id = no; // only used for debugging purpose
         static std::atomic_int _usage_counter;
-        static std::atomic_int _current_tasks_in_execution;
     };
 
 
@@ -121,13 +118,17 @@ namespace test_helper
     private:
         template <typename F>
         void wait_until_future_is_ready(F& f) {
-            while (!f.get_try()) {}
+            while (!f.get_try()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
 
         template <typename E, typename F>
         void wait_until_this_future_fails(F& f) {
             try {
-                while (!f.get_try()) {}
+                while (!f.get_try()) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
             }
             catch (const E&) {
             }
