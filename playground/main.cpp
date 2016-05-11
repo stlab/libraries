@@ -6,19 +6,16 @@
 
 /**************************************************************************************************/
 
-#define BOOST_TEST_MODULE stlab_libraries_tests
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-
-#if 0
 #include <iostream>
 #include <stlab/future.hpp>
 #include <utility>
 #include <exception>
+#include <stlab/channel.hpp>
 
 using namespace stlab;
 using namespace std;
 
+#if 0
 void simple_continuation() {
     cout << "start tasking test" << endl;
     auto f1 = async(default_scheduler(), [] { return 42; }).then(
@@ -156,6 +153,7 @@ void activeProgressExample()
 
     std::cout << "Result: " << *f2.get_try() << std::endl;
 }
+#endif
 
 /*
 sum is an example of an accumulating "co-routine". It will await for values, keeping an
@@ -221,8 +219,11 @@ void channelExample()
 }
 
 
+
+
 int main(int argc, char **argv)
 {
+#if 0
     simple_continuation();
     when_all_with_multiple_arguments();
     when_all_with_empty_range();
@@ -233,8 +234,9 @@ int main(int argc, char **argv)
     recover_with_a_continuation();
     passivProgressExample();
     activeProgressExample();
-    channelExample()
 
+#endif // 0    
+    channelExample();
+    int i;
+    cin >> i;
 }
-
-#endif

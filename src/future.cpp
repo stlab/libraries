@@ -6,21 +6,36 @@
 
 /**************************************************************************************************/
 
+#include <stlab/future.hpp>
+#include <functional>
+
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
+#include <atomic>
+#include <condition_variable>
 #include <deque>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <vector>
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
 
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+
+#include <Windows.h>
+
+#endif
+
 using namespace std;
 
 /**************************************************************************************************/
 
+
 namespace {
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 /**************************************************************************************************/
 
@@ -183,10 +198,58 @@ struct timed_queue {
     }
 
 };
-
 #endif
 
 /**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+
+class task_system
+{
+    PTP_POOL            _thread_pool;
+    TP_CALLBACK_ENVIRON _callback_environment;
+
+public:
+
+    task_system() {
+        InitializeThreadpoolEnvironment(&_callback_environment);
+        _thread_pool = CreateThreadpool(NULL);
+
+        if (NULL == _thread_pool) {
+            // Throw???
+        }
+        SetThreadpoolCallbackPool(&_callback_environment, _thread_pool);
+    }
+
+    ~task_system()
+    {
+        CloseThreadpool(_thread_pool);
+    }
+
+    template <typename F>
+    void async_(F&& f) {     
+        auto work = CreateThreadpoolWork(&callback_impl<F>, 
+                                         new F(std::forward<F>(f)), 
+                                         &_callback_environment);
+        if (NULL == work) {
+            // todo throw?
+        }
+        SubmitThreadpoolWork(work);
+    }
+
+private:
+
+    template <typename F>
+    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE instance,
+                                       PVOID                 parameter,
+                                       PTP_WORK              Work) {
+        auto f = static_cast<F*>(parameter);
+        (*f)();
+        delete f;
+    }
+};
+
+#endif
 
 } // namespace
 
@@ -209,9 +272,3 @@ void async_(function<void()> f) {
 } // namespace stlab
 
 /**************************************************************************************************/
-
-// STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-#endif
-
-/**************************************************************************************************/
-

@@ -2,10 +2,6 @@ project(future C CXX)
 
 include_directories("${PROJECT_SOURCE_DIR}/..")
 
-if(WIN32)
-  add_definitions(-D_WIN32_WINNT=0x0501)
-endif(WIN32)
-
 set(SOURCE
   future.cpp
 )
@@ -13,7 +9,9 @@ set(SOURCE
 set(HEADERS
   ../stlab/config.hpp
   ../stlab/channel.hpp
+  ../stlab/expected.hpp
   ../stlab/future.hpp
+  ../stlab/progress.hpp
 )
 
 include_directories(${Boost_INCLUDE_DIRS})
