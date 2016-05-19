@@ -302,11 +302,13 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         then_t then;
         {
             std::unique_lock<std::mutex> lock(_mutex);
-            then = std::move(_then);
+            if (_then.second)
+                then = std::move(_then);
             _ready = true;
         }
         // propagate exception without scheduling // FP After usage of recover with scheduling
-        then.first(std::move(then.second));
+        if (then.second)
+            then.first(std::move(then.second));
     }
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
@@ -583,6 +585,11 @@ class future<T, detail::enable_if_copyable<T>> {
         return _p->get_try();
     }
 
+    // Fp Does it make sense to have this? At the moment I don't see a real use case for it.
+    // One can only ask once on an r-value and then the future is gone.
+    // To perform this in an l-value casted to an r-value does not make sense either,
+    // because in this case _p is not unique any more and internally it is forwarded to
+    // the l-value get_try.
     auto get_try() && {
         assert(valid()); 
         return _p->get_try_r(_p.unique());
@@ -753,7 +760,7 @@ class future<T, detail::enable_if_not_copyable<T>> {
 
     void detach() const {
         assert(valid()); 
-        then([_hold = _p](auto f){ }, [](const auto& x){ });
+        _p->then_r(_p.unique(), [_hold = _p](auto f) {}, [](auto&&) {});
     }
 
     bool cancel_try() {
@@ -1035,11 +1042,11 @@ namespace detail
             , _holds(_remaining)
         {}
 
-        std::atomic_size_t                    _remaining;
+        std::atomic_size_t                    _remaining{0};
         std::vector<future<void>>             _holds;
         std::mutex                            _mutex;
         boost::optional<std::exception_ptr>   _error;
-        size_t                                _index;
+        size_t                                _index{0};
         packaged_task<>                       _f;
 
         void failure(std::exception_ptr error) {

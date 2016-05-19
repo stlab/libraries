@@ -15,9 +15,24 @@ Distributed under the Boost Software License, Version 1.0.
 using namespace stlab;
 using namespace test_helper;
 
+using lock_t = std::unique_lock<std::mutex>;
+
 BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
-    BOOST_AUTO_TEST_CASE(future_when_any_void_empty_range) {
-        BOOST_TEST_MESSAGE("running future when_all void with empty range");
+    BOOST_AUTO_TEST_CASE(future_when_any_void_void_empty_range) {
+        BOOST_TEST_MESSAGE("running future when_all void void with empty range");
+        auto check{ false };
+        std::vector<stlab::future<void>> emptyFutures;
+        sut = when_any(custom_scheduler<0>(), [&_check = check](size_t index) { _check = true;
+        }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
+
+        wait_until_future_fails<std::future_error>(sut);
+
+        BOOST_REQUIRE(!check);
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_when_any_void_int_empty_range) {
+        BOOST_TEST_MESSAGE("running future when_all void int with empty range");
         auto check{ false };
         std::vector<stlab::future<int>> emptyFutures;
         sut = when_any(custom_scheduler<0>(), [&_check = check](int x, size_t index) { _check = true;
@@ -235,27 +250,65 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
 
     BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_many_elements) {
         BOOST_TEST_MESSAGE("running future when_any int with range with many elements and the last suceeds");
-        size_t index = 0;
-        auto threadBlock = std::make_shared<std::mutex>();
+        size_t used_future_index = 0;
+        auto mutex = std::make_shared<std::mutex>();
+        std::atomic_bool go{ false };
+        std::atomic_int task_counter{ 0 };
+        std::atomic_int any_task_execution_counter{ 0 };
+        std::condition_variable thread_block;
+        
+        std::vector<stlab::future<int>> futures;
+        futures.push_back(async(custom_scheduler<0>(), 
+            [_tb = mutex, &_go = go, &_block = thread_block, &_task_counter = task_counter ]
+            { 
+                lock_t lock(*_tb); 
+                while (!_go) {
+                    _block.wait(lock);
+                }
+                ++_task_counter;
+                return 42; 
+        }));
+        futures.push_back(async(custom_scheduler<1>(), 
+            [_tb = mutex, &_go = go, &_block = thread_block, &_task_counter = task_counter]
         {
-            std::unique_lock<std::mutex> block(*threadBlock);
-            std::vector<stlab::future<int>> futures;
-            futures.push_back(async(custom_scheduler<0>(), [_tb = threadBlock] { std::unique_lock<std::mutex> lock(*_tb); return 1; }));
-            futures.push_back(async(custom_scheduler<1>(), [_tb = threadBlock] { std::unique_lock<std::mutex> lock(*_tb); return 2; }));
-            futures.push_back(async(custom_scheduler<0>(), [_tb = threadBlock] { std::unique_lock<std::mutex> lock(*_tb); return 3; }));
-            futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
+            lock_t lock(*_tb);
+            while (!_go) {
+                _block.wait(lock);
+            }
+            ++_task_counter;
+            return 815;
+        }));
+        futures.push_back(async(custom_scheduler<0>(), 
+            [_tb = mutex, &_go = go, &_block = thread_block, &_task_counter = task_counter]
+        {
+            lock_t lock(*_tb);
+            while (!_go) {
+                _block.wait(lock);
+            }
+            ++_task_counter;
+            return 4711;
+        }));
+        futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
 
-            sut = when_any(custom_scheduler<0>(), [&_index = index](int x, size_t index) {
-                _index = index;
+        {
+            std::unique_lock<std::mutex> block(*mutex);
+
+            sut = when_any(custom_scheduler<0>(), 
+                [&_used_future_index = used_future_index, &_counter = any_task_execution_counter](int x, size_t index) {
+                _used_future_index = index;
+                ++_counter;
                 return x;
             }, std::make_pair(futures.begin(), futures.end()));
             check_valid_future(sut);
-
-            wait_until_future_completed(sut);
+            go = true;
         }
+        wait_until_future_completed(sut);
+        thread_block.notify_all();
+        while (task_counter.load() < 2) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 
-        BOOST_REQUIRE_EQUAL(size_t(3), index);
+        BOOST_REQUIRE_EQUAL(size_t(3), used_future_index);
         BOOST_REQUIRE_EQUAL(5, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
     }

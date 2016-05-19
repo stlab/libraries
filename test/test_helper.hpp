@@ -43,9 +43,17 @@ namespace test_helper
         const std::string _error;
 
     public:
+        test_exception() {}
+
         explicit test_exception(const std::string& error);
 
         explicit test_exception(const char* error);
+
+        test_exception& operator=(const test_exception&) = default;
+
+        test_exception(const test_exception&) = default;
+
+        virtual ~test_exception() {}
 
         const char* what() const noexcept override;
     };
@@ -105,8 +113,8 @@ namespace test_helper
         }
 
         template <typename E, typename F>
-        static void check_failure(F& f, const char* message) {
-            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(_m) == std::string(e.what()); }));
+        static void check_failure(F&& f, const char* message) {
+            BOOST_REQUIRE_EXCEPTION(std::forward<F>(f).get_try(), E, ([_m = message](const auto& e) { return std::string(_m) == std::string(e.what()); }));
         }
 
         template <typename E, typename... F>

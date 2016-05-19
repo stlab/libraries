@@ -16,12 +16,26 @@ using namespace stlab;
 using namespace test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, test_fixture<void>)
+    BOOST_AUTO_TEST_CASE(future_when_all_void_void_empty_range) {
+        BOOST_TEST_MESSAGE("running future when_all void -> void with empty range");
+        bool check = {false};
+        std::vector<stlab::future<void>> emptyFutures;
+        sut = when_all(custom_scheduler<0>(), [&_check = check]() { _check = true;
+            }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
+
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(check);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
     BOOST_AUTO_TEST_CASE(future_when_all_void_empty_range) {
         BOOST_TEST_MESSAGE("running future when_all void with empty range");
         size_t p = 0;
         std::vector<stlab::future<int>> emptyFutures;
         sut = when_all(custom_scheduler<0>(), [&_p = p](const std::vector<int>& v) { _p = v.size();
-            }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
+        }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
         check_valid_future(sut);
         wait_until_future_completed(sut);

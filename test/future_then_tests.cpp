@@ -164,6 +164,20 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
+    BOOST_AUTO_TEST_CASE(future_then_non_copyable_detach) {
+        BOOST_TEST_MESSAGE("running future non copyable, detached");
+        std::atomic_bool check{ false };
+        {
+            async(custom_scheduler<0>(), [&_check = check] { 
+                auto result = std::make_unique<int>(); 
+                *result = 42; 
+                _check = true;  
+                return std::move(result);
+            }).detach();
+        }
+        while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+    }
+
     BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
         BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with same scheduler, then on r-value");
 
@@ -291,6 +305,22 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
+    BOOST_AUTO_TEST_CASE(future_int_single_task_get_try_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future int single tasks, get_try on r-value");
+
+        sut = async(custom_scheduler<0>(), [] { return 42; });
+        
+        auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
+        
+        wait_until_future_completed(sut);
+
+        auto test_result_2 = std::move(sut).get_try();
+
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, *test_result_2);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
     BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
         BOOST_TEST_MESSAGE("running future int single tasks, detached");
         std::atomic_bool check{ false };
@@ -298,7 +328,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
             auto detached = async(custom_scheduler<0>(), [&_check = check] { _check = true;  return 42; });
             detached.detach();
         }
-        while (!check) {}
+        while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
     }
 
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
@@ -474,7 +504,17 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
         check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
+#if 0 // currently disabled, because I have doubts that get_try on an r-value makes any sense at al
+    BOOST_AUTO_TEST_CASE(future_int_single_task_with_error_get_try_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future int single tasks, with error on get_try on r-value");
 
+        sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
+        auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
+        wait_until_future_fails<test_exception>(sut);
+        check_failure<test_exception>(std::move(sut), "failure");
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+#endif
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler) {
         BOOST_TEST_MESSAGE("running future int with two tasks which first fails");
         int p = 0;
