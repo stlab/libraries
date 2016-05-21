@@ -18,6 +18,8 @@ Distributed under the Boost Software License, Version 1.0.
 
 #include <stlab/future.hpp>
 
+using lock_t = std::unique_lock<std::mutex>;
+
 namespace test_helper
 {
     template <size_t no>
@@ -27,7 +29,11 @@ namespace test_helper
         template <typename F>
         void operator()(F f) {
             ++_usage_counter;
+#ifdef WIN32
             stlab::default_scheduler()(std::move(f));
+#else
+            std::thread(std::move(f)).detach();
+#endif
         }
 
         static int usage_counter() { return _usage_counter.load(); }
@@ -75,12 +81,7 @@ namespace test_helper
             custom_scheduler<1>::reset();
         }
 
-        ~test_fixture() {
-		    // work in progress: ensure that all futures have finished before end of 
-			// text fixture ends, otherwise boost.test complains about memory leaks
-            //sut = stlab::future<T>();
-            //while (custom_scheduler<0>::current_tasks_in_execution() && custom_scheduler<1>::current_tasks_in_execution());
-        }
+        ~test_fixture() {}
 
         stlab::future<T> sut;
 
@@ -143,6 +144,52 @@ namespace test_helper
         }
     };
 
+    struct thread_block_context
+    {
+        std::shared_ptr<std::mutex> _mutex;
+        std::condition_variable     _thread_block;
+        std::atomic_bool            _go{false};
+        std::atomic_bool            _may_proceed{ false };
+
+        thread_block_context()
+            : _mutex(std::make_shared<std::mutex>())
+        {}
+    };
+
+    template <typename R>
+    class blocking_functor
+    {
+        thread_block_context& _context;
+        std::atomic_int& _functor_counter;
+        R _result;
+    public:
+        using result_type = R;
+
+        blocking_functor(thread_block_context& context, std::atomic_int& functor_counter)
+            : _context(context)
+            , _functor_counter(functor_counter)
+        {}
+
+        blocking_functor returns(const R& result) {
+            _result = result;
+            return *this;
+        }
+
+        R operator()() {
+            lock_t lock(*_context._mutex);
+    
+            while (!_context._go || !_context._may_proceed) {
+                _context._thread_block.wait(lock);
+            }
+            ++_functor_counter;
+            return _result;
+        }
+    };
+
+    template <typename R, typename... Args>
+    auto make_blocking_functor(Args&&... args) {
+        return blocking_functor<R>(std::forward<Args>(args)...);
+    }
 }
 
 #endif
