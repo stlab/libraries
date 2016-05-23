@@ -1,10 +1,27 @@
+dist: trusty
+
 language: cpp
+
 compiler:
     - clang
     - gcc
+    
 branches:
-        - develop
-        - UnitTests
+    - develop
+    - UnitTests
+
+addons:
+    apt:
+        sources:
+        - boost-latest
+        - ubuntu-toolchain-r-test
+        packages:
+        - cmake
+        - gcc-5.3
+        - g++-5.3
+        - libboost-thread-dev
+        - libboost-unit_test_framework-dev
+        - libboost-system-dev
             
 notifications:
   recipients:
@@ -14,11 +31,6 @@ notifications:
     on_failure: always
 
 before_script:
-    - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-    - sudo apt-get update -q
-    - sudo apt-get install gcc-5.3 -y
-    - sudo apt-get install boost-latest -y
-    - sudo apt-get install libboost-thread-dev libboost-unit_test_framework-dev libboost-system-dev -y
     - mkdir build
     - cd build
     - cmake ./..
