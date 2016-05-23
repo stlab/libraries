@@ -64,7 +64,7 @@ matrix:
 script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_CXX_COMPILER=$COMPILER ..
+    - cmake -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=/usr/include ..
     - make
     - test/future_test
     
