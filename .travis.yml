@@ -5,7 +5,17 @@ compiler:
 branches:
         - develop
         - UnitTests
-        
+addons:
+    apt:
+        sources:
+            - boost-latest
+        packages:
+            - g++5.3
+            - cmake
+            - libboost-thread-dev
+            - libboost-unit_test_framework-dev
+            - libboost-system-dev
+            
 notifications:
   recipients:
     - felix@petriconi.net
