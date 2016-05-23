@@ -4,7 +4,6 @@ language: cpp
 
 compiler:
     - clang
-    - gcc
     
 branches:
     - develop
@@ -14,21 +13,10 @@ addons:
     apt:
         sources:
         - boost-latest
-        - ubuntu-toolchain-r-test
         packages:
-        - cmake
-        - gcc-5.3
-        - g++-5.3
         - libboost-thread-dev
-        - libboost-unit_test_framework-dev
+        - libboost-test-dev
         - libboost-system-dev
-            
-notifications:
-  recipients:
-    - felix@petriconi.net
-  email:
-    on_success: change
-    on_failure: always
 
 before_script:
     - mkdir build
@@ -36,3 +24,10 @@ before_script:
     - cmake ./..
  
 script: make && test/future_test
+
+notifications:
+  recipients:
+    - felix@petriconi.net
+  email:
+    on_success: change
+    on_failure: always
