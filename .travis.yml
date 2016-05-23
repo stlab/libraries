@@ -1,0 +1,21 @@
+language: cpp
+compiler:
+    - clang
+    - gcc
+branches:
+        - develop
+        - UnitTests
+        
+notifications:
+  recipients:
+    - felix@petriconi.net
+  email:
+    on_success: change
+    on_failure: always
+
+before_script:
+    - mkdir build
+    - cd build
+    - cmake ..
+ 
+script: make && test/future_test
