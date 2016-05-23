@@ -13,7 +13,9 @@ addons:
     apt:
         sources:
         - boost-latest
+        - llvm-toolchain-precise-3.7
         packages:
+        - clang-3.7
         - libboost-thread-dev
         - libboost-test-dev
         - libboost-system-dev
