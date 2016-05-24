@@ -43,6 +43,7 @@ matrix:
       env: COMPILER=clang++-3.7
 
 before_script:
+    - chmod +x configure.sh
     - ./configure.sh
       
 script:
