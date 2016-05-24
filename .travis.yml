@@ -12,54 +12,38 @@ matrix:
       addons:
         apt:
           sources:
-          - boost-latest
           - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
-            - libboost-all-dev
-      env: 
-        - COMPILER=g++-4.9
-        - TOOLSET=$COMPILER
+      env: COMPILER=g++-4.9
     - compiler: gcc
       addons:
         apt:
           sources:
-            - boost-latest
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-            - libboost-all-dev
-      env: 
-        - COMPILER=g++-5
-        - TOOLSET=$COMPILER
+      env: COMPILER=g++-5
     - compiler: clang
       addons:
         apt:
           sources:
-            - boost-latest
             - libboost-all-dev
           packages:
             - clang-3.6
-            - libboost-all-dev
-      env: 
-        - COMPILER=clang++-3.6
-        - TOOLSET=$COMPILER
+      env: COMPILER=clang++-3.6
     - compiler: clang
       addons:
         apt:
           sources:
-            - boost-latest
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-            - libboost-all-dev
-      env: 
-        - COMPILER=clang++-3.7
-        - TOOLSET=$COMPILER
+      env: COMPILER=clang++-3.7
 
 before_script:
-    - configure.sh
+    - ./configure.sh
       
 script:
     - mkdir build
