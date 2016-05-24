@@ -55,7 +55,7 @@ if [ ! -e './boost_libraries/b2' ]; then
 
     echo_run cd boost_libraries;
 
-    echo_run ./bootstrap.sh --with-toolset=${COMPILER:-clang}
+    echo_run ./bootstrap.sh --with-toolset=${TOOLSET:-clang}
     echo_run ./b2 --with-system --with-thread --with-atomic --with-chrono --with-test
 
     echo_run cd ..
