@@ -17,9 +17,7 @@ matrix:
           - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
-            - libboost-thread-dev
-            - libboost-test-dev
-            - libboost-system-dev
+            - libboost-all-dev
       env: COMPILER=g++-4.9
     - compiler: gcc
       addons:
@@ -29,22 +27,17 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-            - libboost-thread-dev
-            - libboost-test-dev
-            - libboost-system-dev
+            - libboost-all-dev
       env: COMPILER=g++-5
     - compiler: clang
       addons:
         apt:
           sources:
             - boost-latest
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
+            - libboost-all-dev
           packages:
             - clang-3.6
-            - libboost-thread-dev
-            - libboost-test-dev
-            - libboost-system-dev
+            - libboost-all-dev
 
             env: COMPILER=clang++-3.6
     - compiler: clang
@@ -56,15 +49,13 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-            - libboost-thread-dev
-            - libboost-test-dev
-            - libboost-system-dev
+            - libboost-all-dev
       env: COMPILER=clang++-3.7
 
 script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=/usr/include ..
+    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=/usr/include ./..
     - make
     - test/future_test
     
