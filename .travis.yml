@@ -53,7 +53,7 @@ matrix:
 
 before_script:
     - ./configure.sh
-    env: TOOLSET=$COMPILER
+env: TOOLSET=$COMPILER
     
 script:
     - mkdir build
