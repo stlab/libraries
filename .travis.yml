@@ -17,7 +17,9 @@ matrix:
           packages:
             - g++-4.9
             - libboost-all-dev
-      env: COMPILER=g++-4.9
+      env: 
+        - COMPILER=g++-4.9
+        - TOOLSET=$COMPILER
     - compiler: gcc
       addons:
         apt:
@@ -27,7 +29,9 @@ matrix:
           packages:
             - g++-5
             - libboost-all-dev
-      env: COMPILER=g++-5
+      env: 
+        - COMPILER=g++-5
+        - TOOLSET=$COMPILER
     - compiler: clang
       addons:
         apt:
@@ -37,8 +41,9 @@ matrix:
           packages:
             - clang-3.6
             - libboost-all-dev
-
-      env: COMPILER=clang++-3.6
+      env: 
+        - COMPILER=clang++-3.6
+        - TOOLSET=$COMPILER
     - compiler: clang
       addons:
         apt:
@@ -49,16 +54,17 @@ matrix:
           packages:
             - clang-3.7
             - libboost-all-dev
-      env: COMPILER=clang++-3.7
+      env: 
+        - COMPILER=clang++-3.7
+        - TOOLSET=$COMPILER
 
 before_script:
-    - ./configure.sh
-env: TOOLSET=$COMPILER
-    
+    - configure.sh
+      
 script:
     - mkdir build
     - cd build
-    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=../boost_libraries ./..
+    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=boost_libraries ./..
     - make
     - test/future_test
     

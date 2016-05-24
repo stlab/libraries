@@ -21,12 +21,6 @@ BOOST_DIR=boost_${BOOST_US_VER}
 BOOST_TAR=$BOOST_DIR.tar.bz2
 
 #
-# Make sure we're at the top-level directory when we set up all our siblings.
-#
-
-cd ..
-
-#
 # If need be, download Boost and unzip it, moving it to the appropriate location.
 #
 
