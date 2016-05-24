@@ -4,8 +4,7 @@ dist: trusty
 language: cpp
 
 branches:
-    - develop
-    - UnitTests
+  - UnitTests
 
 matrix:
   include:
@@ -39,7 +38,7 @@ matrix:
             - clang-3.6
             - libboost-all-dev
 
-            env: COMPILER=clang++-3.6
+      env: COMPILER=clang++-3.6
     - compiler: clang
       addons:
         apt:
