@@ -19,6 +19,9 @@ url: "http://yourdomain.com" # the base hostname & protocol for your site
 twitter_username: SeanParent
 github_username:  sean-parent
 
+# For Travis-CI (See https://jekyllrb.com/docs/continuous-integration/)
+exclude: [vendor]
+
 # Build settings
 markdown: kramdown
 

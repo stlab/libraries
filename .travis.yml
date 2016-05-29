@@ -1,0 +1,20 @@
+language: ruby
+rvm:
+- 2.1
+
+install: gem install jekyll html-proofer
+
+script: jekyll build && htmlproofer ./_site
+
+# branch whitelist, only for GitHub Pages
+branches:
+  only:
+  - master     # test the gh-pages branch
+  - fbrereto-forest # test the fbrereto-forest branch
+  - /pages-(.*)/ # test every branch which starts with "pages-"
+
+env:
+  global:
+  - NOKOGIRI_USE_SYSTEM_LIBRARIES=true # speeds up installation of html-proofer
+
+sudo: false # route your build to the container-based infrastructure for a faster build
