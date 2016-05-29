@@ -4,7 +4,7 @@ rvm:
 
 install: gem install jekyll html-proofer github-pages
 
-script: bundle exec jekyll build && htmlproofer ./_site
+script: bundle exec jekyll build # && htmlproofer ./_site
 
 # branch whitelist, only for GitHub Pages
 branches:
