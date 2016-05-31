@@ -184,3 +184,7 @@ auto package(S s, F f); // -> pair<packaged_task<Sig>, future<result_of_t<Sig>>>
 template <typename S, typename F, typename ...Args>
 auto async(S s, F&& f, Args&&... args) -> future<std::result_of_t<F (Args...)>>
 ```
+
+----------
+
+Current build status: [![Build Status](https://travis-ci.org/FelixPetriconi/libraries.svg?branch=UnitTests)](https://travis-ci.org/FelixPetriconi/libraries)
