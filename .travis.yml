@@ -28,6 +28,16 @@ matrix:
       env: 
         - COMPILER=g++-5
         - TOOLSET=gcc
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env: 
+        - COMPILER=g++-6
+        - TOOLSET=gcc
     # - compiler: clang
       # addons:
         # apt:
