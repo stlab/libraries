@@ -33,22 +33,21 @@ matrix:
         apt:
           sources:
             - libboost-all-dev
-            - libc++-dev
+            - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
       env:
         - COMPILER=clang++-3.6
         - TOOLSET=clang
+        - LIBS=libc++        
     - compiler: clang
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
-            - libc++-dev
           packages:
             - clang-3.7
-            - libc++-dev
       env:
         - COMPILER=clang++-3.7
         - TOOLSET=clang
