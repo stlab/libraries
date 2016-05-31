@@ -29,16 +29,16 @@ matrix:
         - COMPILER=g++-6
         - TOOLSET=gcc
     - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-            - libc++-dev
+      # addons:
+        # apt:
+          # sources:
+            # - ubuntu-toolchain-r-test
+            # - llvm-toolchain-precise-3.7
+          # packages:
+            # - clang-3.7
+            # - libc++-dev
       env:
-        - COMPILER=clang++-3.7
+        - COMPILER=clang++-3.5
         - TOOLSET=clang
         - LIBS=libc++
         
