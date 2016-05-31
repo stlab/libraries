@@ -1050,6 +1050,10 @@ namespace detail
         packaged_task<>                       _f;
 
         void failure(std::exception_ptr error) {
+            // we already have a result
+            if (_remaining == 0) {
+                return;
+            }
             // only the last error is of any interest
             if (_remaining == 1) {
                 _error = std::move(error);
@@ -1074,6 +1078,9 @@ namespace detail
                     when_any_range_context_base<F, I>::_remaining = 0;
                     _result = std::move(r);
                     when_any_range_context_base<F, I>::_index = index;
+                    for (auto& h : this->_holds) {
+                        h.cancel_try();
+                    }
                 }
                 else {
                     return;
@@ -1100,6 +1107,9 @@ namespace detail
                 if (when_any_range_context_base<F, I>::_remaining != 0) {
                     when_any_range_context_base<F, I>::_remaining = 0;
                     when_any_range_context_base<F, I>::_index = index;
+                    for (auto& h : this->_holds) {
+                        h.cancel_try();
+                    }
                 }
                 else {
                     return;

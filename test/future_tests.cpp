@@ -44,6 +44,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, copyable_test_types) {
+    BOOST_TEST_MESSAGE("running future with mininmal copyable type and passed parameter " << typeid(T).name());
+
+    test_setup setup;
+    {
+        auto sut = async(custom_scheduler<0>(), [](auto x)->T { return x + T(0); }, T(42));
+        BOOST_REQUIRE(sut.valid() == true);
+        BOOST_REQUIRE(sut.error().is_initialized() == false);
+
+        while (!sut.get_try()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        BOOST_WARN_EQUAL(T(42) + T(0), *sut.get_try());
+    }
+    BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+}
+
 #if 0
 BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
     auto sut = async(default_scheduler(), []()->std::unique_ptr<int> { 

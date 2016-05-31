@@ -29,9 +29,10 @@ namespace test_helper
         template <typename F>
         void operator()(F f) {
             ++_usage_counter;
-#ifdef WIN32
+#ifdef WIN32 // The implementation on Windows uses a scheduler that allows 512 tasks in the pool in parallel
             stlab::default_scheduler()(std::move(f));
-#else
+#else        // The default scheduler under Linux allows only as many tasks as there are physical core. But this
+             // can lead to a dead lock in some of the test
             std::thread(std::move(f)).detach();
 #endif
         }
@@ -76,7 +77,8 @@ namespace test_helper
     template <typename T>
     struct test_fixture
     {
-        test_fixture() {
+        test_fixture()
+            : _task_counter{ 0 } {
             custom_scheduler<0>::reset();
             custom_scheduler<1>::reset();
         }
@@ -123,6 +125,12 @@ namespace test_helper
             (void)std::initializer_list<int>{ (wait_until_this_future_fails<E>(f), 0)... };
         }
 
+        void wait_until_all_tasks_completed() {
+            while (_task_counter.load() != 0) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+        }
+
+
+        std::atomic_int _task_counter;
 
     private:
         template <typename F>
@@ -148,7 +156,7 @@ namespace test_helper
     {
         std::shared_ptr<std::mutex> _mutex;
         std::condition_variable     _thread_block;
-        std::atomic_bool            _go{false};
+        std::atomic_bool            _go{ false };
         std::atomic_bool            _may_proceed{ false };
 
         thread_block_context()
@@ -156,40 +164,95 @@ namespace test_helper
         {}
     };
 
-    template <typename R>
-    class blocking_functor
+    class scoped_decrementer
     {
-        thread_block_context& _context;
-        std::atomic_int& _functor_counter;
-        R _result;
+        std::atomic_int& _v;
     public:
-        using result_type = R;
-
-        blocking_functor(thread_block_context& context, std::atomic_int& functor_counter)
-            : _context(context)
-            , _functor_counter(functor_counter)
+        explicit scoped_decrementer(std::atomic_int& v)
+            : _v(v)
         {}
 
-        blocking_functor returns(const R& result) {
-            _result = result;
-            return *this;
-        }
-
-        R operator()() {
-            lock_t lock(*_context._mutex);
-    
-            while (!_context._go || !_context._may_proceed) {
-                _context._thread_block.wait(lock);
-            }
-            ++_functor_counter;
-            return _result;
+        ~scoped_decrementer() {
+            --_v;
         }
     };
 
-    template <typename R, typename... Args>
-    auto make_blocking_functor(Args&&... args) {
-        return blocking_functor<R>(std::forward<Args>(args)...);
+    template <typename F, typename P>
+    class test_functor_base : public P
+    {
+        F _f;
+        std::atomic_int& _task_counter;
+    public:
+        test_functor_base(F f, std::atomic_int& task_counter)
+            : _f(std::move(f))
+            , _task_counter(task_counter) {
+        }
+
+        ~test_functor_base() {
+        }
+
+        test_functor_base(const test_functor_base&) = default;
+        test_functor_base& operator=(const test_functor_base&) = default;
+        test_functor_base(test_functor_base&&) = default;
+        test_functor_base& operator=(test_functor_base&&) = default;
+
+        template <typename... Args>
+        auto operator()(Args&&... args) const {
+            ++_task_counter;
+            scoped_decrementer d(_task_counter);
+            P::action();
+            return _f(std::forward<Args>(args)...);
+        }
+    };
+
+    struct null_policy
+    {
+        void action() const {}
+    };
+
+    class blocking_policy
+    {
+        thread_block_context* _context{ nullptr };
+    public:
+        void set_context(thread_block_context* context) {
+            _context = context;
+        }
+
+        void action() const {
+            lock_t lock(*_context->_mutex);
+
+            while (!_context->_go || !_context->_may_proceed) {
+                _context->_thread_block.wait(lock);
+            }
+        }
+    };
+
+    class failing_policy
+    {
+    public:
+        void action() const {
+            throw test_exception("failure");
+        }
+    };
+
+    template <typename F>
+    auto make_non_blocking_functor(F&& f, std::atomic_int& task_counter) {
+        return test_functor_base<F, null_policy>(std::forward<F>(f), task_counter);
     }
+
+
+    template <typename F>
+    auto make_blocking_functor(F&& f, std::atomic_int& task_counter, thread_block_context& context) {
+        auto result = test_functor_base<F, blocking_policy>(std::forward<F>(f), task_counter);
+        result.set_context(&context);
+        return result;
+    }
+
+    template <typename F>
+    auto make_failing_functor(F&& f, std::atomic_int& task_counter) {
+        return test_functor_base<F, failing_policy>(std::forward<F>(f), task_counter);
+    }
+
 }
 
 #endif
