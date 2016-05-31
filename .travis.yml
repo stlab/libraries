@@ -33,6 +33,7 @@ matrix:
         apt:
           sources:
             - libboost-all-dev
+            - libc++-dev
           packages:
             - clang-3.6
       env:
@@ -44,6 +45,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
+            - libc++-dev
           packages:
             - clang-3.7
             - libc++-dev

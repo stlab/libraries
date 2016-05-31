@@ -286,7 +286,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
         BOOST_TEST_MESSAGE("running future when_any int with empty range");
 
-        auto check{ false };
+        bool check{ false };
         std::vector<stlab::future<int>> emptyFutures;
         sut = when_any(custom_scheduler<0>(), [&_check = check](int x, size_t index) {
             _check = true;
