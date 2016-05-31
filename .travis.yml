@@ -38,7 +38,7 @@ matrix:
             # - clang-3.7
             # - libc++-dev
       env:
-        - COMPILER=clang++-3.5
+        - COMPILER=clang++
         - TOOLSET=clang
         - LIBS=libc++
         
