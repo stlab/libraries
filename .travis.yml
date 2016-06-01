@@ -28,7 +28,7 @@ matrix:
       env: 
         - COMPILER=g++-6
         - TOOLSET=gcc
-- compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
