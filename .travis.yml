@@ -28,17 +28,16 @@ matrix:
       env: 
         - COMPILER=g++-6
         - TOOLSET=gcc
-    - compiler: clang
-      # addons:
-        # apt:
-          # sources:
-            # - ubuntu-toolchain-r-test
-            # - llvm-toolchain-precise-3.7
-          # packages:
-            # - clang-3.7
-            # - libc++-dev
-      env:
-        - COMPILER=clang++
+- compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env: 
+        - COMPILER=clang++-3.6
         - TOOLSET=clang
         - LIBS=libc++
         
