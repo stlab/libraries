@@ -20,11 +20,13 @@ using lock_t = std::unique_lock<std::mutex>;
 
 BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_when_any_void_void_empty_range) {
-        BOOST_TEST_MESSAGE("running future when_all void void with empty range");
+        BOOST_TEST_MESSAGE("running future when_any void void with empty range");
         bool check{ false };
         std::vector<stlab::future<void>> emptyFutures;
-        sut = when_any(custom_scheduler<0>(), [&_check = check](size_t index) { _check = true;
-        }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
+        
+        sut = when_any(custom_scheduler<0>(), 
+            [&_check = check](size_t index) { _check = true;}, 
+            std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
         wait_until_future_fails<std::future_error>(sut);
 
@@ -32,13 +34,14 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_EQUAL(0, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_int_empty_range) {
-        BOOST_TEST_MESSAGE("running future when_all void int with empty range");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_empty_range) {
+        BOOST_TEST_MESSAGE("running future when_any int void with empty range");
         bool check{ false };
         std::vector<stlab::future<int>> emptyFutures;
 
-        sut = when_any(custom_scheduler<0>(), [&_check = check](int x, size_t index) { _check = true;
-        }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
+        sut = when_any(custom_scheduler<0>(), 
+            [&_check = check](int x, size_t index) { _check = true;}, 
+            std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
         wait_until_future_fails<std::future_error>(sut);
 
@@ -46,17 +49,37 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_EQUAL(0, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_one_element) {
-        BOOST_TEST_MESSAGE("running future when_any void with range of one element");
+    BOOST_AUTO_TEST_CASE(future_when_any_void_void_range_with_one_element) {
+        BOOST_TEST_MESSAGE("running future when_any void void with one element");
+
+        int interim_result = 0;
+        int result = 0;
+        std::vector<stlab::future<void>> futures;
+        futures.push_back(async(custom_scheduler<1>(), [&_interim_result = interim_result] { _interim_result = 42; }));
+
+        sut = when_any(custom_scheduler<1>(),
+            [&_result = result, &_interim_result = interim_result](size_t index) { _result = _interim_result; },
+            std::make_pair(futures.begin(), futures.end()));
+
+        wait_until_future_completed(sut);
+
+        BOOST_WARN_EQUAL(42, result);
+        BOOST_WARN_EQUAL(2, custom_scheduler<1>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_one_element) {
+        BOOST_TEST_MESSAGE("running future when_any int void with range of one element");
         size_t index = 4711;
         size_t result = 0;
         std::vector<stlab::future<int>> futures;
         futures.push_back(async(custom_scheduler<0>(), [] { return 42; }));
 
-        sut = when_any(custom_scheduler<0>(), [&_i = index, &_r = result](int x, size_t index) {
-            _i = index;
-            _r = x;
-        }, std::make_pair(futures.begin(), futures.end()));
+        sut = when_any(custom_scheduler<0>(), 
+            [&_i = index, &_r = result](int x, size_t index) {
+                _i = index;
+                _r = x;
+            }, 
+            std::make_pair(futures.begin(), futures.end()));
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -66,8 +89,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_first_succeeds) {
-        BOOST_TEST_MESSAGE("running future when_any void with range with many elements and the first succeeds");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_first_succeeds) {
+        BOOST_TEST_MESSAGE("running future when_any int void with range with many elements and the first succeeds");
 
         thread_block_context block_context;
         std::atomic_int any_task_execution_counter{ 0 };
@@ -103,8 +126,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_middle_succeeds) {
-        BOOST_TEST_MESSAGE("running future when_any void with range with many elements and one in the middle succeeds");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_middle_succeeds) {
+        BOOST_TEST_MESSAGE("running future when_any int void with range with many elements and one in the middle succeeds");
 
         thread_block_context block_context;
         std::atomic_int any_task_execution_counter{ 0 };
@@ -142,8 +165,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_last_succeeds) {
-        BOOST_TEST_MESSAGE("running future when_any void with range with many elements and the last succeeds");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_last_succeeds) {
+        BOOST_TEST_MESSAGE("running future when_any int void with range with many elements and the last succeeds");
 
         thread_block_context block_context;
         std::atomic_int any_task_execution_counter{ 0 };
@@ -180,8 +203,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_one_succeeds_all_other_fails) {
-        BOOST_TEST_MESSAGE("running future when_any void with range with many elements and one succeeds all other fails");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_one_succeeds_all_other_fails) {
+        BOOST_TEST_MESSAGE("running future when_any int void with range with many elements and one succeeds all other fails");
 
         std::atomic_int any_task_execution_counter{ 0 };
         size_t index = 4711;
@@ -210,8 +233,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_many_elements_all_fails) {
-        BOOST_TEST_MESSAGE("running future when_any void with range all fails");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_all_fails) {
+        BOOST_TEST_MESSAGE("running future when_any int void with range all fails");
         std::atomic_size_t failures{ 0 };
         size_t index = 4711;
         int r = 0;
@@ -283,8 +306,8 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
-    BOOST_AUTO_TEST_CASE(future_when_any_int_empty_range) {
-        BOOST_TEST_MESSAGE("running future when_any int with empty range");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_int_empty_range) {
+        BOOST_TEST_MESSAGE("running future when_any int int with empty range");
 
         bool check{ false };
         std::vector<stlab::future<int>> emptyFutures;
@@ -298,8 +321,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
         BOOST_REQUIRE(!check);
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_one_element) {
-        BOOST_TEST_MESSAGE("running future when_any int with range of one element");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_one_element) {
+        BOOST_TEST_MESSAGE("running future when_any int int with range of one element");
         size_t index = 42;
 
         std::vector<stlab::future<int>> futures;
@@ -319,8 +342,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
     }
 
 
-    BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_many_elements) {
-        BOOST_TEST_MESSAGE("running future when_any int with range with many elements and the last suceeds");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements) {
+        BOOST_TEST_MESSAGE("running future when_any int int with range with many elements and the last suceeds");
         
         thread_block_context block_context;
 
@@ -355,8 +378,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
         BOOST_WARN_LE(3, custom_scheduler<1>::usage_counter());
     }
 
-    BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_many_elements_all_but_all_one_failing) {
-        BOOST_TEST_MESSAGE("running future when_any int with range with many elements all but one is failing");
+    BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements_all_but_all_one_failing) {
+        BOOST_TEST_MESSAGE("running future when_any int int range with many elements all but one is failing");
         size_t index = 0;
         std::atomic_int failures{ 0 };
         std::vector<stlab::future<int>> futures;
