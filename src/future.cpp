@@ -235,9 +235,8 @@ private:
     static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
                                        PVOID                 parameter,
                                        PTP_WORK              /*Work*/) {
-        auto f = static_cast<F*>(parameter);
+        std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
-        delete f;
     }
 };
 
