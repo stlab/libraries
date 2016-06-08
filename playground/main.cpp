@@ -6,11 +6,11 @@
 
 /**************************************************************************************************/
 
+#include <exception>
 #include <iostream>
 #include <stlab/future.hpp>
-#include <utility>
-#include <exception>
 #include <stlab/channel.hpp>
+#include <utility>
 
 using namespace stlab;
 using namespace std;
@@ -292,9 +292,6 @@ void channelExample()
     // Wait for everything to execute (just for demonstration)
     //Sleep(100);
 }
-
-
-
 
 int main(int argc, char **argv)
 {

@@ -7,8 +7,10 @@ Distributed under the Boost Software License, Version 1.0.
 /**************************************************************************************************/
 
 #define BOOST_TEST_DYN_LINK
+
 #include <boost/test/unit_test.hpp>
 #include <stlab/future.hpp>
+
 #include "test_helper.hpp"
 
 using namespace stlab;

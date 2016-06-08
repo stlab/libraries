@@ -9,14 +9,14 @@ Distributed under the Boost Software License, Version 1.0.
 #define _TEST_HELPER_HPP_
 
 #define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
 
-#include <thread>
 #include <atomic>
+#include <boost/test/unit_test.hpp>
 #include <exception>
-#include <string>
-
 #include <stlab/future.hpp>
+#include <string>
+#include <thread>
+
 
 using lock_t = std::unique_lock<std::mutex>;
 
@@ -31,8 +31,9 @@ namespace test_helper
             ++_usage_counter;
 #ifdef WIN32 // The implementation on Windows uses a scheduler that allows 512 tasks in the pool in parallel
             stlab::default_scheduler()(std::move(f));
-#else        // The default scheduler under Linux allows only as many tasks as there are physical core. But this
-             // can lead to a dead lock in some of the test
+#else
+            // The default scheduler under Linux allows only as many tasks as there are physical cores. But this
+            // can lead to a dead lock in some of the tests
             std::thread(std::move(f)).detach();
 #endif
         }
