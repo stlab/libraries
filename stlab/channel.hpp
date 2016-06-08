@@ -120,6 +120,7 @@ struct shared_process_receiver {
     virtual void cts() = 0;
     virtual void add_receiver() = 0;
     virtual void remove_receiver() = 0;
+    virtual schedule_t scheduler() const = 0;
 };
 
 /**************************************************************************************************/
@@ -131,6 +132,8 @@ struct shared_process_sender {
     virtual void send(avoid<T> x) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
+    virtual schedule_t scheduler() const = 0;
+	virtual void set_process_queue_size(size_t) = 0;
 };
 
 /**************************************************************************************************/
@@ -210,9 +213,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     using argument = Arg;
     using result = yield_type<T, Arg>;
 
-    std::mutex                    _downstream_mutex;
+    std::mutex                   _downstream_mutex;
     std::deque<sender<result>>   _downstream;
 
+    schedule_t               _scheduler;
     T                        _process;
 
     std::mutex               _process_mutex;
@@ -226,6 +230,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     std::atomic_size_t       _sender_count;
     std::atomic_size_t       _receiver_count;
 
+    std::atomic_size_t      _process_queue_size{ 0 }; // zero means no limitation
+    std::condition_variable _process_queue_condition;
+
     /*
         Join is not yet implemented so single upstream for now. We don't just use
         a receiver for upstream because we need to be be able to kick the task
@@ -233,16 +240,16 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     */
     const std::shared_ptr<shared_process_receiver<argument>> _upstream;
 
-    template <typename F>
-    shared_process(F&& f) :
-        _process(std::forward<F>(f))
+    template <typename S, typename F>
+    shared_process(S&& s, F&& f) : _scheduler(std::forward<S>(s)), _process(std::forward<F>(f))
     {
         _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
-    template <typename F>
-    shared_process(F&& f, std::shared_ptr<shared_process_receiver<argument>> p) :
+    template <typename S, typename F>
+    shared_process(S&& s, F&& f, std::shared_ptr<shared_process_receiver<argument>> p) :
+        _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f)),
         _upstream(std::move(p))
     {
@@ -290,14 +297,18 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
     }
 
+    schedule_t scheduler() const override {
+        return _scheduler;
+    }
+
     void task_done() {
         bool do_run;
         bool do_final;
         {
-        std::unique_lock<std::mutex> lock(_process_mutex);
-        do_run = !_process_message_queue.empty() || _process_close_queue;
-        _process_running = do_run;
-        do_final = _process_final;
+        	std::unique_lock<std::mutex> lock(_process_mutex);
+        	do_run = !_process_message_queue.empty() || _process_close_queue;
+        	_process_running = do_run;
+        	do_final = _process_final;
         }
         // The mutual exclusiveness of this assert implies too many variables. Should have a single
         // "get state" call.
@@ -348,6 +359,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
                 cts = _process_message_queue.size() == 0; // TODO (sparent) : queue size - 1.
             }
         }
+        _process_queue_condition.notify_all();
         if (cts && _upstream) _upstream->cts();
         if (message) _process.await(std::move(message.get()));
         else if (do_close) process_close(_process);
@@ -386,6 +398,8 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
                 do_cts = _process_message_queue.size() == 0; // TODO (sparent) : queue size - 1.
             }
         }
+        _process_queue_condition.notify_all();
+
         if (do_cts && _upstream) _upstream->cts();
         if (message) {
             broadcast(avoid_invoke(_process, std::move(message.get())));
@@ -395,7 +409,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void run() {
-        default_scheduler()([_p = make_weak_ptr(this->shared_from_this())]{
+        _scheduler([_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
@@ -409,8 +423,8 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
         std::size_t n;
         {
-        std::unique_lock<std::mutex> lock(_downstream_mutex);
-        n = _downstream.size();
+        	std::unique_lock<std::mutex> lock(_downstream_mutex);
+        	n = _downstream.size();
         }
 
         {
@@ -434,6 +448,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         bool do_run;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
+            while (_process_queue_size != 0 && _process_queue_size <= _process_message_queue.size())
+            {
+                _process_queue_condition.wait(lock);
+            }
             _process_message_queue.emplace_back(std::move(arg)); // TODO (sparent) : overwrite here.
             
             do_run = !_receiver_count && !_process_running;
@@ -452,9 +470,14 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             and not add it here.
         */
         {
-        std::unique_lock<std::mutex> lock(_downstream_mutex);
-        _downstream.emplace_back(f);
+			std::unique_lock<std::mutex> lock(_downstream_mutex);
+        	_downstream.emplace_back(f);
         }
+    }
+
+    void set_process_queue_size(size_t queue_size) override {
+        _process_queue_size = queue_size;
+        _process_queue_condition.notify_all();
     }
 };
 
@@ -464,9 +487,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
 /**************************************************************************************************/
 
-template <typename T>
-auto channel() -> std::pair<sender<T>, receiver<T>> {
-    auto p = std::make_shared<detail::shared_process<identity, T>>(identity());
+template <typename T, typename S>
+auto channel(S&& s) -> std::pair<sender<T>, receiver<T>> {
+    auto p = std::make_shared<detail::shared_process<identity, T>>(std::forward<S>(s), identity());
     return std::make_pair(sender<T>(p), receiver<T>(p));
 }
 
@@ -487,8 +510,8 @@ class receiver {
     template <typename U>
     friend class receiver; // huh?
 
-    template <typename U>
-    friend auto channel() -> std::pair<sender<U>, receiver<U>>;
+    template <typename U, typename V>
+    friend auto channel(V&&) -> std::pair<sender<U>, receiver<U>>;
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
@@ -519,7 +542,7 @@ class receiver {
     template <typename F>
     auto operator|(F&& f) const {
         // TODO - report error if not constructed or _ready.
-        auto p = std::make_shared<detail::shared_process<F, T>>(std::forward<F>(f), _p);
+        auto p = std::make_shared<detail::shared_process<F, T>>(_p->scheduler(), std::forward<F>(f), _p);
         _p->map(sender<T>(p));
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }
@@ -535,8 +558,8 @@ class sender {
     template <typename U>
     friend class receiver;
 
-    template <typename U>
-    friend auto channel() -> std::pair<sender<U>, receiver<U>>;
+    template <typename U, typename V>
+    friend auto channel(V&&) -> std::pair<sender<U>, receiver<U>>;
 
     sender(ptr_t p) : _p(std::move(p)) { }
 
@@ -569,6 +592,11 @@ class sender {
     void operator()(A&&... args) const {
         auto p = _p.lock();
         if (p) p->send(std::forward<A>(args)...);
+    }
+
+    void set_queue_size(size_t queue_size) {
+      auto p = _p.lock();
+      if (p) p->set_process_queue_size(queue_size);
     }
 };
 

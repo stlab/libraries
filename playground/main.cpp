@@ -6,15 +6,17 @@
 
 /**************************************************************************************************/
 
-#include <exception>
 #include <iostream>
 #include <stlab/future.hpp>
-#include <stlab/channel.hpp>
 #include <utility>
-
+#include <exception>
+#include <stlab/channel.hpp>
+#include <sstream>
 using namespace stlab;
 using namespace std;
 
+
+#if 0
 
 /*
 Copyright 2015 Adobe Systems Incorporated
@@ -88,7 +90,7 @@ int main() {
     cout << y.get_try().get() << endl;
     cout << z.get_try().get() << endl;
 }
-
+#endif
 
 #if 0
 void simple_continuation() {
@@ -229,7 +231,7 @@ void activeProgressExample()
     std::cout << "Result: " << *f2.get_try() << std::endl;
 }
 #endif
-#if 0
+
 /*
 sum is an example of an accumulating "co-routine". It will await for values, keeping an
 internal sum, until the channel is closed and then it will yield the result as a string.
@@ -238,7 +240,11 @@ struct sum {
     process_state _state = process_state::await;
     int _sum = 0;
 
-    void await(int n) { _sum += n; }
+    void await(int n) {
+        _sum += n; 
+        // adding some additional processing time to see that later the defined queue size is taken into account
+        this_thread::sleep_for(chrono::milliseconds(10));
+    }
 
     int yield() { _state = process_state::await; return _sum; }
 
@@ -250,48 +256,62 @@ struct sum {
 
 void channelExample()
 {
-    /*
-    Create a channel to aggregate our values.
-    */
-    sender<int> aggregate;
-    receiver<int> receiver;
-    tie(aggregate, receiver) = channel<int>();
+  /*
+  Create a channel to aggregate our values.
+  */
+  sender<int> aggregate;
+  receiver<int> receiver;
+  tie(aggregate, receiver) = channel<int>(default_scheduler());
 
-    /*
-    Create a vector to hold all the futures for each result as it is piped to channel.
-    The future is of type <void> because the value is passed into the channel.
-    */
-    vector<stlab::future<void>> results;
+  aggregate.set_queue_size(5);
 
-    for (int n = 0; n != 10; ++n) {
-        // Asynchronously generate a bunch of values.
-        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-            // Then send those values into a copy of the channel
-            .then([_aggregate = aggregate](int n) {
-            _aggregate(n);
-        }));
+  /*
+  Create a vector to hold all the futures for each result as it is piped to channel.
+  The future is of type <void> because the value is passed into the channel.
+  */
+  vector<stlab::future<void>> results;
+
+  for (int n = 0; n != 10; ++n) {
+    // Asynchronously generate a bunch of values.
+    results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+      // Then send those values into a copy of the channel
+      .then([_aggregate = aggregate](int n) {
+      
+      auto start = chrono::system_clock::now();
+      _aggregate(n);
+      auto end = chrono::system_clock::now();
+
+      chrono::duration<double> elapsed_seconds = end - start;
+      std::stringstream str;
+      str << "Had to wait " << elapsed_seconds.count() << "s for passing value " << to_string(n) << "\n";
+      std::cout << str.str(); 
+    }));
     }
-    // Now it is safe to close (or destruct) this channel, all the copies remain open.
-    aggregate.close();
+  // Now it is safe to close (or destruct) this channel, all the copies remain open.
+  aggregate.close();
 
-    auto pipe = receiver
-        /*
-        The receiver is our common end point - we attach the vector of futures to it (another)
-        inefficiency here - this is a lambda whose only purpose is to hold the vector of
-        futures.
-        */
-        | [_results = move(results)](auto x){ return x; }
-    // Then we can pipe the values to our accumulator
-    | sum()
-        // And pipe the final value to a lambda to print it.
-        // Returning void from the pipe will mark it as ready.
-        | [](auto x) { cout << x << endl; };
+  atomic_bool all_done{ false };
 
-    receiver.set_ready(); // close this end of the pipe
+  auto pipe = receiver
+    /*
+    The receiver is our common end point - we attach the vector of futures to it (another)
+    inefficiency here - this is a lambda whose only purpose is to hold the vector of
+    futures.
+    */
+    | [_results = move(results)](auto x){ return x; }
+  // Then we can pipe the values to our accumulator
+  | sum()
+    // And pipe the final value to a lambda to print it.
+    // Returning void from the pipe will mark it as ready.
+    | [&_all_done = all_done](auto x) { cout << x << endl; _all_done = true; };
 
-    // Wait for everything to execute (just for demonstration)
-    //Sleep(100);
+  receiver.set_ready(); // close this end of the pipe
+
+  while (!all_done.load()) {
+      this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
 }
+
 
 int main(int argc, char **argv)
 {
@@ -312,4 +332,3 @@ int main(int argc, char **argv)
     int i;
     cin >> i;
 }
-#endif
