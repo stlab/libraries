@@ -27,9 +27,11 @@ If the associated task through an exception, get_try() with rethrow the exceptio
 
 For a future<T> if T is move only then the future is move only and can only contain one continuation.
 
-[ TODO - for notification of errors the plan is to add a recover() clause to futures which is passed the exception and may return a value T or rethrow. recover() will be executed prior to continuations. ]
+In case a recover() clause is defined, then a failed future is passed to it an offers an appropriate error handling. recover() will be executed prior to continuations. ]
 
-when_all() takes an n'ary function and n futures as arguments.
+when_all() takes either an n'ary function and n futures as arguments or a variable range of futures
+
+when_any() takes as argument avariable range of futures and proceeds when at least one of the futures successds.
 
 Here is a trivial scheduler using threads:
 
@@ -56,6 +58,55 @@ auto schedule = [](auto f) // F is void() and movable
 };
 ```
 
+Here is an example scheduler that executes the task in the Qt main loop, e.g. to
+update a UI element.
+```C++
+class QtScheduler
+{
+    class EventReceiver;
+
+    class SchedulerEvent : public QEvent
+    {
+        std::function<void()> _f;
+        std::unique_ptr<EventReceiver> _receiver;
+
+    public:
+        explicit SchedulerEvent(std::function<void()> f)
+            : QEvent(QEvent::User)
+            , _f(std::move(f))
+            , _receiver(new EventReceiver()) {
+        }
+
+        void execute() {
+            _f();
+        }
+
+        QObject *receiver() const { return _receiver.get(); }
+    };
+
+    class EventReceiver : public QObject
+    {
+    public:
+        bool event(QEvent *event) override {
+            auto myEvent = dynamic_cast<SchedulerEvent*>(event);
+            if (myEvent) {
+                myEvent->execute();
+                return true;
+            }
+            return false;
+        }
+    };
+
+public:
+    template <typename F>
+    void operator()(F&& f) {
+        auto event = new SchedulerEvent(std::forward<F>(f));
+        QApplication::postEvent(event->receiver(), event);
+    }
+};
+
+```
+Future interface
 ```c++
 template<typename R, typename ...Args >
 class packaged_task<R (Args...)> {
@@ -95,6 +146,18 @@ class future {
     template <typename S, typename F>
     auto then(S&& s, F&& f) &&; // -> future<result_of_t<F(T)>>
 
+    template <typename F>
+    auto recover(F&& f) const&; // -> future<result_of_t<F(T)>>
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) const&; // -> future<result_of_t<F(T)>>
+
+    template <typename F>
+    auto recover(F&& f) &&; // -> future<result_of_t<F(T)>>
+
+    template <typename S, typename F>
+    auto recover(S&& s, F&& f) &&; // -> future<result_of_t<F(T)>>
+
     bool cancel_try();
 
     auto get_try() const&; // -> T == void ? bool : optional<T>
@@ -104,9 +167,24 @@ class future {
 template <typename S, typename F, typename... Ts>
 auto when_all(S, F, future<Ts>... args); // -> future<result_of_t<F(Ts...>>
 
+template <typename S, // models task scheduler
+          typename F, // models functional object
+          typename I> // models ForwardIterator that reference to a range of futures of the same type
+auto when_all(S schedule, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(const std::vector<typename std::iterator_traits<I>::value_type::result_type>)>>
+
+template <typename S, // models task scheduler
+          typename F, // models functional object
+          typename I> // models ForwardIterator that reference to a range of futures of the same type
+auto when_any(S schedule, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(typename std::iterator_traits<I>::value_type::result_type, size_t)>>
+
+
 template <typename Sig, typename S, typename F>
 auto package(S s, F f); // -> pair<packaged_task<Sig>, future<result_of_t<Sig>>>;
 
 template <typename S, typename F, typename ...Args>
 auto async(S s, F&& f, Args&&... args) -> future<std::result_of_t<F (Args...)>>
 ```
+
+----------
+
+Current build status: [![Build Status](https://travis-ci.org/FelixPetriconi/libraries.svg?branch=UnitTests)](https://travis-ci.org/FelixPetriconi/libraries)

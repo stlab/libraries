@@ -1,0 +1,62 @@
+sudo: required
+dist: trusty
+
+language: cpp
+
+branches:
+  - UnitTests
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: 
+        - COMPILER=g++-5
+        - TOOLSET=gcc
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env: 
+        - COMPILER=g++-6
+        - TOOLSET=gcc
+# clang is currently not available via Travis because of 
+# http://lists.llvm.org/pipermail/llvm-dev/2016-May/100303.html
+#        - compiler: clang
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#            - llvm-toolchain-precise-3.6
+#          packages:
+#            - clang-3.6
+#      env: 
+#        - COMPILER=clang++-3.6
+#        - TOOLSET=clang
+#        - LIBS=libc++
+        
+before_script:
+    - chmod +x configure.sh
+    - ./configure.sh
+      
+script:
+    - mkdir build
+    - cd build
+    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=boost_libraries ./..
+    - make
+    - test/future_test
+    
+notifications:
+  recipients:
+    - felix@petriconi.net
+  email:
+    on_success: change
+    on_failure: always
