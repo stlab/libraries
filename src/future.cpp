@@ -43,7 +43,7 @@ class notification_queue {
     bool                    _done{false};
     mutex                   _mutex;
     condition_variable      _ready;
-    
+
 public:
     bool try_pop(function<void()>& x) {
         lock_t lock{_mutex, try_to_lock};
@@ -203,21 +203,7 @@ struct timed_queue {
 
 class task_system
 {
-    PTP_POOL            _thread_pool;
-
 public:
-
-    task_system() {
-        _thread_pool = CreateThreadpool(nullptr);
-        if (_thread_pool == nullptr) {
-            throw std::bad_alloc();
-        }
-    }
-
-    ~task_system() {
-        CloseThreadpool(_thread_pool);
-    }
-
     template <typename F>
     void async_(F&& f) {     
         auto work = CreateThreadpoolWork(&callback_impl<F>, 

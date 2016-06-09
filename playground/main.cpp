@@ -199,7 +199,7 @@ void when_all_with_failing_range() {
 void recover_with_a_continuation() {
     auto f1 = async(default_scheduler(), []() -> int { throw std::exception("My fault"); });
     f1.then([](auto x) { return 2; }).then([](auto x) { cout << x << endl; });
-    auto a2 = f1.recover([](auto x) { return 3; }).then([] (auto x) {
+    auto a2 = f1.recover([](auto x) { return 3; }).then([](auto x) {
         cout << "Recovered from error and got: " << x << endl;
     });
     //a4.detach();
@@ -241,7 +241,7 @@ struct sum {
     int _sum = 0;
 
     void await(int n) {
-        _sum += n; 
+        _sum += n;
         // adding some additional processing time to see that later the defined queue size is taken into account
         this_thread::sleep_for(chrono::milliseconds(10));
     }
@@ -256,60 +256,60 @@ struct sum {
 
 void channelExample()
 {
-  /*
-  Create a channel to aggregate our values.
-  */
-  sender<int> aggregate;
-  receiver<int> receiver;
-  tie(aggregate, receiver) = channel<int>(default_scheduler());
-
-  aggregate.set_queue_size(5);
-
-  /*
-  Create a vector to hold all the futures for each result as it is piped to channel.
-  The future is of type <void> because the value is passed into the channel.
-  */
-  vector<stlab::future<void>> results;
-
-  for (int n = 0; n != 10; ++n) {
-    // Asynchronously generate a bunch of values.
-    results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-      // Then send those values into a copy of the channel
-      .then([_aggregate = aggregate](int n) {
-      
-      auto start = chrono::system_clock::now();
-      _aggregate(n);
-      auto end = chrono::system_clock::now();
-
-      chrono::duration<double> elapsed_seconds = end - start;
-      std::stringstream str;
-      str << "Had to wait " << elapsed_seconds.count() << "s for passing value " << to_string(n) << "\n";
-      std::cout << str.str(); 
-    }));
-    }
-  // Now it is safe to close (or destruct) this channel, all the copies remain open.
-  aggregate.close();
-
-  atomic_bool all_done{ false };
-
-  auto pipe = receiver
     /*
-    The receiver is our common end point - we attach the vector of futures to it (another)
-    inefficiency here - this is a lambda whose only purpose is to hold the vector of
-    futures.
+    Create a channel to aggregate our values.
     */
-    | [_results = move(results)](auto x){ return x; }
-  // Then we can pipe the values to our accumulator
-  | sum()
-    // And pipe the final value to a lambda to print it.
-    // Returning void from the pipe will mark it as ready.
-    | [&_all_done = all_done](auto x) { cout << x << endl; _all_done = true; };
+    sender<int> aggregate;
+    receiver<int> receiver;
+    tie(aggregate, receiver) = channel<int>(default_scheduler());
 
-  receiver.set_ready(); // close this end of the pipe
+    /*
+    Create a vector to hold all the futures for each result as it is piped to channel.
+    The future is of type <void> because the value is passed into the channel.
+    */
+    vector<stlab::future<void>> results;
 
-  while (!all_done.load()) {
-      this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+    for (int n = 0; n != 10; ++n) {
+        // Asynchronously generate a bunch of values.
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            // Then send those values into a copy of the channel
+            .then([_aggregate = aggregate](int n) {
+
+            auto start = chrono::system_clock::now();
+            _aggregate(n);
+            auto end = chrono::system_clock::now();
+
+            chrono::duration<double> elapsed_seconds = end - start;
+            std::stringstream str;
+            str << "Had to wait " << elapsed_seconds.count() << "s for passing value " << to_string(n) << "\n";
+            std::cout << str.str();
+        }));
+    }
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate.close();
+
+    atomic_bool all_done{ false };
+
+    //receiver.set_buffer_size(2);
+
+    auto pipe = receiver
+        /*
+        The receiver is our common end point - we attach the vector of futures to it (another)
+        inefficiency here - this is a lambda whose only purpose is to hold the vector of
+        futures.
+        */
+        | [_results = move(results)](auto x){ return x; }
+    // Then we can pipe the values to our accumulator
+        | sum()
+        // And pipe the final value to a lambda to print it.
+        // Returning void from the pipe will mark it as ready.
+        | [&_all_done = all_done](auto x) { cout << x << endl; _all_done = true; };
+
+    receiver.set_ready(); // close this end of the pipe
+
+    while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 }
 
 

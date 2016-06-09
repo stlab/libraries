@@ -35,6 +35,14 @@ enum class process_state {
 
 /**************************************************************************************************/
 
+struct buffer_size
+{
+    const size_t _value;
+    explicit buffer_size(size_t v) : _value(v) {}
+};
+
+/**************************************************************************************************/
+
 template <typename I, // I models ForwardIterator
           typename N, // N models PositiveInteger
           typename F> // F models UnaryFunction
@@ -117,10 +125,12 @@ struct shared_process_receiver {
     virtual ~shared_process_receiver() = default;
 
     virtual void map(sender<T>) = 0;
-    virtual void cts() = 0;
+    virtual void clear_to_send() = 0;
     virtual void add_receiver() = 0;
     virtual void remove_receiver() = 0;
     virtual schedule_t scheduler() const = 0;
+    virtual void set_buffer_size(size_t) = 0;
+    virtual size_t buffer_size() const = 0;
 };
 
 /**************************************************************************************************/
@@ -133,7 +143,6 @@ struct shared_process_sender {
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
     virtual schedule_t scheduler() const = 0;
-	virtual void set_process_queue_size(size_t) = 0;
 };
 
 /**************************************************************************************************/
@@ -230,8 +239,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     std::atomic_size_t       _sender_count;
     std::atomic_size_t       _receiver_count;
 
-    std::atomic_size_t      _process_queue_size{ 0 }; // zero means no limitation
-    std::condition_variable _process_queue_condition;
+    std::atomic_size_t       _process_buffer_size{ 1 };
 
     /*
         Join is not yet implemented so single upstream for now. We don't just use
@@ -260,6 +268,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     void add_sender() override {
         ++_sender_count;
     }
+
     void remove_sender() override {
         if (--_sender_count == 0) {
             bool do_run;
@@ -305,10 +314,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         bool do_run;
         bool do_final;
         {
-        	std::unique_lock<std::mutex> lock(_process_mutex);
-        	do_run = !_process_message_queue.empty() || _process_close_queue;
-        	_process_running = do_run;
-        	do_final = _process_final;
+            std::unique_lock<std::mutex> lock(_process_mutex);
+            do_run = !_process_message_queue.empty() || _process_close_queue;
+            _process_running = do_run;
+            do_final = _process_final;
         }
         // The mutual exclusiveness of this assert implies too many variables. Should have a single
         // "get state" call.
@@ -323,12 +332,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         // _process~();
     }
 
-    void cts() override {
+    void clear_to_send() override {
         bool do_run = false;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
             --_process_suspend_count; // could be atomic?
-            assert(_process_running && "ERROR (sparent) : cts but not running!");
+            assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
                 // FIXME (sparent): This is calling the process state ender the lock.
                 if (get_process_state(_process) == process_state::yield || !_process_message_queue.empty()
@@ -346,7 +355,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
     bool dequeue() {
         boost::optional<argument> message; // TODO : make functional
-        bool cts = false;
+        bool do_cts = false;
         bool do_close = false;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
@@ -356,11 +365,11 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             } else {
                 message = std::move(_process_message_queue.front());
                 _process_message_queue.pop_front();
-                cts = _process_message_queue.size() == 0; // TODO (sparent) : queue size - 1.
+                do_cts = _process_message_queue.size() == (_process_buffer_size - 1);
             }
         }
-        _process_queue_condition.notify_all();
-        if (cts && _upstream) _upstream->cts();
+
+        if (do_cts && _upstream) _upstream->clear_to_send();
         if (message) _process.await(std::move(message.get()));
         else if (do_close) process_close(_process);
         return bool(message);
@@ -377,8 +386,8 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         if (get_process_state(_process) == process_state::await) {
             task_done();
         } else {
-            broadcast(_process.yield()); // after this point must call cts()
-            cts();
+            broadcast(_process.yield()); // after this point must call clear_to_send()
+            clear_to_send();
         }
     }
 
@@ -395,15 +404,14 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             } else {
                 message = std::move(_process_message_queue.front());
                 _process_message_queue.pop_front();
-                do_cts = _process_message_queue.size() == 0; // TODO (sparent) : queue size - 1.
+                do_cts = _process_message_queue.size() == (_process_buffer_size - 1);
             }
         }
-        _process_queue_condition.notify_all();
 
-        if (do_cts && _upstream) _upstream->cts();
+        if (do_cts && _upstream) _upstream->clear_to_send();
         if (message) {
             broadcast(avoid_invoke(_process, std::move(message.get())));
-            cts();
+            clear_to_send();
         }
         else task_done();
     }
@@ -423,8 +431,8 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
         std::size_t n;
         {
-        	std::unique_lock<std::mutex> lock(_downstream_mutex);
-        	n = _downstream.size();
+            std::unique_lock<std::mutex> lock(_downstream_mutex);
+            n = _downstream.size();
         }
 
         {
@@ -448,10 +456,6 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         bool do_run;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
-            while (_process_queue_size != 0 && _process_queue_size <= _process_message_queue.size())
-            {
-                _process_queue_condition.wait(lock);
-            }
             _process_message_queue.emplace_back(std::move(arg)); // TODO (sparent) : overwrite here.
             
             do_run = !_receiver_count && !_process_running;
@@ -470,14 +474,17 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             and not add it here.
         */
         {
-			std::unique_lock<std::mutex> lock(_downstream_mutex);
-        	_downstream.emplace_back(f);
+            std::unique_lock<std::mutex> lock(_downstream_mutex);
+            _downstream.emplace_back(f);
         }
     }
 
-    void set_process_queue_size(size_t queue_size) override {
-        _process_queue_size = queue_size;
-        _process_queue_condition.notify_all();
+    void set_buffer_size(size_t buffer_size) override {
+        _process_buffer_size = buffer_size;
+    }
+
+    size_t buffer_size() const override {
+        return _process_buffer_size;
     }
 };
 
@@ -525,11 +532,13 @@ class receiver {
     receiver(const receiver& x) : _p(x._p) {
         if (_p) _p->add_receiver();
     }
+    
     receiver(receiver&&) noexcept = default;
 
     receiver& operator=(const receiver& x) {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
+    
     receiver& operator=(receiver&& x) noexcept = default;
 
     void set_ready() {
@@ -537,7 +546,7 @@ class receiver {
         _ready = true;
     }
 
-    bool ready() { return _ready; }
+    bool ready() const { return _ready; }
 
     template <typename F>
     auto operator|(F&& f) const {
@@ -545,6 +554,15 @@ class receiver {
         auto p = std::make_shared<detail::shared_process<F, T>>(_p->scheduler(), std::forward<F>(f), _p);
         _p->map(sender<T>(p));
         return receiver<detail::yield_type<F, T>>(std::move(p));
+    }
+
+    auto operator|(buffer_size bz) {
+        set_buffer_size(bz._value);
+        return *this;
+    }
+
+    void set_buffer_size(size_t queue_size) {
+        _p->set_buffer_size(queue_size);
     }
 };
 
@@ -577,6 +595,7 @@ class sender {
     }
 
     sender(sender&&) noexcept = default;
+    
     sender& operator=(const sender& x) {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
@@ -592,11 +611,6 @@ class sender {
     void operator()(A&&... args) const {
         auto p = _p.lock();
         if (p) p->send(std::forward<A>(args)...);
-    }
-
-    void set_queue_size(size_t queue_size) {
-      auto p = _p.lock();
-      if (p) p->set_process_queue_size(queue_size);
     }
 };
 
