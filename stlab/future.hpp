@@ -25,6 +25,15 @@
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 #include <emscripten.h>
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#include <ppapi/cpp/module.h>
+#include <ppapi/cpp/core.h>
+#include <ppapi/cpp/completion_callback.h>
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+// REVISIT (sparent) : for testing only
+#if __APPLE__
+#include <dispatch/dispatch.h>
+#endif
 #endif
 
 /**************************************************************************************************/
@@ -1004,6 +1013,22 @@ struct default_scheduler {
     }
 };
 
+struct main_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        dispatch_async_f(dispatch_get_main_queue(),
+                new f_t(std::move(f)), [](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                });
+    }
+};
+
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 
 struct default_scheduler {
@@ -1022,7 +1047,10 @@ struct default_scheduler {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+using main_scheduler = default_scheduler;
+
+#elif  (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL)
 
 struct default_scheduler {
     using result_type = void;
@@ -1032,6 +1060,46 @@ struct default_scheduler {
         detail::async_(std::move(f));
     }
 };
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+
+struct main_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        pp::Module::Get()->core()->CallOnMainThread(0,
+            pp::CompletionCallback([](void* f_, int32_t) {
+                auto f = static_cast<f_t*>(f_);
+                (*f)();
+                delete f;
+            }, new f_t(std::move(f))), 0);
+    }
+};
+
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+
+// REVISIT (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
+struct main_scheduler {
+    using result_type = void;
+
+    #if __APPLE__
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        ::dispatch_async_f(dispatch_get_main_queue(),
+                new f_t(std::move(f)), [](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                });
+    }
+    #endif
+};
+#endif
 
 #endif
 
