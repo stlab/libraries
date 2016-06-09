@@ -6,19 +6,91 @@
 
 /**************************************************************************************************/
 
-#define BOOST_TEST_MODULE stlab_libraries_tests
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-
-#if 0
+#include <exception>
 #include <iostream>
 #include <stlab/future.hpp>
+#include <stlab/channel.hpp>
 #include <utility>
-#include <exception>
 
 using namespace stlab;
 using namespace std;
 
+
+/*
+Copyright 2015 Adobe Systems Incorporated
+Distributed under the MIT License (see license at http://stlab.adobe.com/licenses.html)
+
+This file is intended as example code and is not production quality.
+*/
+
+/**************************************************************************************************/
+
+#include <boost/multiprecision/cpp_int.hpp>
+
+/**************************************************************************************************/
+
+using namespace boost::multiprecision;
+using namespace stlab;
+
+/**************************************************************************************************/
+
+template <typename T, typename N, typename O>
+T power(T x, N n, O op)
+{
+    if (n == 0) return identity_element(op);
+
+    while ((n & 1) == 0) {
+        n >>= 1;
+        x = op(x, x);
+    }
+
+    T result = x;
+    n >>= 1;
+    while (n != 0) {
+        x = op(x, x);
+        if ((n & 1) != 0) result = op(result, x);
+        n >>= 1;
+    }
+    return result;
+}
+
+/**************************************************************************************************/
+
+template <typename N>
+struct multiply_2x2 {
+    array<N, 4> operator()(const array<N, 4>& x, const array<N, 4>& y)
+    {
+        return{ x[0] * y[0] + x[1] * y[2], x[0] * y[1] + x[1] * y[3],
+            x[2] * y[0] + x[3] * y[2], x[2] * y[1] + x[3] * y[3] };
+    }
+};
+
+template <typename N>
+array<N, 4> identity_element(const multiply_2x2<N>&) { return{ N(1), N(0), N(0), N(1) }; }
+
+template <typename R, typename N>
+R fibonacci(N n) {
+    if (n == 0) return R(0);
+    return power(array<R, 4>{ 1, 1, 1, 0 }, N(n - 1), multiply_2x2<R>())[0];
+}
+
+
+/**************************************************************************************************/
+
+int main() {
+    auto x = async(default_scheduler(), [] { return fibonacci<cpp_int>(100); });
+
+    auto y = x.then([](const cpp_int& x) { return cpp_int(x * 2); });
+    auto z = x.then([](const cpp_int& x) { return cpp_int(x / 15); });
+
+    while (!y.get_try()) {}
+    while (!x.get_try()) {}
+    cout << y.get_try().get() << endl;
+    cout << z.get_try().get() << endl;
+}
+
+
+#if 0
 void simple_continuation() {
     cout << "start tasking test" << endl;
     auto f1 = async(default_scheduler(), [] { return 42; }).then(
@@ -156,7 +228,8 @@ void activeProgressExample()
 
     std::cout << "Result: " << *f2.get_try() << std::endl;
 }
-
+#endif
+#if 0
 /*
 sum is an example of an accumulating "co-routine". It will await for values, keeping an
 internal sum, until the channel is closed and then it will yield the result as a string.
@@ -220,9 +293,9 @@ void channelExample()
     //Sleep(100);
 }
 
-
 int main(int argc, char **argv)
 {
+#if 0
     simple_continuation();
     when_all_with_multiple_arguments();
     when_all_with_empty_range();
@@ -233,8 +306,10 @@ int main(int argc, char **argv)
     recover_with_a_continuation();
     passivProgressExample();
     activeProgressExample();
-    channelExample()
 
+#endif // 0    
+    channelExample();
+    int i;
+    cin >> i;
 }
-
 #endif

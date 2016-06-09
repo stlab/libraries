@@ -6,6 +6,9 @@
 
 /**************************************************************************************************/
 
+#include <stlab/future.hpp>
+#include <functional>
+
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 #include <atomic>
@@ -16,11 +19,20 @@
 #include <thread>
 #include <vector>
 
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+
+#include <Windows.h>
+
+#endif
+
 using namespace std;
 
 /**************************************************************************************************/
 
+
 namespace {
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 /**************************************************************************************************/
 
@@ -31,7 +43,7 @@ class notification_queue {
     bool                    _done{false};
     mutex                   _mutex;
     condition_variable      _ready;
-
+    
 public:
     bool try_pop(function<void()>& x) {
         lock_t lock{_mutex, try_to_lock};
@@ -40,7 +52,7 @@ public:
         _q.pop_front();
         return true;
     }
-
+    
     template<typename F>
     bool try_push(F&& f) {
         {
@@ -51,7 +63,7 @@ public:
         _ready.notify_one();
         return true;
     }
-
+    
     void done() {
         {
             unique_lock<mutex> lock{_mutex};
@@ -59,7 +71,7 @@ public:
         }
         _ready.notify_all();
     }
-
+    
     bool pop(function<void()>& x) {
         lock_t lock{_mutex};
         while (_q.empty() && !_done) _ready.wait(lock);
@@ -68,7 +80,7 @@ public:
         _q.pop_front();
         return true;
     }
-
+    
     template<typename F>
     void push(F&& f) {
         {
@@ -86,40 +98,40 @@ class task_system {
     vector<thread>              _threads;
     vector<notification_queue>  _q{_count};
     atomic<unsigned>            _index{0};
-
+    
     void run(unsigned i) {
         while (true) {
             function<void()> f;
-
+            
             for (unsigned n = 0; n != _count * 32; ++n) {
                 if (_q[(i + n) % _count].try_pop(f)) break;
             }
             if (!f && !_q[i].pop(f)) break;
-
+            
             f();
         }
     }
-
+    
   public:
     task_system() {
         for (unsigned n = 0; n != _count; ++n) {
             _threads.emplace_back([&, n]{ run(n); });
         }
     }
-
+    
     ~task_system() {
         for (auto& e : _q) e.done();
         for (auto& e : _threads) e.join();
     }
-
+    
     template <typename F>
     void async_(F&& f) {
         auto i = _index++;
-
+        
         for (unsigned n = 0; n != _count; ++n) {
             if (_q[(i + n) % _count].try_push(forward<F>(f))) return;
         }
-
+        
         _q[i % _count].push(forward<F>(f));
     }
 };
@@ -183,10 +195,52 @@ struct timed_queue {
     }
 
 };
-
 #endif
 
 /**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+
+class task_system
+{
+    PTP_POOL            _thread_pool;
+
+public:
+
+    task_system() {
+        _thread_pool = CreateThreadpool(nullptr);
+        if (_thread_pool == nullptr) {
+            throw std::bad_alloc();
+        }
+    }
+
+    ~task_system() {
+        CloseThreadpool(_thread_pool);
+    }
+
+    template <typename F>
+    void async_(F&& f) {     
+        auto work = CreateThreadpoolWork(&callback_impl<F>, 
+                                         new F(std::forward<F>(f)), 
+                                         nullptr);
+        if (work == nullptr) {
+            throw std::bad_alloc();
+        }
+        SubmitThreadpoolWork(work);
+    }
+
+private:
+
+    template <typename F>
+    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
+                                       PVOID                 parameter,
+                                       PTP_WORK              /*Work*/) {
+        std::unique_ptr<F> f(static_cast<F*>(parameter));
+        (*f)();
+    }
+};
+
+#endif
 
 } // namespace
 
@@ -207,10 +261,5 @@ void async_(function<void()> f) {
 
 } // namespace detail
 } // namespace stlab
-
-/**************************************************************************************************/
-
-// STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-#endif
 
 /**************************************************************************************************/
