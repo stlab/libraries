@@ -4,6 +4,8 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 [ This is temporary documentation - to be replaced at a later date. ]
 
+# Build Status: [![Build Status](https://travis-ci.org/FelixPetriconi/libraries.svg?branch=UnitTests)](https://travis-ci.org/FelixPetriconi/libraries)
+
 ## <stlab/future>
 
 This is a proof of concept implementation of a packaged task and future to replace the standard components. This is a list of some of the differences from standard (as of C++14) and boost (as of boost 1.58.0).
@@ -59,7 +61,7 @@ auto schedule = [](auto f) // F is void() and movable
 ```
 
 Here is an example scheduler that executes the task in the Qt main loop, e.g. to
-update a UI element.
+update an UI element.
 ```C++
 class QtScheduler
 {
@@ -77,9 +79,7 @@ class QtScheduler
             , _receiver(new EventReceiver()) {
         }
 
-        void execute() {
-            _f();
-        }
+        void execute() { _f(); }
 
         QObject *receiver() const { return _receiver.get(); }
     };
@@ -185,6 +185,3 @@ template <typename S, typename F, typename ...Args>
 auto async(S s, F&& f, Args&&... args) -> future<std::result_of_t<F (Args...)>>
 ```
 
-----------
-
-Current build status: [![Build Status](https://travis-ci.org/FelixPetriconi/libraries.svg?branch=UnitTests)](https://travis-ci.org/FelixPetriconi/libraries)

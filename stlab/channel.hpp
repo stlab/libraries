@@ -188,6 +188,27 @@ auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, pr
 /**************************************************************************************************/
 
 template <typename T>
+auto test_process_await_timeout(decltype(&T::await_timeout))->std::true_type;
+
+template <typename>
+auto test_process_await_timeout(...)->std::false_type;
+
+template <typename T>
+constexpr bool has_process_await_timeout = decltype(test_process_await_timeout<T>(0))::value;
+
+template <typename T>
+auto get_process_await_timeout(const T& x) -> std::enable_if_t<has_process_await_timeout<T>, std::chrono::milliseconds> {
+    return x.await_timeout();
+}
+
+template <typename T>
+auto get_process_await_timeout(const T& x) -> std::enable_if_t<!has_process_await_timeout<T>, std::chrono::milliseconds> {
+    return std::chrono::milliseconds(42000000);
+}
+
+/**************************************************************************************************/
+
+template <typename T>
 auto test_process_yield(decltype(&T::yield)) -> std::true_type;
 
 template <typename>
@@ -380,14 +401,35 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         /*
             REVISIT (sparent) : Put a timer on this loop to limit it?
         */
-        while (get_process_state(_process) != process_state::yield) {
-            if (!dequeue()) break;
+        // TODO timeout == 0
+        if (has_process_await_timeout<U>) {
+            auto ellapsing_point = std::chrono::system_clock::now() + get_process_await_timeout(_process);
+            auto time_over = false;
+
+            while ( !time_over && (get_process_state(_process) != process_state::yield) ) {
+                if (!dequeue()) break;
+                time_over = std::chrono::system_clock::now() > ellapsing_point;
+            }
+
+            if (time_over || get_process_state(_process) == process_state::yield) {
+                broadcast(_process.yield());
+                clear_to_send();
+            }
+            else {
+                task_done();
+            }
         }
-        if (get_process_state(_process) == process_state::await) {
-            task_done();
-        } else {
-            broadcast(_process.yield()); // after this point must call clear_to_send()
-            clear_to_send();
+        else {
+            while (get_process_state(_process) != process_state::yield) {
+                if (!dequeue()) break;
+            }
+            if (get_process_state(_process) == process_state::await) {
+                task_done();
+            }
+            else {
+                broadcast(_process.yield()); // after this point must call clear_to_send()
+                clear_to_send();
+            }
         }
     }
 
