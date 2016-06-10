@@ -386,7 +386,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             } else {
                 message = std::move(_process_message_queue.front());
                 _process_message_queue.pop_front();
-                do_cts = _process_message_queue.size() == (_process_buffer_size - 1);
+                do_cts = _process_message_queue.size() <= (_process_buffer_size - 1);
             }
         }
 
@@ -398,20 +398,16 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
     template <typename U>
     auto step() -> std::enable_if_t<has_process_yield<U>> {
-        /*
-            REVISIT (sparent) : Put a timer on this loop to limit it?
-        */
-        // TODO timeout == 0
-        if (has_process_await_timeout<U>) {
-            auto ellapsing_point = std::chrono::system_clock::now() + get_process_await_timeout(_process);
+        if (has_process_await_timeout<U> && get_process_await_timeout(_process) > std::chrono::milliseconds(0)) {
             auto time_over = false;
 
-            while ( !time_over && (get_process_state(_process) != process_state::yield) ) {
+            auto ellapsing_point = std::chrono::system_clock::now() + get_process_await_timeout(_process);
+
+            while (!time_over && (get_process_state(_process) != process_state::yield)) {
                 if (!dequeue()) break;
                 time_over = std::chrono::system_clock::now() > ellapsing_point;
             }
-
-            if (time_over || get_process_state(_process) == process_state::yield) {
+            if (time_over || (get_process_state(_process) == process_state::yield) ) {
                 broadcast(_process.yield());
                 clear_to_send();
             }
@@ -423,12 +419,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             while (get_process_state(_process) != process_state::yield) {
                 if (!dequeue()) break;
             }
-            if (get_process_state(_process) == process_state::await) {
-                task_done();
+            if (get_process_state(_process) == process_state::yield) {
+                broadcast(_process.yield());
+                clear_to_send();
             }
             else {
-                broadcast(_process.yield()); // after this point must call clear_to_send()
-                clear_to_send();
+                task_done();
             }
         }
     }
@@ -446,7 +442,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             } else {
                 message = std::move(_process_message_queue.front());
                 _process_message_queue.pop_front();
-                do_cts = _process_message_queue.size() == (_process_buffer_size - 1);
+                do_cts = _process_message_queue.size() <= (_process_buffer_size - 1);
             }
         }
 

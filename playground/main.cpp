@@ -298,9 +298,9 @@ void channelExample()
         inefficiency here - this is a lambda whose only purpose is to hold the vector of
         futures.
         */
-        | [_results = move(results)](auto x){ return x; }
-    // Then we can pipe the values to our accumulator
-    | sum()
+        | [_results = move(results)](auto x){ printf("Passing %d\n", x);  return x; }
+        // Then we can pipe the values to our accumulator
+        | buffer_size(2) | sum() 
         // And pipe the final value to a lambda to print it.
         // Returning void from the pipe will mark it as ready.
         | [&_all_done = all_done](auto x) { cout << x << endl; _all_done = true; };
@@ -375,7 +375,7 @@ void timedChannelExample()
         inefficiency here - this is a lambda whose only purpose is to hold the vector of
         futures.
         */
-        | [_results = move(results)](auto x){ return x; }
+        | [_results = move(results)](auto x){ printf("Passing %d\n", x);  return x; }
         // Then we can pipe the values to our accumulator
         | timed_sum()
         // And pipe the final value to a lambda to print it.
