@@ -390,6 +390,44 @@ void timedChannelExample()
 }
 
 
+void joinedChannelExample()
+{
+    sender<int> aggregate1, aggregate2;
+    receiver<int> receiver1, receiver2;
+    tie(aggregate1, receiver1) = channel<int>(default_scheduler());
+    tie(aggregate2, receiver2) = channel<int>(default_scheduler());
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 10; ++n) {
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate1](int n) { _aggregate(n); }));
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate2](int n) { _aggregate(n); }));
+    }
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate1.close();
+    aggregate2.close();
+
+    atomic_bool all_done{ false };
+
+    auto pipe1 = receiver1 | sum();
+    auto pipe2 = receiver2 | sum();
+
+    auto common_pipe = join(default_scheduler(), 
+        [](int x, int y) 
+            { return x + y; }, 
+        pipe1, pipe2);
+
+    auto end_of_pipe = common_pipe | [&_all_done = all_done](int x) { cout << x << endl; if (x == 90) _all_done = true; };
+
+    end_of_pipe.set_ready(); // close this end of the pipe
+
+    while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -407,6 +445,7 @@ int main(int argc, char **argv)
 #endif // 0    
     channelExample();
     timedChannelExample();
+    joinedChannelExample();
     int i;
     cin >> i;
 }
