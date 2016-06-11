@@ -141,7 +141,7 @@ struct shared_process_sender {
 
     virtual void send(avoid<T> x) = 0;
     virtual void add_sender() = 0;
-    virtual void remove_sender(std::shared_ptr<shared_process<T>>) = 0;
+    virtual void remove_sender() = 0;
     virtual schedule_t scheduler() const = 0;
 };
 
@@ -267,7 +267,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     template <typename S, typename F>
     shared_process(S&& s, F&& f) : _scheduler(std::forward<S>(s)), _process(std::forward<F>(f))
     {
-        _sender_count = 0;
+        _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
@@ -276,7 +276,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f))
     {
-        _sender_count = 0;
+        _sender_count = 1;
         add_sender(p);
         _receiver_count = !std::is_same<result, void>::value;
     }
@@ -783,7 +783,7 @@ class sender {
 
     void close() {
         auto p = _p.lock();
-        if (p) p->remove_sender(p);
+        if (p) p->remove_sender();
         _p.reset();
     }
 
