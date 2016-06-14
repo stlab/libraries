@@ -12,9 +12,9 @@
 #include <deque>
 #include <memory>
 #include <thread>
+#include <tuple>
 #include <utility>
-
-#include <stlab/future.hpp>
+//#include <stlab/future.hpp>
 
 /**************************************************************************************************/
 
@@ -139,10 +139,10 @@ template <typename T>
 struct shared_process_sender {
     virtual ~shared_process_sender() = default;
 
+    virtual void map(receiver<T>) = 0;
     virtual void send(avoid<T> x) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
-    virtual schedule_t scheduler() const = 0;
 };
 
 /**************************************************************************************************/
@@ -257,17 +257,13 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
 
-    std::atomic_size_t       _sender_count;
+    std::atomic_size_t       _sender_count{0};
     std::atomic_size_t       _receiver_count;
 
     std::atomic_size_t       _process_buffer_size{ 1 };
 
-    /*
-        Join is not yet implemented so single upstream for now. We don't just use
-        a receiver for upstream because we need to be be able to kick the task
-        chaining.
-    */
-    const std::shared_ptr<shared_process_receiver<argument>> _upstream;
+    std::deque<std::shared_ptr<shared_process_receiver<argument>>> _upstream;
+    std::mutex                                                     _upstream_mutex;
 
     template <typename S, typename F>
     shared_process(S&& s, F&& f) : _scheduler(std::forward<S>(s)), _process(std::forward<F>(f))
@@ -277,13 +273,19 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     template <typename S, typename F>
-    shared_process(S&& s, F&& f, std::shared_ptr<shared_process_receiver<argument>> p) :
+    shared_process(S&& s, F&& f, const std::shared_ptr<shared_process_receiver<argument>>& p) :
         _scheduler(std::forward<S>(s)),
-        _process(std::forward<F>(f)),
-        _upstream(std::move(p))
+        _process(std::forward<F>(f)), 
+        _upstream({ p })
+
     {
         _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
+    }
+
+    void add_sender(const std::shared_ptr<shared_process_receiver<argument>>& p) {
+        _upstream.push_back(p);
+        ++_sender_count;
     }
 
     void add_sender() override {
@@ -390,7 +392,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             }
         }
 
-        if (do_cts && _upstream) _upstream->clear_to_send();
+        if (do_cts && !_upstream.empty()) {
+            for (auto& up : _upstream) { up->clear_to_send(); }
+        }
+
         if (message) _process.await(std::move(message.get()));
         else if (do_close) process_close(_process);
         return bool(message);
@@ -446,7 +451,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             }
         }
 
-        if (do_cts && _upstream) _upstream->clear_to_send();
+        if (do_cts && !_upstream.empty()) {
+            for (auto& up : _upstream) { up->clear_to_send(); }
+        }
         if (message) {
             broadcast(avoid_invoke(_process, std::move(message.get())));
             clear_to_send();
@@ -517,6 +524,11 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
     }
 
+    void map(receiver<argument> f) override {
+        std::unique_lock<std::mutex> lock(_upstream_mutex);
+        _upstream.emplace_back(f);
+    }
+
     void set_buffer_size(size_t buffer_size) override {
         _process_buffer_size = buffer_size;
     }
@@ -539,6 +551,134 @@ auto channel(S&& s) -> std::pair<sender<T>, receiver<T>> {
 }
 
 /**************************************************************************************************/
+namespace detail {
+
+template <typename... T>
+struct join_context : std::enable_shared_from_this<join_context<T...>>
+{
+    std::tuple<T...>    _result;
+    std::atomic_size_t  _remaining{ sizeof...(T) };
+    stlab::process_state _state = process_state::await;
+
+
+    template<std::size_t i, typename U>
+    void await(U&& u) {
+        std::get<i>(_result) = std::forward<U>(u);
+        --_remaining;
+        if (_remaining == 0) { _state = process_state::yield; }
+    }
+
+    std::shared_ptr<join_context<T...>> yield() {
+        _state = process_state::await;
+        _remaining = sizeof...(T);
+        return this->shared_from_this();
+    }
+
+    void close() { _state = process_state::yield; }
+
+    auto state() const { return _state; }
+};
+
+template <std::size_t i, typename C>
+struct context_worker
+{
+    std::shared_ptr<C> _context;
+
+    explicit context_worker(const std::shared_ptr<C>& c) : _context(c) {}
+
+    stlab::process_state state() const { return _context->state(); }
+    
+    template <typename U>
+    void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
+
+    auto yield() { return _context->yield(); }
+
+    void close() { _context->close(); }
+};
+
+
+template <std::size_t i, typename C, typename P, typename T>
+void attach_join_arg_(std::shared_ptr<C>& context, P& processor, receiver<T>& upstream_receiver) {
+    auto receiver_collector = upstream_receiver | context_worker<i, C>(context);
+    processor->map(receiver<std::shared_ptr<C>>(receiver_collector._p));
+    receiver_collector._p->map(sender<std::shared_ptr<C>>(processor));
+}
+
+
+template <typename C, typename P, typename... T, std::size_t... I>
+void attach_join_args_(std::index_sequence<I...>, std::shared_ptr<C>& context, P& processor, receiver<T>&... upstream_receiver) {
+    (void)std::initializer_list<int>{(attach_join_arg_<I>(context, processor, upstream_receiver), 0)...};
+}
+
+
+template <typename C, typename P, typename... T>
+void attach_join_args(std::shared_ptr<C>& context, P& processor, receiver<T>&... upstream_receiver) {
+    attach_join_args_(std::make_index_sequence<sizeof...(T)>(), context, processor, upstream_receiver...);
+}
+
+template <typename F, typename C, std::size_t... I>
+auto apply_join_args_(const F& f, std::shared_ptr<C>& context, std::index_sequence<I...>) {
+    return f(std::move(std::get<I>(context->_result))...);
+}
+
+template <typename F, typename C>
+auto apply_join_args(const F& f, std::shared_ptr<C>& context) {
+    return apply_join_args_(f, context, std::make_index_sequence<std::tuple_size<decltype(context->_result)>::value>());
+}
+
+template <typename R, typename F, typename C>
+struct join_processor
+{
+    F _f;
+    std::shared_ptr<C> _context;
+
+    bool _done = true;
+
+    explicit join_processor(F f) : _f(std::move(f)) {}
+
+    void await(const std::shared_ptr<C>& context) {
+        // check here the ref counts, to handle a closed upstream
+        _context = context;
+        _done = false;
+    }
+
+    R yield() {
+        _done = true; 
+        auto wc = make_weak_ptr(_context);
+        auto c = wc.lock();
+        _context.reset();
+        return detail::apply_join_args(_f, c);;
+    }
+
+    void close()
+    {
+        _context.reset();
+        _done = true;
+    }
+
+    stlab::process_state state() const { return _done ? process_state::await : process_state::yield; }
+};
+
+
+} // namespace detail
+
+template <typename S, typename F, typename...T>
+auto join(S&& s, F f, receiver<T>&... upstream_receiver) -> receiver<typename std::result_of<F(T...)>::type> {
+    using result_t = typename std::result_of<F(T...)>::type;
+    using context_t = detail::join_context<T...>;
+    using process_t = detail::join_processor<result_t, F, context_t>;
+
+    auto shared_context = std::make_shared<context_t>();
+    auto process = process_t(std::move(f));
+
+    auto p = std::make_shared<detail::shared_process<process_t, std::shared_ptr<context_t>>>(std::forward<S>(s), std::move(process));
+    
+    detail::attach_join_args(shared_context, p, upstream_receiver...);
+
+    return receiver<result_t>(std::move(p));
+}
+
+/**************************************************************************************************/
 
 template <typename> class receiver;
 
@@ -557,6 +697,12 @@ class receiver {
 
     template <typename U, typename V>
     friend auto channel(V&&) -> std::pair<sender<U>, receiver<U>>;
+
+    template <typename S, typename F, typename...U>
+    friend auto join(S&& s, F, receiver<U>&... r)->receiver<typename std::result_of<F(U...)>::type>;
+
+    template <std::size_t, typename C, typename P, typename U>
+    friend void detail::attach_join_arg_(std::shared_ptr<C>&, P&, receiver<U>&);
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
@@ -617,7 +763,10 @@ class sender {
     template <typename U, typename V>
     friend auto channel(V&&) -> std::pair<sender<U>, receiver<U>>;
 
-    sender(ptr_t p) : _p(std::move(p)) { }
+    template <std::size_t, typename C, typename P, typename U>
+    friend void detail::attach_join_arg_(std::shared_ptr<C>&, P&, receiver<U>&);
+
+    sender(ptr_t p) : _p(std::move(p)) {}
 
   public:
     sender() = default;
@@ -637,6 +786,7 @@ class sender {
     sender& operator=(const sender& x) {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
+
     sender& operator=(sender&& x) noexcept = default;
 
     void close() {
