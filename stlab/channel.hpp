@@ -128,7 +128,7 @@ struct shared_process_receiver {
     virtual void clear_to_send() = 0;
     virtual void add_receiver() = 0;
     virtual void remove_receiver() = 0;
-    virtual schedule_t scheduler() const = 0;
+    virtual timed_schedule_t scheduler() const = 0;
     virtual void set_buffer_size(size_t) = 0;
     virtual size_t buffer_size() const = 0;
 };
@@ -142,7 +142,6 @@ struct shared_process_sender {
     virtual void send(avoid<T> x) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
-    virtual schedule_t scheduler() const = 0;
 };
 
 /**************************************************************************************************/
@@ -176,34 +175,13 @@ template <typename T>
 constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, process_state> {
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<process_state, std::chrono::milliseconds>> {
     return x.state();
 }
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, process_state> {
-    return process_state::await;
-}
-
-/**************************************************************************************************/
-
-template <typename T>
-auto test_process_await_timeout(decltype(&T::await_timeout))->std::true_type;
-
-template <typename>
-auto test_process_await_timeout(...)->std::false_type;
-
-template <typename T>
-constexpr bool has_process_await_timeout = decltype(test_process_await_timeout<T>(0))::value;
-
-template <typename T>
-auto get_process_await_timeout(const T& x) -> std::enable_if_t<has_process_await_timeout<T>, std::chrono::milliseconds> {
-    return x.await_timeout();
-}
-
-template <typename T>
-auto get_process_await_timeout(const T& x) -> std::enable_if_t<!has_process_await_timeout<T>, std::chrono::milliseconds> {
-    return std::chrono::milliseconds(42000000);
+auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<process_state, std::chrono::milliseconds>> {
+    return std::make_pair(process_state::await, std::chrono::milliseconds(0));
 }
 
 /**************************************************************************************************/
@@ -246,7 +224,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     std::mutex                   _downstream_mutex;
     std::deque<sender<result>>   _downstream;
 
-    schedule_t               _scheduler;
+    timed_schedule_t         _scheduler;
     T                        _process;
 
     std::mutex               _process_mutex;
@@ -327,7 +305,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
     }
 
-    schedule_t scheduler() const override {
+    timed_schedule_t scheduler() const override {
         return _scheduler;
     }
 
@@ -361,7 +339,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
                 // FIXME (sparent): This is calling the process state ender the lock.
-                if (get_process_state(_process) == process_state::yield || !_process_message_queue.empty()
+                if (get_process_state(_process).first == process_state::yield || !_process_message_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
                 } else {
@@ -398,30 +376,24 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
     template <typename U>
     auto step() -> std::enable_if_t<has_process_yield<U>> {
-        if (has_process_await_timeout<U> && get_process_await_timeout(_process) > std::chrono::milliseconds(0)) {
-            auto time_over = false;
-
-            auto ellapsing_point = std::chrono::system_clock::now() + get_process_await_timeout(_process);
-
-            while (!time_over && (get_process_state(_process) != process_state::yield)) {
-                if (!dequeue()) break;
-                time_over = std::chrono::system_clock::now() > ellapsing_point;
-            }
-            if (time_over || (get_process_state(_process) == process_state::yield) ) {
-                broadcast(_process.yield());
-                clear_to_send();
-            }
-            else {
-                task_done();
-            }
+        while (get_process_state(_process).first != process_state::yield) {
+            if (!dequeue()) break;
+        }
+        if (get_process_state(_process).first == process_state::yield) {
+            broadcast(_process.yield());
+            clear_to_send();
         }
         else {
-            while (get_process_state(_process) != process_state::yield) {
-                if (!dequeue()) break;
-            }
-            if (get_process_state(_process) == process_state::yield) {
-                broadcast(_process.yield());
-                clear_to_send();
+            if (get_process_state(_process).first == process_state::await && 
+                get_process_state(_process).second > std::chrono::milliseconds(0))
+            {
+                _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
+                    if (get_process_state(_this->_process).first != process_state::yield)
+                    {
+                        _this->broadcast(_this->_process.yield());
+                        _this->clear_to_send();
+                    }
+                });
             }
             else {
                 task_done();
@@ -455,7 +427,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void run() {
-        _scheduler([_p = make_weak_ptr(this->shared_from_this())]{
+        _scheduler(std::chrono::milliseconds(0), [_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
