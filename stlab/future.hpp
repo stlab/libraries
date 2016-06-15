@@ -1403,13 +1403,18 @@ struct default_scheduler
     void operator()(F f) {
         detail::async_(std::move(f));
     }
-
 };
+
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 struct default_scheduler {
     using result_type = void;
+
+    template <typename F>
+    void operator()(std::chrono::milliseconds delay, F f) {
+        detail::async_(delay, std::move(f));
+    }
 
     template <typename F>
     void operator()(F f) {
