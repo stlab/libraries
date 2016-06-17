@@ -139,7 +139,6 @@ template <typename T>
 struct shared_process_sender {
     virtual ~shared_process_sender() = default;
 
-    virtual void map(receiver<T>) = 0;
     virtual void send(avoid<T> x) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
@@ -337,12 +336,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     void clear_to_send() override {
         bool do_run = false;
         {
+            auto process_state = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
-                // FIXME (sparent): This is calling the process state ender the lock.
-                if (get_process_state(_process).first == process_state::yield || !_process_message_queue.empty()
+                if (process_state.first == process_state::yield || !_process_message_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
                 } else {
@@ -497,11 +496,6 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
     }
 
-    void map(receiver<argument> f) override {
-        std::unique_lock<std::mutex> lock(_upstream_mutex);
-        _upstream.emplace_back(f);
-    }
-
     void set_buffer_size(size_t buffer_size) override {
         _process_buffer_size = buffer_size;
     }
@@ -549,7 +543,7 @@ struct join_context : std::enable_shared_from_this<join_context<T...>>
 
     void close() { _state = process_state::yield; }
 
-    auto state() const { return _state; }
+    auto state() const { return std::make_pair(_state, std::chrono::milliseconds(0)); }
 };
 
 template <std::size_t i, typename C>
@@ -559,7 +553,7 @@ struct context_worker
 
     explicit context_worker(const std::shared_ptr<C>& c) : _context(c) {}
 
-    stlab::process_state state() const { return _context->state(); }
+    auto state() const { return _context->state(); }
     
     template <typename U>
     void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
@@ -573,7 +567,7 @@ struct context_worker
 template <std::size_t i, typename C, typename P, typename T>
 void attach_join_arg_(std::shared_ptr<C>& context, P& processor, receiver<T>& upstream_receiver) {
     auto receiver_collector = upstream_receiver | context_worker<i, C>(context);
-    processor->map(receiver<std::shared_ptr<C>>(receiver_collector._p));
+    processor->add_sender(receiver_collector._p);
     receiver_collector._p->map(sender<std::shared_ptr<C>>(processor));
 }
 
@@ -620,16 +614,16 @@ struct join_processor
         auto wc = make_weak_ptr(_context);
         auto c = wc.lock();
         _context.reset();
+        
         return detail::apply_join_args(_f, c);;
     }
 
-    void close()
-    {
+    void close() {
         _context.reset();
         _done = true;
     }
 
-    stlab::process_state state() const { return _done ? process_state::await : process_state::yield; }
+    auto state() const { return std::make_pair((_done ? process_state::await : process_state::yield), std::chrono::milliseconds(0)); }
 };
 
 
