@@ -336,12 +336,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     void clear_to_send() override {
         bool do_run = false;
         {
-            auto process_state = get_process_state(_process);
+            auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
-                if (process_state.first == process_state::yield || !_process_message_queue.empty()
+                if (ps.first == process_state::yield || !_process_message_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
                 } else {
