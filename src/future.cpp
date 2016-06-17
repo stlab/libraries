@@ -240,6 +240,14 @@ namespace detail {
     good since we need a concrete interface at this level. Above code could be simpler.
 */
 
+void async_(std::chrono::milliseconds delay, function<void()> f) {
+    async_([_delay = delay, _f = move(f)]{
+        if (_delay > std::chrono::milliseconds(0))
+        std::this_thread::sleep_for(_delay);
+    _f();
+    });
+}
+
 void async_(function<void()> f) {
     static task_system _system;
     _system.async_(move(f));
