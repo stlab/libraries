@@ -175,12 +175,12 @@ template <typename T>
 constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<process_state, std::chrono::milliseconds>> {
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<stlab::process_state, std::chrono::milliseconds>> {
     return x.state();
 }
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<process_state, std::chrono::milliseconds>> {
+auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<stlab::process_state, std::chrono::milliseconds>> {
     return std::make_pair(process_state::await, std::chrono::milliseconds(0));
 }
 
