@@ -6,6 +6,11 @@
 
 /**************************************************************************************************/
 
+#include <stlab/config.hpp>
+
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+
 #include <stlab/future.hpp>
 #include <functional>
 
@@ -261,5 +266,9 @@ void async_(function<void()> f) {
 
 } // namespace detail
 } // namespace stlab
+
+/**************************************************************************************************/
+
+#endif
 
 /**************************************************************************************************/
