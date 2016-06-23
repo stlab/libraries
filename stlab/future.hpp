@@ -74,7 +74,7 @@ template <typename...> class packaged_task;
 template <typename, typename = void> class future;
 
 using schedule_t = std::function<void(std::function<void()>)>;
-using timed_schedule_t = std::function<void(std::chrono::milliseconds, std::function<void()>)>;
+using timed_schedule_t = std::function<void(std::chrono::system_clock::time_point, std::function<void()>)>;
 
 /**************************************************************************************************/
 
@@ -1354,7 +1354,7 @@ void shared_base<future<void>>::set_value(const F& f, Args&&... args) {
 /**************************************************************************************************/
 
 void async_(std::function<void()>);
-void async_(std::chrono::milliseconds, std::function<void()>);
+void async_(std::chrono::system_clock::time_point, std::function<void()>);
 
 /**************************************************************************************************/
 
@@ -1427,7 +1427,7 @@ struct default_scheduler {
     using result_type = void;
 
     template <typename F>
-    void operator()(std::chrono::milliseconds delay, F f) {
+    void operator()(std::chrono::system_clock::time_point delay, F f) {
         detail::async_(delay, std::move(f));
     }
 
