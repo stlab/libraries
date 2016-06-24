@@ -181,7 +181,7 @@ auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std
 
 template <typename T>
 auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
-    return std::make_pair(process_state::await, std::chrono::system_clock::now());
+    return std::make_pair(process_state::await, std::chrono::system_clock::time_point());
 }
 
 /**************************************************************************************************/
@@ -427,7 +427,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void run() {
-        _scheduler(std::chrono::system_clock::now(), [_p = make_weak_ptr(this->shared_from_this())]{
+        _scheduler(std::chrono::system_clock::time_point(), [_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });

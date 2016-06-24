@@ -308,7 +308,7 @@ task_system& only_task_system() {
 }
 
 void async_(std::chrono::system_clock::time_point time_point, function<void()> f) {
-    if (time_point > std::chrono::system_clock::now())
+    if ( (time_point != std::chrono::system_clock::time_point()) && (time_point > std::chrono::system_clock::now()) )        
         only_task_system().async_(time_point, move(f));
     else
         async_(std::move(f));
