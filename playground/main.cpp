@@ -250,7 +250,7 @@ struct sum {
 
     void close() { _state = process_state::yield; }
 
-    auto state() const { return std::make_pair(_state, chrono::milliseconds(0)); }
+    auto state() const { return std::make_pair(_state, chrono::system_clock::now()); }
 };
 
 
@@ -321,14 +321,16 @@ struct timed_sum {
     void await(int n) {
         _sum += n;
         // adding some additional processing time to see that later the defined queue size is taken into account
-        //this_thread::sleep_for(chrono::milliseconds(10));
+        this_thread::sleep_for(chrono::milliseconds(10));
     }
 
     int yield() { _state = process_state::await; return _sum; }
 
-    void close() { _state = process_state::yield; }
+    void close() { _state = process_state::await; }
 
-    auto state() const { return std::make_pair(_state, (_sum < 45)? chrono::milliseconds(0) : chrono::milliseconds(30)); }
+    auto state() const {
+        return std::make_pair(_state, (_sum < 45)? chrono::system_clock::now() : (chrono::system_clock::now() + chrono::milliseconds(5000)));
+    }
 };
 
 void timedChannelExample()

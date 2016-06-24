@@ -14,7 +14,8 @@
 #include <thread>
 #include <tuple>
 #include <utility>
-//#include <stlab/future.hpp>
+
+#include <stlab/future.hpp>
 
 /**************************************************************************************************/
 
@@ -175,13 +176,13 @@ template <typename T>
 constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<stlab::process_state, std::chrono::milliseconds>> {
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
     return x.state();
 }
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<stlab::process_state, std::chrono::milliseconds>> {
-    return std::make_pair(process_state::await, std::chrono::milliseconds(0));
+auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
+    return std::make_pair(process_state::await, std::chrono::system_clock::now());
 }
 
 /**************************************************************************************************/
@@ -390,7 +391,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
         else {
             if (get_process_state(_process).first == process_state::await && 
-                get_process_state(_process).second > std::chrono::milliseconds(0))
+                get_process_state(_process).second > std::chrono::system_clock::now())
             {
                 _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
                     if (get_process_state(_this->_process).first != process_state::yield)
@@ -434,7 +435,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void run() {
-        _scheduler(std::chrono::milliseconds(0), [_p = make_weak_ptr(this->shared_from_this())]{
+        _scheduler(std::chrono::system_clock::now(), [_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
@@ -543,7 +544,7 @@ struct join_context : std::enable_shared_from_this<join_context<T...>>
 
     void close() { _state = process_state::yield; }
 
-    auto state() const { return std::make_pair(_state, std::chrono::milliseconds(0)); }
+    auto state() const { return std::make_pair(_state, std::chrono::system_clock::now()); }
 };
 
 template <std::size_t i, typename C>
@@ -623,7 +624,7 @@ struct join_processor
         _done = true;
     }
 
-    auto state() const { return std::make_pair((_done ? process_state::await : process_state::yield), std::chrono::milliseconds(0)); }
+    auto state() const { return std::make_pair((_done ? process_state::await : process_state::yield), std::chrono::system_clock::now()); }
 };
 
 
@@ -753,7 +754,6 @@ class sender {
     sender& operator=(const sender& x) {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
-
     sender& operator=(sender&& x) noexcept = default;
 
     void close() {

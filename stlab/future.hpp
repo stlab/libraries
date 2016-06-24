@@ -25,6 +25,15 @@
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 #include <emscripten.h>
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#include <ppapi/cpp/module.h>
+#include <ppapi/cpp/core.h>
+#include <ppapi/cpp/completion_callback.h>
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+// REVISIT (sparent) : for testing only
+#if __APPLE__
+#include <dispatch/dispatch.h>
+#endif
 #endif
 
 /**************************************************************************************************/
@@ -65,7 +74,7 @@ template <typename...> class packaged_task;
 template <typename, typename = void> class future;
 
 using schedule_t = std::function<void(std::function<void()>)>;
-using timed_schedule_t = std::function<void(std::chrono::milliseconds,std::function<void()>)>;
+using timed_schedule_t = std::function<void(std::chrono::system_clock::time_point, std::function<void()>)>;
 
 /**************************************************************************************************/
 
@@ -1345,7 +1354,7 @@ void shared_base<future<void>>::set_value(const F& f, Args&&... args) {
 /**************************************************************************************************/
 
 void async_(std::function<void()>);
-void async_(std::chrono::milliseconds, std::function<void()>);
+void async_(std::chrono::system_clock::time_point, std::function<void()>);
 
 /**************************************************************************************************/
 
@@ -1363,6 +1372,22 @@ struct default_scheduler {
         using f_t = decltype(f);
 
         dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                new f_t(std::move(f)), [](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                });
+    }
+};
+
+struct main_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        dispatch_async_f(dispatch_get_main_queue(),
                 new f_t(std::move(f)), [](void* f_) {
                     auto f = static_cast<f_t*>(f_);
                     (*f)();
@@ -1389,30 +1414,20 @@ struct default_scheduler {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-struct default_scheduler
-{
-    using result_type = void;
+using main_scheduler = default_scheduler;
 
-    template <typename F>
-    void operator()(std::chrono::milliseconds delay, F f) {
-        detail::async_(delay, std::move(f));
-    }
+#elif  (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
 
-    template <typename F>
-    void operator()(F f) {
-        detail::async_(std::move(f));
-    }
-};
-
-
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+// REVISIT (sparent): Since we are using the default threadpool, can the windows default scheduler
+// just be inlined here?
 
 struct default_scheduler {
     using result_type = void;
 
     template <typename F>
-    void operator()(std::chrono::milliseconds delay, F f) {
+    void operator()(std::chrono::system_clock::time_point delay, F f) {
         detail::async_(delay, std::move(f));
     }
 
@@ -1421,6 +1436,48 @@ struct default_scheduler {
         detail::async_(std::move(f));
     }
 };
+
+// TODO (sparent) : We need a main task scheduler for STLAB_TASK_SYSTEM_WINDOWS
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+
+struct main_scheduler {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        pp::Module::Get()->core()->CallOnMainThread(0,
+            pp::CompletionCallback([](void* f_, int32_t) {
+                auto f = static_cast<f_t*>(f_);
+                (*f)();
+                delete f;
+            }, new f_t(std::move(f))), 0);
+    }
+};
+
+#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+
+// TODO (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
+struct main_scheduler {
+    using result_type = void;
+
+    #if __APPLE__
+    template <typename F>
+    void operator()(F f) {
+        using f_t = decltype(f);
+
+        ::dispatch_async_f(dispatch_get_main_queue(),
+                new f_t(std::move(f)), [](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                });
+    }
+    #endif
+};
+#endif
 
 #endif
 
