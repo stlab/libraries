@@ -250,7 +250,7 @@ struct sum {
 
     void close() { _state = process_state::yield; }
 
-    auto state() const { return std::make_pair(_state, chrono::system_clock::now()); }
+    auto state() const { return std::make_pair(_state, chrono::system_clock::time_point()); }
 };
 
 
