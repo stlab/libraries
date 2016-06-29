@@ -814,23 +814,24 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>  _args;
     future<void>                        _holds[sizeof...(Ts)] {};
     std::atomic_size_t                  _remaining {sizeof...(Ts)};
-    std::atomic_bool                    _error_happend{ false };
-    std::mutex                          _errormutex;
+    std::atomic_bool                    _error_happened{ false };
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
-    void done() { if (--_remaining == 0 && !_error_happend) _f(); }
+    void done() { if (!_error_happened && --_remaining == 0) _f(); }
 
     void failure(std::exception_ptr error) {
-        {
-            std::unique_lock<std::mutex> lock(_errormutex);
+        bool current_error_happened = _error_happened.load();
+        if (current_error_happened)
+            return;
+
+        bool run = false;
+        if (_error_happened.compare_exchange_strong(current_error_happened, true)) {
             _error = std::move(error);
-            _error_happend = true;
+            run = true;
         }
-        for (auto& h : _holds) {
-            h.cancel_try();
-        }
-        _f();
+        if (run)
+            _f();
     }
 
 };
@@ -934,22 +935,26 @@ namespace detail
         std::atomic_size_t                    _remaining;
         std::atomic_bool                      _error_happened{ false };
         std::vector<future<void>>             _holds;
-        std::mutex                            _errormutex;
         boost::optional<std::exception_ptr>   _error;
         packaged_task<>                       _f;
 
-        void done() { if (--_remaining == 0 && !_error_happened) _f(); }
+        void done() { if (!_error_happened && --_remaining == 0) _f(); }
 
         void failure(std::exception_ptr error) {
-            {
-                std::unique_lock<std::mutex> lock(_errormutex);
+            bool current_error_happened = _error_happened.load();
+            if (current_error_happened)
+                return;
+
+            bool run = false;
+            if (_error_happened.compare_exchange_strong(current_error_happened, true)) {
                 _error = std::move(error);
-                _error_happened = true;
+                run = true;
             }
-            for (auto& h : _holds) {
-                h.cancel_try();
-            }
-            _f();
+            if (run)
+                _f();
+            //for (auto& h : _holds) {
+            //    h.cancel_try();
+            //}
         }
     };
 
@@ -1042,24 +1047,33 @@ namespace detail
             , _holds(_remaining)
         {}
 
-        std::atomic_size_t                    _remaining{0};
+        std::atomic_size_t                    _remaining;
         std::vector<future<void>>             _holds;
         std::mutex                            _mutex;
         boost::optional<std::exception_ptr>   _error;
-        size_t                                _index{0};
+        size_t                                _index{std::numeric_limits<size_t>::max()};
         packaged_task<>                       _f;
 
         void failure(std::exception_ptr error) {
-            // we already have a result
-            if (_remaining == 0) {
-                return;
-            }
+            size_t current_remaining = _remaining.load();
+            
+            bool run = false;
+            
             // only the last error is of any interest
-            if (_remaining == 1) {
-                _error = std::move(error);
-                _f();
+            while (current_remaining != 0) { // we already have a result
+                size_t new_remaining = current_remaining - 1;
+                if (new_remaining == 0) {    // this was the last chance
+                    _error = std::move(error); 
+                    run = true;
+                    break;
+                }
+
+                if (_remaining.compare_exchange_strong(current_remaining, new_remaining)) {
+                    return;
+                }
             }
-            --_remaining;
+            if (run)
+                _f();
         }
     };
 
@@ -1070,24 +1084,24 @@ namespace detail
         {}
         
         void done(Input r, size_t index) {
-            if (when_any_range_context_base<F,I>::_remaining == 0)
-                return;
-            {
-                std::unique_lock<std::mutex> lock(when_any_range_context_base<F, I>::_mutex);
-                if (when_any_range_context_base<F, I>::_remaining != 0) {
-                    when_any_range_context_base<F, I>::_remaining = 0;
+            bool run = false;
+
+            size_t current_remaining = this->_remaining.load();
+            while (current_remaining != 0) {            // we already have a result
+                if (this->_remaining.compare_exchange_strong(current_remaining, size_t(0))) {
                     _result = std::move(r);
-                    when_any_range_context_base<F, I>::_index = index;
-                    for (auto& h : this->_holds) {
-                        h.cancel_try();
-                    }
+                    this->_index = index;
+                    run = true;
+                    break;
                 }
-                else {
-                    return;
-                }
+                
+                current_remaining = this->_remaining.load();
             }
-            if (when_any_range_context_base<F, I>::_remaining == 0)
-                when_any_range_context_base<F, I>::_f();
+            if (run)
+                this->_f();
+            //for (auto& h : this->_holds) {
+            //    h.cancel_try();
+            //}
         }
 
         Input  _result;
@@ -1100,23 +1114,23 @@ namespace detail
         {}
 
         void done(size_t index) {
-            if (when_any_range_context_base<F, I>::_remaining == 0)
-                return;
-            {
-                std::unique_lock<std::mutex> lock(when_any_range_context_base<F, I>::_mutex);
-                if (when_any_range_context_base<F, I>::_remaining != 0) {
-                    when_any_range_context_base<F, I>::_remaining = 0;
-                    when_any_range_context_base<F, I>::_index = index;
-                    for (auto& h : this->_holds) {
-                        h.cancel_try();
-                    }
+            bool run = false;
+
+            size_t current_remaining = this->_remaining.load();
+            while (current_remaining != 0) {        // we already have a result
+                if (this->_remaining.compare_exchange_strong(current_remaining, 0)) {
+                    this->_index = index;
+                    run = true;
+                    break;
                 }
-                else {
-                    return;
-                }
+                current_remaining = this->_remaining.load();
             }
-            if (when_any_range_context_base<F, I>::_remaining == 0)
-                when_any_range_context_base<F, I>::_f();
+            if (run)
+                this->_f();
+            //for (auto& h : this->_holds) {
+            //    h.cancel_try();
+            //}
+
         }
     };
 
