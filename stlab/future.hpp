@@ -825,13 +825,10 @@ struct when_all_shared {
         if (current_error_happened)
             return;
 
-        bool run = false;
         if (_error_happened.compare_exchange_strong(current_error_happened, true)) {
             _error = std::move(error);
-            run = true;
-        }
-        if (run)
             _f();
+        }
     }
 
 };
@@ -945,13 +942,10 @@ namespace detail
             if (current_error_happened)
                 return;
 
-            bool run = false;
             if (_error_happened.compare_exchange_strong(current_error_happened, true)) {
                 _error = std::move(error);
-                run = true;
-            }
-            if (run)
                 _f();
+            }
             //for (auto& h : _holds) {
             //    h.cancel_try();
             //}
