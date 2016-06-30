@@ -818,7 +818,7 @@ struct when_all_shared {
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
-    void done() { if (!_error_happened && --_remaining == 0) _f(); }
+    void done() { if (--_remaining == 0 && !_error_happened) _f(); }
 
     void failure(std::exception_ptr error) {
         bool current_error_happened = _error_happened.load();
@@ -938,7 +938,7 @@ namespace detail
         boost::optional<std::exception_ptr>   _error;
         packaged_task<>                       _f;
 
-        void done() { if (!_error_happened && --_remaining == 0) _f(); }
+        void done() { if (--_remaining == 0 && !_error_happened) _f(); }
 
         void failure(std::exception_ptr error) {
             bool current_error_happened = _error_happened.load();
@@ -1055,25 +1055,13 @@ namespace detail
         packaged_task<>                       _f;
 
         void failure(std::exception_ptr error) {
-            size_t current_remaining = _remaining.load();
-            
-            bool run = false;
+            --_remaining;
             
             // only the last error is of any interest
-            while (current_remaining != 0) { // we already have a result
-                size_t new_remaining = current_remaining - 1;
-                if (new_remaining == 0) {    // this was the last chance
-                    _error = std::move(error); 
-                    run = true;
-                    break;
-                }
-
-                if (_remaining.compare_exchange_strong(current_remaining, new_remaining)) {
-                    return;
-                }
-            }
-            if (run)
+            if (_remaining == 0) {
+                _error = std::move(error);
                 _f();
+            }
         }
     };
 
