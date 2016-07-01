@@ -818,7 +818,7 @@ struct when_all_shared {
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
-    void done() { if (--_remaining == 0 && !_error_happened) _f(); }
+    void done() { if (--_remaining == 0) _f(); }
 
     void failure(std::exception_ptr error) {
         bool current_error_happened = _error_happened.load();
@@ -917,8 +917,7 @@ namespace detail
         explicit context_apply_void(size_t) {}
 
         template <typename C, typename F>
-        void apply_result(C&, F&, size_t) {
-        }
+        void apply_result(C&, F&, size_t) {}
     };
 
     template <typename ApplyPolicy, typename F, typename I, typename R>
@@ -935,7 +934,7 @@ namespace detail
         boost::optional<std::exception_ptr>   _error;
         packaged_task<>                       _f;
 
-        void done() { if (--_remaining == 0 && !_error_happened) _f(); }
+        void done() { if (--_remaining == 0) _f(); }
 
         void failure(std::exception_ptr error) {
             bool current_error_happened = _error_happened.load();
@@ -1066,21 +1065,17 @@ namespace detail
         {}
         
         void done(Input r, size_t index) {
-            bool run = false;
-
             size_t current_remaining = this->_remaining.load();
             while (current_remaining != 0) {            // we already have a result
                 if (this->_remaining.compare_exchange_strong(current_remaining, size_t(0))) {
                     _result = std::move(r);
                     this->_index = index;
-                    run = true;
-                    break;
+                    this->_f();
+                    return;
                 }
                 
                 current_remaining = this->_remaining.load();
             }
-            if (run)
-                this->_f();
             //for (auto& h : this->_holds) {
             //    h.cancel_try();
             //}
@@ -1096,19 +1091,15 @@ namespace detail
         {}
 
         void done(size_t index) {
-            bool run = false;
-
             size_t current_remaining = this->_remaining.load();
             while (current_remaining != 0) {        // we already have a result
                 if (this->_remaining.compare_exchange_strong(current_remaining, 0)) {
                     this->_index = index;
-                    run = true;
-                    break;
+                    this->_f();
+                    return;
                 }
                 current_remaining = this->_remaining.load();
             }
-            if (run)
-                this->_f();
             //for (auto& h : this->_holds) {
             //    h.cancel_try();
             //}
