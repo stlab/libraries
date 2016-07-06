@@ -56,19 +56,37 @@ struct arguments_of_<R(Args...)> { using type = type_list<Args...>; };
 
 
 template <typename F, typename T>
-struct result_of_f_t;
+struct result_of_when_all_t;
 
 template <typename F>
-struct result_of_f_t<F,void>
+struct result_of_when_all_t<F,void>
 {
     using result_type = typename std::result_of<F()>::type;
 };
 
 template <typename F, typename T>
-struct result_of_f_t
+struct result_of_when_all_t
 {
     using result_type = typename std::result_of<F(const std::vector<T>&)>::type;
 };
+
+
+template <typename F, typename T>
+struct result_of_when_any_t;
+
+template <typename F>
+struct result_of_when_any_t<F, void>
+{
+    using result_type = typename std::result_of<F(size_t)>::type;
+};
+
+template <typename F, typename R>
+struct result_of_when_any_t
+{
+    using result_type = typename std::result_of<F(R, size_t)>::type;
+};
+
+
 
 
 /**************************************************************************************************/
@@ -929,9 +947,9 @@ namespace detail
             , _f(std::move(f))
         {}
 
-        template <typename C, typename FF>
-        void apply(C& c, FF& f, size_t index) {
-            c._results[index] = std::move(*f.get_try());
+        template <typename FF>
+        void apply(FF& f, size_t index) {
+            _results[index] = std::move(*f.get_try());
         }
 
         auto operator()() {
@@ -950,15 +968,15 @@ namespace detail
           : _f(std::move(f))
         {}
 
-        template <typename C, typename FF>
-        void apply(C&, FF&, size_t) {}
+        template <typename FF>
+        void apply(FF&, size_t) {}
 
         auto operator()() {
             return _f();
         }
     };
 
-    template <typename CR, typename F, typename I, typename R>
+    template <typename CR, typename F, typename R>
     struct when_all_range_context : CR {
         when_all_range_context(F f, size_t s)
             : CR(std::move(f), s)
@@ -1006,7 +1024,7 @@ namespace detail
                 p->failure(*error);
             }
             else {
-                p->apply(*p ,x, _i);
+                p->apply(x, _i);
                 p->done();
             }
         });
@@ -1017,8 +1035,8 @@ namespace detail
 
         template<typename S, typename F, typename I>
         static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename result_of_f_t<F,R>::result_type;
-            using context_t = detail::when_all_range_context<context_result<F, R>, F, I, R >;
+            using result_t = typename result_of_when_all_t<F,R>::result_type;
+            using context_t = detail::when_all_range_context<context_result<F, R>, F, R >;
 
             if (first == last) {
                 auto p = package<result_t()>(std::forward<S>(s), context_result<F, R>(std::forward<F>(f), 0));
@@ -1044,43 +1062,87 @@ namespace detail
 
     /**************************************************************************************************/
 
-    template <typename F, typename I>
-    struct when_any_range_context_base {
-        when_any_range_context_base(I first, I last)
-            : _remaining(std::distance(first, last))
-            , _holds(_remaining)
+    template <typename F, typename R>
+    struct when_any_context_result;
+
+    template <typename F, typename R>
+    struct when_any_context_result {
+        R  _results;
+        
+        F _f;
+        size_t _index;
+
+        when_any_context_result(F f, size_t)
+            : _f(std::move(f))
         {}
+
+        template <typename FF>
+        void apply(FF& f, size_t index) {
+            _results = std::move(*f.get_try());
+            _index = index;
+        }
+
+        auto operator()() {
+            return _f(_results, _index);
+        }
+    };
+
+
+    template<typename F>
+    struct when_any_context_result<F, void> {
+        using result_type = void;
+
+        F _f;
+        size_t _index;
+
+        when_any_context_result(F f, size_t)
+            : _f(std::move(f))
+        {}
+
+        template <typename FF>
+        void apply(FF&, size_t index) {
+            _index = index;
+        }
+
+        auto operator()() {
+            return _f(_index);
+        }
+    };
+
+
+    template <typename CR, typename F, typename R>
+    struct when_any_range_context : CR {
 
         std::atomic_size_t                    _remaining;
         std::vector<future<void>>             _holds;
         std::mutex                            _mutex;
         boost::optional<std::exception_ptr>   _error;
-        size_t                                _index{std::numeric_limits<size_t>::max()};
+        size_t                                _index{ std::numeric_limits<size_t>::max() };
+
         packaged_task<>                       _f;
+
+        when_any_range_context(F f, size_t s)
+            : CR(std::move(f), s)
+            , _remaining(s)
+            , _holds(_remaining)
+        {}
 
         void failure(std::exception_ptr error) {
             --_remaining;
-            
+
             // only the last error is of any interest
             if (_remaining == 0) {
                 _error = std::move(error);
                 _f();
             }
         }
-    };
 
-    template <typename F, typename I, typename Input>
-    struct when_any_range_context : when_any_range_context_base<F, I> {
-        when_any_range_context(I first, I last)
-            : when_any_range_context_base<F, I>(first, last)
-        {}
-        
-        void done(Input r, size_t index) {
+        template <typename FF>
+        void done(FF&& f, size_t index) {
             size_t current_remaining = this->_remaining.load();
             while (current_remaining != 0) {            // we already have a result
                 if (this->_remaining.compare_exchange_strong(current_remaining, size_t(0))) {
-                    _result = std::move(r);
-                    this->_index = index;
+                    apply(std::forward<FF>(f), index);
                     this->_f();
                     return;
                 }
@@ -1092,47 +1154,12 @@ namespace detail
             //}
         }
 
-        template <typename FF>
-        auto execute(FF& f)
-        {
+        auto execute() {
             if (this->_error) {
                 std::rethrow_exception(this->_error.get());
             }
-            return f(_result, this->_index);
+            return CR::operator()();
         }
-
-        Input  _result;
-    };
-
-    template <typename F, typename I>
-    struct when_any_range_context<F, I, void> : when_any_range_context_base<F, I> {
-        when_any_range_context(I first, I last)
-            : when_any_range_context_base<F, I>(first, last)
-        {}
-
-        void done(size_t index) {
-            size_t current_remaining = this->_remaining.load();
-            while (current_remaining != 0) {        // we already have a result
-                if (this->_remaining.compare_exchange_strong(current_remaining, 0)) {
-                    this->_index = index;
-                    this->_f();
-                    return;
-                }
-                current_remaining = this->_remaining.load();
-            }
-            //for (auto& h : this->_holds) {
-            //    h.cancel_try();
-            //}
-        }
-        template <typename FF>
-        auto execute(FF& f)
-        {
-            if (this->_error) {
-                std::rethrow_exception(this->_error.get());
-            }
-            return f(this->_index);
-        }
-
     };
 
     template <typename P, typename T>
@@ -1144,21 +1171,7 @@ namespace detail
                 p->failure(*error);
             }
             else {
-                p->done(std::move(*x.get_try()), _i);
-            }
-        });
-    }
-
-    template <typename P, typename T>
-    void attach_when_any_range_void_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
-        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
-            auto p = _w.lock(); if (!p) return;
-            auto error = x.error();
-            if (error) {
-                p->failure(*error);
-            }
-            else {
-                p->done(_i);
+                p->done(x, _i);
             }
         });
     }
@@ -1168,16 +1181,16 @@ namespace detail
 
         template<typename S, typename F, typename I>
         static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename std::result_of<F(R, size_t)>::type;
+            using result_t = typename result_of_when_any_t<F, R>::result_type;
 
             if (first == last) {
-                auto p = package_with_broken_promise<result_t()>(std::forward<S>(s), std::bind(std::forward<F>(f), R(), 0));
+                auto p = package_with_broken_promise<result_t()>(std::forward<S>(s), when_any_context_result<F,R>(std::forward<F>(f),0));
                 return std::move(p.second);
             }
 
-            auto context = std::make_shared<detail::when_any_range_context<F, I, R>>(first, last);
-            auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context]{
-                return _c->execute(_f);
+            auto context = std::make_shared<when_any_range_context<when_any_context_result<F,R>, F, R>>(std::forward<F>(f), std::distance(first, last));
+            auto p = package<result_t()>(std::move(s), [_c = context]{
+                return _c->execute();
             });
 
             context->_f = std::move(p.first);
@@ -1185,34 +1198,6 @@ namespace detail
             size_t index(0);
             std::for_each(first, last, [&index, &context](auto item) {
                 detail::attach_when_any_range_tasks(index++, context, item);
-            });
-
-            return std::move(p.second);
-        }
-    };
-
-    template <>
-    struct create_when_any_range_future<void> {
-
-        template<typename S, typename F, typename I>
-        static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename std::result_of<F(size_t)>::type;
-
-            if (first == last) {
-                auto p = package_with_broken_promise<void()>(std::forward<S>(s), std::bind(std::forward<F>(f), 0));                
-                return std::move(p.second);
-            }
-
-            auto context = std::make_shared<detail::when_any_range_context<F, I, void>>(first, last);
-            auto p = package<result_t()>(std::move(s), [_f = std::move(f), _c = context]{
-                return _c->execute(_f);
-            });
-
-            context->_f = std::move(p.first);
-
-            size_t index(0);
-            std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_when_any_range_void_tasks(index++, context, item);
             });
 
             return std::move(p.second);
