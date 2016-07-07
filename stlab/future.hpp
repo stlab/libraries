@@ -449,7 +449,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
     function_t _f;
 
     template <typename F>
-    explicit shared(schedule_t s, F f) : shared_base<R>(std::move(s)), _f(std::move(f)) {
+    shared(schedule_t s, F f) : shared_base<R>(std::move(s)), _f(std::move(f)) {
         _promise_count = 1;
     }
 
@@ -933,9 +933,6 @@ auto when_all(S s, F f, future<Ts>... args) {
 namespace detail
 {
     template <typename F, typename R>
-    struct context_result;
-
-    template <typename F, typename R>
     struct context_result {
         using result_type = std::vector<R>;
 
@@ -1019,61 +1016,14 @@ namespace detail
 
     };
 
-    template <typename P, typename T>
-    void attach_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
-        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
-            auto p = _w.lock(); if (!p) return;
-            auto error = x.error();
-            if (error) {
-                p->failure(*error);
-            }
-            else {
-                p->done(std::move(x), _i);
-            }
-        });
-    }
-
-    template <typename R>
-    struct create_when_all_range_future {
-
-        template<typename S, typename F, typename I>
-        static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename result_of_when_all_t<F,R>::result_type;
-            using context_t = detail::when_all_range_context<context_result<F, R>, F, R >;
-
-            if (first == last) {
-                auto p = package<result_t()>(std::forward<S>(s), context_result<F, R>(std::forward<F>(f), 0));
-                s(std::move(p.first));
-                return std::move(p.second);
-            }
-
-            auto context = std::make_shared<context_t>(std::forward<F>(f), std::distance(first, last));
-            auto p = package<result_t()>(std::move(s), [_c = context] {
-                return _c->execute();
-            });
-
-            context->_f = std::move(p.first);
-
-            size_t index(0);
-            std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_tasks(index++, context, item);
-            });
-
-            return std::move(p.second);
-        }
-    };
-
     /**************************************************************************************************/
 
     template <typename F, typename R>
-    struct when_any_context_result;
-
-    template <typename F, typename R>
     struct when_any_context_result {
-        R  _results;
-        
-        F _f;
-        size_t _index;
+
+        R       _results;
+        size_t  _index;
+        F       _f;
 
         when_any_context_result(F f, size_t)
             : _f(std::move(f))
@@ -1095,8 +1045,8 @@ namespace detail
     struct when_any_context_result<F, void> {
         using result_type = void;
 
-        F _f;
-        size_t _index;
+        size_t  _index;
+        F       _f;
 
         when_any_context_result(F f, size_t)
             : _f(std::move(f))
@@ -1165,20 +1115,31 @@ namespace detail
         }
     };
 
-    template <typename R>
-    struct create_when_any_range_future {
+    /**************************************************************************************************/
+
+    template <typename C, typename T>
+    void attach_tasks(size_t index, const std::shared_ptr<C>& context, T a) {
+        context->_holds[index] = std::move(a).recover([_context = std::weak_ptr<C>(context), _i = index](auto x){
+            auto p = _context.lock(); if (!p) return;
+            auto error = x.error();
+            if (error) {
+                p->failure(*error);
+            }
+            else {
+                p->done(std::move(x), _i);
+            }
+        });
+    }
+
+    template <typename R, typename C>
+    struct create_range_of_futures {
 
         template<typename S, typename F, typename I>
         static auto do_it(S&& s, F&& f, I first, I last) {
-            using result_t = typename result_of_when_any_t<F, R>::result_type;
+            assert(first != last);
 
-            if (first == last) {
-                auto p = package_with_broken_promise<result_t()>(std::forward<S>(s), when_any_context_result<F,R>(std::forward<F>(f),0));
-                return std::move(p.second);
-            }
-
-            auto context = std::make_shared<when_any_range_context<when_any_context_result<F,R>, F, R>>(std::forward<F>(f), std::distance(first, last));
-            auto p = package<result_t()>(std::move(s), [_c = context]{
+            auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
+            auto p = package<R()>(std::move(s), [_c = context]{
                 return _c->execute();
             });
 
@@ -1186,14 +1147,13 @@ namespace detail
 
             size_t index(0);
             std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_tasks(index++, context, item);
+                attach_tasks(index++, context, item);
             });
 
             return std::move(p.second);
         }
     };
 }
-
 
 /**************************************************************************************************/
 
@@ -1202,8 +1162,18 @@ template <typename S, // models task scheduler
           typename I> // models ForwardIterator that reference to a range of futures of the same type
 auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
+    using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
 
-    return detail::create_when_all_range_future<param_t>::do_it(std::forward<S>(schedule), 
+    using context_t = detail::when_all_range_context<detail::context_result<F, param_t>, F, param_t>;
+
+
+    if (range.first == range.second) {
+        auto p = package<result_t()>(std::move(schedule), detail::context_result<F, param_t>(std::move(f), 0));
+        schedule(std::move(p.first));
+        return std::move(p.second);
+    }
+
+    return detail::create_range_of_futures<result_t,context_t>::do_it(std::forward<S>(schedule),
                                                              std::forward<F>(f), 
                                                              range.first, range.second);
 }
@@ -1215,8 +1185,15 @@ template <typename S, // models task scheduler
           typename I> // models ForwardIterator that reference to a range of futures of the same type
 auto when_any(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
+    using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
+    using context_t = detail::when_any_range_context<detail::when_any_context_result<F, param_t>, F, param_t>;
 
-    return detail::create_when_any_range_future<param_t>::do_it(std::forward<S>(schedule),
+    if (range.first == range.second) {
+        auto p = package_with_broken_promise<result_t()>(std::move(schedule), detail::when_any_context_result<F, param_t>(std::move(f), 0));
+        return std::move(p.second);
+    }
+
+    return detail::create_range_of_futures<result_t, context_t>::do_it(std::forward<S>(schedule),
                                                          std::forward<F>(f),
                                                          range.first, range.second);
 }
