@@ -990,7 +990,11 @@ namespace detail
         boost::optional<std::exception_ptr>   _error;
         packaged_task<>                       _f;
 
-        void done() { if (--_remaining == 0) _f(); }
+        template<typename FF>
+        void done(FF&& f, size_t index) {
+            apply(std::forward<FF>(f), index);
+            if (--_remaining == 0) _f();
+        }
 
         void failure(std::exception_ptr error) {
             bool current_error_happened = _error_happened.load();
@@ -1016,7 +1020,7 @@ namespace detail
     };
 
     template <typename P, typename T>
-    void attach_when_all_range_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
+    void attach_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
         p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
             auto p = _w.lock(); if (!p) return;
             auto error = x.error();
@@ -1024,8 +1028,7 @@ namespace detail
                 p->failure(*error);
             }
             else {
-                p->apply(x, _i);
-                p->done();
+                p->done(std::move(x), _i);
             }
         });
     }
@@ -1053,7 +1056,7 @@ namespace detail
 
             size_t index(0);
             std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_when_all_range_tasks(index++, context, item);
+                detail::attach_tasks(index++, context, item);
             });
 
             return std::move(p.second);
@@ -1162,20 +1165,6 @@ namespace detail
         }
     };
 
-    template <typename P, typename T>
-    void attach_when_any_range_tasks(size_t index, const std::shared_ptr<P>& p, T a) {
-        p->_holds[index] = std::move(a).recover([_w = std::weak_ptr<P>(p), _i = index](auto x){
-            auto p = _w.lock(); if (!p) return;
-            auto error = x.error();
-            if (error) {
-                p->failure(*error);
-            }
-            else {
-                p->done(x, _i);
-            }
-        });
-    }
-
     template <typename R>
     struct create_when_any_range_future {
 
@@ -1197,7 +1186,7 @@ namespace detail
 
             size_t index(0);
             std::for_each(first, last, [&index, &context](auto item) {
-                detail::attach_when_any_range_tasks(index++, context, item);
+                detail::attach_tasks(index++, context, item);
             });
 
             return std::move(p.second);
