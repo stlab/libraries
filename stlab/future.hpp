@@ -945,7 +945,7 @@ namespace detail
         {}
 
         template <typename FF>
-        void apply(FF& f, size_t index) {
+        void apply(FF&& f, size_t index) {
             _results[index] = std::move(*f.get_try());
         }
 
@@ -966,7 +966,7 @@ namespace detail
         {}
 
         template <typename FF>
-        void apply(FF&, size_t) {}
+        void apply(FF&&, size_t) {}
 
         auto operator()() {
             return _f();
@@ -989,7 +989,7 @@ namespace detail
 
         template<typename FF>
         void done(FF&& f, size_t index) {
-            apply(std::forward<FF>(f), index);
+            this->apply(std::forward<FF>(f), index);
             if (--_remaining == 0) _f();
         }
 
@@ -1030,7 +1030,7 @@ namespace detail
         {}
 
         template <typename FF>
-        void apply(FF& f, size_t index) {
+        void apply(FF&& f, size_t index) {
             _results = std::move(*f.get_try());
             _index = index;
         }
@@ -1053,7 +1053,7 @@ namespace detail
         {}
 
         template <typename FF>
-        void apply(FF&, size_t index) {
+        void apply(FF&&, size_t index) {
             _index = index;
         }
 
@@ -1095,7 +1095,7 @@ namespace detail
             size_t current_remaining = this->_remaining.load();
             while (current_remaining != 0) {            // we already have a result
                 if (this->_remaining.compare_exchange_strong(current_remaining, size_t(0))) {
-                    apply(std::forward<FF>(f), index);
+                    this->apply(std::forward<FF>(f), index);
                     this->_f();
                     return;
                 }
