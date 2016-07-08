@@ -973,39 +973,21 @@ namespace detail
         }
     };
 
-    template <typename CR, typename F, typename R>
-    struct when_all_range_context : CR {
-        when_all_range_context(F f, size_t s)
-            : CR(std::move(f), s)
-            , _remaining(s)
-            , _holds(_remaining)
-        {}
-
+    template <typename CR, typename F>
+    struct when_range_context_base : CR
+    {
         std::atomic_size_t                    _remaining;
         std::atomic_bool                      _error_happened{ false };
         std::vector<future<void>>             _holds;
         boost::optional<std::exception_ptr>   _error;
         packaged_task<>                       _f;
 
-        template<typename FF>
-        void done(FF&& f, size_t index) {
-            this->apply(std::forward<FF>(f), index);
-            if (--_remaining == 0) _f();
-        }
+        when_range_context_base(F f, size_t s)
+            : CR(std::move(f), s)
+            , _remaining(s)
+            , _holds(_remaining)
+        {}
 
-        void failure(std::exception_ptr error) {
-            bool current_error_happened = _error_happened.load();
-            if (current_error_happened)
-                return;
-
-            if (_error_happened.compare_exchange_strong(current_error_happened, true)) {
-                _error = std::move(error);
-                _f();
-            }
-            //for (auto& h : _holds) {
-            //    h.cancel_try();
-            //}
-        }
 
         auto execute() {
             if (this->_error) {
@@ -1014,6 +996,34 @@ namespace detail
             return CR::operator()();
         }
 
+    };
+
+    template <typename CR, typename F>
+    struct when_all_range_context : when_range_context_base<CR, F>
+    {
+        when_all_range_context(F f, size_t s)
+            : when_range_context_base<CR,F>(std::move(f), s)
+        {}
+
+        template<typename FF>
+        void done(FF&& f, size_t index) {
+            this->apply(std::forward<FF>(f), index);
+            if (--this->_remaining == 0) this->_f();
+        }
+
+        void failure(std::exception_ptr error) {
+            bool current_error_happened = this->_error_happened.load();
+            if (current_error_happened)
+                return;
+
+            if (this->_error_happened.compare_exchange_strong(current_error_happened, true)) {
+                this->_error = std::move(error);
+                this->_f();
+            }
+            //for (auto& h : _holds) {
+            //    h.cancel_try();
+            //}
+        }
     };
 
     /**************************************************************************************************/
@@ -1063,30 +1073,20 @@ namespace detail
     };
 
 
-    template <typename CR, typename F, typename R>
-    struct when_any_range_context : CR {
-
-        std::atomic_size_t                    _remaining;
-        std::vector<future<void>>             _holds;
-        std::mutex                            _mutex;
-        boost::optional<std::exception_ptr>   _error;
-        size_t                                _index{ std::numeric_limits<size_t>::max() };
-
-        packaged_task<>                       _f;
-
+    template <typename CR, typename F>
+    struct when_any_range_context : when_range_context_base<CR,F> 
+    {
         when_any_range_context(F f, size_t s)
-            : CR(std::move(f), s)
-            , _remaining(s)
-            , _holds(_remaining)
+            : when_range_context_base<CR,F>(std::move(f), s)
         {}
 
         void failure(std::exception_ptr error) {
-            --_remaining;
+            --this->_remaining;
 
             // only the last error is of any interest
-            if (_remaining == 0) {
-                _error = std::move(error);
-                _f();
+            if (this->_remaining == 0) {
+                this->_error = std::move(error);
+                this->_f();
             }
         }
 
@@ -1105,13 +1105,6 @@ namespace detail
             //for (auto& h : this->_holds) {
             //    h.cancel_try();
             //}
-        }
-
-        auto execute() {
-            if (this->_error) {
-                std::rethrow_exception(this->_error.get());
-            }
-            return CR::operator()();
         }
     };
 
@@ -1164,7 +1157,7 @@ auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
 
-    using context_t = detail::when_all_range_context<detail::context_result<F, param_t>, F, param_t>;
+    using context_t = detail::when_all_range_context<detail::context_result<F, param_t>, F>;
 
 
     if (range.first == range.second) {
@@ -1186,7 +1179,7 @@ template <typename S, // models task scheduler
 auto when_any(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
-    using context_t = detail::when_any_range_context<detail::when_any_context_result<F, param_t>, F, param_t>;
+    using context_t = detail::when_any_range_context<detail::when_any_context_result<F, param_t>, F>;
 
     if (range.first == range.second) {
         auto p = package_with_broken_promise<result_t()>(std::move(schedule), detail::when_any_context_result<F, param_t>(std::move(f), 0));
