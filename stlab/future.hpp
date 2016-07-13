@@ -932,47 +932,6 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 namespace detail
 {
-    template <typename F, typename R>
-    struct context_result {
-        using result_type = std::vector<R>;
-
-        std::vector<R>  _results;
-        F _f;
-
-        context_result(F f, size_t size) 
-            : _results(size) 
-            , _f(std::move(f))
-        {}
-
-        template <typename FF>
-        void apply(FF&& f, size_t index) {
-            _results[index] = std::move(*f.get_try());
-        }
-
-        auto operator()() {
-            return _f(_results);
-        }
-    };
-
-
-    template<typename F>
-    struct context_result<F, void> {
-        using result_type = void;
-        
-        F _f;
-
-        context_result(F f, size_t)
-          : _f(std::move(f))
-        {}
-
-        template <typename FF>
-        void apply(FF&&, size_t) {}
-
-        auto operator()() {
-            return _f();
-        }
-    };
-
     template <typename CR, typename F>
     struct when_range_context_base : CR
     {
@@ -1011,7 +970,7 @@ namespace detail
             if (--this->_remaining == 0) this->_f();
         }
 
-        void failure(std::exception_ptr error) {
+        void failure(std::exception_ptr error, size_t) {
             bool current_error_happened = this->_error_happened.load();
             if (current_error_happened)
                 return;
@@ -1028,47 +987,111 @@ namespace detail
 
     /**************************************************************************************************/
 
-    template <typename F, typename R>
-    struct when_any_context_result {
+    template <typename R>
+    struct value_storer
+    {
+        template <typename C, typename F>
+        static void store(C& c, F&& f, size_t index)
+        {
+            c._results = std::move(*std::forward<F>(f).get_try());
+            c._index = index;
+        }
+    };
+
+    template <typename T>
+    struct value_storer<std::vector<T>>
+    {
+        template <typename C, typename F>
+        static void store(C& c, F&& f, size_t index)
+        {
+            c._results[index] = std::move(*std::forward<F>(f).get_try());
+        }
+    };
+
+    template <bool Indxed, typename R>
+    struct result_creator;
+
+    template <>
+    struct result_creator<true, void>
+    {
+        template <typename C>
+        static auto go(C& context) { return context._f(context._index); }
+    };
+
+    template <>
+    struct result_creator<false, void>
+    {
+        template <typename C>
+        static auto go(C& context) { return context._f(); }
+    };
+    
+    template <typename R>
+    struct result_creator<true, R>
+    {
+        template <typename C>
+        static auto go(C& context) { return context._f(context._results, context._index); }
+    };
+
+    template <typename R>
+    struct result_creator<false, R>
+    {
+        template <typename C>
+        static auto go(C& context) { return context._f(context._results); }
+    };
+
+
+
+    template<typename F, bool Indexed, typename R>
+    struct context_result
+    {
+        using result_type = R;
 
         R       _results;
         size_t  _index;
         F       _f;
 
-        when_any_context_result(F f, size_t)
+        context_result(F f, size_t s)
             : _f(std::move(f))
-        {}
+        {
+            init(_results, s);
+        }
+
+        template <typename T>
+        void init(std::vector<T>& v, size_t s) {
+            v.resize(s);
+        }
+
+        template <typename T>
+        void init(T&, size_t) {}
 
         template <typename FF>
         void apply(FF&& f, size_t index) {
-            _results = std::move(*f.get_try());
-            _index = index;
+            value_storer<R>::store(*this, std::forward<FF>(f), index);
         }
 
         auto operator()() {
-            return _f(_results, _index);
+            return result_creator<Indexed,R>::go(*this);
         }
     };
 
-
-    template<typename F>
-    struct when_any_context_result<F, void> {
-        using result_type = void;
-
+    template<typename F, bool Indexed>
+    struct context_result<F, Indexed, void>
+    {
         size_t  _index;
         F       _f;
 
-        when_any_context_result(F f, size_t)
+        context_result(F f, size_t)
             : _f(std::move(f))
-        {}
+        {
+        }
 
         template <typename FF>
-        void apply(FF&&, size_t index) {
+        void apply(FF&& f, size_t index) {
             _index = index;
         }
 
         auto operator()() {
-            return _f(_index);
+            return result_creator<Indexed, void>::go(*this);
         }
     };
 
@@ -1080,7 +1103,7 @@ namespace detail
             : when_range_context_base<CR,F>(std::move(f), s)
         {}
 
-        void failure(std::exception_ptr error) {
+        void failure(std::exception_ptr error, size_t) {
             --this->_remaining;
 
             // only the last error is of any interest
@@ -1116,7 +1139,7 @@ namespace detail
             auto p = _context.lock(); if (!p) return;
             auto error = x.error();
             if (error) {
-                p->failure(*error);
+                p->failure(*error, _i);
             }
             else {
                 p->done(std::move(x), _i);
@@ -1146,6 +1169,7 @@ namespace detail
             return std::move(p.second);
         }
     };
+
 }
 
 /**************************************************************************************************/
@@ -1156,12 +1180,12 @@ template <typename S, // models task scheduler
 auto when_all(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
-
-    using context_t = detail::when_all_range_context<detail::context_result<F, param_t>, F>;
+    using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, std::vector<param_t>>;
+    using context_t = detail::when_all_range_context<detail::context_result<F, false, context_result_t>, F>;
 
 
     if (range.first == range.second) {
-        auto p = package<result_t()>(std::move(schedule), detail::context_result<F, param_t>(std::move(f), 0));
+        auto p = package<result_t()>(std::move(schedule), detail::context_result<F, false, context_result_t>(std::move(f), 0));
         schedule(std::move(p.first));
         return std::move(p.second);
     }
@@ -1179,10 +1203,11 @@ template <typename S, // models task scheduler
 auto when_any(S schedule, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
-    using context_t = detail::when_any_range_context<detail::when_any_context_result<F, param_t>, F>;
+    using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
+    using context_t = detail::when_any_range_context<detail::context_result<F, true, context_result_t>, F>;
 
     if (range.first == range.second) {
-        auto p = package_with_broken_promise<result_t()>(std::move(schedule), detail::when_any_context_result<F, param_t>(std::move(f), 0));
+        auto p = package_with_broken_promise<result_t()>(std::move(schedule), detail::context_result<F, true, context_result_t>(std::move(f), 0));
         return std::move(p.second);
     }
 
