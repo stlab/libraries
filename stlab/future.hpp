@@ -932,61 +932,6 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 namespace detail
 {
-    template <typename CR, typename F>
-    struct when_range_context_base : CR
-    {
-        std::atomic_size_t                    _remaining;
-        std::atomic_bool                      _error_happened{ false };
-        std::vector<future<void>>             _holds;
-        boost::optional<std::exception_ptr>   _error;
-        packaged_task<>                       _f;
-
-        when_range_context_base(F f, size_t s)
-            : CR(std::move(f), s)
-            , _remaining(s)
-            , _holds(_remaining)
-        {}
-
-
-        auto execute() {
-            if (this->_error) {
-                std::rethrow_exception(this->_error.get());
-            }
-            return CR::operator()();
-        }
-
-    };
-
-    template <typename CR, typename F>
-    struct when_all_range_context : when_range_context_base<CR, F>
-    {
-        when_all_range_context(F f, size_t s)
-            : when_range_context_base<CR,F>(std::move(f), s)
-        {}
-
-        template<typename FF>
-        void done(FF&& f, size_t index) {
-            this->apply(std::forward<FF>(f), index);
-            if (--this->_remaining == 0) this->_f();
-        }
-
-        void failure(std::exception_ptr error, size_t) {
-            bool current_error_happened = this->_error_happened.load();
-            if (current_error_happened)
-                return;
-
-            if (this->_error_happened.compare_exchange_strong(current_error_happened, true)) {
-                this->_error = std::move(error);
-                this->_f();
-            }
-            //for (auto& h : _holds) {
-            //    h.cancel_try();
-            //}
-        }
-    };
-
-    /**************************************************************************************************/
-
     template <typename R>
     struct value_storer
     {
@@ -1082,8 +1027,7 @@ namespace detail
 
         context_result(F f, size_t)
             : _f(std::move(f))
-        {
-        }
+        {}
 
         template <typename FF>
         void apply(FF&& f, size_t index) {
@@ -1095,6 +1039,59 @@ namespace detail
         }
     };
 
+    /**************************************************************************************************/
+
+    template <typename CR, typename F>
+    struct when_range_context_base : CR
+    {
+        std::atomic_size_t                    _remaining;
+        std::atomic_bool                      _error_happened{ false };
+        std::vector<future<void>>             _holds;
+        boost::optional<std::exception_ptr>   _error;
+        packaged_task<>                       _f;
+
+        when_range_context_base(F f, size_t s)
+            : CR(std::move(f), s)
+            , _remaining(s)
+            , _holds(_remaining)
+        {}
+
+        auto execute() {
+            if (this->_error) {
+                std::rethrow_exception(this->_error.get());
+            }
+            return CR::operator()();
+        }
+    };
+
+
+    template <typename CR, typename F>
+    struct when_all_range_context : when_range_context_base<CR, F>
+    {
+        when_all_range_context(F f, size_t s)
+            : when_range_context_base<CR, F>(std::move(f), s)
+        {}
+
+        template<typename FF>
+        void done(FF&& f, size_t index) {
+            this->apply(std::forward<FF>(f), index);
+            if (--this->_remaining == 0) this->_f();
+        }
+
+        void failure(std::exception_ptr error, size_t) {
+            bool current_error_happened = this->_error_happened.load();
+            if (current_error_happened)
+                return;
+
+            if (this->_error_happened.compare_exchange_strong(current_error_happened, true)) {
+                this->_error = std::move(error);
+                this->_f();
+            }
+            //for (auto& h : _holds) {
+            //    h.cancel_try();
+            //}
+        }
+    };
 
     template <typename CR, typename F>
     struct when_any_range_context : when_range_context_base<CR,F> 
