@@ -329,7 +329,7 @@ struct timed_sum {
     void close() { _state = process_state::await; }
 
     auto state() const {
-        return std::make_pair(_state, (_sum < 45)? chrono::system_clock::now() : (chrono::system_clock::now() + chrono::milliseconds(5000)));
+        return std::make_pair(_state, (_sum < 45)? chrono::system_clock::time_point() : (chrono::system_clock::now() + chrono::milliseconds(5000)));
     }
 };
 
@@ -391,6 +391,40 @@ void timedChannelExample()
     }
 }
 
+template <size_t I>
+struct sum_10_elements {
+    process_state _state = process_state::await;
+    int _sum{ 0 };
+    int _counter{ 0 };
+
+    void await(int n) {
+        printf("%s: %d\n", __FUNCTION__, n);
+        _sum += n;
+        ++_counter;
+        if (_counter == 2)
+            _state = process_state::yield;
+    }
+
+    int yield() {
+        printf("%s\n", __FUNCTION__);
+        _state = process_state::await;
+        _counter = 0;  
+        auto result = _sum;
+        _sum = 0; 
+        return result;
+    }
+
+    void close() {
+        printf("%s\n", __FUNCTION__);
+        _state = process_state::yield;
+    }
+
+    auto state() const {
+        printf("%s\n",__FUNCTION__);
+        return std::make_pair( _state,  chrono::system_clock::time_point());
+    }
+};
+
 
 void joinedChannelExample()
 {
@@ -415,17 +449,18 @@ void joinedChannelExample()
 
     atomic_bool all_done{ false };
 
-    auto pipe1 = receiver1 | sum();
-    auto pipe2 = receiver2 | sum();
+    auto pipe1 = receiver1 | sum_10_elements<0>();
+    auto pipe2 = receiver2 | sum_10_elements<1>();
 
     auto common_pipe = join(default_scheduler(), 
         [](int x, int y) 
             { return x + y; }, 
         pipe1, pipe2);
 
-    auto end_of_pipe = common_pipe | [&_all_done = all_done](int x) { cout << x << endl; if (x == 90) _all_done = true; };
+    auto end_of_pipe = common_pipe | [&_all_done = all_done](auto x) { cout << x << endl; if (x == 3) _all_done = true; };
 
-    end_of_pipe.set_ready(); // close this end of the pipe
+    receiver1.set_ready(); // close this end of the pipe
+    receiver2.set_ready(); // close this end of the pipe
 
     while (!all_done.load()) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -447,8 +482,8 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-    channelExample();
-    timedChannelExample();
+    //channelExample();
+    //timedChannelExample();
     joinedChannelExample();
     int i;
     cin >> i;

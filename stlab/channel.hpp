@@ -251,18 +251,19 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         _receiver_count = !std::is_same<result, void>::value;
     }
 
-    template <typename S, typename F>
-    shared_process(S&& s, F&& f, const std::shared_ptr<shared_process_receiver<argument>>& p) :
+    template <typename S, typename F, typename... U>
+    shared_process(S&& s, F&& f, const U&... p) :
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f)), 
-        _upstream({ p })
+        _upstream(std::initializer_list<std::shared_ptr<shared_process_receiver<argument>>>{p...})
 
     {
-        _sender_count = 1;
+        _sender_count = sizeof...(U);
         _receiver_count = !std::is_same<result, void>::value;
     }
 
     void add_sender(const std::shared_ptr<shared_process_receiver<argument>>& p) {
+        std::unique_lock<std::mutex> lock(_upstream_mutex);
         _upstream.push_back(p);
         ++_sender_count;
     }
@@ -277,7 +278,8 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             {
                 std::unique_lock<std::mutex> lock(_process_mutex);
                 _process_close_queue = true;
-                do_run = !_receiver_count && !_process_running;
+                //do_run = !_receiver_count && !_process_running;
+                do_run = (_receiver_count>0) && !_process_running;
                 _process_running = _process_running || do_run;
             }
             if (do_run) run();
@@ -391,11 +393,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
         else {
             if (get_process_state(_process).first == process_state::await && 
-                get_process_state(_process).second > std::chrono::system_clock::now())
+                get_process_state(_process).second > std::chrono::system_clock::time_point())
             {
                 _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
-                    if (get_process_state(_this->_process).first != process_state::yield)
-                    {
+                    if (get_process_state(_this->_process).first != process_state::yield) {
                         _this->broadcast(_this->_process.yield());
                         _this->clear_to_send();
                     }
@@ -464,7 +465,8 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             assert(_process_suspend_count == 0 && "broadcasting while suspended");
             _process_suspend_count = n + 1;
         }
-
+        
+        // FP: Why use a lock to set n above, but not here?
         for_each_n(begin(_downstream), n, [&](const auto& e){
             e(args...);
         });
@@ -476,7 +478,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             std::unique_lock<std::mutex> lock(_process_mutex);
             _process_message_queue.emplace_back(std::move(arg)); // TODO (sparent) : overwrite here.
             
-            do_run = !_receiver_count && !_process_running;
+            // FP: Does it make sense to run, when there is no receiver?
+            //do_run = !_receiver_count && !_process_running;
+            do_run = (_receiver_count>0) && !_process_running;
             _process_running = _process_running || do_run;
 
             #if 0
@@ -494,6 +498,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         {
             std::unique_lock<std::mutex> lock(_downstream_mutex);
             _downstream.emplace_back(f);
+            ++_receiver_count;
         }
     }
 
@@ -526,25 +531,32 @@ struct join_context : std::enable_shared_from_this<join_context<T...>>
 {
     std::tuple<T...>    _result;
     std::atomic_size_t  _remaining{ sizeof...(T) };
-    stlab::process_state _state = process_state::await;
+    std::atomic_size_t  _sender_index{ std::numeric_limits<size_t>::max() };
+    bool                _closed = false;
 
 
     template<std::size_t i, typename U>
     void await(U&& u) {
         std::get<i>(_result) = std::forward<U>(u);
         --_remaining;
-        if (_remaining == 0) { _state = process_state::yield; }
+        if (_remaining == 0) { _sender_index = i; }
     }
 
     std::shared_ptr<join_context<T...>> yield() {
-        _state = process_state::await;
-        _remaining = sizeof...(T);
+        _remaining = sizeof...(T);     
+        _sender_index = std::numeric_limits<size_t>::max();
         return this->shared_from_this();
     }
 
-    void close() { _state = process_state::yield; }
+    void close() { _closed = true; }
 
-    auto state() const { return std::make_pair(_state, std::chrono::system_clock::now()); }
+    auto state(size_t i) const {
+        // only for that processor the state is yield, that set the last value into _result
+        if ( _closed || ((_remaining.load() == 0) && (i == _sender_index.load())) )
+            return std::make_pair(process_state::yield, std::chrono::system_clock::time_point());
+        
+        return std::make_pair(process_state::await, std::chrono::system_clock::time_point());
+    }
 };
 
 template <std::size_t i, typename C>
@@ -554,7 +566,7 @@ struct context_worker
 
     explicit context_worker(const std::shared_ptr<C>& c) : _context(c) {}
 
-    auto state() const { return _context->state(); }
+    auto state() const { return _context->state(i); }
     
     template <typename U>
     void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
@@ -600,18 +612,15 @@ struct join_processor
     F _f;
     std::shared_ptr<C> _context;
 
-    bool _done = true;
 
     explicit join_processor(F f) : _f(std::move(f)) {}
 
     void await(const std::shared_ptr<C>& context) {
         // check here the ref counts, to handle a closed upstream
         _context = context;
-        _done = false;
     }
 
     R yield() {
-        _done = true; 
         auto wc = make_weak_ptr(_context);
         auto c = wc.lock();
         _context.reset();
@@ -621,10 +630,11 @@ struct join_processor
 
     void close() {
         _context.reset();
-        _done = true;
     }
 
-    auto state() const { return std::make_pair((_done ? process_state::await : process_state::yield), std::chrono::system_clock::now()); }
+    auto state() const {
+        return std::make_pair((_context? process_state::yield: process_state::await), std::chrono::system_clock::time_point());
+    }
 };
 
 
