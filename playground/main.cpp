@@ -391,22 +391,20 @@ void timedChannelExample()
     }
 }
 
-template <size_t I>
+template <size_t I> // parameter just for debugging purpose
 struct sum_10_elements {
     process_state _state = process_state::await;
     int _sum{ 0 };
     int _counter{ 0 };
 
     void await(int n) {
-        printf("%s: %d\n", __FUNCTION__, n);
         _sum += n;
         ++_counter;
-        if (_counter == 2)
+        if (_counter == 45)
             _state = process_state::yield;
     }
 
     int yield() {
-        printf("%s\n", __FUNCTION__);
         _state = process_state::await;
         _counter = 0;  
         auto result = _sum;
@@ -415,12 +413,10 @@ struct sum_10_elements {
     }
 
     void close() {
-        printf("%s\n", __FUNCTION__);
         _state = process_state::yield;
     }
 
     auto state() const {
-        printf("%s\n",__FUNCTION__);
         return std::make_pair( _state,  chrono::system_clock::time_point());
     }
 };
@@ -428,8 +424,6 @@ struct sum_10_elements {
 
 void joinedChannelExample()
 {
-    cout << __FUNCTION__ << endl;
-
     sender<int> aggregate1, aggregate2;
     receiver<int> receiver1, receiver2;
     tie(aggregate1, receiver1) = channel<int>(default_scheduler());
@@ -454,10 +448,9 @@ void joinedChannelExample()
 
     auto common_pipe = join(default_scheduler(), 
         [](int x, int y) 
-            { return x + y; }, 
-        pipe1, pipe2);
+            { return x + y; }, pipe1, pipe2);
 
-    auto end_of_pipe = common_pipe | [&_all_done = all_done](auto x) { cout << x << endl; if (x == 3) _all_done = true; };
+    auto end_of_pipe = common_pipe | [&_all_done = all_done](auto x) { cout << x << endl; if (x == 90) _all_done = true; };
 
     receiver1.set_ready(); // close this end of the pipe
     receiver2.set_ready(); // close this end of the pipe
