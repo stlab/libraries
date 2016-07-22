@@ -24,10 +24,6 @@
 #include <thread>
 #include <vector>
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-
-#include <Windows.h>
-
 #endif
 
 using namespace std;
@@ -43,7 +39,8 @@ namespace {
 
 using lock_t = unique_lock<mutex>;
 
-class notification_queue {
+class notification_queue 
+{
     deque<function<void()>> _q;
     bool                    _done{false};
     mutex                   _mutex;
@@ -98,7 +95,8 @@ public:
 
 /**************************************************************************************************/
 
-class task_system {
+class task_system 
+{
     const unsigned              _count{thread::hardware_concurrency()};
     vector<thread>              _threads;
     vector<notification_queue>  _q{_count};
@@ -156,7 +154,8 @@ class task_system {
 /**************************************************************************************************/
 
 #if 0
-struct timed_queue {
+struct timed_queue 
+{
     using lock_t = unique_lock<mutex>;
     using element_t = pair<steady_clock::time_point, any_packaged_task_>;
     using queue_t = vector<element_t>;
@@ -201,8 +200,7 @@ struct timed_queue {
         }
     }
 
-    void async(const steady_clock::time_point& when, any_packaged_task_&& p)
-    {
+    void async(const steady_clock::time_point& when, any_packaged_task_&& p) {
         {
         lock_t lock(_mutex);
         _q.push_back(element_t(when, move(p)));
@@ -210,84 +208,10 @@ struct timed_queue {
         }
         _condition.notify_one();
     }
-
 };
 #endif
 
 /**************************************************************************************************/
-
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-
-FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& tp) {
-    FILETIME ft = { 0, 0 };
-    SYSTEMTIME st = { 0 };
-    time_t t = std::chrono::system_clock::to_time_t(tp);
-    tm utc_tm;
-    if (!gmtime_s(&utc_tm, &t)) {
-        st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
-        st.wMinute = static_cast<WORD>(utc_tm.tm_min);
-        st.wHour = static_cast<WORD>(utc_tm.tm_hour);
-        st.wDay = static_cast<WORD>(utc_tm.tm_mday);
-        st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
-        st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
-        st.wMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
-        SystemTimeToFileTime(&st, &ft);
-    }
-    return ft;
-}
-
-
-class task_system
-{
-public:
-    template <typename F>
-    void async_(F&& f) {     
-        auto work = CreateThreadpoolWork(&callback_impl<F>, 
-                                         new F(std::forward<F>(f)), 
-                                         nullptr);
-        if (work == nullptr) {
-            throw std::bad_alloc();
-        }
-        SubmitThreadpoolWork(work);
-    }
-
-    template <typename F>
-    void async_(std::chrono::system_clock::time_point time_point, F&& f) {
-
-        auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
-                                           new F(std::forward<F>(f)),
-                                           nullptr);
-        if (timer == nullptr) {
-            throw std::bad_alloc();
-        }
-
-        auto file_time = time_point_to_FILETIME(time_point);
-
-        SetThreadpoolTimer(timer,
-                           &file_time,
-                           0,
-                           0);
-    }
-private:
-
-    template <typename F>
-    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
-                                       PVOID                 parameter,
-                                       PTP_WORK              /*Work*/) {
-        std::unique_ptr<F> f(static_cast<F*>(parameter));
-        (*f)();
-    }
-
-    template <typename F>
-    static void CALLBACK timer_callback_impl(PTP_CALLBACK_INSTANCE /*Instance*/,
-                                             PVOID                 parameter,
-                                             PTP_TIMER             /*timer*/ ) {
-        std::unique_ptr<F> f(static_cast<F*>(parameter));
-        (*f)();
-    }
-
-};
-
 #endif
 
 } // namespace
