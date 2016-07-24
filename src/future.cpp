@@ -23,6 +23,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <chrono>
 
 #endif
 
@@ -55,7 +56,7 @@ public:
         return true;
     }
     
-    template<typename F>
+    template<typename F> 
     bool try_push(F&& f) {
         {
             lock_t lock{_mutex, try_to_lock};
@@ -95,12 +96,32 @@ public:
 
 /**************************************************************************************************/
 
+struct greater_first
+{
+    using result_type = bool;
+
+    template <typename T>
+    bool operator()(const T& x, const T& y) {
+        return x.first > y.first;
+    }
+};
+
 class task_system 
 {
     const unsigned              _count{thread::hardware_concurrency()};
     vector<thread>              _threads;
     vector<notification_queue>  _q{_count};
     atomic<unsigned>            _index{0};
+
+    using element_t = pair<chrono::system_clock::time_point, function<void()>>;
+    using queue_t = vector<element_t>;
+
+    queue_t             _timed_queue;
+    condition_variable  _condition;
+    bool                _stop = false;
+    mutex               _timed_queue_mutex;
+    thread              _timed_queue_thread;
+
     
     void run(unsigned i) {
         while (true) {
@@ -114,15 +135,44 @@ class task_system
             f();
         }
     }
-    
-  public:
+
+    void timed_queue_run() {
+        while (true) {
+            function<void()> task;
+            {
+                lock_t lock(_timed_queue_mutex);
+
+                while (_timed_queue.empty() && !_stop) _condition.wait(lock);
+                if (_stop) break;
+                while (chrono::system_clock::now() < _timed_queue.front().first) {
+                    auto when = _timed_queue.front().first;
+                    _condition.wait_until(lock, when);
+                }
+                pop_heap(begin(_timed_queue), end(_timed_queue), greater_first());
+                task = move(_timed_queue.back().second);
+                _timed_queue.pop_back();
+            }
+
+            async_(move(task));
+        }
+    }
+
+public:
     task_system() {
         for (unsigned n = 0; n != _count; ++n) {
             _threads.emplace_back([&, n]{ run(n); });
         }
+        _timed_queue_thread = thread([this] { this->timed_queue_run(); });
     }
     
     ~task_system() {
+        {
+            lock_t lock(_timed_queue_mutex);
+            _stop = true;
+        }
+        _condition.notify_one();
+        _timed_queue_thread.join();
+
         for (auto& e : _q) e.done();
         for (auto& e : _threads) e.join();
     }
@@ -138,78 +188,16 @@ class task_system
         _q[i % _count].push(forward<F>(f));
     }
 
-    // TODO FP: delayed execution to be implemented
     template <typename F>
-    void async_(std::chrono::system_clock::time_point, F&& f) {
-        auto i = _index++;
-
-        for (unsigned n = 0; n != _count; ++n) {
-            if (_q[(i + n) % _count].try_push(forward<F>(f))) return;
-        }
-
-        _q[i % _count].push(forward<F>(f));
-    }
-};
-
-/**************************************************************************************************/
-
-#if 0
-struct timed_queue 
-{
-    using lock_t = unique_lock<mutex>;
-    using element_t = pair<steady_clock::time_point, any_packaged_task_>;
-    using queue_t = vector<element_t>;
-
-    queue_t             _q;
-    condition_variable  _condition;
-    bool                _done = false;
-    mutex               _mutex;
-    thread              _thread;
-
-    timed_queue() { _thread = thread([this]{ this->_run(); }); }
-
-    ~timed_queue() {
+    void async_(std::chrono::system_clock::time_point when, F&& f) {
         {
-        lock_t lock(_mutex);
-        _done = true;
-        }
-        _thread.join();
-    }
-
-    void _run()
-    {
-        while(true) {
-            any_packaged_task_ task;
-            {
-            lock_t lock(_mutex);
-
-            while (_q.empty() && !_done) _condition.wait(lock);
-            if (_q.empty()) break; // ==> _done
-            while (steady_clock::now() < _q.front().first) {
-                auto t = _q.front().first;
-                _condition.wait_until(lock, t);
-            }
-            pop_heap(begin(_q), end(_q), [](const auto& x, const auto& y) {
-                return x.first > y.first;
-            });
-            task = move(_q.back().second);
-            _q.pop_back();
-            }
-
-            adobe::details::async_(move(task));
-        }
-    }
-
-    void async(const steady_clock::time_point& when, any_packaged_task_&& p) {
-        {
-        lock_t lock(_mutex);
-        _q.push_back(element_t(when, move(p)));
-        push_heap(begin(_q), end(_q), greater_first());
+            lock_t lock(_timed_queue_mutex);
+            _timed_queue.emplace_back(when, std::forward<F>(f));
+            push_heap(begin(_timed_queue), end(_timed_queue), greater_first());
         }
         _condition.notify_one();
     }
 };
-#endif
 
 /**************************************************************************************************/
 #endif
