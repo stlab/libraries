@@ -389,6 +389,13 @@ void timedChannelExample()
     }
 }
 
+void runTimedTasks() {
+    default_scheduler()(chrono::system_clock::now() + chrono::seconds(3), [] {cout << 3 << '\n'; });
+    default_scheduler()(chrono::system_clock::now() + chrono::seconds(5), [] {cout << 5 << '\n'; });
+    default_scheduler()(chrono::system_clock::now() + chrono::seconds(1), [] {cout << 1 << '\n'; });
+    default_scheduler()(chrono::system_clock::now() + chrono::seconds(2), [] {cout << 2 << '\n'; });
+}
+
 
 int main(int argc, char **argv)
 {
@@ -404,7 +411,8 @@ int main(int argc, char **argv)
     passivProgressExample();
     activeProgressExample();
 
-#endif // 0    
+#endif // 0
+    runTimedTasks();
     channelExample();
     timedChannelExample();
     int i;

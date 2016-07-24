@@ -1427,8 +1427,8 @@ struct default_scheduler {
     using result_type = void;
 
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point delay, F f) {
-        detail::async_(delay, std::move(f));
+    void operator()(std::chrono::system_clock::time_point when, F f) {
+        detail::async_(when, std::move(f));
     }
 
     template <typename F>
@@ -1459,25 +1459,6 @@ struct main_scheduler {
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-inline FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& tp) {
-    FILETIME ft = { 0, 0 };
-    SYSTEMTIME st = { 0 };
-    time_t t = std::chrono::system_clock::to_time_t(tp);
-    tm utc_tm;
-    if (!gmtime_s(&utc_tm, &t)) {
-        st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
-        st.wMinute = static_cast<WORD>(utc_tm.tm_min);
-        st.wHour = static_cast<WORD>(utc_tm.tm_hour);
-        st.wDay = static_cast<WORD>(utc_tm.tm_mday);
-        st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
-        st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
-        st.wMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
-        SystemTimeToFileTime(&st, &ft);
-    }
-    return ft;
-}
-
-
 class task_system
 {
 public:
@@ -1493,7 +1474,7 @@ public:
     }
 
     template <typename F>
-    void async_(std::chrono::system_clock::time_point time_point, F&& f) {
+    void async_(std::chrono::system_clock::time_point when, F&& f) {
 
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
             new F(std::forward<F>(f)),
@@ -1502,7 +1483,7 @@ public:
             throw std::bad_alloc();
         }
 
-        auto file_time = time_point_to_FILETIME(time_point);
+        auto file_time = time_point_to_FILETIME(when);
 
         SetThreadpoolTimer(timer,
             &file_time,
@@ -1527,6 +1508,23 @@ private:
         (*f)();
     }
 
+    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) {
+        FILETIME ft = { 0, 0 };
+        SYSTEMTIME st = { 0 };
+        time_t t = std::chrono::system_clock::to_time_t(when);
+        tm utc_tm;
+        if (!gmtime_s(&utc_tm, &t)) {
+            st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
+            st.wMinute = static_cast<WORD>(utc_tm.tm_min);
+            st.wHour = static_cast<WORD>(utc_tm.tm_hour);
+            st.wDay = static_cast<WORD>(utc_tm.tm_mday);
+            st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
+            st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
+            st.wMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(when.time_since_epoch()).count() % 1000;
+            SystemTimeToFileTime(&st, &ft);
+        }
+        return ft;
+    }
 };
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
