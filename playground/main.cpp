@@ -398,13 +398,15 @@ struct sum_10_elements {
     int _counter{ 0 };
 
     void await(int n) {
+        printf("%s %d\n", __FUNCTION__, n);
         _sum += n;
         ++_counter;
-        if (_counter == 45)
+        if (_sum == 45)
             _state = process_state::yield;
     }
 
     int yield() {
+        printf("%s\n", __FUNCTION__);
         _state = process_state::await;
         _counter = 0;  
         auto result = _sum;
@@ -421,6 +423,39 @@ struct sum_10_elements {
     }
 };
 
+void singledJoinedChannelExample()
+{
+    sender<int> aggregate1;
+    receiver<int> receiver1;
+    tie(aggregate1, receiver1) = channel<int>(default_scheduler());
+
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 10; ++n) {
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate1](int n) { printf("Send from future %d\n", n);  _aggregate(n); }));
+    }
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate1.close();
+
+    atomic_bool all_done{ false };
+
+    auto pipe1 = receiver1 | sum_10_elements<0>();
+
+    auto common_pipe = join(default_scheduler(), [](int x) { return x; }, pipe1);
+
+    auto end_of_pipe = common_pipe | [&_all_done = all_done](auto x) { cout << x << endl; _all_done = true; };
+
+    receiver1.set_ready(); // close this end of the pipe
+    common_pipe.set_ready();
+    pipe1.set_ready();
+
+    while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
 
 void joinedChannelExample()
 {
@@ -433,9 +468,9 @@ void joinedChannelExample()
 
     for (int n = 0; n != 10; ++n) {
         results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-            .then([_aggregate = aggregate1](int n) { _aggregate(n); }));
+            .then([_aggregate = aggregate1](int n) { printf("Send from future %d\n", n);  _aggregate(n); }));
         results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-            .then([_aggregate = aggregate2](int n) { _aggregate(n); }));
+            .then([_aggregate = aggregate2](int n) { printf("Send from future %d\n", n); _aggregate(n); }));
     }
     // Now it is safe to close (or destruct) this channel, all the copies remain open.
     aggregate1.close();
@@ -443,17 +478,16 @@ void joinedChannelExample()
 
     atomic_bool all_done{ false };
 
-    auto pipe1 = receiver1 | sum_10_elements<0>();
-    auto pipe2 = receiver2 | sum_10_elements<1>();
-
     auto common_pipe = join(default_scheduler(), 
         [](int x, int y) 
-            { return x + y; }, pipe1, pipe2);
+            { return x + y; }, (receiver1 | sum_10_elements<0>()), (receiver2 | sum_10_elements<1>()) );
 
-    auto end_of_pipe = common_pipe | [&_all_done = all_done](auto x) { cout << x << endl; if (x == 90) _all_done = true; };
+    auto end_of_pipe = common_pipe | 
+        [&_all_done = all_done](auto x) { cout << "Final result arrived: " << x << '\n'; _all_done = true; };
 
     receiver1.set_ready(); // close this end of the pipe
     receiver2.set_ready(); // close this end of the pipe
+    common_pipe.set_ready();
 
     while (!all_done.load()) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -477,6 +511,7 @@ int main(int argc, char **argv)
 #endif // 0    
     //channelExample();
     //timedChannelExample();
+    //singledJoinedChannelExample();
     joinedChannelExample();
     int i;
     cin >> i;
