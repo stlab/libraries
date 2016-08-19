@@ -299,7 +299,7 @@ void channelExample()
         inefficiency here - this is a lambda whose only purpose is to hold the vector of
         futures.
         */
-        | [_results = move(results)](auto x){ printf("Passing %d\n", x);  return x; }
+        | [_results = move(results)](auto x){ return x; }
         // Then we can pipe the values to our accumulator
         | buffer_size(2) | sum() 
         // And pipe the final value to a lambda to print it.
@@ -377,7 +377,7 @@ void timedChannelExample()
         inefficiency here - this is a lambda whose only purpose is to hold the vector of
         futures.
         */
-        | [_results = move(results)](auto x){ printf("Passing %d\n", x);  return x; }
+        | [_results = move(results)](auto x){ return x; }
         // Then we can pipe the values to our accumulator
         | timed_sum()
         // And pipe the final value to a lambda to print it.
@@ -395,27 +395,18 @@ template <size_t I> // parameter just for debugging purpose
 struct sum_10_elements {
     process_state _state = process_state::await;
     int _sum{ 0 };
-    int _counter{ 0 };
 
     void await(int n) {
-        printf("%s %d\n", __FUNCTION__, n);
         _sum += n;
-        ++_counter;
         if (_sum == 45)
             _state = process_state::yield;
     }
 
     int yield() {
-        printf("%s\n", __FUNCTION__);
         _state = process_state::await;
-        _counter = 0;  
         auto result = _sum;
         _sum = 0; 
         return result;
-    }
-
-    void close() {
-        _state = process_state::yield;
     }
 
     auto state() const {
@@ -425,6 +416,8 @@ struct sum_10_elements {
 
 void singledJoinedChannelExample()
 {
+    cout << __FUNCTION__ << endl;
+
     sender<int> aggregate1;
     receiver<int> receiver1;
     tie(aggregate1, receiver1) = channel<int>(default_scheduler());
@@ -434,7 +427,7 @@ void singledJoinedChannelExample()
 
     for (int n = 0; n != 10; ++n) {
         results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-            .then([_aggregate = aggregate1](int n) { printf("Send from future %d\n", n);  _aggregate(n); }));
+            .then([_aggregate = aggregate1](int n) { _aggregate(n); }));
     }
     // Now it is safe to close (or destruct) this channel, all the copies remain open.
     aggregate1.close();
@@ -445,7 +438,8 @@ void singledJoinedChannelExample()
 
     auto common_pipe = join(default_scheduler(), [](int x) { return x; }, pipe1);
 
-    auto end_of_pipe = common_pipe | [&_all_done = all_done](auto x) { cout << x << endl; _all_done = true; };
+    auto end_of_pipe = common_pipe | 
+        [&_all_done = all_done](auto x) { cout << "Final result arrived: " << x << '\n'; _all_done = true; };
 
     receiver1.set_ready(); // close this end of the pipe
     common_pipe.set_ready();
@@ -459,6 +453,8 @@ void singledJoinedChannelExample()
 
 void joinedChannelExample()
 {
+    cout << __FUNCTION__ << endl;
+
     sender<int> aggregate1, aggregate2;
     receiver<int> receiver1, receiver2;
     tie(aggregate1, receiver1) = channel<int>(default_scheduler());
@@ -468,9 +464,9 @@ void joinedChannelExample()
 
     for (int n = 0; n != 10; ++n) {
         results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-            .then([_aggregate = aggregate1](int n) { printf("Send from future %d\n", n);  _aggregate(n); }));
+            .then([_aggregate = aggregate1](int n) { _aggregate(n); }));
         results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
-            .then([_aggregate = aggregate2](int n) { printf("Send from future %d\n", n); _aggregate(n); }));
+            .then([_aggregate = aggregate2](int n) { _aggregate(n); }));
     }
     // Now it is safe to close (or destruct) this channel, all the copies remain open.
     aggregate1.close();
@@ -478,15 +474,20 @@ void joinedChannelExample()
 
     atomic_bool all_done{ false };
 
+    auto pipe1 = receiver1 | sum_10_elements<0>();
+    auto pipe2 = receiver2 | sum_10_elements<1>();
+    
     auto common_pipe = join(default_scheduler(), 
-        [](int x, int y) 
-            { return x + y; }, (receiver1 | sum_10_elements<0>()), (receiver2 | sum_10_elements<1>()) );
+        [](int x, int y) { return x + y; }, pipe1, pipe2);
 
     auto end_of_pipe = common_pipe | 
         [&_all_done = all_done](auto x) { cout << "Final result arrived: " << x << '\n'; _all_done = true; };
 
-    receiver1.set_ready(); // close this end of the pipe
-    receiver2.set_ready(); // close this end of the pipe
+    // close the ends of all pipes
+    pipe1.set_ready();
+    pipe2.set_ready();
+    receiver1.set_ready(); 
+    receiver2.set_ready();
     common_pipe.set_ready();
 
     while (!all_done.load()) {
@@ -509,9 +510,9 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-    //channelExample();
-    //timedChannelExample();
-    //singledJoinedChannelExample();
+    channelExample();
+    timedChannelExample();
+    singledJoinedChannelExample();
     joinedChannelExample();
     int i;
     cin >> i;
