@@ -111,6 +111,10 @@ auto avoid_invoke(F&& f, Args&&... args)
     return avoid_();
 }
 
+/**************************************************************************************************/
+
+template <typename T>
+using receiver_type = typename std::remove_reference_t<T>::result_type;
 
 /**************************************************************************************************/
 
@@ -575,15 +579,15 @@ struct context_worker
 };
 
 
-template <std::size_t I, typename C, typename T>
-auto create_receiver_collector(std::shared_ptr<C>& context, receiver<T>& upstream_receiver) {
-    auto receiver_collector = upstream_receiver | buffer_size(1) | context_worker<I, C>(context);
+template <std::size_t I, typename C, typename R>
+auto create_receiver_collector(std::shared_ptr<C>& context, R&& upstream_receiver) {
+    auto receiver_collector = std::forward<R>(upstream_receiver) | buffer_size(1) | context_worker<I, C>(context);
     return receiver_collector._p;
 }
 
-template <typename C, typename... T, std::size_t... I>
-auto create_receiver_collectors(std::shared_ptr<C>& context, std::index_sequence<I...>, receiver<T>&... upstream_receiver) {
-    return std::make_tuple(create_receiver_collector<I>(context, upstream_receiver)...);
+template <typename C, typename... R, std::size_t... I>
+auto create_receiver_collectors(std::shared_ptr<C>& context, std::index_sequence<I...>, R&&... upstream_receiver) {
+    return std::make_tuple(create_receiver_collector<I>(context, std::forward<R>(upstream_receiver))...);
 }
 
 template <typename C, typename S, typename P, typename RC, std::size_t... I>
@@ -646,10 +650,10 @@ struct join_processor
 
 } // namespace detail
 
-template <typename S, typename F, typename...T>
-auto join(S s, F f, receiver<T>&... upstream_receiver) -> receiver<typename std::result_of<F(T...)>::type> {
-    using result_t = typename std::result_of<F(T...)>::type;
-    using context_t = detail::join_context<T...>;
+template <typename S, typename F, typename...R>
+auto join(S s, F f, R&&... upstream_receiver){
+    using result_t = typename std::result_of<F(detail::receiver_type<R>...)>::type;
+    using context_t = detail::join_context<detail::receiver_type<R>...>;
     using process_t = detail::join_processor<result_t, F, context_t>;
 
     auto shared_context = std::make_shared<context_t>();
@@ -657,19 +661,20 @@ auto join(S s, F f, receiver<T>&... upstream_receiver) -> receiver<typename std:
 
     auto receiver_collectors = 
         detail::create_receiver_collectors(shared_context, 
-                                           std::make_index_sequence<sizeof...(T)>(), 
+                                           std::make_index_sequence<sizeof...(R)>(), 
                                            upstream_receiver...);
 
     auto p = detail::create_joined_process<context_t>(
         std::move(s), 
         std::move(process), 
         receiver_collectors,
-        std::make_index_sequence<sizeof...(T)>());
+        std::make_index_sequence<sizeof...(R)>());
     
     detail::map_as_sender<context_t>(receiver_collectors, p);
 
     return receiver<result_t>(std::move(p));
 }
+
 
 /**************************************************************************************************/
 
@@ -692,15 +697,18 @@ class receiver {
     friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
 
     template <typename S, typename F, typename...U>
-    friend auto join(S, F, receiver<U>&...)->receiver<typename std::result_of<F(U...)>::type>;
+    friend auto join(S, F, U&&...);
 
-    template <std::size_t I, typename C, typename U>
-    friend auto detail::create_receiver_collector(std::shared_ptr<C>&, receiver<U>&);
+    template <std::size_t I, typename C, typename R>
+    friend auto detail::create_receiver_collector(std::shared_ptr<C>&, R&&);
+
 
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
+    using result_type = T;
+
     receiver() = default;
 
     ~receiver() {
