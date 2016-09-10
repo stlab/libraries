@@ -16,6 +16,7 @@
 #include <utility>
 
 #include <stlab/future.hpp>
+#include <stlab/scopeguard.hpp>
 
 /**************************************************************************************************/
 
@@ -30,8 +31,9 @@ template <typename> class receiver;
 
 enum class process_state {
     await,
-    await_try,
+    hold,
     yield,
+    closed
 };
 
 /**************************************************************************************************/
@@ -131,6 +133,7 @@ struct shared_process_receiver {
 
     virtual void map(sender<T>) = 0;
     virtual void clear_to_send() = 0;
+    virtual void clear_hold() = 0;
     virtual void add_receiver() = 0;
     virtual void remove_receiver() = 0;
     virtual timed_schedule_t scheduler() const = 0;
@@ -150,6 +153,30 @@ struct shared_process_sender {
 };
 
 /**************************************************************************************************/
+
+
+#if __GNUC__ < 5 && ! defined __clang__
+// http://stackoverflow.com/a/28967049/1353549
+template <typename...>
+struct voider
+{
+    using type = void;
+};
+template <typename...Ts>
+using void_t = typename voider<Ts...>::type;
+#else
+template <typename...>
+using void_t = void;
+#endif
+
+// Primary template handles all types not supporting the operation.
+template <typename, template <typename> class, typename = void_t<>>
+struct detect : std::false_type {};
+
+// Specialization recognizes/validates only types supporting the archetype.
+template <typename T, template <typename> class Op>
+struct detect<T, Op, void_t<Op<T>>> : std::true_type {};
+
 
 template <typename T>
 auto test_process_close(decltype(&T::close)) -> std::true_type;
@@ -171,21 +198,18 @@ auto process_close(T& x) -> std::enable_if_t<!has_process_close<T>> { }
 /**************************************************************************************************/
 
 template <typename T>
-auto test_process_state(decltype(&T::state)) -> std::true_type;
-
-template <typename>
-auto test_process_state(...) -> std::false_type;
+using process_state_t = decltype(std::declval<const T&>().state());
 
 template <typename T>
-constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
+constexpr bool has_process_state_v = detect<T, process_state_t>::value;
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state_v<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
     return x.state();
 }
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
+auto get_process_state(const T&) -> std::enable_if_t<!has_process_state_v<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
     return std::make_pair(process_state::await, std::chrono::system_clock::time_point());
 }
 
@@ -237,6 +261,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     bool                     _process_running = false;
     std::size_t              _process_suspend_count = 0;
     bool                     _process_close_queue = false;
+    std::atomic_bool         _process_hold{false};
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
 
@@ -248,7 +273,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     const std::deque<std::shared_ptr<shared_process_receiver<argument>>> _upstream;
 
     template <typename S, typename F>
-    shared_process(S&& s, F&& f) : _scheduler(std::forward<S>(s)), _process(std::forward<F>(f))
+    shared_process(S&& s, F&& f) : 
+        _scheduler(std::forward<S>(s)),
+        _process(std::forward<F>(f))
     {
         _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
@@ -259,7 +286,6 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f)), 
         _upstream(std::initializer_list<std::shared_ptr<shared_process_receiver<argument>>>{p...})
-
     {
         _sender_count = sizeof...(U);
         _receiver_count = !std::is_same<result, void>::value;
@@ -311,6 +337,13 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         return _scheduler;
     }
 
+    void clear_hold() override {
+        if (_process_hold && get_process_state(_process).first == process_state::await) {
+            _process_hold = false;
+            task_done();
+        }
+    }
+
     void task_done() {
         bool do_run;
         bool do_final;
@@ -334,10 +367,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void clear_to_send() override {
+        
         bool do_run = false;
         {
             auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
+            assert(_process_suspend_count > 0);
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
@@ -375,17 +410,21 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
 
         if (message) _process.await(std::move(message.get()));
-        else if (do_close) process_close(_process);
+        else if (do_close) 
+            process_close(_process);
         return bool(message);
     }
 
     template <typename U>
     auto step() -> std::enable_if_t<has_process_yield<U>> {
-        while (get_process_state(_process).first != process_state::yield) {
+        while (get_process_state(_process).first == process_state::await) {
             if (!dequeue()) break;
         }
         if (get_process_state(_process).first == process_state::yield) {
             broadcast(_process.yield());
+            for (auto& u : _upstream) {
+                u->clear_hold();
+            }
             clear_to_send();
         }
         else {
@@ -393,13 +432,21 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
                 get_process_state(_process).second > std::chrono::system_clock::time_point())
             {
                 _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
-                    if (get_process_state(_this->_process).first != process_state::yield) {
+                    if (get_process_state(_this->_process).first != process_state::yield &&
+                        get_process_state(_this->_process).first != process_state::closed) {
                         _this->broadcast(_this->_process.yield());
+                        for (auto& u : _this->_upstream) {
+                            u->clear_hold();
+                        }
                         _this->clear_to_send();
+                        //TODO move all to own method
                     }
                 });
             }
-            else if (get_process_state(_process).first != process_state::await_try) {
+            else if (get_process_state(_process).first == process_state::hold) {
+                _process_hold = true;
+            }
+            else {
                 task_done();
             }
         }
@@ -427,9 +474,15 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
         if (message) {
             broadcast(avoid_invoke(_process, std::move(message.get())));
+            for (auto& u : _upstream) {
+                u->clear_hold();
+            }
             clear_to_send();
         }
-        else if (get_process_state(_process).first != process_state::await_try) {
+        else if (get_process_state(_process).first == process_state::hold) {
+            _process_hold = true;
+        }
+        else {
             task_done();
         }
     }
@@ -523,25 +576,42 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 /**************************************************************************************************/
 namespace detail {
 
+
 template <typename... T>
 struct join_context : std::enable_shared_from_this<join_context<T...>>
 {
-    std::tuple<T...>    _result;
-    std::atomic_size_t  _remaining{ sizeof...(T) };
-    std::atomic_size_t  _sender_index{ std::numeric_limits<size_t>::max() };
-    bool                _closed = false;
-    std::atomic_size_t  _close_counter{ sizeof...(T) };
+    std::tuple<boost::optional<T>...>    _result;
+    std::atomic_size_t                   _remaining{ sizeof...(T) + 1};
+    std::atomic_size_t                   _sender_index{ std::numeric_limits<size_t>::max() };
+    bool                                 _closed = false;
+    std::atomic_size_t                   _close_counter{ sizeof...(T) };
 
+    template <std::size_t I>
+    void reset_context_result() {
+        std::get<I>(_result) = boost::none;
+    }
+
+    template <std::size_t... I>
+    void reset_context_results(std::index_sequence<I...>) {
+        (void)std::initializer_list<int>{(reset_context_result<I>(), 0)...};
+    }
 
     template<std::size_t i, typename U>
     void await(U&& u) {
+        assert(!std::get<i>(_result).is_initialized());
         std::get<i>(_result) = std::forward<U>(u);
-        if (--_remaining == 0) { _sender_index = i; }
+        if (--_remaining == 1) { _sender_index = i; }
+    }
+
+    void reset() {
+        reset_context_results(std::make_index_sequence<sizeof...(T)>());
+        _sender_index = std::numeric_limits<size_t>::max();
+        _close_counter = sizeof...(T);
+        _remaining = sizeof...(T) + 1;
     }
 
     std::shared_ptr<join_context<T...>> yield() {
-        _remaining = sizeof...(T);     
-        _sender_index = std::numeric_limits<size_t>::max();
+        --_remaining;
         return this->shared_from_this();
     }
 
@@ -549,15 +619,25 @@ struct join_context : std::enable_shared_from_this<join_context<T...>>
         if (--_close_counter == 0) _closed = true;
     }
 
-    auto state(size_t i) const {
+    template <std::size_t I>
+    auto state() const {
         // only for that processor the state is yield, that set the last value into _result
-        if ( _closed || ((_remaining.load() == 0) && (i == _sender_index.load())) )
+        if (_closed)
+            return std::make_pair(process_state::closed, std::chrono::system_clock::time_point());
+
+        if (_remaining.load() == 1 && I == _sender_index.load()) {
             return std::make_pair(process_state::yield, std::chrono::system_clock::time_point());
-        
-        if (_remaining.load() == sizeof...(T))
+        }
+
+        if (_remaining.load() == 0 || (_remaining.load() > 0 && _sender_index.load() != I && std::get<I>(_result).is_initialized()) ) {
+            return std::make_pair(process_state::hold, std::chrono::system_clock::time_point());
+        }
+
+        if (_remaining.load() > 1 && !std::get<I>(_result).is_initialized()) {
             return std::make_pair(process_state::await, std::chrono::system_clock::time_point());
-        else
-            return std::make_pair(process_state::await_try, std::chrono::system_clock::time_point());
+        }
+
+        assert(0);
     }
 };
 
@@ -568,12 +648,19 @@ struct context_worker
 
     explicit context_worker(const std::shared_ptr<C>& c) : _context(c) {}
 
-    auto state() const { return _context->state(i); }
+    // auto as return type does not wotk here with VS 2015 Update 3. 
+    // The trait inside get_process_state does not see it
+    std::pair<process_state, std::chrono::system_clock::time_point> state() const { 
+        auto s = _context->template state<i>(); 
+        return s;
+    }
     
     template <typename U>
-    void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
+    void await(U&& u) {
+        _context->template await<i,U>(std::forward<U>(u)); }
 
-    auto yield() { return _context->yield(); }
+    auto yield() {
+        return _context->yield(); }
 
     void close() { _context->close(); }
 };
@@ -608,7 +695,7 @@ void map_as_sender(RC& receiver_collectors, P& p) {
 
 template <typename F, typename C, std::size_t... I>
 auto apply_join_args_(const F& f, std::shared_ptr<C>& context, std::index_sequence<I...>) {
-    return f(std::move(std::get<I>(context->_result))...);
+    return f(std::move(std::get<I>(context->_result)).value()...);
 }
 
 template <typename F, typename C>
@@ -622,7 +709,7 @@ struct join_processor
 {
     F                   _f;
     std::shared_ptr<C>  _context;
-
+    bool                _closed = false;
     explicit join_processor(F&& f) : _f(std::move(f)) {}
 
     void await(const std::shared_ptr<C>& context) {
@@ -633,16 +720,21 @@ struct join_processor
     R yield() {
         auto wc = make_weak_ptr(_context);
         auto c = wc.lock();
+        SCOPE_EXIT{ if (c) c->reset(); };
         _context.reset();
         
         return detail::apply_join_args(_f, c);;
     }
 
     void close() {
+        _closed = true;
         _context.reset();
     }
 
     auto state() const {
+        if (_closed)
+            return std::make_pair(process_state::closed, std::chrono::system_clock::time_point());
+
         return std::make_pair((_context? process_state::yield: process_state::await), std::chrono::system_clock::time_point());
     }
 };
@@ -701,8 +793,6 @@ class receiver {
 
     template <std::size_t I, typename C, typename R>
     friend auto detail::create_receiver_collector(std::shared_ptr<C>&, R&&);
-
-
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
@@ -768,7 +858,6 @@ class sender {
     template <typename C, typename RC, typename P, std::size_t... I>
     friend void detail::map_as_sender_(RC&, P&, std::index_sequence<I...>);
 
-
     sender(ptr_t p) : _p(std::move(p)) {}
 
   public:
@@ -791,7 +880,6 @@ class sender {
     }
 
     sender& operator=(sender&&) noexcept = default;
-
     void close() {
         auto p = _p.lock();
         if (p) p->remove_sender();

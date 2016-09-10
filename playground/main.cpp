@@ -248,7 +248,7 @@ struct sum {
 
     int yield() { _state = process_state::await; return _sum; }
 
-    void close() { _state = process_state::yield; }
+    void close() { _state = process_state::closed; }
 
     auto state() const { return std::make_pair(_state, chrono::system_clock::time_point()); }
 };
@@ -326,7 +326,7 @@ struct timed_sum {
 
     int yield() { _state = process_state::await; return _sum; }
 
-    void close() { _state = process_state::await; }
+    void close() { _state = process_state::closed; }
 
     auto state() const {
         return std::make_pair(_state, (_sum < 45)? chrono::system_clock::time_point() : (chrono::system_clock::now() + chrono::milliseconds(5000)));
@@ -514,10 +514,13 @@ struct sum_10 {
         _state = process_state::await; 
         int result(0); 
         std::swap(result, _sum);
+        assert(result != 0);
         return result; 
     }
 
-    void close() { _state = process_state::yield; }
+    void close() { 
+        _state = process_state::closed; 
+    }
 
     auto state() const { return std::make_pair(_state, chrono::system_clock::time_point()); }
 };
@@ -574,7 +577,7 @@ void multipleJoinedChannelExample()
 
     vector<stlab::future<void>> results;
 
-    for (int n = 0; n != 30; ++n) {
+    for (int n = 0; n != 40; ++n) {
         results.emplace_back(async(default_scheduler(), [] { return 1; })
             .then([_aggregate = aggregate1](int x) { _aggregate(x); }));
         results.emplace_back(async(default_scheduler(), [] { return 1; })
@@ -589,8 +592,9 @@ void multipleJoinedChannelExample()
     auto joinedSum = join(default_scheduler(),
         [](int x, int y) { return x + y; }, receiver1 | sum_10(), receiver2|sum_10());
 
-    auto end_of_pipe = joinedSum | [&_sums = sums](auto x) {
-        printf("Final result arrived: %d\n", x);
+    auto arrived(0);
+    auto end_of_pipe = joinedSum | [&_sums = sums, &_arrived = arrived](auto x) {
+        printf("Final result arrived: %d / %d\n", x, ++_arrived);
         _sums += x; 
     };
 
@@ -599,7 +603,7 @@ void multipleJoinedChannelExample()
     receiver2.set_ready();
     joinedSum.set_ready();
 
-    while (sums < 60) {
+    while (sums < 80) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
