@@ -11,7 +11,6 @@
 
 #include <deque>
 #include <memory>
-#include <thread>
 #include <tuple>
 #include <utility>
 
@@ -154,6 +153,7 @@ struct shared_process_sender {
 
 /**************************************************************************************************/
 
+// the following is based on the C++ standard proposal N4502
 
 #if __GNUC__ < 5 && ! defined __clang__
 // http://stackoverflow.com/a/28967049/1353549
@@ -178,22 +178,21 @@ template <typename T, template <typename> class Op>
 struct detect<T, Op, void_t<Op<T>>> : std::true_type {};
 
 
-template <typename T>
-auto test_process_close(decltype(&T::close)) -> std::true_type;
-
-template <typename>
-auto test_process_close(...) -> std::false_type;
+/**************************************************************************************************/
 
 template <typename T>
-constexpr bool has_process_close = decltype(test_process_close<T>(0))::value;
+using process_close_t = decltype(std::declval<T&>().close());
 
 template <typename T>
-auto process_close(T& x) -> std::enable_if_t<has_process_close<T>> {
+constexpr bool has_process_close_v = detect<T, process_close_t>::value;
+
+template <typename T>
+auto process_close(T& x) -> std::enable_if_t<has_process_close_v<T>> {
     x.close();
 }
 
 template <typename T>
-auto process_close(T& x) -> std::enable_if_t<!has_process_close<T>> { }
+auto process_close(T& x) -> std::enable_if_t<!has_process_close_v<T>> { }
 
 /**************************************************************************************************/
 
@@ -216,13 +215,10 @@ auto get_process_state(const T&) -> std::enable_if_t<!has_process_state_v<T>, st
 /**************************************************************************************************/
 
 template <typename T>
-auto test_process_yield(decltype(&T::yield)) -> std::true_type;
-
-template <typename>
-auto test_process_yield(...) -> std::false_type;
+using process_yield_t = decltype(std::declval<T&>().yield());
 
 template <typename T>
-constexpr bool has_process_yield = decltype(test_process_yield<T>(0))::value;
+constexpr bool has_process_yield_v = detect<T, process_yield_t>::value;
 
 /**************************************************************************************************/
 
@@ -367,7 +363,6 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void clear_to_send() override {
-        
         bool do_run = false;
         {
             auto ps = get_process_state(_process);
@@ -410,13 +405,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
 
         if (message) _process.await(std::move(message.get()));
-        else if (do_close) 
-            process_close(_process);
+        else if (do_close) process_close(_process);
         return bool(message);
     }
 
     template <typename U>
-    auto step() -> std::enable_if_t<has_process_yield<U>> {
+    auto step() -> std::enable_if_t<has_process_yield_v<U>> {
         while (get_process_state(_process).first == process_state::await) {
             if (!dequeue()) break;
         }
@@ -445,6 +439,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             }
             else if (get_process_state(_process).first == process_state::hold) {
                 _process_hold = true;
+                _process_suspend_count = _downstream.size();
             }
             else {
                 task_done();
@@ -453,7 +448,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     template <typename U>
-    auto step() -> std::enable_if_t<!has_process_yield<U>> {
+    auto step() -> std::enable_if_t<!has_process_yield_v<U>> {
         boost::optional<argument> message; // TODO : make functional
         bool do_cts = false;
         bool do_close = false;
@@ -481,6 +476,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         }
         else if (get_process_state(_process).first == process_state::hold) {
             _process_hold = true;
+            _process_suspend_count = _downstream.size();
         }
         else {
             task_done();
@@ -611,11 +607,13 @@ struct join_context : std::enable_shared_from_this<join_context<T...>>
     }
 
     std::shared_ptr<join_context<T...>> yield() {
+        assert(_remaining == 1);
         --_remaining;
         return this->shared_from_this();
     }
 
     void close() { 
+        // FP Not sure, if _close_counter is still needed
         if (--_close_counter == 0) _closed = true;
     }
 
@@ -636,7 +634,7 @@ struct join_context : std::enable_shared_from_this<join_context<T...>>
         if (_remaining.load() > 1 && !std::get<I>(_result).is_initialized()) {
             return std::make_pair(process_state::await, std::chrono::system_clock::time_point());
         }
-
+        // TODO FP all conditions covered?
         assert(0);
     }
 };
@@ -648,19 +646,17 @@ struct context_worker
 
     explicit context_worker(const std::shared_ptr<C>& c) : _context(c) {}
 
-    // auto as return type does not wotk here with VS 2015 Update 3. 
-    // The trait inside get_process_state does not see it
+    // auto as return type does not work here with VS 2015 Update 3. 
+    // The trait inside get_process_state does not see it, grmpf
     std::pair<process_state, std::chrono::system_clock::time_point> state() const { 
         auto s = _context->template state<i>(); 
         return s;
     }
     
     template <typename U>
-    void await(U&& u) {
-        _context->template await<i,U>(std::forward<U>(u)); }
+    void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
 
-    auto yield() {
-        return _context->yield(); }
+    auto yield() { return _context->yield(); }
 
     void close() { _context->close(); }
 };
@@ -713,7 +709,7 @@ struct join_processor
     explicit join_processor(F&& f) : _f(std::move(f)) {}
 
     void await(const std::shared_ptr<C>& context) {
-        // check here the ref counts, to handle a closed upstream ?
+        // FP check here the ref counts, to handle a closed upstream ?
         _context = context;
     }
 
