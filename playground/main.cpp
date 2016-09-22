@@ -608,6 +608,82 @@ void multipleJoinedChannelExample()
     }
 }
 
+struct failing_sum {
+    process_state _state = process_state::await;
+    int _sum = 0;
+
+    void await(int n) {
+        _sum += n;
+        if (n == 4)
+            throw std::exception();
+
+        if (_sum == 41)
+            _state = process_state::yield;
+    }
+
+    int yield() { _state = process_state::await; return _sum; }
+
+    void close() { _state = process_state::closed; }
+
+    auto state() const { return std::make_pair(_state, chrono::system_clock::time_point()); }
+};
+
+struct sum_display
+{
+    std::atomic_bool& _allDone;
+
+    sum_display(std::atomic_bool& allDone) : _allDone(allDone) {}
+
+    process_state _state = process_state::await;
+
+    void operator()(int sum) {
+        cout << "The sum is " << sum << '\n';
+        _allDone = true;
+    }
+
+    void set_error(std::exception_ptr) {
+        cout << "Upstream an error occurred!\n";
+        _allDone = true;
+    }
+
+    void close()
+    {
+        cout << "Closed!\n";
+        _state = process_state::closed;
+    }
+};
+
+
+void channelErrorExample()
+{
+    cout << __FUNCTION__ << endl;
+
+    sender<int> aggregate;
+    receiver<int> receiver;
+    tie(aggregate, receiver) = channel<int>(default_scheduler());
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 10; ++n) {
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate](int n) {
+            _aggregate(n);
+        }));
+    }
+    aggregate.close();
+
+    atomic_bool all_done{ false };
+
+    auto pipe = receiver
+        | [_results = move(results)](auto x){ return x; }
+        | failing_sum() | sum_display(all_done);
+
+    receiver.set_ready(); // close this end of the pipe
+
+    while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
 
 
 int main(int argc, char **argv)
@@ -630,7 +706,8 @@ int main(int argc, char **argv)
     //singledJoinedChannelExample();
     //joinedChannelExample();
     //multipleSums();
-    multipleJoinedChannelExample();
+    //multipleJoinedChannelExample();
+    channelErrorExample();
     int i;
     cin >> i;
 }

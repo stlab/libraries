@@ -14,6 +14,8 @@
 #include <tuple>
 #include <utility>
 
+#include <boost/variant.hpp>
+
 #include <stlab/future.hpp>
 #include <stlab/scopeguard.hpp>
 
@@ -147,6 +149,7 @@ struct shared_process_sender {
     virtual ~shared_process_sender() = default;
 
     virtual void send(avoid<T> x) = 0;
+    virtual void send(std::exception_ptr) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
 };
@@ -215,6 +218,23 @@ auto get_process_state(const T&) -> std::enable_if_t<!has_process_state_v<T>, st
 /**************************************************************************************************/
 
 template <typename T>
+using process_set_error_t = decltype(std::declval<T&>().set_error(std::exception_ptr()));
+
+template <typename T>
+constexpr bool has_set_process_error_v = detect<T, process_set_error_t>::value;
+
+template <typename T>
+auto set_process_error(T& x, std::exception_ptr error) -> std::enable_if_t<has_set_process_error_v<T>, void> {
+    x.set_error(std::move(error));
+}
+
+template <typename T>
+auto set_process_error(T&, std::exception_ptr) -> std::enable_if_t<!has_set_process_error_v<T>, void> {
+}
+
+/**************************************************************************************************/
+
+template <typename T>
 using process_yield_t = decltype(std::declval<T&>().yield());
 
 template <typename T>
@@ -253,7 +273,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     T                        _process;
 
     std::mutex               _process_mutex;
-    std::deque<argument>     _process_message_queue;
+
+    enum class message_t { argument, error};
+    std::deque<boost::variant<argument, std::exception_ptr>>  _process_message_queue;
     bool                     _process_running = false;
     std::size_t              _process_suspend_count = 0;
     bool                     _process_close_queue = false;
@@ -384,27 +406,54 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         if (do_run) run();
     }
 
-    bool dequeue() {
-        boost::optional<argument> message; // TODO : make functional
+    auto pop_from_queue() {
+        boost::optional<boost::variant<argument, std::exception_ptr>> message; // TODO : make functional
         bool do_cts = false;
         bool do_close = false;
-        {
-            std::unique_lock<std::mutex> lock(_process_mutex);
-            if (_process_message_queue.empty()) {
-                std::swap(do_close, _process_close_queue);
-                _process_final = do_close; // unravel after any yield
-            } else {
-                message = std::move(_process_message_queue.front());
-                _process_message_queue.pop_front();
-                do_cts = _process_message_queue.size() <= (_process_buffer_size - 1);
-            }
+
+        std::unique_lock<std::mutex> lock(_process_mutex);
+        if (_process_message_queue.empty()) {
+            std::swap(do_close, _process_close_queue);
+            _process_final = do_close; // unravel after any yield
         }
+        else {
+            message = std::move(_process_message_queue.front());
+            _process_message_queue.pop_front();
+            do_cts = _process_message_queue.size() <= (_process_buffer_size - 1);
+        }
+
+        return std::make_tuple(std::move(message), do_cts, do_close);
+    }
+    
+
+    bool dequeue() {
+        boost::optional<boost::variant<argument,std::exception_ptr>> message; // TODO : make functional
+        bool do_cts = false;
+        bool do_close = false;
+
+        std::tie(message, do_cts, do_close) = pop_from_queue();
 
         if (do_cts) {
             for (auto& up : _upstream) { up->clear_to_send(); }
         }
 
-        if (message) _process.await(std::move(message.get()));
+        if (message) {
+            if (message_t::argument == static_cast<message_t>(message.get().which()))
+            {
+                try {
+                    _process.await(std::move(boost::get<argument>(message.get())));
+                }
+                catch (...) {
+                    broadcast(std::move(std::current_exception()));
+                }
+            }
+            else {
+                if (has_set_process_error_v<T>)
+                    set_process_error(_process, std::move(boost::get<std::exception_ptr>(message.get())));
+                else
+                    do_close = true;
+            }
+        }
         else if (do_close) process_close(_process);
         return bool(message);
     }
@@ -449,30 +498,33 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
     template <typename U>
     auto step() -> std::enable_if_t<!has_process_yield_v<U>> {
-        boost::optional<argument> message; // TODO : make functional
+        boost::optional<boost::variant<argument, std::exception_ptr>> message; // TODO : make functional
         bool do_cts = false;
         bool do_close = false;
-        {
-            std::unique_lock<std::mutex> lock(_process_mutex);
-            if (_process_message_queue.empty()) {
-                std::swap(do_close, _process_close_queue);
-                _process_final = do_close; // unravel after any yield
-            } else {
-                message = std::move(_process_message_queue.front());
-                _process_message_queue.pop_front();
-                do_cts = _process_message_queue.size() <= (_process_buffer_size - 1);
-            }
-        }
+
+        std::tie(message, do_cts, do_close) = pop_from_queue();
 
         if (do_cts) {
             for (auto& up : _upstream) { up->clear_to_send(); }
         }
         if (message) {
-            broadcast(avoid_invoke(_process, std::move(message.get())));
-            for (auto& u : _upstream) {
-                u->clear_hold();
+            if (message_t::argument == static_cast<message_t>(message.get().which())) {
+                try {
+                    broadcast(avoid_invoke(_process, std::move(boost::get<argument>(message.get()))));
+                }
+                catch (...) {
+                    broadcast(std::move(std::current_exception()));
+                }
+                for (auto& u : _upstream) {
+                    u->clear_hold();
+                }
+                clear_to_send();
+            } else {
+                if (has_set_process_error_v<T>)
+                    set_process_error(_process, std::move(boost::get<std::exception_ptr>(message.get())));
+                else
+                    do_close = true;
             }
-            clear_to_send();
         }
         else if (get_process_state(_process).first == process_state::hold) {
             _process_hold = true;
@@ -520,22 +572,33 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             e(args...);
         });
     }
+    
+    void send(std::exception_ptr error) override {
+        enqueue(std::move(error));
+    }
 
     void send(argument arg) override {
+        enqueue(std::move(arg));
+    }
+
+    template <typename U>
+    void enqueue(U&& arg)
+    {
         bool do_run;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
-            _process_message_queue.emplace_back(std::move(arg)); // TODO (sparent) : overwrite here.
-            
+            _process_message_queue.emplace_back(std::forward<U>(arg)); // TODO (sparent) : overwrite here.
+
             do_run = !_receiver_count && !_process_running;
             _process_running = _process_running || do_run;
 
-            #if 0
+#if 0
             running = running || _process_suspend_count;
-            #endif
+#endif
         }
         if (do_run) run();
     }
+
 
     void map(sender<result> f) override {
         /*
@@ -880,6 +943,11 @@ class sender {
         auto p = _p.lock();
         if (p) p->remove_sender();
         _p.reset();
+    }
+
+    void operator()(std::exception_ptr error) {
+        auto p = _p.lock();
+        if (p) p->send(std::move(error));
     }
 
     template <typename... A>
