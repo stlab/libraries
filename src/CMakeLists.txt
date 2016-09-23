@@ -12,7 +12,7 @@ set(HEADERS
   ../stlab/expected.hpp
   ../stlab/future.hpp
   ../stlab/progress.hpp
-  ../scopeguard.hpp
+  ../stlab/scopeguard.hpp
 )
 
 include_directories(${Boost_INCLUDE_DIRS})
