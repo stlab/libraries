@@ -248,7 +248,7 @@ struct sum {
 
     int yield() { _state = process_state::await; return _sum; }
 
-    void close() { _state = process_state::yield; }
+    void close() { _state = process_state::closed; }
 
     auto state() const { return std::make_pair(_state, chrono::system_clock::time_point()); }
 };
@@ -256,6 +256,7 @@ struct sum {
 
 void channelExample()
 {
+    cout << __FUNCTION__ << endl;
     /*
     Create a channel to aggregate our values.
     */
@@ -298,7 +299,7 @@ void channelExample()
         inefficiency here - this is a lambda whose only purpose is to hold the vector of
         futures.
         */
-        | [_results = move(results)](auto x){ printf("Passing %d\n", x);  return x; }
+        | [_results = move(results)](auto x){ return x; }
         // Then we can pipe the values to our accumulator
         | buffer_size(2) | sum() 
         // And pipe the final value to a lambda to print it.
@@ -325,15 +326,16 @@ struct timed_sum {
 
     int yield() { _state = process_state::await; return _sum; }
 
-    void close() { _state = process_state::await; }
+    void close() { _state = process_state::closed; }
 
     auto state() const {
-        return std::make_pair(_state, (_sum < 45)? chrono::system_clock::now() : (chrono::system_clock::now() + chrono::milliseconds(5000)));
+        return std::make_pair(_state, (_sum < 45)? chrono::system_clock::time_point() : (chrono::system_clock::now() + chrono::milliseconds(5000)));
     }
 };
 
 void timedChannelExample()
 {
+    cout << __FUNCTION__ << endl;
     /*
     Create a channel to aggregate our values.
     */
@@ -375,7 +377,7 @@ void timedChannelExample()
         inefficiency here - this is a lambda whose only purpose is to hold the vector of
         futures.
         */
-        | [_results = move(results)](auto x){ printf("Passing %d\n", x);  return x; }
+        | [_results = move(results)](auto x){ return x; }
         // Then we can pipe the values to our accumulator
         | timed_sum()
         // And pipe the final value to a lambda to print it.
@@ -388,6 +390,224 @@ void timedChannelExample()
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
+
+template <size_t I> // parameter just for debugging purpose
+struct sum_10_elements {
+    process_state _state = process_state::await;
+    int _sum{ 0 };
+
+    void await(int n) {
+        _sum += n;
+        if (_sum == 45)
+            _state = process_state::yield;
+    }
+
+    int yield() {
+        _state = process_state::await;
+        auto result = _sum;
+        _sum = 0; 
+        return result;
+    }
+
+    auto state() const {
+        return std::make_pair( _state,  chrono::system_clock::time_point());
+    }
+};
+
+void singledJoinedChannelExample()
+{
+    cout << __FUNCTION__ << endl;
+
+    sender<int> aggregate1;
+    receiver<int> receiver1;
+    tie(aggregate1, receiver1) = channel<int>(default_scheduler());
+
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 20; ++n) {
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate1](int n) { _aggregate(n); }));
+    }
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate1.close();
+
+    atomic_bool all_done{ false };
+
+    auto pipe1 = receiver1 | sum_10_elements<0>();
+
+    auto common_pipe = join(default_scheduler(), [](int x) { return x; }, pipe1);
+
+    auto end_of_pipe = common_pipe | 
+        [&_all_done = all_done](auto x) { cout << "Final result arrived: " << x << '\n'; _all_done = true; };
+
+    receiver1.set_ready(); // close this end of the pipe
+    common_pipe.set_ready();
+    pipe1.set_ready();
+
+    while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+
+void joinedChannelExample()
+{
+    cout << __FUNCTION__ << endl;
+
+    sender<int> aggregate1, aggregate2;
+    receiver<int> receiver1, receiver2;
+    tie(aggregate1, receiver1) = channel<int>(default_scheduler());
+    tie(aggregate2, receiver2) = channel<int>(default_scheduler());
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 10; ++n) {
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate1](int n) { _aggregate(n); }));
+        results.emplace_back(async(default_scheduler(), [_n = n] { return _n; })
+            .then([_aggregate = aggregate2](int n) { _aggregate(n); }));
+    }
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate1.close();
+    aggregate2.close();
+
+    atomic_int done{ 2 };
+
+    auto pipe1 = receiver1 | sum_10_elements<0>();
+    auto pipe2 = receiver2 | sum_10_elements<1>();
+    
+    auto common_pipe = join(default_scheduler(), 
+        [](int x, int y) { return x + y; }, pipe1, pipe2);
+
+    auto end_of_pipe = common_pipe | 
+        [&_done = done](auto x) { cout << "Final result arrived: " << x << '\n'; --_done; };
+
+    // close the ends of all pipes
+    pipe1.set_ready();
+    pipe2.set_ready();
+    receiver1.set_ready(); 
+    receiver2.set_ready();
+    common_pipe.set_ready();
+
+    while (done > 0) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+
+struct sum_10 {
+    process_state _state = process_state::await;
+    int _sum = 0;
+
+    void await(int n) {
+        _sum += n;
+        assert(_sum <= 10);
+
+        if (_sum == 10) {
+            _state = process_state::yield;
+        }
+    }
+
+    int yield() { 
+        printf("%s %d\n", __FUNCTION__, _sum);
+        _state = process_state::await; 
+        int result(0); 
+        std::swap(result, _sum);
+        assert(result != 0);
+        return result; 
+    }
+
+    void close() { 
+        _state = process_state::closed; 
+    }
+
+    auto state() const { return std::make_pair(_state, chrono::system_clock::time_point()); }
+};
+
+
+void multipleSums()
+{
+    cout << __FUNCTION__ << endl;
+    /*
+    Create a channel to aggregate our values.
+    */
+    sender<int> aggregate;
+    receiver<int> receiver;
+    tie(aggregate, receiver) = channel<int>(default_scheduler());
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 30; ++n) {
+        results.emplace_back(async(default_scheduler(), [] { return 1; })
+            .then([_aggregate = aggregate](int x) {
+            _aggregate(x);
+        }));
+    }
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate.close();
+
+    atomic_int sums{ 0 };
+
+    //receiver.set_buffer_size(2);
+
+    auto pipe = receiver | 
+        [_results = move(results)](auto x){ return x; } | 
+        sum_10() | 
+        [&_sums = sums](auto x) { 
+            cout << "Result received " << x << '\n'; 
+            _sums += x;
+        };
+
+    receiver.set_ready(); // close this end of the pipe
+
+    while (sums < 30) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+void multipleJoinedChannelExample()
+{
+    cout << __FUNCTION__ << endl;
+
+    sender<int> aggregate1, aggregate2;
+    receiver<int> receiver1, receiver2;
+    tie(aggregate1, receiver1) = channel<int>(default_scheduler());
+    tie(aggregate2, receiver2) = channel<int>(default_scheduler());
+
+    vector<stlab::future<void>> results;
+
+    for (int n = 0; n != 40; ++n) {
+        results.emplace_back(async(default_scheduler(), [] { return 1; })
+            .then([_aggregate = aggregate1](int x) { _aggregate(x); }));
+        results.emplace_back(async(default_scheduler(), [] { return 1; })
+            .then([_aggregate = aggregate2](int x) { _aggregate(x); }));
+}
+    // Now it is safe to close (or destruct) this channel, all the copies remain open.
+    aggregate1.close();
+    aggregate2.close();
+
+    atomic_int sums{ 0 };
+
+    auto joinedSum = join(default_scheduler(),
+        [](int x, int y) { return x + y; }, receiver1 | sum_10(), receiver2|sum_10());
+
+    auto arrived(0);
+    auto end_of_pipe = joinedSum | [&_sums = sums, &_arrived = arrived](auto x) {
+        printf("Final result arrived: %d / %d\n", x, ++_arrived);
+        _sums += x; 
+    };
+
+    // close the ends of all pipes
+    receiver1.set_ready();
+    receiver2.set_ready();
+    joinedSum.set_ready();
+
+    while (sums < 80) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
 
 
 int main(int argc, char **argv)
@@ -405,8 +625,12 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-    channelExample();
-    timedChannelExample();
+    //channelExample();
+    //timedChannelExample();
+    //singledJoinedChannelExample();
+    //joinedChannelExample();
+    //multipleSums();
+    multipleJoinedChannelExample();
     int i;
     cin >> i;
 }
