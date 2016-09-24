@@ -582,6 +582,14 @@ class future<T, detail::enable_if_copyable<T>> {
         then([_hold = _p](auto f){ }, [](const auto& x){ });
     }
 
+    /*
+        What is this? The bool is never tested. If _p is unique then the rest of the dance is not
+        necessary. Why would we continue to hold if someone else is holding? The should just be the
+        equivalent of:
+        
+        void cancel() { *this = future(); }
+    */
+
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<T>> p = _p;
