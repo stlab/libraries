@@ -7,6 +7,7 @@ Distributed under the Boost Software License, Version 1.0.
 /**************************************************************************************************/
 
 #define BOOST_TEST_DYN_LINK
+
 #include <boost/test/unit_test.hpp>
 #include <stlab/future.hpp>
 
@@ -23,8 +24,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         int p = 0;
 
         sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
+        
         check_valid_future(sut);
-
         wait_until_future_completed(sut);
     
         BOOST_REQUIRE_EQUAL(42, p);
@@ -49,8 +50,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
 
         sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
             .then([&_p = p] { _p += 42; });
+        
         check_valid_future(sut);
-
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, p);
@@ -61,11 +62,11 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on l-value");
 
         std::atomic_int p{ 0 };
-
         auto interim = async(custom_scheduler<0>(), [&_p = p] { _p = 42; });
-        sut = interim.then([&_p = p] { _p += 42; });
-        check_valid_future(sut);
 
+        sut = interim.then([&_p = p] { _p += 42; });
+
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, p);
@@ -136,8 +137,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         auto sut = async(custom_scheduler<0>(), [&_p = p ] { _p = 42; });
         auto f1 = sut.then(custom_scheduler<0>(), [&_p = p, &_r = r1 ] { _r = 42 + _p; });
         auto f2 = sut.then(custom_scheduler<0>(), [&_p = p, &_r = r2 ] { _r = 4711 + _p; });
-        check_valid_future(sut, f1, f2);
 
+        check_valid_future(sut, f1, f2);
         wait_until_future_completed(f1, f2);
 
         BOOST_REQUIRE_EQUAL(42 + 42, r1);
@@ -156,12 +157,26 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
             *r = 42; 
             return std::move(r); 
         });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
         
         BOOST_REQUIRE_EQUAL(42, **result);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_then_non_copyable_detach) {
+        BOOST_TEST_MESSAGE("running future non copyable, detached");
+        std::atomic_bool check{ false };
+        {
+            async(custom_scheduler<0>(), [&_check = check] { 
+                auto result = std::make_unique<int>(); 
+                *result = 42; 
+                _check = true;  
+                return std::move(result);
+            }).detach();
+        }
+        while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
     }
 
     BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
@@ -172,8 +187,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
             *r = x;
             return std::move(r);
         });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42, **result);
@@ -189,8 +204,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
                 *r = x;
                 return std::move(r);
             });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42, **result);
@@ -202,13 +217,14 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with same scheduler, then on l-value");
 
         auto interim = async(custom_scheduler<0>(), [] { return 42; });
+
         sut = interim.then([](auto x) {
             auto r = std::make_unique<int>();
             *r = x;
             return std::move(r);
         });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42, **result);
@@ -219,13 +235,14 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with different scheduler, then on l-value");
 
         auto interim = async(custom_scheduler<0>(), [] { return 42; });
+
         sut = interim.then(custom_scheduler<1>(), [](auto x) {
             auto r = std::make_unique<int>();
             *r = x;
             return std::move(r);
         });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42, **result);
@@ -245,8 +262,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
                 *r = *x * 2;
                 return std::move(r);
             });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 * 2, **result);
@@ -265,8 +282,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
                 *r = *x * 2;
                 return std::move(r);
             });
+        
         check_valid_future(sut);
-
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 * 2, **result);
@@ -283,11 +300,25 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
         BOOST_TEST_MESSAGE("running future int single tasks");
 
         sut = async(custom_scheduler<0>(), [] { return 42; });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_int_single_task_get_try_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future int single tasks, get_try on r-value");
+
+        sut = async(custom_scheduler<0>(), [] { return 42; });
+        
+        auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
+        wait_until_future_completed(sut);
+        auto test_result_2 = std::move(sut).get_try();
+
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, *test_result_2);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -298,7 +329,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
             auto detached = async(custom_scheduler<0>(), [&_check = check] { _check = true;  return 42; });
             detached.detach();
         }
-        while (!check) {}
+        while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
     }
 
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
@@ -306,8 +337,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         sut = async(custom_scheduler<0>(), [] { return 42; })
             .then([](auto x) { return x + 42; });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
@@ -317,12 +348,11 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_lvalue) {
         BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on l-value");
 
-
         auto interim = async(custom_scheduler<0>(), [] { return 42; });
+
         sut = interim.then([](auto x) { return x + 42; });
 
         check_valid_future(sut);
-
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
@@ -334,8 +364,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         auto sut = async(custom_scheduler<0>(), [] { return 42; })
             .then(custom_scheduler<1>(), [](auto x) { return x + 42; });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
@@ -350,8 +380,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
             .then([&_p = p] { _p += 42; return _p.load(); });
+        
         check_valid_future(sut);
-
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, p);
@@ -365,8 +395,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         sut = async(custom_scheduler<0>(), [&_p = p] { _p = 42; })
             .then(custom_scheduler<1>(), [&_p = p] { _p += 42; return _p.load(); });
+        
         check_valid_future(sut);
-
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, p);
@@ -384,8 +414,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
         auto sut = async(custom_scheduler<0>(), [] { return 42; })
             .then(custom_scheduler<0>(), [](auto x) { return x + 42; })
             .then(custom_scheduler<0>(), [](auto x) { return x + 42; });
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42 + 42, *sut.get_try());
@@ -405,8 +435,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
         sut = async(custom_scheduler<0>(), [] { return 42; });
         auto f1 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 42; });
         auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 4177; });
-        check_valid_future(sut, f1, f2);
 
+        check_valid_future(sut, f1, f2);
         wait_until_future_completed(f1, f2);
 
         BOOST_REQUIRE_EQUAL(42 + 42, *f1.get_try());
@@ -426,7 +456,6 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
         sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); });
 
         wait_until_future_fails<test_exception>(sut);
-
         check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
@@ -440,7 +469,6 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
             .then([&_p = p] { _p = 42; });
 
         wait_until_future_fails<test_exception>(sut);
-
         check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_EQUAL(0, p);
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -474,7 +502,17 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
         check_failure<test_exception>(sut, "failure");
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
+#if 0 // currently disabled, because I have doubts that get_try on an r-value makes any sense at al
+    BOOST_AUTO_TEST_CASE(future_int_single_task_with_error_get_try_on_rvalue) {
+        BOOST_TEST_MESSAGE("running future int single tasks, with error on get_try on r-value");
 
+        sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
+        auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
+        wait_until_future_fails<test_exception>(sut);
+        check_failure<test_exception>(std::move(sut), "failure");
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+#endif
     BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler) {
         BOOST_TEST_MESSAGE("running future int with two tasks which first fails");
         int p = 0;

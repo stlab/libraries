@@ -7,9 +7,11 @@ Distributed under the Boost Software License, Version 1.0.
 /**************************************************************************************************/
 
 #define BOOST_TEST_DYN_LINK
+
 #include <boost/test/unit_test.hpp>
 #include <stlab/future.hpp>
 #include <string>
+
 #include "test_helper.hpp"
 
 using namespace stlab;
@@ -23,8 +25,9 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int, test_fixture<int>)
         sut = when_all(custom_scheduler<0>(), [](auto x) {
             return x + x;
         }, f1);
-        check_valid_future(sut);
 
+
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
@@ -42,8 +45,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int, test_fixture<int>)
         sut = when_all(custom_scheduler<0>(), [](int x1, int x2, int x3, int x4) {
             return 7*x1 + 11*x2 + 13*x3 + 17*x4;
         }, f1, f2, f3, f4);
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(1*7 + 2*11 + 3*13 + 5*17, *sut.get_try());
@@ -67,8 +70,8 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string, test_fixture<std::string>)
             st << x1 << " " << x2 << " " << x3 << " " << x4[0] << " " << x4[1];
             return st.str();
         }, f1, f2, f3, f4);
-        check_valid_future(sut);
 
+        check_valid_future(sut);
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE_EQUAL(std::string("1 3.1415 Don't panic! 3 3"), *sut.get_try());
@@ -91,10 +94,10 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, test_fixture<int>)
         sut = when_all(custom_scheduler<0>(), [](auto x) {
             return x + x;
         }, f1);
+
         wait_until_future_fails<test_exception>(sut);
 
         check_failure<test_exception>(sut, "failure");
-
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -109,6 +112,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, test_fixture<int>)
         sut = when_all(custom_scheduler<0>(), [](int x1, int x2, int x3, int x4) {
             return 7 * x1 + 11 * x2 + 13 * x3 + 17 * x4;
         }, f1, f2, f3, f4);
+
         wait_until_future_fails<test_exception>(sut);
 
         check_failure<test_exception>(sut, "failure");
@@ -127,6 +131,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_int_failure, test_fixture<int>)
         sut = when_all(custom_scheduler<0>(), [](int x1, int x2, int x3, int x4) {
             return 7 * x1 + 11 * x2 + 13 * x3 + 17 * x4;
         }, f1, f2, f3, f4);
+
         wait_until_future_fails<test_exception>(sut);
 
         check_failure<test_exception>(sut, "failure");
@@ -151,6 +156,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string_failure, test_fixture<std::
             st << x1 << " " << x2 << " " << x3 << " " << x4[0] << " " << x4[1];
             return st.str();
         }, f1, f2, f3, f4);
+
         wait_until_future_fails<test_exception>(sut);
 
         check_failure<test_exception>(sut, "failure");
@@ -171,6 +177,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string_failure, test_fixture<std::
             st << x1 << " " << x2 << " " << x3 << " " << x4[0] << " " << x4[1];
             return st.str();
         }, f1, f2, f3, f4);
+
         wait_until_future_fails<test_exception>(sut);
 
         check_failure<test_exception>(sut, "failure");

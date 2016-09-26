@@ -7,10 +7,11 @@ Distributed under the Boost Software License, Version 1.0.
 /**************************************************************************************************/
 
 #define BOOST_TEST_DYN_LINK
+
 #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
-
 #include <stlab/future.hpp>
+
 #include "test_helper.hpp"
 
 using namespace stlab;
@@ -40,6 +41,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
 
         if (sut.cancel_try())
             BOOST_REQUIRE(sut.valid() == false);
+    }
+    BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, copyable_test_types) {
+    BOOST_TEST_MESSAGE("running future with mininmal copyable type and passed parameter " << typeid(T).name());
+
+    test_setup setup;
+    {
+        auto sut = async(custom_scheduler<0>(), [](auto x)->T { return x + T(0); }, T(42));
+        BOOST_REQUIRE(sut.valid() == true);
+        BOOST_REQUIRE(sut.error().is_initialized() == false);
+
+        while (!sut.get_try()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        BOOST_WARN_EQUAL(T(42) + T(0), *sut.get_try());
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }

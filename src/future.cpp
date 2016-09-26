@@ -6,6 +6,11 @@
 
 /**************************************************************************************************/
 
+#include <stlab/config.hpp>
+
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+
 #include <stlab/future.hpp>
 #include <functional>
 
@@ -18,9 +23,6 @@
 #include <mutex>
 #include <thread>
 #include <vector>
-#include <mutex>
-#include <atomic>
-#include <condition_variable>
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
@@ -46,7 +48,7 @@ class notification_queue {
     bool                    _done{false};
     mutex                   _mutex;
     condition_variable      _ready;
-    
+
 public:
     bool try_pop(function<void()>& x) {
         lock_t lock{_mutex, try_to_lock};
@@ -137,6 +139,18 @@ class task_system {
         
         _q[i % _count].push(forward<F>(f));
     }
+
+    // TODO FP: delayed execution to be implemented
+    template <typename F>
+    void async_(std::chrono::system_clock::time_point, F&& f) {
+        auto i = _index++;
+
+        for (unsigned n = 0; n != _count; ++n) {
+            if (_q[(i + n) % _count].try_push(forward<F>(f))) return;
+        }
+
+        _q[i % _count].push(forward<F>(f));
+    }
 };
 
 /**************************************************************************************************/
@@ -204,49 +218,74 @@ struct timed_queue {
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
+FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& tp) {
+    FILETIME ft = { 0, 0 };
+    SYSTEMTIME st = { 0 };
+    time_t t = std::chrono::system_clock::to_time_t(tp);
+    tm utc_tm;
+    if (!gmtime_s(&utc_tm, &t)) {
+        st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
+        st.wMinute = static_cast<WORD>(utc_tm.tm_min);
+        st.wHour = static_cast<WORD>(utc_tm.tm_hour);
+        st.wDay = static_cast<WORD>(utc_tm.tm_mday);
+        st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
+        st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
+        st.wMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
+        SystemTimeToFileTime(&st, &ft);
+    }
+    return ft;
+}
+
+
 class task_system
 {
-    PTP_POOL            _thread_pool;
-    TP_CALLBACK_ENVIRON _callback_environment;
-
 public:
-
-    task_system() {
-        InitializeThreadpoolEnvironment(&_callback_environment);
-        _thread_pool = CreateThreadpool(NULL);
-
-        if (NULL == _thread_pool) {
-            // Throw???
-        }
-        SetThreadpoolCallbackPool(&_callback_environment, _thread_pool);
-    }
-
-    ~task_system()
-    {
-        CloseThreadpool(_thread_pool);
-    }
-
     template <typename F>
     void async_(F&& f) {     
         auto work = CreateThreadpoolWork(&callback_impl<F>, 
                                          new F(std::forward<F>(f)), 
-                                         &_callback_environment);
-        if (NULL == work) {
-            // todo throw?
+                                         nullptr);
+        if (work == nullptr) {
+            throw std::bad_alloc();
         }
         SubmitThreadpoolWork(work);
     }
 
+    template <typename F>
+    void async_(std::chrono::system_clock::time_point time_point, F&& f) {
+
+        auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
+                                           new F(std::forward<F>(f)),
+                                           nullptr);
+        if (timer == nullptr) {
+            throw std::bad_alloc();
+        }
+
+        auto file_time = time_point_to_FILETIME(time_point);
+
+        SetThreadpoolTimer(timer,
+                           &file_time,
+                           0,
+                           0);
+    }
 private:
 
     template <typename F>
-    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE instance,
+    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
                                        PVOID                 parameter,
-                                       PTP_WORK              Work) {
-        auto f = static_cast<F*>(parameter);
+                                       PTP_WORK              /*Work*/) {
+        std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
-        delete f;
     }
+
+    template <typename F>
+    static void CALLBACK timer_callback_impl(PTP_CALLBACK_INSTANCE /*Instance*/,
+                                             PVOID                 parameter,
+                                             PTP_TIMER             /*timer*/ ) {
+        std::unique_ptr<F> f(static_cast<F*>(parameter));
+        (*f)();
+    }
+
 };
 
 #endif
@@ -263,12 +302,27 @@ namespace detail {
     good since we need a concrete interface at this level. Above code could be simpler.
 */
 
+task_system& only_task_system() {
+    static task_system instance;
+    return instance;
+}
+
+void async_(std::chrono::system_clock::time_point time_point, function<void()> f) {
+    if ( (time_point != std::chrono::system_clock::time_point()) && (time_point > std::chrono::system_clock::now()) )        
+        only_task_system().async_(time_point, move(f));
+    else
+        async_(std::move(f));
+}
+
 void async_(function<void()> f) {
-    static task_system _system;
-    _system.async_(move(f));
+    only_task_system().async_(move(f));
 }
 
 } // namespace detail
 } // namespace stlab
+
+/**************************************************************************************************/
+
+#endif
 
 /**************************************************************************************************/
