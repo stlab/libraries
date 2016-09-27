@@ -13,6 +13,7 @@
 #include <memory>
 #include <thread>
 #include <utility>
+#include <chrono>
 
 #include <stlab/future.hpp>
 
@@ -29,8 +30,19 @@ template <typename> class receiver;
 
 enum class process_state {
     await,
-    await_try,
     yield,
+};
+
+using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
+
+constexpr process_state_scheduled await_forever {
+    process_state::await,
+    std::chrono::system_clock::time_point::max()
+};
+
+constexpr process_state_scheduled yield_immediate {
+    process_state::yield,
+    std::chrono::system_clock::time_point::min()
 };
 
 /**************************************************************************************************/
@@ -175,13 +187,13 @@ template <typename T>
 constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, process_state_scheduled> {
     return x.state();
 }
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, std::pair<process_state, std::chrono::system_clock::time_point>> {
-    return std::make_pair(process_state::await, std::chrono::system_clock::time_point());
+auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, process_state_scheduled> {
+    return await_forever;
 }
 
 /**************************************************************************************************/
@@ -376,14 +388,57 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 
     template <typename U>
     auto step() -> std::enable_if_t<has_process_yield<U>> {
-        while (get_process_state(_process).first != process_state::yield) {
+        /*
+            While we are awaiting we will flush the queue. The assumption here is that work
+            is done on yield()
+        */
+        while (get_process_state(_process).first == process_state::await) {
             if (!dequeue()) break;
         }
-        if (get_process_state(_process).first == process_state::yield) {
-            broadcast(_process.yield());
-            clear_to_send();
+
+        auto now = std::chrono::system_clock::now();
+        process_state state;
+        std::chrono::system_clock::time_point when;
+        std::tie(state, when) = get_process_state(_process);
+
+        /*
+            Once we hit yield, go ahead and call it. If the yield is delayed then schedule it. This
+            process will be considered running until it executes.
+        */
+        if (state == process_state::yield) {
+            if (when <= now) broadcast(_process.yield());
+            else _scheduler(when, [_this = this->shared_from_this()] {
+                _this->broadcast(_process.yield());
+            });
         }
-        else {
+        
+        /*
+            We are in an await state and the queue is empty.
+            
+            If we await forever then task_done() leaving us in an await state.
+            else if we await with an expired timeout then go ahead and yield now.
+            else schedule a timeout when we will yield if not canceled by intervening await.
+        */
+        else if (when == std::chrono::system_clock::time_point::max()) {
+            task_done();
+        } else if (when <= now) {
+            broadcast(_process.yield());
+        } else {
+            /*
+                REVISIT (sparent) : The case is not implemented.
+
+                Schedule a timeout. If a new value is received then cancel pending timeout.
+
+                Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
+                not sufficient since process might have changed state many times before timeout
+                is invoked.
+                
+                Timeout may occur concurrent with other operation - requires syncronization.
+            */
+            assert(false && "await with non-max/min timout not yet supported.");
+
+
+            #if 0 // This logic is flawed
             if (get_process_state(_process).first == process_state::await && 
                 get_process_state(_process).second > std::chrono::system_clock::now())
             {
@@ -391,15 +446,24 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
                     if (get_process_state(_this->_process).first != process_state::yield)
                     {
                         _this->broadcast(_this->_process.yield());
-                        _this->clear_to_send();
                     }
                 });
             }
             else {
                 task_done();
             }
+            #endif
         }
     }
+
+    /*
+        REVISIT (sparent) : See above comments on step() and ensure consistency.
+        
+        This code is too similar to dequeue() - refactor.
+        
+        What is this code doing, if we don't have a yield then it also assumes no await?
+        
+    */
 
     template <typename U>
     auto step() -> std::enable_if_t<!has_process_yield<U>> {
@@ -421,13 +485,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         if (do_cts && _upstream) _upstream->clear_to_send();
         if (message) {
             broadcast(avoid_invoke(_process, std::move(message.get())));
-            clear_to_send();
         }
         else task_done();
     }
 
     void run() {
-        _scheduler(std::chrono::system_clock::time_point(), [_p = make_weak_ptr(this->shared_from_this())]{
+        _scheduler(std::chrono::system_clock::time_point::min(), [_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
@@ -445,21 +508,32 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             n = _downstream.size();
         }
 
-        {
-            /*
-                There is no need for a lock here because the other processes that could change
-                _process_suspend_count must all be ready (and not running).
-                
-                But we'll assert that to be sure!
-            */
-            // std::unique_lock<std::mutex> lock(_process_mutex);
-            assert(_process_suspend_count == 0 && "broadcasting while suspended");
-            _process_suspend_count = n + 1;
-        }
+        /*
+            There is no need for a lock here because the other processes that could change
+            _process_suspend_count must all be ready (and not running).
+            
+            But we'll assert that to be sure!
+        */
+        // std::unique_lock<std::mutex> lock(_process_mutex);
+        assert(_process_suspend_count == 0 && "broadcasting while suspended");
+
+        /*
+            Suspend for however many downstream processes we have + 1 for this process - that
+            ensures that we are not kicked to run while still broadcasting.
+        */
+
+        _process_suspend_count = n + 1;
+
+        /*
+            There is no lock on _downstream here. We only ever append to this deque so the first
+            n elements are good.
+        */
 
         for_each_n(begin(_downstream), n, [&](const auto& e){
             e(args...);
         });
+
+        clear_to_send(); // unsuspend this process
     }
 
     void send(argument arg) override {
@@ -470,10 +544,6 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             
             do_run = !_receiver_count && !_process_running;
             _process_running = _process_running || do_run;
-
-            #if 0
-            running = running || _process_suspend_count;
-            #endif
         }
         if (do_run) run();
     }
