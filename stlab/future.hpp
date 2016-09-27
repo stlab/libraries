@@ -31,7 +31,7 @@
 #include <ppapi/cpp/completion_callback.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 // REVISIT (sparent) : for testing only
-#if __APPLE__
+#if 0 && __APPLE__
 #include <dispatch/dispatch.h>
 #endif
 #endif
@@ -1375,12 +1375,36 @@ void async_(std::chrono::system_clock::time_point, std::function<void()>);
 struct default_scheduler {
     using result_type = void;
 
+
+    template <typename F>
+    void operator()(std::chrono::system_clock::time_point when, F f) {
+
+        using namespace std::chrono;
+
+        if (when == system_clock::time_point()) {
+            operator()(std::move(f));
+            return;
+        }
+
+        using f_t = decltype(f);
+
+        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - system_clock::now()).count()),
+                dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                new f_t(std::move(f)),
+                [](void* f_) {
+                    auto f = static_cast<f_t*>(f_);
+                    (*f)();
+                    delete f;
+                });
+    }
+
     template <typename F>
     void operator()(F f) {
         using f_t = decltype(f);
 
         dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                new f_t(std::move(f)), [](void* f_) {
+                new f_t(std::move(f)),
+                [](void* f_) {
                     auto f = static_cast<f_t*>(f_);
                     (*f)();
                     delete f;
