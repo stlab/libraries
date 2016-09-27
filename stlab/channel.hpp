@@ -408,7 +408,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
         if (state == process_state::yield) {
             if (when <= now) broadcast(_process.yield());
             else _scheduler(when, [_this = this->shared_from_this()] {
-                _this->broadcast(_process.yield());
+                _this->broadcast(_this->_process.yield());
             });
         }
         
