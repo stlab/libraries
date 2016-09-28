@@ -189,13 +189,18 @@ public:
     }
 
     template <typename F>
-    void async_(std::chrono::system_clock::time_point when, F&& f) {
+    void async_(chrono::system_clock::time_point when, F&& f) {
         {
-            lock_t lock(_timed_queue_mutex);
-            _timed_queue.emplace_back(when, std::forward<F>(f));
-            push_heap(begin(_timed_queue), end(_timed_queue), greater_first());
+            if (when == chrono::system_clock::time_point::min()) {
+                async_(forward<F>(f));
+            } 
+            else {
+                lock_t lock(_timed_queue_mutex);
+                _timed_queue.emplace_back(when, forward<F>(f));
+                push_heap(begin(_timed_queue), end(_timed_queue), greater_first());
+                _condition.notify_one();
+            }
         }
-        _condition.notify_one();
     }
 };
 
