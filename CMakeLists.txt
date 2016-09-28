@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 project(SlabFuture C CXX)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")  
-  set(CMAKE_CXX_FLAGS "-g -Wall -std=c++14 -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
-  #set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions")
+  #set(CMAKE_CXX_FLAGS "-g -Wall -O3 -std=c++14 -fsanitize=thread -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
+  set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
   set(CMAKE_LINK_FLAGS "-pthreads")
 endif()
 
