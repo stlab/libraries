@@ -8,32 +8,31 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 ## <stlab/future>
 
-This is a proof of concept implementation of a packaged task and future to replace the standard components. This is a list of some of the differences from standard (as of C++14) and boost (as of boost 1.58.0).
+This is a proof of concept implementation of a packaged task and future to replace the standard components. This is a list of some of the differences from standard (as of C++17) and boost (as of boost 1.60.0):
 
-There is no promise type, packaged_task and futures are created as pairs with the package() function.
+- There is no promise type, packaged_task and futures are created as pairs with the package() function.
 
-package_task is copyable, not just movable, and the call operator is const. This allows packaged_task objects to be
-stored in std::function<>. Once any copy of a packaged_task<> is called, all copies are invalid.
+- package_task is copyable, not just movable, and the call operator is const. This allows packaged_task objects to be stored in std::function<>. Once any copy of a packaged_task<> is called, all copies are invalid.
 
-future is also copyable, there is no need for a shared future. If a future is only used as an rvalue and there are no copies then the value returned, by get_try or through a continuation, will be moved.
+- future is also copyable, there is no need for a shared future. If a future is only used as an rvalue and there are no copies then the value returned, by get_try or through a continuation, will be moved.
 
-Multiple continutations may be attached to a single future with then(). then() is declared const since it does not mutate the result object of the future.
+- Multiple continutations may be attached to a single future with then(). then() is declared const since it does not mutate the result object of the future.
 
-The continuation is called with the value type, not the future. A sink argument to a continuation should take the argument by value and move the object as needed. If the continuation reads the argument it should take it by const&. Behavior of modifying the argument through a non-const reference is undefined (may be a compliation error).
+- The continuation is called with the value type, not the future. A sink argument to a continuation should take the argument by value and move the object as needed. If the continuation reads the argument it should take it by const&. Behavior of modifying the argument through a non-const reference is undefined (may be a compliation error).
 
-If the last copy of a future destructs, the associated task and any held futures for the task arguments are released and the associated packaged_task will become a no-op if called.
+- If the last copy of a future destructs, the associated task and any held futures for the task arguments are released and the associated packaged_task will become a no-op if called.
 
-There are no wait() or get() function. Instead there is a get_try() which returns an optional<T> (or if T is void, the result is a bool with true indicating the associated task has executed.
+- There are no wait() or get() function. Instead there is a get_try() which returns an optional<T> (or if T is void, the result is a bool with true indicating the associated task has executed).
 
-If the associated task through an exception, get_try() with rethrow the exception.
+- If the associated task through an exception, get_try() with rethrow the exception.
 
-For a future<T> if T is move only then the future is move only and can only contain one continuation.
+- For a future<T> if T is move only then the future is move only and can only contain one continuation.
 
-In case a recover() clause is defined, then a failed future is passed to it an offers an appropriate error handling. recover() will be executed prior to continuations. ]
+- In case a recover() clause is defined, then a failed future is passed to it and offers an appropriate error handling. recover() will be executed prior to continuations.
 
 when_all() takes either an n'ary function and n futures as arguments or a variable range of futures
 
-when_any() takes as argument avariable range of futures and proceeds when at least one of the futures successds.
+when_any() takes either an n'ary function and n (>=1) futures as argument or a variable range of futures and proceeds when at least one of the futures successds.
 
 Here is a trivial scheduler using threads:
 
@@ -99,8 +98,8 @@ class QtScheduler
 
 public:
     template <typename F>
-    void operator()(F&& f) {
-        auto event = new SchedulerEvent(std::forward<F>(f));
+    void operator()(F f) {
+        auto event = new SchedulerEvent(std::move(f));
         QApplication::postEvent(event->receiver(), event);
     }
 };
@@ -165,7 +164,11 @@ class future {
 };
 
 template <typename S, typename F, typename... Ts>
-auto when_all(S, F, future<Ts>... args); // -> future<result_of_t<F(Ts...>>
+auto when_all(S, F, future<Ts>... args); // -> future<result_of_t<F(Ts...)>>
+
+template <typename S, typename F, typename T, typename... Ts>
+auto when_all(S, F, future<T>, future<Ts>... args); // -> future<result_of_t<F(T,size_t)>>
+
 
 template <typename S, // models task scheduler
           typename F, // models functional object
