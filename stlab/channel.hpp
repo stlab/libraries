@@ -9,11 +9,12 @@
 #ifndef STLAB_CHANNEL_HPP
 #define STLAB_CHANNEL_HPP
 
+#include <array>
+#include <chrono>
 #include <deque>
 #include <memory>
-#include <thread>
+#include <tuple>
 #include <utility>
-#include <chrono>
 
 #include <stlab/future.hpp>
 
@@ -27,9 +28,15 @@ template <typename> class sender;
 template <typename> class receiver;
 
 /**************************************************************************************************/
+/*
+ * close on a process is called when a process is in an await state to signal that no more data is coming. 
+ * In response to a close, a process can switch to a yield state to yield values, otherwise it is destructed.
+ * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
+ */
 
 enum class process_state {
     await,
+    await_try,
     yield,
 };
 
@@ -37,6 +44,11 @@ using process_state_scheduled = std::pair<process_state, std::chrono::system_clo
 
 constexpr process_state_scheduled await_forever {
     process_state::await,
+    std::chrono::system_clock::time_point::max()
+};
+
+constexpr process_state_scheduled await_try_forever{
+    process_state::await_try,
     std::chrono::system_clock::time_point::max()
 };
 
@@ -81,6 +93,12 @@ struct result_of_<R(Args...)> { using type = R; };
 template <typename F>
 using result_of_t_ = typename result_of_<F>::type;
 
+template <class T1, class ...T>
+struct first_t
+{
+    using type = T1;
+};
+    
 /**************************************************************************************************/
 
 template <typename> struct argument_of;
@@ -122,6 +140,10 @@ auto avoid_invoke(F&& f, Args&&... args)
     return avoid_();
 }
 
+/**************************************************************************************************/
+
+template <typename T>
+using receiver_type = typename std::remove_reference_t<T>::result_type;
 
 /**************************************************************************************************/
 
@@ -158,65 +180,83 @@ struct shared_process_sender {
 
 /**************************************************************************************************/
 
-template <typename T>
-auto test_process_close(decltype(&T::close)) -> std::true_type;
+// the following is based on the C++ standard proposal N4502
 
-template <typename>
-auto test_process_close(...) -> std::false_type;
+#if __GNUC__ < 5 && ! defined __clang__
+// http://stackoverflow.com/a/28967049/1353549
+template <typename...>
+struct voider
+{
+    using type = void;
+};
+template <typename...Ts>
+using void_t = typename voider<Ts...>::type;
+#else
+template <typename...>
+using void_t = void;
+#endif
 
-template <typename T>
-constexpr bool has_process_close = decltype(test_process_close<T>(0))::value;
+// Primary template handles all types not supporting the operation.
+template <typename, template <typename> class, typename = void_t<>>
+struct detect : std::false_type {};
 
-template <typename T>
-auto process_close(T& x) -> std::enable_if_t<has_process_close<T>> {
-    x.close();
-}
+// Specialization recognizes/validates only types supporting the archetype.
+template <typename T, template <typename> class Op>
+struct detect<T, Op, void_t<Op<T>>> : std::true_type {};
 
-template <typename T>
-auto process_close(T& x) -> std::enable_if_t<!has_process_close<T>> { }
 
 /**************************************************************************************************/
 
 template <typename T>
-auto test_process_state(decltype(&T::state)) -> std::true_type;
-
-template <typename>
-auto test_process_state(...) -> std::false_type;
+using process_close_t = decltype(std::declval<T&>().close());
 
 template <typename T>
-constexpr bool has_process_state = decltype(test_process_state<T>(0))::value;
+constexpr bool has_process_close_v = detect<T, process_close_t>::value;
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<has_process_state<T>, process_state_scheduled> {
+auto process_close(T& x) -> std::enable_if_t<has_process_close_v<T>> {
+    x.close();
+}
+
+template <typename T>
+auto process_close(T& x) -> std::enable_if_t<!has_process_close_v<T>> { }
+
+/**************************************************************************************************/
+
+template <typename T>
+using process_state_t = decltype(std::declval<const T&>().state());
+
+template <typename T>
+constexpr bool has_process_state_v = detect<T, process_state_t>::value;
+
+template <typename T>
+auto get_process_state(const T& x) -> std::enable_if_t<has_process_state_v<T>, process_state_scheduled> {
     return x.state();
 }
 
 template <typename T>
-auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state<T>, process_state_scheduled> {
+auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state_v<T>, process_state_scheduled> {
     return await_forever;
 }
 
 /**************************************************************************************************/
 
 template <typename T>
-auto test_process_yield(decltype(&T::yield)) -> std::true_type;
-
-template <typename>
-auto test_process_yield(...) -> std::false_type;
+using process_yield_t = decltype(std::declval<T&>().yield());
 
 template <typename T>
-constexpr bool has_process_yield = decltype(test_process_yield<T>(0))::value;
+constexpr bool has_process_yield_v = detect<T, process_yield_t>::value;
 
 /**************************************************************************************************/
 
-template <typename T, typename>
+template <typename T, typename...>
 auto yield_type_(decltype(&T::yield)) -> decltype(std::declval<T>().yield());
 
-template <typename T, typename Arg>
-auto yield_type_(...) -> decltype(std::declval<T>()(std::declval<Arg>()));
+template <typename T, typename... Arg>
+auto yield_type_(...) -> decltype(std::declval<T>()(std::declval<Arg>()...));
 
-template <typename T, typename Arg>
-using yield_type = decltype(yield_type_<T, Arg>(0));
+template <typename T, typename... Arg>
+using yield_type = decltype(yield_type_<T, Arg...>(0));
 
 /**************************************************************************************************/
 
@@ -247,32 +287,29 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
 
-    std::atomic_size_t       _sender_count;
+    std::atomic_size_t       _sender_count{0};
     std::atomic_size_t       _receiver_count;
 
     std::atomic_size_t       _process_buffer_size{ 1 };
 
-    /*
-        Join is not yet implemented so single upstream for now. We don't just use
-        a receiver for upstream because we need to be be able to kick the task
-        chaining.
-    */
-    const std::shared_ptr<shared_process_receiver<argument>> _upstream;
+    const std::deque<std::shared_ptr<shared_process_receiver<argument>>> _upstream;
 
     template <typename S, typename F>
-    shared_process(S&& s, F&& f) : _scheduler(std::forward<S>(s)), _process(std::forward<F>(f))
+    shared_process(S&& s, F&& f) : 
+        _scheduler(std::forward<S>(s)),
+        _process(std::forward<F>(f))
     {
         _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
-    template <typename S, typename F>
-    shared_process(S&& s, F&& f, std::shared_ptr<shared_process_receiver<argument>> p) :
+    template <typename S, typename F, typename... U>
+    shared_process(S&& s, F&& f, const U&... p) :
         _scheduler(std::forward<S>(s)),
-        _process(std::forward<F>(f)),
-        _upstream(std::move(p))
+        _process(std::forward<F>(f)), 
+        _upstream(std::initializer_list<std::shared_ptr<shared_process_receiver<argument>>>{p...})
     {
-        _sender_count = 1;
+        _sender_count = sizeof...(U);
         _receiver_count = !std::is_same<result, void>::value;
     }
 
@@ -281,6 +318,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void remove_sender() override {
+        assert(_sender_count > 0);
         if (--_sender_count == 0) {
             bool do_run;
             {
@@ -305,7 +343,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             send before we can get to the check - so we need to see if we are already running
             before starting again.
         */
-
+        assert(_receiver_count > 0);
         if (--_receiver_count == 0) {
             bool do_run;
             {
@@ -346,12 +384,13 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     void clear_to_send() override {
         bool do_run = false;
         {
+            auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
+            assert(_process_suspend_count > 0);
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
-                // FIXME (sparent): This is calling the process state ender the lock.
-                if (get_process_state(_process).first == process_state::yield || !_process_message_queue.empty()
+                if (ps.first == process_state::yield || !_process_message_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
                 } else {
@@ -380,14 +419,17 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             }
         }
 
-        if (do_cts && _upstream) _upstream->clear_to_send();
+        if (do_cts) {
+            for (auto& up : _upstream) { up->clear_to_send(); }
+        }
+
         if (message) _process.await(std::move(message.get()));
         else if (do_close) process_close(_process);
         return bool(message);
     }
 
     template <typename U>
-    auto step() -> std::enable_if_t<has_process_yield<U>> {
+    auto step() -> std::enable_if_t<has_process_yield_v<U>> {
         /*
             While we are awaiting we will flush the queue. The assumption here is that work
             is done on yield()
@@ -411,7 +453,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
                 _this->broadcast(_this->_process.yield());
             });
         }
-        
+        else if (state == process_state::await_try) {
+            _process_suspend_count = _downstream.size()+1;
+        }
+
         /*
             We are in an await state and the queue is empty.
             
@@ -466,7 +511,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     */
 
     template <typename U>
-    auto step() -> std::enable_if_t<!has_process_yield<U>> {
+    auto step() -> std::enable_if_t<!has_process_yield_v<U>> {
         boost::optional<argument> message; // TODO : make functional
         bool do_cts = false;
         bool do_close = false;
@@ -482,7 +527,9 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             }
         }
 
-        if (do_cts && _upstream) _upstream->clear_to_send();
+        if (do_cts) {
+            for (auto& up : _upstream) { up->clear_to_send(); }
+        }
         if (message) {
             broadcast(avoid_invoke(_process, std::move(message.get())));
         }
@@ -575,10 +622,185 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
 /**************************************************************************************************/
 
 template <typename T, typename S>
-auto channel(S&& s) -> std::pair<sender<T>, receiver<T>> {
-    auto p = std::make_shared<detail::shared_process<identity, T>>(std::forward<S>(s), identity());
+auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
+    auto p = std::make_shared<detail::shared_process<identity, T>>(std::move(s), identity());
     return std::make_pair(sender<T>(p), receiver<T>(p));
 }
+
+/**************************************************************************************************/
+namespace detail {
+
+
+template <typename... T>
+struct join_context : std::enable_shared_from_this<join_context<T...>>
+{
+    const static std::size_t            _size = sizeof...(T);
+    std::tuple<boost::optional<T>...>   _result;
+    std::atomic_size_t                  _remaining{ _size };
+
+    template <std::size_t I>
+    void reset_context_result() {
+        std::get<I>(_result) = boost::none;
+    }
+
+    template <std::size_t... I>
+    void reset_context_results(std::index_sequence<I...>) {
+        (void)std::initializer_list<int>{(reset_context_result<I>(), 0)...};
+    }
+
+    template<std::size_t i, typename U>
+    void await(U&& u) {
+        assert(!std::get<i>(_result).is_initialized());
+        std::get<i>(_result) = std::forward<U>(u);
+    }
+
+    void reset() {
+        reset_context_results(std::make_index_sequence<sizeof...(T)>());
+        _remaining = _size;
+    }
+
+    std::shared_ptr<join_context<T...>> yield() {
+        return this->shared_from_this();
+    }
+
+    template <std::size_t I>
+    auto state() const {
+        if (!std::get<I>(_result).is_initialized()) {
+            return await_forever;
+        }
+    
+        return yield_immediate;
+    }
+};
+
+template <std::size_t i, typename C>
+struct join_context_worker
+{
+    std::shared_ptr<C> _context;
+    mutable bool       _send{ false };
+
+    explicit join_context_worker(const std::shared_ptr<C>& c) : _context(c) {}
+
+    // auto as return type does not work here with VS 2015 Update 3. 
+    // The trait inside get_process_state does not see it, grmpf
+    std::pair<process_state, std::chrono::system_clock::time_point> state() const { 
+        auto s = _context->template state<i>();
+        if (_send && s.first == process_state::await) {
+            _send = false;
+        }
+        if (_send) return await_try_forever;
+        return s;
+    }
+    
+    template <typename U>
+    void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
+
+    auto yield() { _send = true; return _context->yield(); }
+};
+
+
+template <std::size_t I, typename W, typename C, typename R>
+auto create_receiver_collector(std::shared_ptr<C>& context, R&& upstream_receiver) {
+    using context_worker = typename W::template type<I, C>;
+    auto receiver_collector = std::forward<R>(upstream_receiver) | context_worker(context);
+    return receiver_collector._p;
+}
+
+template <typename W, typename C, typename... R, std::size_t... I>
+auto create_receiver_collectors(std::shared_ptr<C>& context, std::index_sequence<I...>, R&&... upstream_receiver) {
+    return std::make_tuple(create_receiver_collector<I,W>(context, std::forward<R>(upstream_receiver))...);
+}
+
+template <typename C, typename S, typename P, typename RC, std::size_t... I>
+auto create_process(S&& s, P&& p, RC& receiver_collectors, std::index_sequence<I...>) {
+    return std::make_shared<detail::shared_process<P, C>>(
+        std::forward<S>(s), std::forward<P>(p), std::get<I>(receiver_collectors)...);
+}
+
+template <typename C, typename RC, typename P, std::size_t... I>
+void map_as_sender_(RC& receiver_collectors, P& p, std::index_sequence<I...>) {
+    (void)std::initializer_list<int>{(std::get<I>(receiver_collectors)->map(sender<C>(p)), 0)...};
+}
+
+template <typename C, typename RC, typename P>
+void map_as_sender(RC& receiver_collectors, P& p) {
+    map_as_sender_<C>(receiver_collectors, p, std::make_index_sequence<std::tuple_size<RC>::value>());
+}
+
+template <typename F, typename C, std::size_t... I>
+auto apply_join_args_(const F& f, std::shared_ptr<C>& context, std::index_sequence<I...>) {
+    return f(std::move(std::get<I>(context->_result)).value()...);
+}
+
+template <typename F, typename C>
+auto apply_join_args(const F& f, std::shared_ptr<C>& context) {
+    return apply_join_args_(f, context, std::make_index_sequence<std::tuple_size<decltype(context->_result)>::value>());
+}
+
+
+template <typename R, typename F, typename C>
+struct join_processor
+{
+    F                   _f;
+    std::shared_ptr<C>  _context;
+
+    explicit join_processor(F&& f) : _f(std::move(f)) {}
+
+    void await(const std::shared_ptr<C>& context) {
+        if (--context->_remaining == 0)
+            _context = context;
+    }
+
+    R yield() {
+        auto result = detail::apply_join_args(_f, _context);
+        _context->reset();
+        _context.reset();
+        return result;
+    }
+
+    auto state() const {
+        if (_context)
+            return yield_immediate;
+
+        return await_forever;
+    }
+};
+
+
+    struct join_context_worker_helper
+    {
+        template <std::size_t I, typename C>
+        using type = join_context_worker<I, C>;
+    };
+
+} // namespace detail
+
+template <typename S, typename F, typename...R>
+auto join(S s, F f, R&&... upstream_receiver){
+    
+    using result_t = detail::yield_type<F, detail::receiver_type<R>...>;
+    using context_t = detail::join_context<detail::receiver_type<R>...>;
+    using process_t = detail::join_processor<result_t, F, context_t>;
+
+    auto shared_context = std::make_shared<context_t>();
+    auto process = process_t(std::move(f));
+
+    auto receiver_collectors = 
+        detail::create_receiver_collectors<detail::join_context_worker_helper>(shared_context,
+                                           std::make_index_sequence<sizeof...(R)>(), 
+                                           upstream_receiver...);
+
+    auto p = detail::create_process<std::shared_ptr<context_t>>(
+        std::move(s), 
+        std::move(process), 
+        receiver_collectors,
+        std::make_index_sequence<sizeof...(R)>());
+    
+    detail::map_as_sender<std::shared_ptr<context_t>>(receiver_collectors, p);
+
+    return receiver<result_t>(std::move(p));
+}
+
 
 /**************************************************************************************************/
 
@@ -598,11 +820,19 @@ class receiver {
     friend class receiver; // huh?
 
     template <typename U, typename V>
-    friend auto channel(V&&) -> std::pair<sender<U>, receiver<U>>;
+    friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
+
+    template <typename S, typename F, typename...U>
+    friend auto join(S, F, U&&...);
+
+    template <std::size_t I, typename W, typename C, typename R>
+    friend auto detail::create_receiver_collector(std::shared_ptr<C>&, R&&);
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
+    using result_type = T;
+
     receiver() = default;
 
     ~receiver() {
@@ -657,9 +887,12 @@ class sender {
     friend class receiver;
 
     template <typename U, typename V>
-    friend auto channel(V&&) -> std::pair<sender<U>, receiver<U>>;
+    friend auto channel(V)->std::pair<sender<U>, receiver<U>>;
 
-    sender(ptr_t p) : _p(std::move(p)) { }
+    template <typename C, typename RC, typename P, std::size_t... I>
+    friend void detail::map_as_sender_(RC&, P&, std::index_sequence<I...>);
+
+    sender(ptr_t p) : _p(std::move(p)) {}
 
   public:
     sender() = default;
@@ -679,8 +912,8 @@ class sender {
     sender& operator=(const sender& x) {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
-    sender& operator=(sender&& x) noexcept = default;
 
+    sender& operator=(sender&&) noexcept = default;
     void close() {
         auto p = _p.lock();
         if (p) p->remove_sender();

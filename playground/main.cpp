@@ -279,6 +279,34 @@ void channelExample() {
     }
 }
 
+
+void joinChannels(){
+    sender<int> send1, send2;
+    receiver<int> receive1, receive2;
+
+    tie(send1, receive1) = channel<int>(default_scheduler());
+    tie(send2, receive2) = channel<int>(default_scheduler());
+
+    std::atomic_bool all_done{ false };
+    auto joined = join(default_scheduler(),[](int x, int y) { return x + y; }, receive1, receive2)
+        | [&_all_done = all_done](int x) { cout << x << '\n'; _all_done = true; };
+
+    receive1.set_ready();
+    receive2.set_ready();
+
+    send1(1);
+    send2(2);
+
+    send1(3);
+    send2(4);
+    send1.close();
+    send2.close();
+
+    while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -294,7 +322,8 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-    channelExample();
+    //channelExample();
+    joinChannels();
     int i;
     cin >> i;
 }
