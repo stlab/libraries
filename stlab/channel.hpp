@@ -9,7 +9,6 @@
 #ifndef STLAB_CHANNEL_HPP
 #define STLAB_CHANNEL_HPP
 
-#include <array>
 #include <chrono>
 #include <deque>
 #include <memory>
@@ -212,7 +211,6 @@ struct detect : std::false_type {};
 template <typename T, template <typename> class Op>
 struct detect<T, Op, void_t<Op<T>>> : std::true_type {};
 
-
 /**************************************************************************************************/
 
 template <typename T>
@@ -290,7 +288,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     std::mutex               _process_mutex;
     std::deque<argument>     _process_message_queue;
     bool                     _process_running = false;
-    std::size_t              _process_suspend_count = 0;
+    std::atomic_size_t       _process_suspend_count{ 0 };
     bool                     _process_close_queue = false;
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
@@ -390,18 +388,24 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
     }
 
     void clear_to_send() override {
+        // The downstream sender may trigger this because an other parallel upstream
+        // process may have just passed down a value
+        if (_process_suspend_count == 0)
+            return;
+
         bool do_run = false;
         {
-            auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
-            assert(_process_suspend_count > 0);
+            auto ps = get_process_state(_process);
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
+                // FIXME (sparent): This is calling the process state ender the lock.
                 if (ps.first == process_state::yield || !_process_message_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
-                } else {
+                } 
+                else {
                     _process_running = false;
                     do_run = false;
                 }
@@ -460,9 +464,6 @@ struct shared_process : shared_process_receiver<yield_type<T, Arg>>,
             else _scheduler(when, [_this = this->shared_from_this()] {
                 _this->broadcast(_this->_process.yield());
             });
-        }
-        else if (state == process_state::await_try) {
-            _process_suspend_count = _downstream.size()+1;
         }
 
         /*
@@ -639,74 +640,6 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 namespace detail {
 
 
-template <typename... T>
-struct join_context : std::enable_shared_from_this<join_context<T...>>
-{
-    const static std::size_t            _size = sizeof...(T);
-    std::tuple<boost::optional<T>...>   _result;
-    std::atomic_size_t                  _remaining{ _size };
-
-    template <std::size_t I>
-    void reset_context_result() {
-        std::get<I>(_result) = boost::none;
-    }
-
-    template <std::size_t... I>
-    void reset_context_results(std::index_sequence<I...>) {
-        (void)std::initializer_list<int>{(reset_context_result<I>(), 0)...};
-    }
-
-    template<std::size_t i, typename U>
-    void await(U&& u) {
-        assert(!std::get<i>(_result).is_initialized());
-        std::get<i>(_result) = std::forward<U>(u);
-    }
-
-    void reset() {
-        reset_context_results(std::make_index_sequence<sizeof...(T)>());
-        _remaining = _size;
-    }
-
-    std::shared_ptr<join_context<T...>> yield() {
-        return this->shared_from_this();
-    }
-
-    template <std::size_t I>
-    auto state() const {
-        if (!std::get<I>(_result).is_initialized()) {
-            return await_forever;
-        }
-    
-        return yield_immediate;
-    }
-};
-
-template <std::size_t i, typename C>
-struct join_context_worker
-{
-    std::shared_ptr<C> _context;
-    mutable bool       _send{ false };
-
-    explicit join_context_worker(const std::shared_ptr<C>& c) : _context(c) {}
-
-    // auto as return type does not work here with VS 2015 Update 3. 
-    // The trait inside get_process_state does not see it, grmpf
-    std::pair<process_state, std::chrono::system_clock::time_point> state() const { 
-        auto s = _context->template state<i>();
-        if (_send && s.first == process_state::await) {
-            _send = false;
-        }
-        if (_send) return await_try_forever;
-        return s;
-    }
-    
-    template <typename U>
-    void await(U&& u) { _context->template await<i,U>(std::forward<U>(u)); }
-
-    auto yield() { _send = true; return _context->yield(); }
-};
-
-
 template <std::size_t I, typename W, typename C, typename R>
 auto create_receiver_collector(std::shared_ptr<C>& context, R&& upstream_receiver) {
     using context_worker = typename W::template type<I, C>;
@@ -735,39 +668,129 @@ void map_as_sender(RC& receiver_collectors, P& p) {
     map_as_sender_<C>(receiver_collectors, p, std::make_index_sequence<std::tuple_size<RC>::value>());
 }
 
-template <typename F, typename C, std::size_t... I>
-auto apply_join_args_(const F& f, std::shared_ptr<C>& context, std::index_sequence<I...>) {
-    return f(std::move(std::get<I>(context->_result)).value()...);
+template <typename F, typename...T, std::size_t... I>
+auto apply_join_args_(const F& f, std::tuple<boost::optional<T>...>& args, std::index_sequence<I...>) {
+    return f(std::move(std::get<I>(args)).value()...);
 }
 
-template <typename F, typename C>
-auto apply_join_args(const F& f, std::shared_ptr<C>& context) {
-    return apply_join_args_(f, context, std::make_index_sequence<std::tuple_size<decltype(context->_result)>::value>());
+template <typename F, typename... T>
+auto apply_join_args(const F& f, std::tuple<boost::optional<T>...>& args) {
+    return apply_join_args_(f, args, std::make_index_sequence<sizeof...(T)>());
+}
+
+template <std::size_t I, typename... T>
+void reset_tuple_optional_(std::tuple<boost::optional<T>...>& values) {
+    std::get<I>(values) = boost::none;
+}
+
+template <typename... T, std::size_t... I>
+void reset_tuple_optional(std::tuple<boost::optional<T>...>& values, std::index_sequence<I...>) {
+    (void)std::initializer_list<int>{(reset_tuple_optional_<I>(values), 0)...};
 }
 
 
-template <typename R, typename F, typename C>
+
+template <typename... T>
+struct join_context
+{
+    const static std::size_t            _size = sizeof...(T);
+    std::tuple<boost::optional<T>...>   _result;
+    std::atomic_size_t                  _remaining{ _size };
+
+    template<std::size_t i, typename U>
+    void await(U&& u) {
+        assert(!std::get<i>(_result).is_initialized());
+        std::get<i>(_result) = std::forward<U>(u);
+    }
+
+    void reset() {
+        reset_tuple_optional(_result, std::make_index_sequence<sizeof...(T)>());
+        _remaining = _size;
+    }
+
+    std::tuple<boost::optional<T>...> yield() {
+        if (--_remaining == 0) {
+            auto result = std::move(_result);
+            reset();
+            return result;
+        }
+        return _result;
+    }
+
+    template <std::size_t I>
+    auto state() const {
+        if (!std::get<I>(_result).is_initialized()) {
+            return await_forever;
+        }
+
+        return yield_immediate;
+    }
+};
+
+
+template <std::size_t i, typename C>
+struct join_context_worker
+{
+    std::shared_ptr<C> _context;
+    mutable bool       _send{ false };
+
+    explicit join_context_worker(const std::shared_ptr<C>& c) : _context(c) {}
+
+    auto state() const {
+        auto s = _context->template state<i>();
+        if (_send && s.first == process_state::await) {
+            _send = false;
+        }
+        if (_send) return await_try_forever;
+        return s;
+    }
+
+    template <typename U>
+    void await(U&& u) { _context->template await<i, U>(std::forward<U>(u)); }
+
+    auto yield() { _send = true; return _context->yield(); }
+};
+
+
+template <typename R, typename F, typename C, typename...T>
 struct join_processor
 {
-    F                   _f;
-    std::shared_ptr<C>  _context;
+    F                                 _f;
+    std::size_t                       _remaining = sizeof...(T);
+    std::tuple<boost::optional<T>...> _input;
+    boost::optional<R>                _result;
 
     explicit join_processor(F&& f) : _f(std::move(f)) {}
 
-    void await(const std::shared_ptr<C>& context) {
-        if (--context->_remaining == 0)
-            _context = context;
+    template <std::size_t I>
+    void store_input(std::tuple<boost::optional<T>...>& input) {
+        if (std::get<I>(input).is_initialized() && !std::get<I>(_input).is_initialized()) {
+            std::get<I>(_input) = std::move(std::get<I>(input).get());
+        }
+    }
+
+    template <std::size_t... I>
+    void store_inputs(std::tuple<boost::optional<T>...>& input, std::index_sequence<I...>) {
+        (void)std::initializer_list<int>{(store_input<I>(input), 0)...};
+    }
+
+    void await(std::tuple<boost::optional<T>...> input) {
+        store_inputs(input, std::make_index_sequence<sizeof...(T)>());
+        if (--_remaining == 0) {
+            _result = detail::apply_join_args(_f, _input);
+            reset_tuple_optional(_input, std::make_index_sequence<sizeof...(T)>());
+        }
     }
 
     R yield() {
-        auto result = detail::apply_join_args(_f, _context);
-        _context->reset();
-        _context.reset();
-        return result;
+        auto r = std::move(_result.get());
+        _result = boost::none;
+        _remaining = sizeof...(T);
+        return r;
     }
 
     auto state() const {
-        if (_context)
+        if (_result.is_initialized())
             return yield_immediate;
 
         return await_forever;
@@ -775,20 +798,22 @@ struct join_processor
 };
 
 
-    struct join_context_worker_helper
-    {
-        template <std::size_t I, typename C>
-        using type = join_context_worker<I, C>;
-    };
+struct join_context_worker_helper
+{
+    template <std::size_t I, typename C>
+    using type = join_context_worker<I, C>;
+};
 
 } // namespace detail
+
+/**************************************************************************************************/
 
 template <typename S, typename F, typename...R>
 auto join(S s, F f, R&&... upstream_receiver){
     
     using result_t = detail::yield_type<F, detail::receiver_type<R>...>;
     using context_t = detail::join_context<detail::receiver_type<R>...>;
-    using process_t = detail::join_processor<result_t, F, context_t>;
+    using process_t = detail::join_processor<result_t, F, context_t, detail::receiver_type<R>...>;
 
     auto shared_context = std::make_shared<context_t>();
     auto process = process_t(std::move(f));
@@ -798,13 +823,13 @@ auto join(S s, F f, R&&... upstream_receiver){
                                            std::make_index_sequence<sizeof...(R)>(), 
                                            upstream_receiver...);
 
-    auto p = detail::create_process<std::shared_ptr<context_t>>(
+    auto p = detail::create_process<std::tuple<boost::optional<detail::receiver_type<R>>...>>(
         std::move(s), 
         std::move(process), 
         receiver_collectors,
         std::make_index_sequence<sizeof...(R)>());
     
-    detail::map_as_sender<std::shared_ptr<context_t>>(receiver_collectors, p);
+    detail::map_as_sender<std::tuple<boost::optional<detail::receiver_type<R>>...>>(receiver_collectors, p);
 
     return receiver<result_t>(std::move(p));
 }

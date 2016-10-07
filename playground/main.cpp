@@ -265,7 +265,7 @@ void channelExample() {
     std::atomic_bool all_done{ false };
     auto hold = receive
         | sum()
-        | [&_all_done = all_done](int x) { cout << x << '\n'; if (x == 6) _all_done = true; };
+        | [&_all_done = all_done](int x) { printf("%s %d\n", __FUNCTION__, x); if (x == 6) _all_done = true; };
 
     receive.set_ready();
 
@@ -287,9 +287,9 @@ void joinChannels(){
     tie(send1, receive1) = channel<int>(default_scheduler());
     tie(send2, receive2) = channel<int>(default_scheduler());
 
-    std::atomic_bool all_done{ false };
+    std::atomic_int all_done{ 0 };
     auto joined = join(default_scheduler(),[](int x, int y) { return x + y; }, receive1, receive2)
-        | [&_all_done = all_done](int x) { cout << x << '\n'; _all_done = true; };
+        | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
     receive2.set_ready();
@@ -302,7 +302,7 @@ void joinChannels(){
     send1.close();
     send2.close();
 
-    while (!all_done.load()) {
+    while (all_done < 2) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
