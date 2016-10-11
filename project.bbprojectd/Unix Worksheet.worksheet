@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CurrentWorkingDirectory</key>
-	<string>/Users/sean-parent</string>
+	<string>/Users/sean-parent/Projects/github.com/stlab/stlab.github.io</string>
 	<key>WorksheetContents</key>
 	<string>### Editing better-code
 ## Jeykll for github pages
@@ -24,6 +24,15 @@ open -a "LiveReload"
 open -a "Google Chrome" "http://kramdown.gettalong.org/syntax.html"
 open -a "Google Chrome" "https://github.com/Shopify/liquid/wiki/liquid-for-designers"
 open -a "Google Chrome" "https://jekyllrb.com/docs/home/"
+
+
+###
+
+ls ./_posts/*.png
+ls: ./_posts/*.png: No such file or directory
+
+git mv ./_posts/*.png ./images
+fatal: bad source, source=_posts/*.png, destination=images
 </string>
 </dict>
 </plist>
