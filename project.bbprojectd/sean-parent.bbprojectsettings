@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EmbeddedEditorHidden:sean-parent</key>
+	<false/>
+	<key>ExpandedEditorWidth:sean-parent:displays([(0, 0), (2560, 1440)])</key>
+	<integer>849</integer>
+	<key>ExpandedItems:sean-parent</key>
+	<array/>
+	<key>FileFilterMode:sean-parent</key>
+	<integer>0</integer>
+	<key>OpenDocuments:sean-parent</key>
+	<array/>
+	<key>OpenDocumentsExpanded</key>
+	<true/>
+	<key>OpenDocumentsSplitterProportion</key>
+	<real>0.88808953762054443</real>
+	<key>ProjectItemsExpanded</key>
+	<true/>
+	<key>ProjectViewVisible</key>
+	<true/>
+	<key>RecentItems:sean-parent</key>
+	<array/>
+	<key>ScratchpadItemsExpanded</key>
+	<true/>
+	<key>ScratchpadItemsVisible</key>
+	<true/>
+	<key>ShowSCMData:sean-parent</key>
+	<false/>
+	<key>ToolbarVisible:sean-parent</key>
+	<false/>
+	<key>ViewSplitterPosition:sean-parent</key>
+	<real>0.19296577572822571</real>
+	<key>WindowFrame:sean-parent:displays([(0, 0), (2560, 1440)])</key>
+	<string>rect(103,462,1354,1514)</string>
+</dict>
+</plist>

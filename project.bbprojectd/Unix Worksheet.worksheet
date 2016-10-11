@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CurrentWorkingDirectory</key>
+	<string>/Users/sean-parent</string>
+	<key>WorksheetContents</key>
+	<string>### Editing better-code
+## Jeykll for github pages
+# In Terminal
+open -a terminal --args ~/Projects/github.com/stlab/stlab.github.io
+
+
+cd ~/Projects/github.com/stlab/stlab.github.io
+bundle update
+bundle exec jekyll serve
+
+##
+open -a "Google Chrome" "http://127.0.0.1:4000/"
+open -a "LiveReload"
+# Click on live-reload extension in Chrome
+
+## Kramdown sytax reference
+open -a "Google Chrome" "http://kramdown.gettalong.org/syntax.html"
+open -a "Google Chrome" "https://github.com/Shopify/liquid/wiki/liquid-for-designers"
+open -a "Google Chrome" "https://jekyllrb.com/docs/home/"
+</string>
+</dict>
+</plist>

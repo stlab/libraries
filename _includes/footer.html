@@ -8,8 +8,20 @@
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
           <li>{{ site.title }}</li>
-          <li><a href="mailto:{{ site.email }}">{{ site.email }}</a></li>
-        </ul>
+          <li>
+            {% assign email = site.email | split:"@" %}
+            <style>
+              .email:after{ content:'@{{ email[1] }}'; }
+            </style>
+              <div class="email" id="email" onclick="sendMail()">{{ email[0] }}</div>
+            <script>
+              function sendMail(){
+                window.location = 'mailto:' + document.getElementById("email").textContent
+                  + '@{{ email[1] }}';
+              }
+            </script>
+           </li>
+         </ul>
       </div>
 
       <div class="footer-col footer-col-2">
