@@ -7,11 +7,11 @@ tags: forest tutorial documentation
 excerpt_separator: <!--more-->
 ---
 
-A _forest_ is a hierarchical, node-based data structure. This document serves to cover the high-level concepts of a forest, `adobe::forest<T>` implementation details, as well as examples of frequent patterns. 
+A _forest_ is a hierarchical, node-based data structure. This document serves to cover the high-level concepts of a forest, `adobe::forest<T>` implementation details, as well as examples of frequent patterns.
 
 <!--more-->
 
-# Concepts 
+# Concepts
 
 ## Terminology
 
@@ -31,7 +31,7 @@ $I$: A forest (fullorder) iterator
 
 Forest's fundamental element type is the node. They are heap-allocated by the forest as necessary for storing a value. Each node has exactly one parent and zero or more children. In this document we will draw nodes as circles:
 
-![A single node](./n.png)
+![A single node](n.png)
 
 ## The Root Node
 
@@ -305,7 +305,7 @@ Given:
 We repeatedly insert subsequent values found in $S$ at position $I$.
 
 ### Pseudocode
-    
+
     for (const auto& s : S) {
         forest.insert(I, s);
     }
@@ -324,7 +324,7 @@ Given:
 We repeatedly insert subsequent values found in $S$ at position $I$, each time reassigning $I$ to be the result of the insertion.
 
 ### Pseudocode
-    
+
     for (const auto& s : S) {
         I = forest.insert(I, s);
     }
