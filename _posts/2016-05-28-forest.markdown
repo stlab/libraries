@@ -1,7 +1,6 @@
 ---
 layout: post
 title:  Forest Documentation & Tutorials
-date:   2016-05-28 20:00:00 -0800
 categories: forest
 tags: forest tutorial documentation
 excerpt_separator: <!--more-->

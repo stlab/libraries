@@ -28,11 +28,6 @@ open -a "Google Chrome" "https://jekyllrb.com/docs/home/"
 
 ###
 
-ls ./_posts/*.png
-ls: ./_posts/*.png: No such file or directory
-
-git mv ./_posts/*.png ./images
-fatal: bad source, source=_posts/*.png, destination=images
 </string>
 </dict>
 </plist>
