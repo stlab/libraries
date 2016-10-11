@@ -1,6 +1,5 @@
 ---
 title: Library Coding Style
-permalink: /tips/library-coding-style
 tagline: Too many projects, too little time
 layout: page
 tags: [tips]
