@@ -273,13 +273,14 @@ void channelExample() {
     send(2);
     send(3);
     send.close();
+    hold.set_ready();
 
     while (!all_done.load()) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
-
+#if 0
 void joinChannels(){
     sender<int> send1, send2;
     receiver<int> receive1, receive2;
@@ -306,7 +307,7 @@ void joinChannels(){
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
-
+#endif
 int main(int argc, char **argv)
 {
 #if 0
@@ -322,8 +323,8 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-    //channelExample();
-    joinChannels();
+    channelExample();
+    //joinChannels();
     int i;
     cin >> i;
 }

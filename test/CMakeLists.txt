@@ -8,6 +8,7 @@ set(SOURCE
   future_when_all_range_tests.cpp
   future_when_any_tests.cpp
   test_helper.cpp
+  tuple_algorithm_test.cpp
   main.cpp
 )
 
