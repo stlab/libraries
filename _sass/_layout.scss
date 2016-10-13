@@ -4,19 +4,39 @@
 .site-header {
     border-top: 5px solid $grey-color-dark;
     border-bottom: 1px solid $grey-color-light;
-    min-height: 56px;
+    min-height: $title-height;
 
     // Positioning context for the mobile navigation icon
     position: relative;
 }
 
 .site-title {
+    /*
     font-size: 26px;
     font-weight: 300;
     line-height: 56px;
     letter-spacing: -1px;
     margin-bottom: 0;
     float: left;
+    */
+
+    float: left;
+    width: 50%;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    min-height: $title-height;
+
+    /*
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    */
+
+    background-image: url("/images/site/stlab-logo-long.svg");
+    background-repeat: no-repeat;
+    background-size: contain;
 
     &,
     &:visited {
@@ -26,7 +46,7 @@
 
 .site-nav {
     float: right;
-    line-height: 56px;
+    line-height: $title-height;
 
     .menu-icon {
         display: none;
