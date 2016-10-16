@@ -119,6 +119,17 @@ namespace detail {
 
 /**************************************************************************************************/
 
+template <typename T, typename...>
+auto yield_type_(decltype(&T::yield)) -> decltype(std::declval<T>().yield());
+
+template <typename T, typename... Arg>
+auto yield_type_(...) -> decltype(std::declval<T>()(std::declval<Arg>()...));
+
+template <typename T, typename... Arg>
+using yield_type = decltype(yield_type_<T, Arg...>(0));
+
+/**************************************************************************************************/
+
 class avoid_ { };
 
 template <typename T>
@@ -126,22 +137,25 @@ using avoid = std::conditional_t<std::is_same<void, T>::value, avoid_, T>;
 
 /**************************************************************************************************/
 
-template <typename F, typename... Args>
-auto avoid_invoke(F&& f, Args&&... args)
-        -> std::enable_if_t<!std::is_same<void,
-            decltype(std::forward<F>(f)(std::forward<Args>(args)...))>::value,
-            decltype(std::forward<F>(f)(std::forward<Args>(args)...))>
+template <typename F, std::size_t...I, typename...T>
+auto invoke_(F&& f, std::tuple<T...>& t, std::index_sequence<I...>)
 {
-    return std::forward<F>(f)(std::forward<Args>(args)...);
+    return std::forward<F>(f)(std::move(std::get<I>(t))...);
 }
 
 template <typename F, typename... Args>
-auto avoid_invoke(F&& f, Args&&... args)
-        -> std::enable_if_t<std::is_same<void,
-            decltype(std::forward<F>(f)(std::forward<Args>(args)...))>::value,
-            avoid_>
+auto avoid_invoke(F&& f, std::tuple<Args...>& t)
+        -> std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
+            yield_type<F, Args...>>
 {
-    std::forward<F>(f)(std::forward<Args>(args)...);
+    return invoke_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
+}
+
+template <typename F, typename... Args>
+auto avoid_invoke(F&& f, std::tuple<Args...>& t)
+        -> std::enable_if_t<std::is_same<void, yield_type<F, Args...>>::value, avoid_>
+{
+    invoke_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
     return avoid_();
 }
 
@@ -251,16 +265,6 @@ using process_yield_t = decltype(std::declval<T&>().yield());
 template <typename T>
 constexpr bool has_process_yield_v = detect<T, process_yield_t>::value;
 
-/**************************************************************************************************/
-
-template <typename T, typename...>
-auto yield_type_(decltype(&T::yield)) -> decltype(std::declval<T>().yield());
-
-template <typename T, typename... Arg>
-auto yield_type_(...) -> decltype(std::declval<T>()(std::declval<Arg>()...));
-
-template <typename T, typename... Arg>
-using yield_type = decltype(yield_type_<T, Arg...>(0));
 
 /**************************************************************************************************/
 
@@ -295,11 +299,12 @@ struct default_queue_strategy
     }
 
     auto size() const {
-        return std::array<std::size_t, 1>{_queue.size()};
+        return std::array<std::size_t, 1>{ {_queue.size()}};
     }
 
-    void append(std::size_t, T t) {
-        _queue.emplace_back(std::move(t));
+    template <std::size_t, typename U>
+    void append(U&& u) {
+        _queue.emplace_back(std::forward<U>(u));
     }
 };
 
@@ -310,19 +315,19 @@ struct join_queue_strategy
     static const std::size_t Size = sizeof...(T);
     using value_type = std::tuple<T...>;
     using queue_size_t = std::array<std::size_t, Size>;
+    using queue_t = std::tuple<std::deque<T>...>;
 
-
-    std::tuple<std::deque<T>...> _queue;
+    queue_t _queue;
 
     bool empty() const { return tuple_find(_queue, [](const auto& c) { return c.empty(); }) != Size; }
 
     template <std::size_t... I, typename U>
     auto front_impl(U& u, std::index_sequence<I...>) {
-        return std::make_tuple(std::move(std::get<I>(u)...));
+        return std::make_tuple(std::move(std::get<I>(u).front())...);
     }
 
     auto front() {
-        assert(!empty && "front on an empty container is a very bad idea!");
+        assert(!empty() && "front on an empty container is a very bad idea!");
         return front_impl(_queue, std::make_index_sequence<Size>());
     }
 
@@ -338,36 +343,24 @@ struct join_queue_strategy
     }
 
     template <std::size_t I, typename U>
-    struct appender
-    {
-        static void append(std::size_t index, U&& u) {
-            if (index == I) std::get<I>(_queue).emplace_back(std::forward<U>(u));
-            else appender<I + 1, U>::append(index, std::forward<U>(u));
-        }
-    };
-
-    template <typename U>
-    void append(std::size_t index, U&& u) {
-        assert(index < Size &&  "Index out of bounds");
-        appender<0, U>::append(index, std::forward<U>(u));
+    void append(U&& u) {
+        std::get<I>(_queue).emplace_back(std::forward<U>(u));
     }
 
 };
 
 /**************************************************************************************************/
 
-template <typename Q, typename SP, typename Arg>
+template<typename Q, typename T, typename... Args>
+struct shared_process;
+
+template <typename Q, typename T, typename Arg, std::size_t I, typename... Args>
 struct shared_process_sender_ : public shared_process_sender<Arg>
 {
-    Q&                  _queue;
-    SP&                 _shared_process;
-    const std::size_t   _index;
+    shared_process<Q, T, Args...>&  _shared_process;
 
-    template <std::size_t... I>
-    shared_process_sender_(Q& q, SP& sp, std::index_sequence<I...>) 
-        : _queue(q)
-        , _shared_process(sp)
-        , _index(I...)
+    shared_process_sender_(shared_process<Q, T, Args...>& sp)
+        : _shared_process(sp)
     {}
 
     void add_sender() override {
@@ -392,8 +385,7 @@ struct shared_process_sender_ : public shared_process_sender<Arg>
         bool do_run;
         {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
-            _queue.append(_index,std::move(arg)); // TODO (sparent) : overwrite here.
-
+            _shared_process._queue.template append<I>(std::move(arg)); // TODO (sparent) : overwrite here.
             do_run = !_shared_process._receiver_count && !_shared_process._process_running;
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
@@ -402,10 +394,21 @@ struct shared_process_sender_ : public shared_process_sender<Arg>
 };
 
 
+template <typename Q, typename T, typename U, typename... Args>
+struct shared_process_sender_helper;
+
+template <typename Q, typename T, std::size_t...I, typename... Args>
+struct shared_process_sender_helper<Q, T, std::index_sequence<I...>, Args...> : 
+    shared_process_sender_<Q, T, Args, I, Args...>...
+{
+    shared_process_sender_helper(shared_process<Q, T, Args...>& sp) : shared_process_sender_<Q, T, Args, I, Args...>(sp)... {}
+};
+    
+
 template<typename Q, typename T, typename... Args>
 struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
-                        std::enable_shared_from_this<shared_process<Q, T, Args...>>,
-                        shared_process_sender_<Q, shared_process<Q, T, Args...>,Args>... {
+                        shared_process_sender_helper<Q, T, std::make_index_sequence<sizeof...(Args)>, Args...>,
+                        std::enable_shared_from_this<shared_process<Q, T, Args...>> {
 
     /*
         the downstream continuations are stored in a deque so we don't get reallocations
@@ -414,6 +417,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
 
     using result            = yield_type<T, Args...>;
     using queue_strategy    = Q;
+    using process_t         = T;
 
     std::mutex                   _downstream_mutex;
     std::deque<sender<result>>   _downstream;
@@ -440,7 +444,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
 
     template <typename S, typename F>
     shared_process(S&& s, F&& f) : 
-        shared_process_sender_(_queue, *this, std::make_index_sequence<sizeof...(Args)>()),
+        shared_process_sender_helper<Q, T, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f))
     {
@@ -448,12 +452,12 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
         _receiver_count = !std::is_same<result, void>::value;
     }
 
-    template <typename S, typename F, typename U>
-    shared_process(S&& s, F&& f, U&& u) :
-        shared_process_sender_(_queue, *this, std::make_index_sequence<sizeof...(Args)>()),
+    template <typename S, typename F, typename... U>
+    shared_process(S&& s, F&& f, U&&... u) :
+        shared_process_sender_helper<Q, T, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f)), 
-        _upstream(std::forward<U>(u))
+        _upstream(std::forward<U>(u)...)
     {
         _sender_count = sizeof...(Args);
         _receiver_count = !std::is_same<result, void>::value;
@@ -532,7 +536,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
 
     auto pop_from_queue() {
         boost::optional<typename Q::value_type> message; // TODO : make functional
-        std::array<bool, sizeof...(Args)> do_cts = {false};
+        std::array<bool, sizeof...(Args)> do_cts = { {false} };
         bool do_close = false;
 
         std::unique_lock<std::mutex> lock(_process_mutex);
@@ -568,7 +572,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
             ++i;
         });
 
-        if (message) await_args(_process, std::move(message.get()));
+        if (message) await_args(_process, message.get());
         else if (do_close) process_close(_process);
         return bool(message);
     }
@@ -664,7 +668,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
         });
 
         if (message) {
-            broadcast(avoid_invoke(_process, std::move(std::get<0>(message.get()))));
+            broadcast(avoid_invoke(_process, message.get()));
         }
         else task_done();
     }
@@ -737,6 +741,38 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
     }
 };
 
+template <typename P, typename URP, typename... R, std::size_t... I>
+void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<I...>) {
+    using shared_process_t = typename P::element_type;
+    using queue_t = typename shared_process_t::queue_strategy;
+    using process_t = typename shared_process_t::process_t;
+
+    (void)std::initializer_list<int>{(std::get<I>(upstream_receiver_processes)->map(
+        sender<R>(std::dynamic_pointer_cast<shared_process_sender<R>>(
+            std::dynamic_pointer_cast<shared_process_sender_<queue_t, process_t, R, I, R...>>(p)))), 0)...};
+}
+
+template <typename P, typename URP, typename...R>
+void map_as_sender(P& p, URP& upstream_receiver_processes) {
+    map_as_sender_<P, URP, R...>(p, upstream_receiver_processes, std::make_index_sequence<sizeof...(R)>());
+}
+
+template <typename S, typename F, typename...R>
+auto join_(S&& s, F&& f, R&&... upstream_receiver) {
+
+    using result_t = yield_type<F, receiver_type<R>...>;
+
+    auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
+    auto join_process = std::make_shared<
+        shared_process<join_queue_strategy<receiver_type<R>...>,
+                       F,
+                       receiver_type<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+
+    map_as_sender<decltype(join_process), decltype(upstream_receiver_processes), receiver_type<R>...>(join_process, upstream_receiver_processes);
+
+    return receiver<result_t>(std::move(join_process));
+}
+
 /**************************************************************************************************/
 
 } // namespace detail
@@ -745,48 +781,25 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
 
 template <typename T, typename S>
 auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
-    auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, identity, T>>(std::move(s), identity());
+    auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, 
+                                                     identity, 
+                                                     T>>(std::move(s), identity());
     return std::make_pair(sender<T>(p), receiver<T>(p));
 }
 
 
 /**************************************************************************************************/
-#if 0
+
 template <typename S, typename F, typename...R>
 auto join(S s, F f, R&&... upstream_receiver){
-    auto p = std::make_shared<detail::shared_process<detail::join_queue_strategy<detail::receiver_type<R>...>, 
-                                                     F, 
-                                                     detail::receiver_type<R>...>>(std::move(s), std::move(F))
-    using result_t = detail::yield_type<F, detail::receiver_type<R>...>;
-    using context_t = detail::join_context<detail::receiver_type<R>...>;
-    using process_t = detail::join_processor<result_t, F, context_t, detail::receiver_type<R>...>;
-
-    auto shared_context = std::make_shared<context_t>();
-    auto process = process_t(std::move(f));
-
-    auto receiver_collectors = 
-        detail::create_receiver_collectors<detail::join_context_worker_helper>(shared_context,
-                                           std::make_index_sequence<sizeof...(R)>(), 
-                                           upstream_receiver...);
-
-    auto p = detail::create_process<std::tuple<boost::optional<detail::receiver_type<R>>...>>(
-        std::move(s), 
-        std::move(process), 
-        receiver_collectors,
-        std::make_index_sequence<sizeof...(R)>());
-    
-    detail::map_as_sender<std::tuple<boost::optional<detail::receiver_type<R>>...>>(receiver_collectors, p);
-
-    return receiver<result_t>(std::move(p));
+    return detail::join_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
-#endif
 
 /**************************************************************************************************/
 
-template <typename> class receiver;
-
 template <typename T>
 class receiver {
+public: // TODO FP check why clang is complaining about friend
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
 
     ptr_t _p;
@@ -799,17 +812,17 @@ class receiver {
     friend class receiver; // huh?
 
     template <typename U, typename V>
-    friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
-#if 0
-    template <typename S, typename F, typename...U>
-    friend auto join(S, F, U&&...);
+    friend auto stlab::channel(V) -> std::pair<sender<U>, receiver<U>>;
 
-    template <std::size_t I, typename W, typename C, typename R>
-    friend auto detail::create_receiver_collector(std::shared_ptr<C>&, R&&);
-#endif
+    template <typename P, typename URP, typename... R, std::size_t... I>
+    friend void stlab::detail::map_as_sender_(P&, URP&, std::index_sequence<I...>);
+
+    template <typename S, typename F, typename...R>
+    friend auto stlab::detail::join_(S&&, F&&, R&&...);//->receiver<detail::yield_type<F, detail::receiver_type<R>...>>;
+
     receiver(ptr_t p) : _p(std::move(p)) { }
 
-  public:
+  //public:
     using result_type = T;
 
     receiver() = default;
@@ -867,10 +880,10 @@ class sender {
 
     template <typename U, typename V>
     friend auto channel(V)->std::pair<sender<U>, receiver<U>>;
-#if 0
-    template <typename C, typename RC, typename P, std::size_t... I>
+
+    template <typename RC, typename P, typename...R, std::size_t... I>
     friend void detail::map_as_sender_(RC&, P&, std::index_sequence<I...>);
-#endif
+
     sender(ptr_t p) : _p(std::move(p)) {}
 
   public:

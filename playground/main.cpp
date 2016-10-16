@@ -6,12 +6,14 @@
 
 /**************************************************************************************************/
 
+struct IUnknown;
 #include <iostream>
 #include <stlab/future.hpp>
 #include <utility>
 #include <exception>
 #include <stlab/channel.hpp>
 #include <sstream>
+
 using namespace stlab;
 using namespace std;
 
@@ -257,6 +259,7 @@ struct sum {
 
 void channelExample() {
 
+    printf("%s\n", __FUNCTION__);
     sender<int> send;
     receiver<int> receive;
 
@@ -280,8 +283,9 @@ void channelExample() {
     }
 }
 
-#if 0
+
 void joinChannels(){
+    printf("%s\n", __FUNCTION__);
     sender<int> send1, send2;
     receiver<int> receive1, receive2;
 
@@ -307,7 +311,7 @@ void joinChannels(){
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
-#endif
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -324,7 +328,7 @@ int main(int argc, char **argv)
 
 #endif // 0    
     channelExample();
-    //joinChannels();
+    joinChannels();
     int i;
     cin >> i;
 }
