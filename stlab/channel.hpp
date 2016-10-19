@@ -279,6 +279,8 @@ void await_args(P& p, std::tuple<T...>& args) {
     await_args_(p, args, std::make_index_sequence<sizeof...(T)>());
 }
 
+/**************************************************************************************************/
+
 template <typename T>
 struct default_queue_strategy
 {
@@ -308,6 +310,7 @@ struct default_queue_strategy
     }
 };
 
+/**************************************************************************************************/
 
 template <typename... T>
 struct join_queue_strategy
@@ -346,20 +349,94 @@ struct join_queue_strategy
     void append(U&& u) {
         std::get<I>(_queue).emplace_back(std::forward<U>(u));
     }
-
 };
 
 /**************************************************************************************************/
 
-template<typename Q, typename T, typename... Args>
+template <typename... T>
+struct zip_queue_strategy
+{
+    static const std::size_t Size = sizeof...(T);
+    using value_type    = std::tuple<typename first_t<T...>::type>;
+    using queue_size_t  = std::array<std::size_t, Size>;
+    using queue_t       = std::tuple<std::deque<T>...>;
+    std::size_t         _index{ 0 };
+    std::size_t         _pop_index{ 0 };
+    queue_t             _queue;
+
+    template <std::size_t I, std::size_t L>
+    struct get_i
+    {
+        template <typename T, typename F, typename D>
+        static auto go(T& t, std::size_t index, F&& f, D default_v) {
+            if (index == I) return std::forward<F>(f)(std::get<I>(t));
+            else return get_i<I+1, L>::go(t, index, std::forward<F>(f), default_v);
+        }
+    };
+
+    template <std::size_t L>
+    struct get_i<L, L>
+    {
+        template <typename T, typename F, typename D>
+        static auto go(T&, std::size_t, F&&, D default_v) { return default_v; }
+    };
+
+    template <std::size_t I, std::size_t L>
+    struct void_i
+    {
+        template <typename T, typename F>
+        static void go(T& t, std::size_t index, F&& f) {
+            if (index == I) std::forward<F>(f)(std::get<I>(t));
+            else void_i<I + 1, L>::go(t, index, std::forward<F>(f));
+        }
+    };
+
+    template <std::size_t L>
+    struct void_i<L, L>
+    {
+        template <typename T, typename F>
+        static void go(T&, std::size_t, F&&) { }
+    };
+
+    bool empty() const { return get_i<0, Size>::go(_queue, _index, [](const auto& c) { return c.empty(); }, true); }
+
+    auto front() {
+        assert(!empty() && "front on an empty container is a very bad idea!");
+        _pop_index = _index;
+        ++_index;
+        if (_index == Size) _index = 0;
+        return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>::type{}));
+    }
+
+    void pop_front() {
+        void_i<0, Size>::go(_queue, _pop_index, [](auto& c) { c.pop_front(); });
+    }
+
+    auto size() const {
+        queue_size_t result;
+        std::size_t i = 0;
+        tuple_for_each(_queue, [&i, &result](const auto& c) { result[i++] = c.size(); });
+        return result;
+    }
+
+    template <std::size_t I, typename U>
+    void append(U&& u) {
+        std::get<I>(_queue).emplace_back(std::forward<U>(u));
+    }
+};
+
+
+/**************************************************************************************************/
+
+template<typename Q, typename T, typename R, typename... Args>
 struct shared_process;
 
-template <typename Q, typename T, typename Arg, std::size_t I, typename... Args>
+template <typename Q, typename T, typename R, typename Arg, std::size_t I, typename... Args>
 struct shared_process_sender_ : public shared_process_sender<Arg>
 {
-    shared_process<Q, T, Args...>&  _shared_process;
+    shared_process<Q, T, R, Args...>&  _shared_process;
 
-    shared_process_sender_(shared_process<Q, T, Args...>& sp)
+    shared_process_sender_(shared_process<Q, T, R, Args...>& sp)
         : _shared_process(sp)
     {}
 
@@ -394,28 +471,28 @@ struct shared_process_sender_ : public shared_process_sender<Arg>
 };
 
 
-template <typename Q, typename T, typename U, typename... Args>
+template <typename Q, typename T, typename R, typename U, typename... Args>
 struct shared_process_sender_helper;
 
-template <typename Q, typename T, std::size_t...I, typename... Args>
-struct shared_process_sender_helper<Q, T, std::index_sequence<I...>, Args...> : 
-    shared_process_sender_<Q, T, Args, I, Args...>...
+template <typename Q, typename T, typename R, std::size_t...I, typename... Args>
+struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...> : 
+    shared_process_sender_<Q, T, R, Args, I, Args...>...
 {
-    shared_process_sender_helper(shared_process<Q, T, Args...>& sp) : shared_process_sender_<Q, T, Args, I, Args...>(sp)... {}
+    shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) : shared_process_sender_<Q, T, R, Args, I, Args...>(sp)... {}
 };
     
 
-template<typename Q, typename T, typename... Args>
-struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
-                        shared_process_sender_helper<Q, T, std::make_index_sequence<sizeof...(Args)>, Args...>,
-                        std::enable_shared_from_this<shared_process<Q, T, Args...>> {
+template<typename Q, typename T, typename R, typename... Args>
+struct shared_process : shared_process_receiver<R>,
+                        shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>,
+                        std::enable_shared_from_this<shared_process<Q, T, R, Args...>> {
 
     /*
         the downstream continuations are stored in a deque so we don't get reallocations
         on push back - this allows us to make calls while additional inserts happen.
     */
 
-    using result            = yield_type<T, Args...>;
+    using result            = R;
     using queue_strategy    = Q;
     using process_t         = T;
 
@@ -444,7 +521,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
 
     template <typename S, typename F>
     shared_process(S&& s, F&& f) : 
-        shared_process_sender_helper<Q, T, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
+        shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f))
     {
@@ -454,7 +531,7 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
 
     template <typename S, typename F, typename... U>
     shared_process(S&& s, F&& f, U&&... u) :
-        shared_process_sender_helper<Q, T, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
+        shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
         _scheduler(std::forward<S>(s)),
         _process(std::forward<F>(f)), 
         _upstream(std::forward<U>(u)...)
@@ -514,6 +591,10 @@ struct shared_process : shared_process_receiver<yield_type<T, Args...>>,
     }
 
     void clear_to_send() override {
+        // TODO FP I am not sure if this is the correct way to handle an closed upstream
+        if (_process_final)
+            return;
+
         bool do_run = false;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
@@ -746,16 +827,19 @@ void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<
     using shared_process_t = typename P::element_type;
     using queue_t = typename shared_process_t::queue_strategy;
     using process_t = typename shared_process_t::process_t;
+    using result_t = typename shared_process_t::result;
 
     (void)std::initializer_list<int>{(std::get<I>(upstream_receiver_processes)->map(
         sender<R>(std::dynamic_pointer_cast<shared_process_sender<R>>(
-            std::dynamic_pointer_cast<shared_process_sender_<queue_t, process_t, R, I, R...>>(p)))), 0)...};
+            std::dynamic_pointer_cast<shared_process_sender_<queue_t, process_t, result_t, R, I, R...>>(p)))), 0)...};
 }
 
 template <typename P, typename URP, typename...R>
 void map_as_sender(P& p, URP& upstream_receiver_processes) {
     map_as_sender_<P, URP, R...>(p, upstream_receiver_processes, std::make_index_sequence<sizeof...(R)>());
 }
+
+/**************************************************************************************************/
 
 template <typename S, typename F, typename...R>
 auto join_(S&& s, F&& f, R&&... upstream_receiver) {
@@ -766,11 +850,31 @@ auto join_(S&& s, F&& f, R&&... upstream_receiver) {
     auto join_process = std::make_shared<
         shared_process<join_queue_strategy<receiver_type<R>...>,
                        F,
+                       result_t,
                        receiver_type<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
     map_as_sender<decltype(join_process), decltype(upstream_receiver_processes), receiver_type<R>...>(join_process, upstream_receiver_processes);
 
     return receiver<result_t>(std::move(join_process));
+}
+
+/**************************************************************************************************/
+
+template <typename S, typename F, typename...R>
+auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
+    // TODO FP static_assert, that all upstream_receiver are of the same type
+    using result_t = yield_type<F, receiver_type<first_t<R...>::type>>;
+
+    auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
+    auto zip_process = std::make_shared<
+        shared_process<zip_queue_strategy<receiver_type<R>...>,
+        F,
+        result_t,
+        receiver_type<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+
+    map_as_sender<decltype(zip_process), decltype(upstream_receiver_processes), receiver_type<R>...>(zip_process, upstream_receiver_processes);
+
+    return receiver<result_t>(std::move(zip_process));
 }
 
 /**************************************************************************************************/
@@ -783,6 +887,7 @@ template <typename T, typename S>
 auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
     auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, 
                                                      identity, 
+                                                     T, 
                                                      T>>(std::move(s), identity());
     return std::make_pair(sender<T>(p), receiver<T>(p));
 }
@@ -793,6 +898,13 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 template <typename S, typename F, typename...R>
 auto join(S s, F f, R&&... upstream_receiver){
     return detail::join_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+}
+
+/**************************************************************************************************/
+
+template <typename S, typename F, typename...R>
+auto zip(S s, F f, R&&... upstream_receiver) {
+    return detail::zip_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
@@ -819,6 +931,9 @@ public: // TODO FP check why clang is complaining about friend
 
     template <typename S, typename F, typename...R>
     friend auto stlab::detail::join_(S&&, F&&, R&&...);//->receiver<detail::yield_type<F, detail::receiver_type<R>...>>;
+
+    template <typename S, typename F, typename...R>
+    friend auto stlab::detail::zip_(S&&, F&&, R&&...);//->receiver<detail::yield_type<F, detail::receiver_type<R>...>>;
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
@@ -853,7 +968,7 @@ public: // TODO FP check why clang is complaining about friend
     template <typename F>
     auto operator|(F&& f) const {
         // TODO - report error if not constructed or _ready.
-        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, F, T>>(_p->scheduler(), std::forward<F>(f), _p);
+        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, F, detail::yield_type<F, T>, T>>(_p->scheduler(), std::forward<F>(f), _p);
         _p->map(sender<T>(p));
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }

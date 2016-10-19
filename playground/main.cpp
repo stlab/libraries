@@ -312,6 +312,39 @@ void joinChannels(){
     }
 }
 
+void zipChannels() {
+    printf("%s\n", __FUNCTION__);
+    sender<int> send1, send2, send3;
+    receiver<int> receive1, receive2, receive3;
+
+    tie(send1, receive1) = channel<int>(default_scheduler());
+    tie(send2, receive2) = channel<int>(default_scheduler());
+    tie(send3, receive3) = channel<int>(default_scheduler());
+
+    std::atomic_int all_done{ 0 };
+    auto joined = zip(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+        | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
+
+    receive1.set_ready();
+    receive2.set_ready();
+    receive3.set_ready();
+
+    send1(1);
+    send3(3);
+    send2(2);
+    send2(5);
+    send3(6);
+    send1(4);
+
+    send1.close();
+    send2.close();
+    send3.close();
+
+    while (all_done < 6) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -329,6 +362,7 @@ int main(int argc, char **argv)
 #endif // 0    
     channelExample();
     joinChannels();
+    zipChannels();
     int i;
     cin >> i;
 }
