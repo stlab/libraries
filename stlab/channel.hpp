@@ -99,11 +99,14 @@ template <typename F>
 using result_of_t_ = typename result_of_<F>::type;
 
 template <class T1, class ...T>
-struct first_t
+struct first_
 {
     using type = T1;
 };
-    
+
+template <typename... T>
+using first_t = typename first_<T...>::type;
+
 /**************************************************************************************************/
 
 template <typename> struct argument_of;
@@ -162,7 +165,7 @@ auto avoid_invoke(F&& f, std::tuple<Args...>& t)
 /**************************************************************************************************/
 
 template <typename T>
-using receiver_type = typename std::remove_reference_t<T>::result_type;
+using receiver_t = typename std::remove_reference_t<T>::result_type;
 
 /**************************************************************************************************/
 
@@ -357,46 +360,13 @@ template <typename... T>
 struct zip_queue_strategy
 {
     static const std::size_t Size = sizeof...(T);
-    using value_type    = std::tuple<typename first_t<T...>::type>;
+    using value_type    = std::tuple<first_t<T...>>;
     using queue_size_t  = std::array<std::size_t, Size>;
     using queue_t       = std::tuple<std::deque<T>...>;
     std::size_t         _index{ 0 };
     std::size_t         _pop_index{ 0 };
     queue_t             _queue;
 
-    template <std::size_t I, std::size_t L>
-    struct get_i
-    {
-        template <typename T, typename F, typename D>
-        static auto go(T& t, std::size_t index, F&& f, D default_v) {
-            if (index == I) return std::forward<F>(f)(std::get<I>(t));
-            else return get_i<I+1, L>::go(t, index, std::forward<F>(f), default_v);
-        }
-    };
-
-    template <std::size_t L>
-    struct get_i<L, L>
-    {
-        template <typename T, typename F, typename D>
-        static auto go(T&, std::size_t, F&&, D default_v) { return default_v; }
-    };
-
-    template <std::size_t I, std::size_t L>
-    struct void_i
-    {
-        template <typename T, typename F>
-        static void go(T& t, std::size_t index, F&& f) {
-            if (index == I) std::forward<F>(f)(std::get<I>(t));
-            else void_i<I + 1, L>::go(t, index, std::forward<F>(f));
-        }
-    };
-
-    template <std::size_t L>
-    struct void_i<L, L>
-    {
-        template <typename T, typename F>
-        static void go(T&, std::size_t, F&&) { }
-    };
 
     bool empty() const { return get_i<0, Size>::go(_queue, _index, [](const auto& c) { return c.empty(); }, true); }
 
@@ -405,7 +375,7 @@ struct zip_queue_strategy
         _pop_index = _index;
         ++_index;
         if (_index == Size) _index = 0;
-        return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>::type{}));
+        return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>()));
     }
 
     void pop_front() {
@@ -822,6 +792,8 @@ struct shared_process : shared_process_receiver<R>,
     }
 };
 
+/**************************************************************************************************/
+
 template <typename P, typename URP, typename... R, std::size_t... I>
 void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<I...>) {
     using shared_process_t = typename P::element_type;
@@ -844,16 +816,16 @@ void map_as_sender(P& p, URP& upstream_receiver_processes) {
 template <typename S, typename F, typename...R>
 auto join_(S&& s, F&& f, R&&... upstream_receiver) {
 
-    using result_t = yield_type<F, receiver_type<R>...>;
+    using result_t = yield_type<F, receiver_t<R>...>;
 
     auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
     auto join_process = std::make_shared<
-        shared_process<join_queue_strategy<receiver_type<R>...>,
+        shared_process<join_queue_strategy<receiver_t<R>...>,
                        F,
                        result_t,
-                       receiver_type<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+                       receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
-    map_as_sender<decltype(join_process), decltype(upstream_receiver_processes), receiver_type<R>...>(join_process, upstream_receiver_processes);
+    map_as_sender<decltype(join_process), decltype(upstream_receiver_processes), receiver_t<R>...>(join_process, upstream_receiver_processes);
 
     return receiver<result_t>(std::move(join_process));
 }
@@ -863,16 +835,16 @@ auto join_(S&& s, F&& f, R&&... upstream_receiver) {
 template <typename S, typename F, typename...R>
 auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
     // TODO FP static_assert, that all upstream_receiver are of the same type
-    using result_t = yield_type<F, receiver_type<first_t<R...>::type>>;
+    using result_t = yield_type<F, receiver_t<first_t<R...>>>;
 
     auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
     auto zip_process = std::make_shared<
-        shared_process<zip_queue_strategy<receiver_type<R>...>,
+        shared_process<zip_queue_strategy<receiver_t<R>...>,
         F,
         result_t,
-        receiver_type<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+        receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
-    map_as_sender<decltype(zip_process), decltype(upstream_receiver_processes), receiver_type<R>...>(zip_process, upstream_receiver_processes);
+    map_as_sender<decltype(zip_process), decltype(upstream_receiver_processes), receiver_t<R>...>(zip_process, upstream_receiver_processes);
 
     return receiver<result_t>(std::move(zip_process));
 }
@@ -911,7 +883,7 @@ auto zip(S s, F f, R&&... upstream_receiver) {
 
 template <typename T>
 class receiver {
-public: // TODO FP check why clang is complaining about friend
+//public: // TODO FP check why clang is complaining about friend
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
 
     ptr_t _p;
@@ -924,20 +896,20 @@ public: // TODO FP check why clang is complaining about friend
     friend class receiver; // huh?
 
     template <typename U, typename V>
-    friend auto stlab::channel(V) -> std::pair<sender<U>, receiver<U>>;
+    friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
 
     template <typename P, typename URP, typename... R, std::size_t... I>
-    friend void stlab::detail::map_as_sender_(P&, URP&, std::index_sequence<I...>);
+    friend void detail::map_as_sender_(P&, URP&, std::index_sequence<I...>);
 
     template <typename S, typename F, typename...R>
-    friend auto stlab::detail::join_(S&&, F&&, R&&...);//->receiver<detail::yield_type<F, detail::receiver_type<R>...>>;
+    friend auto detail::join_(S&&, F&&, R&&...);
 
     template <typename S, typename F, typename...R>
-    friend auto stlab::detail::zip_(S&&, F&&, R&&...);//->receiver<detail::yield_type<F, detail::receiver_type<R>...>>;
+    friend auto detail::zip_(S&&, F&&, R&&...);
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
-  //public:
+  public:
     using result_type = T;
 
     receiver() = default;

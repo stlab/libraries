@@ -72,16 +72,40 @@ namespace stlab
         detail::tuple_for_each_impl<0, std::tuple_size<T>::value, T, Op>::for_each(t, op);
     }
 
-    template <typename T, typename Op>
-    std::size_t tuple_min_element(const T& t, Op op)
-    {
-        if (std::tuple_size<T>::value == 0)
-            return 1;
-        if (std::tuple_size<T>::value == 1)
-            return 0;
 
-        return detail::tuple_min_element_impl<0, std::tuple_size<T>::value - 1, T, Op>::min_element(t, op);
-    }
+    template <std::size_t I, std::size_t L>
+    struct get_i
+    {
+        template <typename T, typename F, typename D>
+        static auto go(T& t, std::size_t index, F&& f, D default_v) {
+            if (index == I) return std::forward<F>(f)(std::get<I>(t));
+            else return get_i<I + 1, L>::go(t, index, std::forward<F>(f), default_v);
+        }
+    };
+
+    template <std::size_t L>
+    struct get_i<L, L>
+    {
+        template <typename T, typename F, typename D>
+        static auto go(T&, std::size_t, F&&, D default_v) { return default_v; }
+    };
+
+    template <std::size_t I, std::size_t L>
+    struct void_i
+    {
+        template <typename T, typename F>
+        static void go(T& t, std::size_t index, F&& f) {
+            if (index == I) std::forward<F>(f)(std::get<I>(t));
+            else void_i<I + 1, L>::go(t, index, std::forward<F>(f));
+        }
+    };
+
+    template <std::size_t L>
+    struct void_i<L, L>
+    {
+        template <typename T, typename F>
+        static void go(T&, std::size_t, F&&) { }
+    };
 }
 
 #endif
