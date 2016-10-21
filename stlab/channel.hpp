@@ -283,6 +283,8 @@ void await_args(P& p, std::tuple<T...>& args) {
 }
 
 /**************************************************************************************************/
+/**************************************************************************************************/
+/**************************************************************************************************/
 
 template <typename T>
 struct default_queue_strategy
@@ -415,8 +417,6 @@ struct merge_queue_strategy
         assert(!empty() && "front on an empty container is a very bad idea!");
         _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
         _pop_index = _index;
-        ++_index;
-        if (_index == Size) _index = 0;
         return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>()));
     }
 
@@ -444,11 +444,11 @@ template<typename Q, typename T, typename R, typename... Args>
 struct shared_process;
 
 template <typename Q, typename T, typename R, typename Arg, std::size_t I, typename... Args>
-struct shared_process_sender_ : public shared_process_sender<Arg>
+struct shared_process_sender_i : public shared_process_sender<Arg>
 {
     shared_process<Q, T, R, Args...>&  _shared_process;
 
-    shared_process_sender_(shared_process<Q, T, R, Args...>& sp)
+    shared_process_sender_i(shared_process<Q, T, R, Args...>& sp)
         : _shared_process(sp)
     {}
 
@@ -482,17 +482,19 @@ struct shared_process_sender_ : public shared_process_sender<Arg>
     }
 };
 
+/**************************************************************************************************/
 
 template <typename Q, typename T, typename R, typename U, typename... Args>
 struct shared_process_sender_helper;
 
 template <typename Q, typename T, typename R, std::size_t...I, typename... Args>
 struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...> : 
-    shared_process_sender_<Q, T, R, Args, I, Args...>...
+    shared_process_sender_i<Q, T, R, Args, I, Args...>...
 {
-    shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) : shared_process_sender_<Q, T, R, Args, I, Args...>(sp)... {}
+    shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) : shared_process_sender_i<Q, T, R, Args, I, Args...>(sp)... {}
 };
     
+/**************************************************************************************************/
 
 template<typename Q, typename T, typename R, typename... Args>
 struct shared_process : shared_process_receiver<R>,
@@ -845,7 +847,7 @@ void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<
 
     (void)std::initializer_list<int>{(std::get<I>(upstream_receiver_processes)->map(
         sender<R>(std::dynamic_pointer_cast<shared_process_sender<R>>(
-            std::dynamic_pointer_cast<shared_process_sender_<queue_t, process_t, result_t, R, I, R...>>(p)))), 0)...};
+            std::dynamic_pointer_cast<shared_process_sender_i<queue_t, process_t, result_t, R, I, R...>>(p)))), 0)...};
 }
 
 template <typename P, typename URP, typename...R>
@@ -1010,7 +1012,10 @@ class receiver {
     template <typename F>
     auto operator|(F&& f) const {
         // TODO - report error if not constructed or _ready.
-        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, F, detail::yield_type<F, T>, T>>(_p->scheduler(), std::forward<F>(f), _p);
+        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, 
+                                                         F, 
+                                                         detail::yield_type<F, T>, 
+                                                         T>>(_p->scheduler(), std::forward<F>(f), _p);
         _p->map(sender<T>(p));
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }
@@ -1108,5 +1113,3 @@ struct function_process<R (Args...)> {
 /**************************************************************************************************/
 
 #endif
-
-/**************************************************************************************************/
