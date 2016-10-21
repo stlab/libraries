@@ -395,6 +395,48 @@ struct zip_queue_strategy
     }
 };
 
+/**************************************************************************************************/
+
+template <typename... T>
+struct merge_queue_strategy
+{
+    static const std::size_t Size = sizeof...(T);
+    using value_type = std::tuple<first_t<T...>>;
+    using queue_size_t = std::array<std::size_t, Size>;
+    using queue_t = std::tuple<std::deque<T>...>;
+    std::size_t         _index{ 0 };
+    std::size_t         _pop_index{ 0 };
+    queue_t             _queue;
+
+
+    bool empty() const { return tuple_find(_queue, [](const auto& c) { return !c.empty(); } ) == Size; }
+
+    auto front() {
+        assert(!empty() && "front on an empty container is a very bad idea!");
+        _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
+        _pop_index = _index;
+        ++_index;
+        if (_index == Size) _index = 0;
+        return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>()));
+    }
+
+    void pop_front() {
+        void_i<0, Size>::go(_queue, _pop_index, [](auto& c) { c.pop_front(); });
+    }
+
+    auto size() const {
+        queue_size_t result;
+        std::size_t i = 0;
+        tuple_for_each(_queue, [&i, &result](const auto& c) { result[i++] = c.size(); });
+        return result;
+    }
+
+    template <std::size_t I, typename U>
+    void append(U&& u) {
+        std::get<I>(_queue).emplace_back(std::forward<U>(u));
+    }
+};
+
 
 /**************************************************************************************************/
 
@@ -851,6 +893,25 @@ auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
 
 /**************************************************************************************************/
 
+template <typename S, typename F, typename...R>
+auto merge_(S&& s, F&& f, R&&... upstream_receiver) {
+    // TODO FP static_assert, that all upstream_receiver are of the same type
+    using result_t = yield_type<F, receiver_t<first_t<R...>>>;
+
+    auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
+    auto merge_process = std::make_shared<
+        shared_process<merge_queue_strategy<receiver_t<R>...>,
+        F,
+        result_t,
+        receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+
+    map_as_sender<decltype(merge_process), decltype(upstream_receiver_processes), receiver_t<R>...>(merge_process, upstream_receiver_processes);
+
+    return receiver<result_t>(std::move(merge_process));
+}
+
+/**************************************************************************************************/
+
 } // namespace detail
 
 /**************************************************************************************************/
@@ -881,9 +942,15 @@ auto zip(S s, F f, R&&... upstream_receiver) {
 
 /**************************************************************************************************/
 
+template <typename S, typename F, typename...R>
+auto merge(S s, F f, R&&... upstream_receiver) {
+    return detail::merge_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+}
+
+/**************************************************************************************************/
+
 template <typename T>
 class receiver {
-//public: // TODO FP check why clang is complaining about friend
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
 
     ptr_t _p;
@@ -906,6 +973,9 @@ class receiver {
 
     template <typename S, typename F, typename...R>
     friend auto detail::zip_(S&&, F&&, R&&...);
+
+    template <typename S, typename F, typename...R>
+    friend auto detail::merge_(S&&, F&&, R&&...);
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
