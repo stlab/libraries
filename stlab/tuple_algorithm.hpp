@@ -77,9 +77,10 @@ namespace stlab
     struct get_i
     {
         template <typename T, typename F, typename D>
-        static auto go(T& t, std::size_t index, F&& f, D default_v) {
+        static auto go(T& t, std::size_t index, F&& f, const D& default_v) {
             if (index == I) return std::forward<F>(f)(std::get<I>(t));
-            else return get_i<I + 1, L>::go(t, index, std::forward<F>(f), default_v);
+            
+            return get_i<I + 1, L>::go(t, index, std::forward<F>(f), default_v);
         }
     };
 
@@ -87,7 +88,7 @@ namespace stlab
     struct get_i<L, L>
     {
         template <typename T, typename F, typename D>
-        static auto go(T&, std::size_t, F&&, D default_v) { return default_v; }
+        static auto go(T&, std::size_t, F&&, const D& default_v) { return default_v; }
     };
 
     template <std::size_t I, std::size_t L>

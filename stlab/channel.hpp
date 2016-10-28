@@ -5,7 +5,6 @@
 */
 
 /**************************************************************************************************/
-
 #ifndef STLAB_CHANNEL_HPP
 #define STLAB_CHANNEL_HPP
 
@@ -16,6 +15,8 @@
 #include <memory>
 #include <tuple>
 #include <utility>
+
+#include <boost/variant.hpp>
 
 #include <stlab/future.hpp>
 #include <stlab/tuple_algorithm.hpp>
@@ -44,11 +45,17 @@ template <typename> class receiver;
  * In response to a close, a process can switch to a yield state to yield values, otherwise it is destructed.
  * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
  */
-
 enum class process_state {
     await,
     yield,
 };
+
+enum class message_t { 
+    argument, 
+    error 
+};
+
+/**************************************************************************************************/
 
 using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
 
@@ -141,13 +148,13 @@ using avoid = std::conditional_t<std::is_same<void, T>::value, avoid_, T>;
 /**************************************************************************************************/
 
 template <typename F, std::size_t...I, typename...T>
-auto invoke_(F&& f, std::tuple<T...>& t, std::index_sequence<I...>)
+auto invoke_(F&& f, std::tuple<boost::variant<T, std::exception_ptr>...>& t, std::index_sequence<I...>)
 {
     return std::forward<F>(f)(std::move(std::get<I>(t))...);
 }
 
 template <typename F, typename... Args>
-auto avoid_invoke(F&& f, std::tuple<Args...>& t)
+auto avoid_invoke(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
         -> std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
             yield_type<F, Args...>>
 {
@@ -155,10 +162,34 @@ auto avoid_invoke(F&& f, std::tuple<Args...>& t)
 }
 
 template <typename F, typename... Args>
-auto avoid_invoke(F&& f, std::tuple<Args...>& t)
+auto avoid_invoke(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
         -> std::enable_if_t<std::is_same<void, yield_type<F, Args...>>::value, avoid_>
 {
     invoke_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
+    return avoid_();
+}
+
+/**************************************************************************************************/
+
+template <typename F, std::size_t...I, typename...T>
+auto invoke_variant_(F&& f, std::tuple<boost::variant<T, std::exception_ptr>...>& t, std::index_sequence<I...>)
+{
+    return std::forward<F>(f)(std::move(boost::get<T>(std::get<I>(t)))...);
+}
+
+template <typename F, typename... Args>
+auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
+->std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
+    yield_type<F, Args...>>
+{
+    return invoke_variant_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
+}
+
+template <typename F, typename... Args>
+auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
+-> std::enable_if_t<std::is_same<void, yield_type<F, Args...>>::value, avoid_>
+{
+    invoke_variant_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
     return avoid_();
 }
 
@@ -196,14 +227,14 @@ struct shared_process_sender {
     virtual ~shared_process_sender() = default;
 
     virtual void send(avoid<T> x) = 0;
+    virtual void send(std::exception_ptr) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
 };
 
 /**************************************************************************************************/
 
-// the following is based on the C++ standard proposal N4502
-
+// the following implements the C++ standard proposal N4502
 #if __GNUC__ < 5 && ! defined __clang__
 // http://stackoverflow.com/a/28967049/1353549
 template <typename...>
@@ -218,13 +249,39 @@ template <typename...>
 using void_t = void;
 #endif
 
-// Primary template handles all types not supporting the operation.
-template <typename, template <typename> class, typename = void_t<>>
-struct detect : std::false_type {};
+struct nonesuch
+{
+    nonesuch() = delete;
+    ~nonesuch() = delete;
+    nonesuch(nonesuch const&) = delete;
+    void operator= (nonesuch const&) = delete;
+};
 
-// Specialization recognizes/validates only types supporting the archetype.
-template <typename T, template <typename> class Op>
-struct detect<T, Op, void_t<Op<T>>> : std::true_type {};
+
+// primary template handles all types not supporting the archetypal Op:
+template<class Default , class, template<class...> class Op, class... Args>
+struct detector
+{
+    using value_t = std::false_type;
+    using type = Default;
+};
+
+// the specialization recognizes and handles only types supporting Op:
+template<class Default, template<class...> class Op, class... Args>
+struct detector<Default, void_t<Op<Args...>>, Op, Args...>
+{
+    using value_t = std::true_type;
+    using type = Op<Args...>;
+};
+
+template<template<class...> class Op, class... Args>
+using is_detected = typename detector<nonesuch, void, Op, Args...>::value_t;
+
+template<template<class...> class Op, class... Args>
+constexpr bool is_detected_v = is_detected<Op, Args...>::value;
+
+template<template<class...> class Op, class... Args>
+using detected_t = typename detector<nonesuch, void, Op, Args...>::type;
 
 /**************************************************************************************************/
 
@@ -232,7 +289,7 @@ template <typename T>
 using process_close_t = decltype(std::declval<T&>().close());
 
 template <typename T>
-constexpr bool has_process_close_v = detect<T, process_close_t>::value;
+constexpr bool has_process_close_v = is_detected_v<process_close_t, T>;
 
 template <typename T>
 auto process_close(T& x) -> std::enable_if_t<has_process_close_v<T>> {
@@ -248,7 +305,7 @@ template <typename T>
 using process_state_t = decltype(std::declval<const T&>().state());
 
 template <typename T>
-constexpr bool has_process_state_v = detect<T, process_state_t>::value;
+constexpr bool has_process_state_v = is_detected_v<process_state_t, T>;
 
 template <typename T>
 auto get_process_state(const T& x) -> std::enable_if_t<has_process_state_v<T>, process_state_scheduled> {
@@ -262,24 +319,45 @@ auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state_v<T>, 
 
 /**************************************************************************************************/
 
+template <typename T, typename...U>
+using process_set_error_t = decltype(std::declval<T&>().set_error(std::declval<std::tuple<boost::variant<U, std::exception_ptr>...>>()));
+
+template <typename T, typename...U>
+constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, T, U...>;
+
+template <typename T, typename...U>
+auto set_process_error(T& x, std::tuple<boost::variant<U, std::exception_ptr>...> error) -> std::enable_if_t<has_set_process_error_v<T, U...>, void> {
+    x.set_error(std::move(error));
+}
+
+template <typename T, typename... U>
+auto set_process_error(T&, std::tuple<boost::variant<U, std::exception_ptr>...> error) -> std::enable_if_t<!has_set_process_error_v<T, U...>, void> {
+}
+
+/**************************************************************************************************/
+
 template <typename T>
 using process_yield_t = decltype(std::declval<T&>().yield());
 
 template <typename T>
-constexpr bool has_process_yield_v = detect<T, process_yield_t>::value;
-
+constexpr bool has_process_yield_v = is_detected_v<process_yield_t, T>;
 
 /**************************************************************************************************/
 
-
 template <typename P, typename...T, std::size_t... I>
-void await_args_(P& p, std::tuple<T...>& args, std::index_sequence<I...>) {
-    p.await(std::move(std::get<I>(args))...);
+void await_variant_args_(P& p, std::tuple<boost::variant<T, std::exception_ptr>...>& args, std::index_sequence<I...>) {
+    p.await(std::move(boost::get<T>(std::get<I>(args)))...);
 }
 
 template <typename P, typename... T>
-void await_args(P& p, std::tuple<T...>& args) {
-    await_args_(p, args, std::make_index_sequence<sizeof...(T)>());
+void await_variant_args(P& p, std::tuple<boost::variant<T, std::exception_ptr>...>& args) {
+    await_variant_args_(p, args, std::make_index_sequence<sizeof...(T)>());
+}
+
+template <typename...Args>
+bool argument_with_error(const std::tuple<boost::variant<Args, std::exception_ptr>...>& args)
+{
+    return tuple_find(args, [](auto c) { return static_cast<message_t>(c.which()) == message_t::error; }) != sizeof...(Args);
 }
 
 /**************************************************************************************************/
@@ -289,9 +367,9 @@ void await_args(P& p, std::tuple<T...>& args) {
 template <typename T>
 struct default_queue_strategy
 {
-    using value_type = std::tuple<T>;
-
-    std::deque<T> _queue;
+    using value_type = std::tuple<boost::variant<T, std::exception_ptr>>;
+    
+    std::deque<boost::variant<T, std::exception_ptr>> _queue;
 
     bool empty() const {
         return _queue.empty();
@@ -321,11 +399,11 @@ template <typename... T>
 struct join_queue_strategy
 {
     static const std::size_t Size = sizeof...(T);
-    using value_type = std::tuple<T...>;
-    using queue_size_t = std::array<std::size_t, Size>;
-    using queue_t = std::tuple<std::deque<T>...>;
+    using value_type    = std::tuple<boost::variant<T, std::exception_ptr>...>;
+    using queue_size_t  = std::array<std::size_t, Size>;
+    using queue_t       = std::tuple<std::deque<boost::variant<T, std::exception_ptr>>...>;
 
-    queue_t _queue;
+    queue_t             _queue;
 
     bool empty() const { return tuple_find(_queue, [](const auto& c) { return c.empty(); }) != Size; }
 
@@ -362,9 +440,10 @@ template <typename... T>
 struct zip_queue_strategy
 {
     static const std::size_t Size = sizeof...(T);
-    using value_type    = std::tuple<first_t<T...>>;
+    using item_t        = boost::variant<first_t<T...>, std::exception_ptr>;
+    using value_type    = std::tuple<item_t>;
     using queue_size_t  = std::array<std::size_t, Size>;
-    using queue_t       = std::tuple<std::deque<T>...>;
+    using queue_t       = std::tuple<std::deque<boost::variant<T, std::exception_ptr>>...>;
     std::size_t         _index{ 0 };
     std::size_t         _popped_index{ 0 };
     queue_t             _queue;
@@ -377,7 +456,7 @@ struct zip_queue_strategy
         return std::make_tuple(get_i<0, Size>::go(_queue, 
                                                   _index, 
                                                   [](auto& c) { return c.front(); }, 
-                                                  first_t<T...>{} ));
+                                                  item_t{} ));
     }
 
     void pop_front() {
@@ -411,9 +490,10 @@ template <typename... T>
 struct merge_queue_strategy
 {
     static const std::size_t Size = sizeof...(T);
-    using value_type = std::tuple<first_t<T...>>;
-    using queue_size_t = std::array<std::size_t, Size>;
-    using queue_t = std::tuple<std::deque<T>...>;
+    using item_t        = boost::variant<first_t<T...>, std::exception_ptr>;
+    using value_type    = std::tuple<item_t>;
+    using queue_size_t  = std::array<std::size_t, Size>;
+    using queue_t       = std::tuple<std::deque<boost::variant<T, std::exception_ptr>>...>;
     std::size_t         _index{ 0 };
     std::size_t         _popped_index{ 0 };
     queue_t             _queue;
@@ -426,7 +506,7 @@ struct merge_queue_strategy
         _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
         return std::make_tuple(get_i<0, Size>::go(_queue, 
                                                   _index, [](auto& c) { return c.front(); }, 
-                                                  first_t<T...>{} ));
+                                                  item_t{} ));
     }
 
     void pop_front() {
@@ -488,15 +568,25 @@ struct shared_process_sender_i : public shared_process_sender<Arg>
         }
     }
 
-    void send(Arg arg) override {
+    template <typename U>
+    void enqueue(U&& u) {
         bool do_run;
         {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
-            _shared_process._queue.template append<I>(std::move(arg)); // TODO (sparent) : overwrite here.
+            _shared_process._queue.template append<I>(std::forward<U>(u)); // TODO (sparent) : overwrite here.
             do_run = !_shared_process._receiver_count && !_shared_process._process_running;
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
         if (do_run) _shared_process.run();
+    }
+
+
+    void send(std::exception_ptr error) override {
+        enqueue(std::move(error));
+    }
+
+    void send(Arg arg) override {
+        enqueue(std::move(arg));
     }
 };
 
@@ -517,8 +607,8 @@ struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
 template<typename Q, typename T, typename R, typename... Args>
 struct shared_process : shared_process_receiver<R>,
                         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>,
-                        std::enable_shared_from_this<shared_process<Q, T, R, Args...>> {
-
+                        std::enable_shared_from_this<shared_process<Q, T, R, Args...>>
+{
     /*
         the downstream continuations are stored in a deque so we don't get reallocations
         on push back - this allows us to make calls while additional inserts happen.
@@ -623,9 +713,13 @@ struct shared_process : shared_process_receiver<R>,
     }
 
     void clear_to_send() override {
-        // TODO FP I am not sure if this is the correct way to handle an closed upstream
-        if (_process_final)
-            return;
+        {
+            std::unique_lock<std::mutex> lock(_process_mutex);
+            // TODO FP I am not sure if this is the correct way to handle an closed upstream
+            if (_process_final) {
+                return;
+            }
+        }
 
         bool do_run = false;
         {
@@ -686,7 +780,15 @@ struct shared_process : shared_process_receiver<R>,
             ++i;
         });
 
-        if (message) await_args(_process, message.get());
+        if (message) {
+            if (argument_with_error(message.get())) {
+                if (has_set_process_error_v<T, Args...>)
+                    set_process_error(_process, std::move(message.get()));
+                else
+                    do_close = true;
+            }
+            else await_variant_args(_process, message.get());
+        }
         else if (do_close) process_close(_process);
         return bool(message);
     }
@@ -697,70 +799,83 @@ struct shared_process : shared_process_receiver<R>,
             While we are awaiting we will flush the queue. The assumption here is that work
             is done on yield()
         */
-        while (get_process_state(_process).first == process_state::await) {
-            if (!dequeue()) break;
-        }
-
-        auto now = std::chrono::system_clock::now();
-        process_state state;
-        std::chrono::system_clock::time_point when;
-        std::tie(state, when) = get_process_state(_process);
-
-        /*
-            Once we hit yield, go ahead and call it. If the yield is delayed then schedule it. This
-            process will be considered running until it executes.
-        */
-        if (state == process_state::yield) {
-            if (when <= now) broadcast(_process.yield());
-            else _scheduler(when, [_this = this->shared_from_this()] {
-                _this->broadcast(_this->_process.yield());
-            });
-        }
-
-        /*
-            We are in an await state and the queue is empty.
-            
-            If we await forever then task_done() leaving us in an await state.
-            else if we await with an expired timeout then go ahead and yield now.
-            else schedule a timeout when we will yield if not canceled by intervening await.
-        */
-        else if (when == std::chrono::system_clock::time_point::max()) {
-            task_done();
-        } else if (when <= now) {
-            broadcast(_process.yield());
-        } else {
-            /*
-                REVISIT (sparent) : The case is not implemented.
-
-                Schedule a timeout. If a new value is received then cancel pending timeout.
-
-                Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
-                not sufficient since process might have changed state many times before timeout
-                is invoked.
-                
-                Timeout may occur concurrent with other operation - requires syncronization.
-            */
-            assert(false && "await with non-max/min timout not yet supported.");
-
-
-            #if 0 // This logic is flawed
-            if (get_process_state(_process).first == process_state::await && 
-                get_process_state(_process).second > std::chrono::system_clock::now())
-            {
-                _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
-                    if (get_process_state(_this->_process).first != process_state::yield)
-                    {
-                        _this->broadcast(_this->_process.yield());
-                    }
-                });
+        try {
+            while (get_process_state(_process).first == process_state::await) {
+                if (!dequeue()) break;
             }
-            else {
+
+            auto now = std::chrono::system_clock::now();
+            process_state state;
+            std::chrono::system_clock::time_point when;
+            std::tie(state, when) = get_process_state(_process);
+
+            /*
+                Once we hit yield, go ahead and call it. If the yield is delayed then schedule it. This
+                process will be considered running until it executes.
+            */
+            if (state == process_state::yield) {
+                if (when <= now) broadcast(_process.yield());
+                else _scheduler(when, [_this = this->shared_from_this()]{ _this->try_broadcast(); });
+            }
+
+            /*
+                We are in an await state and the queue is empty.
+
+                If we await forever then task_done() leaving us in an await state.
+                else if we await with an expired timeout then go ahead and yield now.
+                else schedule a timeout when we will yield if not canceled by intervening await.
+            */
+            else if (when == std::chrono::system_clock::time_point::max()) {
                 task_done();
             }
-            #endif
+            else if (when <= now) {
+                broadcast(_process.yield());
+            }
+            else {
+                /*
+                    REVISIT (sparent) : The case is not implemented.
+
+                    Schedule a timeout. If a new value is received then cancel pending timeout.
+
+                    Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
+                    not sufficient since process might have changed state many times before timeout
+                    is invoked.
+
+                    Timeout may occur concurrent with other operation - requires syncronization.
+                */
+                assert(false && "await with non-max/min timout not yet supported.");
+
+
+#if 0 // This logic is flawed
+                if (get_process_state(_process).first == process_state::await &&
+                    get_process_state(_process).second > std::chrono::system_clock::now())
+                {
+                    _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
+                        if (get_process_state(_this->_process).first != process_state::yield)
+                        {
+                            _this->broadcast(_this->_process.yield());
+                        }
+                    });
+                }
+                else {
+                    task_done();
+                }
+#endif
+            }
+        }
+        catch (...) { // this catches exceptions during _process.await() and _process.yield()
+            broadcast(std::move(std::current_exception()));
         }
     }
 
+    void try_broadcast() {
+        try {
+            broadcast(_process.yield());
+        }
+        catch (...) {
+            broadcast(std::move(std::current_exception()));
+        }
+    }
     /*
         REVISIT (sparent) : See above comments on step() and ensure consistency.
                 
@@ -782,7 +897,17 @@ struct shared_process : shared_process_receiver<R>,
         });
 
         if (message) {
-            broadcast(avoid_invoke(_process, message.get()));
+            if (argument_with_error(message.get())) {
+                do_close = true;
+            }
+            else {
+                try {
+                    broadcast(avoid_invoke_variant(_process, message.get()));
+                }
+                catch (...) {
+                    broadcast(std::move(std::current_exception()));
+                }
+            }
         }
         else task_done();
     }

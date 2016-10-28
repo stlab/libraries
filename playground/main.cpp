@@ -17,7 +17,6 @@ struct IUnknown;
 using namespace stlab;
 using namespace std;
 
-
 #if 0
 
 /*
@@ -275,8 +274,8 @@ void channelExample() {
     send(1);
     send(2);
     send(3);
+
     send.close();
-    hold.set_ready();
 
     while (!all_done.load()) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -304,6 +303,7 @@ void joinChannels(){
 
     send1(3);
     send2(4);
+
     send1.close();
     send2.close();
 
@@ -322,7 +322,7 @@ void zipChannels() {
     tie(send3, receive3) = channel<int>(default_scheduler());
 
     std::atomic_int all_done{ 0 };
-    auto joined = zip(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+    auto zipped = zip(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
         | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
@@ -355,7 +355,7 @@ void mergeChannels() {
     tie(send3, receive3) = channel<int>(default_scheduler());
 
     std::atomic_int all_done{ 0 };
-    auto joined = merge(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+    auto merged = merge(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
         | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
@@ -378,6 +378,87 @@ void mergeChannels() {
     }
 }
 
+struct sum_w_error {
+    process_state_scheduled _state = await_forever;
+    int _sum = 0;
+
+    void await(int x, int y) { _sum = x + y; _state = yield_immediate; }
+
+    int yield() { auto result = _sum; _sum = 0; _state = await_forever; return result; }
+
+    void set_error(std::tuple<boost::variant<int, std::exception_ptr>, boost::variant<int, std::exception_ptr>> error) {
+        printf("Error arrived\n");
+        auto& first = std::get<0>(error);
+        auto& second = std::get<1>(error);
+        if (static_cast<stlab::message_t>(first.which()) == message_t::error)
+        {
+            cout << "Error in first argument\n";
+        }
+        if (static_cast<stlab::message_t>(second.which()) == message_t::error)
+        {
+            cout << "Error in second argument\n";
+        }
+        _state = yield_immediate; 
+        _sum = 42;
+    }
+
+    void close() { _state = yield_immediate; }
+
+    const auto& state() const { return _state; }
+};
+
+struct failing_process
+{
+    process_state_scheduled _state = await_forever;
+    int _x = 0;
+
+    void await(int x) { 
+        if (x == 2) throw std::exception(); 
+        x = _x; 
+        _state = yield_immediate; 
+    }
+
+    int yield() { _state = await_forever; return _x; }
+
+    void close() { _state = yield_immediate; }
+
+    const auto& state() const { return _state; }
+};
+
+void failingProcess() {
+    printf("%s\n", __FUNCTION__);
+    sender<int> send1, send2;
+    receiver<int> receive1, receive2;
+
+    tie(send1, receive1) = channel<int>(default_scheduler());
+    tie(send2, receive2) = channel<int>(default_scheduler());
+
+    auto failing = receive2 | failing_process();
+
+    std::atomic_int all_done{ 0 };
+    auto joined = join(default_scheduler(), sum_w_error(), receive1, failing)
+        | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
+
+    receive1.set_ready();
+    receive2.set_ready();
+    failing.set_ready();
+
+    send1(1);
+    send2(2);
+
+    send1(3);
+    send2(4);
+
+    send1.close();
+    send2.close();
+
+    while (all_done < 1) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -393,11 +474,13 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-
-    channelExample();
-    joinChannels();
-    zipChannels();
-    mergeChannels();
+    while (true) {
+        channelExample();
+        joinChannels();
+        zipChannels();
+        mergeChannels();
+        failingProcess();
+    }
     int i;
     cin >> i;
 }
