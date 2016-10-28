@@ -366,7 +366,7 @@ struct zip_queue_strategy
     using queue_size_t  = std::array<std::size_t, Size>;
     using queue_t       = std::tuple<std::deque<T>...>;
     std::size_t         _index{ 0 };
-    std::size_t         _pop_index{ 0 };
+    std::size_t         _popped_index{ 0 };
     queue_t             _queue;
 
 
@@ -374,20 +374,28 @@ struct zip_queue_strategy
 
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
-        _pop_index = _index;
-        ++_index;
-        if (_index == Size) _index = 0;
-        return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>()));
+        return std::make_tuple(get_i<0, Size>::go(_queue, 
+                                                  _index, 
+                                                  [](auto& c) { return c.front(); }, 
+                                                  first_t<T...>{} ));
     }
 
     void pop_front() {
-        void_i<0, Size>::go(_queue, _pop_index, [](auto& c) { c.pop_front(); });
+        void_i<0, Size>::go(_queue, _index, [](auto& c) { c.pop_front(); });
+        _popped_index = _index;
+        ++_index;
+        if (_index == Size) _index = 0; // restart from the first sender
     }
 
     auto size() const {
         queue_size_t result;
         std::size_t i = 0;
-        tuple_for_each(_queue, [&i, &result](const auto& c) { result[i++] = c.size(); });
+        tuple_for_each(_queue, [&i, &result, this](const auto& c)
+        {
+            if (i == _popped_index) result[i] = c.size();
+            else result[i] = std::numeric_limits<std::size_t>::max();
+            ++i;
+        });
         return result;
     }
 
@@ -407,7 +415,7 @@ struct merge_queue_strategy
     using queue_size_t = std::array<std::size_t, Size>;
     using queue_t = std::tuple<std::deque<T>...>;
     std::size_t         _index{ 0 };
-    std::size_t         _pop_index{ 0 };
+    std::size_t         _popped_index{ 0 };
     queue_t             _queue;
 
 
@@ -416,18 +424,28 @@ struct merge_queue_strategy
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
         _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
-        _pop_index = _index;
-        return std::make_tuple(get_i<0, Size>::go(_queue, _pop_index, [](auto& c) { return c.front(); }, first_t<T...>()));
+        return std::make_tuple(get_i<0, Size>::go(_queue, 
+                                                  _index, [](auto& c) { return c.front(); }, 
+                                                  first_t<T...>{} ));
     }
 
     void pop_front() {
-        void_i<0, Size>::go(_queue, _pop_index, [](auto& c) { c.pop_front(); });
+        void_i<0, Size>::go(_queue, _index, [](auto& c) { c.pop_front(); });
+        _popped_index = _index;
+        ++_index;
+        if (_index == Size) _index = 0; // restart from the first sender
     }
 
     auto size() const {
         queue_size_t result;
         std::size_t i = 0;
-        tuple_for_each(_queue, [&i, &result](const auto& c) { result[i++] = c.size(); });
+        tuple_for_each(_queue, [&i, &result, this](const auto& c) 
+        {
+            if (i == _popped_index) result[i] = c.size();
+            else result[i] = std::numeric_limits<std::size_t>::max();
+            ++i;
+        });
+
         return result;
     }
 
@@ -612,6 +630,7 @@ struct shared_process : shared_process_receiver<R>,
         bool do_run = false;
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
+            assert(_process_suspend_count > 0 && "Error: Try to unsuspend, but not suspended!");
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
@@ -645,7 +664,7 @@ struct shared_process : shared_process_receiver<R>,
             auto queue_size = _queue.size();
             std::size_t i{ 0 };
             std::for_each(queue_size.begin(), queue_size.end(),
-                [&do_cts, &i,this](const auto& size) {
+                [&do_cts, &i,this](auto size) {
                 do_cts[i] = size <= (_process_buffer_size - 1);
                 ++i;
             });
@@ -662,7 +681,7 @@ struct shared_process : shared_process_receiver<R>,
         std::tie(message, do_cts, do_close) = pop_from_queue();
 
         std::size_t i = 0;
-        tuple_for_each(_upstream, [do_cts,&i](const auto& u) {
+        tuple_for_each(_upstream, [do_cts,&i](auto& u) {
             if (do_cts[i] && u) u->clear_to_send();
             ++i;
         });
@@ -757,7 +776,7 @@ struct shared_process : shared_process_receiver<R>,
         std::tie(message, do_cts, do_close) = pop_from_queue();
 
         std::size_t i = 0;
-        tuple_for_each(_upstream, [do_cts, &i](const auto& u) {
+        tuple_for_each(_upstream, [do_cts, &i](auto& u) {
             if (do_cts[i] && u) u->clear_to_send();
             ++i;
         });
