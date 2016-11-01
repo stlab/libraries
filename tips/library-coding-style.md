@@ -1,16 +1,13 @@
 ---
 title: Library Coding Style
-tagline: Too many projects, too little time
 layout: page
 tags: [tips]
 comments: true
 ---
 
-## Introduction
-
 This guide is intended to augment existing code guidelines to ensure that code from one project can be easily reused within another. These guidelines are intended to make it easier to share code between internal projects and with external projects.
 
-Write all code as if it were a library
+### Write all code as if it were a library
 
 These guidelines should apply to all the code you write. Even if you don't intend your code to be reused, someone else may find it useful. Following these rules will make it easier for them and won't make your job significantly more difficult. You might even find these make your code more readable. When you write code, consider what would happen if an external library were written following the same style. Would you be able to use that external library or would it likely conflict with your own code?
 
@@ -80,7 +77,7 @@ When adding code that augments an existing library name it to match the library 
 
 ## Patching, Augmenting, and Forking
 
-Sometimes a library you depend on doesn't quite meet your needs. If the reason is a defect in the original library then write a patch. The patch code should be delineated with a comment as to what is being fixed and for what project. Then figure out the proper way to get the path upstreamed. Likely this will require writing a bug and possibly submitting a changelist, include this comment in the local patch. Example:
+Sometimes a library you depend on doesn't quite meet your needs. If the reason is a defect in the original library then write a patch. The patch code should be delineated with a comment as to what is being fixed and for what project. Then figure out the proper way to get the patch upstreamed. Likely this will require writing a bug and possibly submitting a changelist or pull-request. Include a comment with the bug and patch information in the local patch. Example:
 
 ```cpp
 // FIX <ORGANIZATION> <PROJECT NAME>
@@ -94,7 +91,7 @@ if (x < static_cast<unsigned int>(y))
 // END FIX
 ```
 
-Log the fix in the `README.md` file in the directory for the component.
+Log the fix in a `README.md` file in the directory for the component.
 
 Often is it tempting to start adding new functions to a component you've pulled in. Don't. Instead, add a companion library to augment the original library.
 

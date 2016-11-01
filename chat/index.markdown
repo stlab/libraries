@@ -2,7 +2,6 @@
 layout: page
 title: "Chat"
 date: 2014-06-17 21:41
-comments: true
 sharing: true
 footer: true
 ---

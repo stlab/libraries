@@ -24,6 +24,8 @@ exclude:
 # Build settings
 markdown: kramdown
 
-# Disqus Comments
-disqus_short_name: stlab-cc
-disqus_show_comment_count: false
+#wire this up
+comments :
+  provider : disqus
+  disqus :
+    short_name : stlab-cc

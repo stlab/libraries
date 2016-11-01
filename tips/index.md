@@ -1,8 +1,9 @@
 ---
 title: Tips
-tagline: Goals for Software Developers
 layout: page
 ---
+
+From time-to-time I've posted programming tips (often these have been internal emails), blog posts, or other short form writings. I'm gathering ones that might be of general interest here, updating them in the process.
 
 ## Contents
 
