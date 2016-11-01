@@ -13,7 +13,7 @@ However this definition has been abused over the years - Back in 2003 I gave a t
 
 >A view object knows how to display and possibly edit data from the application’s model… A controller object acts as the intermediary between the application’s view objects and its model objects… Controllers are often the least reusable objects in an application, but that’s acceptable…[^sfu]
 
-Of course it isn't _acceptable_ and, over the years, Apple has refined their definition and now acknowledge the distinction between the _traditional_ Smalltalk version of MVC and the Cocoa version. (3) But the Cocoa version is still defined much as it was before:
+Of course it isn't _acceptable_ and, over the years, Apple has refined their definition and now acknowledge the distinction between the _traditional_ Smalltalk version of MVC and the Cocoa version.[^objc] But the Cocoa version is still defined much as it was before:
 
 >A view object knows how to display, and might allow users to edit, the data from the application’s model… A controller object acts as the intermediary between the application’s view objects and its model objects…[^objc]
 
