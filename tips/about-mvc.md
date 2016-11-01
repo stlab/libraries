@@ -27,7 +27,7 @@ Here the solid lines imply a direct association. And the dashed lines an indirec
 
 Often the function of the Controller and View are tightly coupled into a "widget" or "control". When Apple talks about a View-Controller in their model they are talking about a grab-bag of an uber-widget that is a composite of UIView widgets and multiple models. From what I've seen, including in Apple's example code, it is usually a pretty big mess.
 
-The key to getting MVC correct is understanding what models are. A model is simply an object[^eop] which can be _observed_ (a requirement for attaching views). For example, in ObjC an int is an object, but it is not observable. However, an ObjC object with an int property is observable using Key-Value Observing[^kvo].  A model may encapsulate complex relationships between the models properties. A trivial model is one where each property is completely independent (think C struct vs. C++ class). From a notification the view should be able to determine, at a minimum:
+The key to getting MVC correct is understanding what models are. A model is simply an object[^eop] which can be _observed_ (a requirement for attaching views). For example, in ObjC an int is an object, but it is not observable. However, an ObjC object with an int property is observable using Key-Value Observing[^kvo].  A model may encapsulate complex relationships between the model’s properties. A trivial model is one where each property is completely independent (think C struct vs. C++ class). From a notification the view should be able to determine, at a minimum:
 
 1. What changed. It may be as simple as "the model bound to the view".
 2. The new value to display.
