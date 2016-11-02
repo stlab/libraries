@@ -1,6 +1,12 @@
 PROJECT(future_test)
 
 set(SOURCE
+  channel_functor_tests.cpp
+  channel_join_tests.cpp
+  channel_merge_tests.cpp
+  channel_process_tests.cpp
+  channel_tests.cpp
+  channel_zip_tests.cpp
   future_recover_tests.cpp
   future_tests.cpp
   future_then_tests.cpp
@@ -13,6 +19,7 @@ set(SOURCE
 )
 
 set(HEADERS
+  channel_test_helper.hpp
   test_helper.hpp
 )
 
@@ -23,9 +30,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(
     future_test
     future
+    #Boost::unit_test_framework
+    #Boost::system
+    #Boost::thread
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_THREAD_LIBRARY}
+    #${Boost_SYSTEM_LIBRARY}
+    #${Boost_THREAD_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT})
 
 

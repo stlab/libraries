@@ -1212,6 +1212,7 @@ class sender {
     }
 
     sender& operator=(sender&&) noexcept = default;
+
     void close() {
         auto p = _p.lock();
         if (p) p->remove_sender();
