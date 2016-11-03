@@ -48,15 +48,15 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
     BOOST_AUTO_TEST_CASE(int_channel_move_ctor_sender) {
         BOOST_TEST_MESSAGE("int channel move ctor sender");
 
-        int result{0};
+        std::atomic_int result{0};
 
-        auto check = _receive | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = _receive | [&_result = result](int x) { _result = x; };
         auto sut = std::move(_send);
 
         _receive.set_ready();
         sut(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -65,15 +65,15 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         BOOST_TEST_MESSAGE("int channel move assignment sender");
 
         stlab::sender<int> sut;
-        int result{ 0 };
+        std::atomic_int result{ 0 };
 
-        auto check = _receive | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = _receive | [&_result = result](int x) { _result = x; };
         sut = std::move(_send);
 
         _receive.set_ready();
         sut(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -81,50 +81,48 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
     BOOST_AUTO_TEST_CASE(int_channel_copy_ctor_sender) {
         BOOST_TEST_MESSAGE("int channel copy ctor sender");
 
-        int result{ 0 };
+        std::atomic_int result{ 0 };
 
-        auto check = _receive | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = _receive | [&_result = result](int x) { _result = x; };
         auto sut(_send);
 
         _receive.set_ready();
         sut(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
 
         result = 0;
-        undone();
 
-        _send(42);
+        _send(4711);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 4711; });
 
-        BOOST_REQUIRE_EQUAL(42, result);
+        BOOST_REQUIRE_EQUAL(4711, result);
     }
 
     BOOST_AUTO_TEST_CASE(int_channel_copy_assignment_sender) {
         BOOST_TEST_MESSAGE("int channel copy assignment sender");
 
         stlab::sender<int> sut;
-        int result{ 0 };
+        std::atomic_int result{ 0 };
 
-        auto check = _receive | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = _receive | [&_result = result](int x) { _result = x; };
         sut = _send;
 
         _receive.set_ready();
         sut(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     
         result = 0;
-        undone();
         
         _send(4711);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 4711; });
 
         BOOST_REQUIRE_EQUAL(4711, result);
     }
@@ -132,15 +130,15 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
     BOOST_AUTO_TEST_CASE(int_channel_move_ctor_receiver) {
         BOOST_TEST_MESSAGE("int channel move ctor receiver");
         
-        int result{ 0 };
+        std::atomic_int result{ 0 };
     
         auto sut = std::move(_receive);
 
-        auto check = sut | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = sut | [&_result = result](int x) { _result = x; };
         sut.set_ready();
         _send(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -149,15 +147,15 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         BOOST_TEST_MESSAGE("int channel move assignment receiver");
 
         stlab::receiver<int> sut;
-        int result{ 0 };
+        std::atomic_int result{ 0 };
 
         sut = std::move(_receive);
-        auto check = sut | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = sut | [&_result = result](int x) { _result = x; };
 
         sut.set_ready();
         _send(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -165,17 +163,17 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
     BOOST_AUTO_TEST_CASE(int_channel_copy_ctor_receiver) {
         BOOST_TEST_MESSAGE("int channel copy ctor receiver");
 
-        int result{ 0 };
+        std::atomic_int result{ 0 };
 
         auto sut(_receive);
 
-        auto check = sut | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = sut | [&_result = result](int x) { _result = x; };
     
         _receive.set_ready();
         sut.set_ready();
         _send(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -184,18 +182,18 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         BOOST_TEST_MESSAGE("int channel copy assignment receiver");
 
         stlab::receiver<int> sut;
-        int result{ 0 };
+        std::atomic_int result{ 0 };
 
         sut = _receive;
 
-        auto check = sut | [&_result = result, this](int x) { _result = x; _done = true; };
+        auto check = sut | [&_result = result](int x) { _result = x; };
 
         _receive.set_ready();
         sut.set_ready();
 
         _send(42);
 
-        wait_until_done();
+        wait_until_done([&_result = result]() { return _result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }

@@ -17,18 +17,15 @@ class channel_test_fixture
 public:
     stlab::sender<T> _send;
     stlab::receiver<T> _receive;
-    std::atomic_bool _done;
 
     channel_test_fixture() 
-        : _done{false}
     {
         std::tie(_send, _receive) = stlab::channel<T>(stlab::default_scheduler());
     }
 
-    void undone() { _done = false; }
-
-    void wait_until_done() const {
-        while (!_done) {
+    template <typename F>
+    void wait_until_done(F&& f) const {
+        while (!std::forward<F>(f)()) {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
