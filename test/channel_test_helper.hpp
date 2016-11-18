@@ -31,4 +31,29 @@ public:
     }
 };
 
+
+template <typename T1, typename T2>
+class channel_combine_test_fixture
+{
+public:
+    stlab::sender<T1> _send1;
+    stlab::receiver<T2> _receive1;
+    stlab::sender<T2> _send2;
+    stlab::receiver<T2> _receive2;
+
+    channel_combine_test_fixture()
+    {
+        std::tie(_send1, _receive1) = stlab::channel<T1>(stlab::default_scheduler());
+        std::tie(_send2, _receive2) = stlab::channel<T2>(stlab::default_scheduler());
+    }
+
+    template <typename F>
+    void wait_until_done(F&& f) const {
+        while (!std::forward<F>(f)()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+        }
+    }
+};
+
+
 #endif
