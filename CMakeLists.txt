@@ -6,9 +6,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
   #set(CMAKE_CXX_FLAGS "-g -Wall -O3 -std=c++14 -fsanitize=thread -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
   set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
   set(CMAKE_LINK_FLAGS "-pthreads")
+  SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS})
 endif()
 
-if (APPLE OR WIN32)
+if (WIN32)
     set(Boost_USE_STATIC_LIBS TRUE)
 endif()
 
@@ -34,4 +35,3 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(playground)
-
