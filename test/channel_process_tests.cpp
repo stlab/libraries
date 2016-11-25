@@ -79,7 +79,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
 
         int expectation[] = { 1, 5, 9, 13, 17 };
         for (auto i = 0; i < 5; ++i) {
-            BOOST_REQUIRE_EQUAL(i, results[i]);
+            BOOST_REQUIRE_EQUAL(expectation[i], results[i]);
         }
     }
 
@@ -99,8 +99,6 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
         BOOST_REQUIRE_EQUAL(45, result);
     }
 
-
-    #if 0
     #ifdef STLAB_CHANNEL_MOVE_ONLY_SUPPORT
 
     BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor) {
@@ -129,29 +127,66 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
 
     #endif
 
-    BOOST_AUTO_TEST_CASE(int_channel_split_void_functor) {
-        BOOST_TEST_MESSAGE("int channel void functor");
+    BOOST_AUTO_TEST_CASE(int_channel_split_process_one_step) {
+        BOOST_TEST_MESSAGE("int channel split process one step");
 
-        stlab::sender<int> send;
-        stlab::receiver<int> receive;
-        std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
+        std::atomic_int index1{ 0 };
+        std::vector<int> results1(10);
+        std::atomic_int index2{ 0 };
+        std::vector<int> results2(10);
+
+        auto check1 = _receive | sum<1>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
+        auto check2 = _receive | sum<1>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
+
+        _receive.set_ready();
+        for (auto i = 0; i < 10; ++i) _send(i);
+
+        wait_until_done([&_index1 = index1, &_index2 = index2] { return _index1 == 10 && _index2 == 10; });
+
+        for (auto i = 0; i < 10; ++i) {
+            BOOST_REQUIRE_EQUAL(i, results1[i]);
+            BOOST_REQUIRE_EQUAL(i, results2[i]);
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE(int_channel_split_process_two_steps) {
+        BOOST_TEST_MESSAGE("int channel split process two steps");
+
+        std::atomic_int index1{ 0 };
+        std::vector<int> results1(5);
+        std::atomic_int index2{ 0 };
+        std::vector<int> results2(5);
+
+        auto check1 = _receive | sum<2>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
+        auto check2 = _receive | sum<2>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
+
+        _receive.set_ready();
+        for (auto i = 0; i < 10; ++i) _send(i);
+
+        wait_until_done([&_index1 = index1, &_index2 = index2] { return _index1 == 5 && _index2 == 5; });
+
+        int expectation[] = { 1, 5, 9, 13, 17 };
+        for (auto i = 0; i < 5; ++i) {
+            BOOST_REQUIRE_EQUAL(expectation[i], results1[i]);
+            BOOST_REQUIRE_EQUAL(expectation[i], results2[i]);
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE(int_channel_split_process_many_steps) {
+        BOOST_TEST_MESSAGE("int channel split process many steps");
+
         std::atomic_int result1{ 0 };
         std::atomic_int result2{ 0 };
 
-        auto check1 = receive | [&_result = result1](int x) { _result += x; };
-        auto check2 = receive | [&_result = result2](int x) { _result += x; };
+        auto check1 = _receive | sum<10>() | [&_result = result1](int x) { _result = x; };
+        auto check2 = _receive | sum<10>() | [&_result = result2](int x) { _result = x; };
 
-        receive.set_ready();
-        for (int i = 0; i < 10; ++i) send(1);
+        _receive.set_ready();
+        for (auto i = 0; i < 10; ++i) _send(i);
 
-        while (result1 < 10 && result2 < 10) {
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
-        }
+        wait_until_done([&_result1 = result1, &_result2 = result2] { return _result1 != 0 && _result2 != 0; });
 
-        BOOST_REQUIRE_EQUAL(10, result1);
-        BOOST_REQUIRE_EQUAL(10, result2);
+        BOOST_REQUIRE_EQUAL(45, result1);
+        BOOST_REQUIRE_EQUAL(45, result2);
     }
-
-    #endif
-
 BOOST_AUTO_TEST_SUITE_END()

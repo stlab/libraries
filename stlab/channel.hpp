@@ -982,79 +982,82 @@ struct shared_process : shared_process_receiver<R>,
 
 /**************************************************************************************************/
 
-template <typename P, typename URP, typename... R, std::size_t... I>
-void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<I...>) {
-    using shared_process_t = typename P::element_type;
-    using queue_t = typename shared_process_t::queue_strategy;
-    using process_t = typename shared_process_t::process_t;
-    using result_t = typename shared_process_t::result;
+// This helper class is necessary to encapsulate the following functions, because Clang
+// currently has a bug in accepting friend functions with auto return type
+struct channel_combiner
+{
 
-    (void)std::initializer_list<int>{(std::get<I>(upstream_receiver_processes)->map(
-        sender<R>(std::dynamic_pointer_cast<shared_process_sender<R>>(
-            std::dynamic_pointer_cast<shared_process_sender_i<queue_t, process_t, result_t, R, I, R...>>(p)))), 0)...};
-}
+    template <typename P, typename URP, typename... R, std::size_t... I>
+    static void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<I...>) {
+        using shared_process_t = typename P::element_type;
+        using queue_t = typename shared_process_t::queue_strategy;
+        using process_t = typename shared_process_t::process_t;
+        using result_t = typename shared_process_t::result;
 
-template <typename P, typename URP, typename...R>
-void map_as_sender(P& p, URP& upstream_receiver_processes) {
-    map_as_sender_<P, URP, R...>(p, upstream_receiver_processes, std::make_index_sequence<sizeof...(R)>());
-}
+        (void)std::initializer_list<int>{(std::get<I>(upstream_receiver_processes)->map(
+                sender<R>(std::dynamic_pointer_cast<shared_process_sender<R>>(
+                        std::dynamic_pointer_cast<shared_process_sender_i<queue_t, process_t, result_t, R, I, R...>>(p)))), 0)...};
+    }
 
-/**************************************************************************************************/
+    template <typename P, typename URP, typename...R>
+    static void map_as_sender(P& p, URP& upstream_receiver_processes) {
+        map_as_sender_<P, URP, R...>(p, upstream_receiver_processes, std::make_index_sequence<sizeof...(R)>());
+    }
 
-template <typename S, typename F, typename...R>
-auto join_(S&& s, F&& f, R&&... upstream_receiver) {
 
-    using result_t = yield_type<F, receiver_t<R>...>;
 
-    auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
-    auto join_process = std::make_shared<
-        shared_process<join_queue_strategy<receiver_t<R>...>,
-                       F,
-                       result_t,
-                       receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+    template <typename S, typename F, typename...R>
+    static auto join_(S&& s, F&& f, R&&... upstream_receiver) {
 
-    map_as_sender<decltype(join_process), decltype(upstream_receiver_processes), receiver_t<R>...>(join_process, upstream_receiver_processes);
+        using result_t = yield_type<F, receiver_t<R>...>;
 
-    return receiver<result_t>(std::move(join_process));
-}
+        auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
+        auto join_process = std::make_shared<
+            shared_process<join_queue_strategy<receiver_t<R>...>,
+                           F,
+                           result_t,
+                           receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
-/**************************************************************************************************/
+        map_as_sender<decltype(join_process), decltype(upstream_receiver_processes), receiver_t<R>...>(join_process, upstream_receiver_processes);
 
-template <typename S, typename F, typename...R>
-auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
-    // TODO FP static_assert, that all upstream_receiver are of the same type
-    using result_t = yield_type<F, receiver_t<first_t<R...>>>;
+        return receiver<result_t>(std::move(join_process));
+    }
 
-    auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
-    auto zip_process = std::make_shared<
-        shared_process<zip_queue_strategy<receiver_t<R>...>,
-        F,
-        result_t,
-        receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
-    map_as_sender<decltype(zip_process), decltype(upstream_receiver_processes), receiver_t<R>...>(zip_process, upstream_receiver_processes);
+    template <typename S, typename F, typename...R>
+    static auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
+        // TODO FP static_assert, that all upstream_receiver are convertable to the first type
+        using result_t = yield_type<F, receiver_t<first_t<R...>>>;
 
-    return receiver<result_t>(std::move(zip_process));
-}
+        auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
+        auto zip_process = std::make_shared<
+            shared_process<zip_queue_strategy<receiver_t<R>...>,
+            F,
+            result_t,
+            receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
-/**************************************************************************************************/
+        map_as_sender<decltype(zip_process), decltype(upstream_receiver_processes), receiver_t<R>...>(zip_process, upstream_receiver_processes);
 
-template <typename S, typename F, typename...R>
-auto merge_(S&& s, F&& f, R&&... upstream_receiver) {
-    // TODO FP static_assert, that all upstream_receiver are of the same type
-    using result_t = yield_type<F, receiver_t<first_t<R...>>>;
+        return receiver<result_t>(std::move(zip_process));
+    }
 
-    auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
-    auto merge_process = std::make_shared<
-        shared_process<merge_queue_strategy<receiver_t<R>...>,
-        F,
-        result_t,
-        receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
+    template <typename S, typename F, typename...R>
+    static auto merge_(S&& s, F&& f, R&&... upstream_receiver) {
+        // TODO FP static_assert, that all upstream_receiver are convertable to the first type
+        using result_t = yield_type<F, receiver_t<first_t<R...>>>;
 
-    map_as_sender<decltype(merge_process), decltype(upstream_receiver_processes), receiver_t<R>...>(merge_process, upstream_receiver_processes);
+        auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
+        auto merge_process = std::make_shared<
+            shared_process<merge_queue_strategy<receiver_t<R>...>,
+            F,
+            result_t,
+            receiver_t<R>...>>(std::move(s), std::forward<F>(f), upstream_receiver._p...);
 
-    return receiver<result_t>(std::move(merge_process));
-}
+        map_as_sender<decltype(merge_process), decltype(upstream_receiver_processes), receiver_t<R>...>(merge_process, upstream_receiver_processes);
+
+        return receiver<result_t>(std::move(merge_process));
+    }
+};
 
 /**************************************************************************************************/
 
@@ -1076,21 +1079,21 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 
 template <typename S, typename F, typename...R>
 auto join(S s, F f, R&&... upstream_receiver){
-    return detail::join_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+    return detail::channel_combiner::join_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename F, typename...R>
 auto zip(S s, F f, R&&... upstream_receiver) {
-    return detail::zip_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+    return detail::channel_combiner::zip_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename F, typename...R>
 auto merge(S s, F f, R&&... upstream_receiver) {
-    return detail::merge_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+    return detail::channel_combiner::merge_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
@@ -1111,21 +1114,12 @@ class receiver {
     template <typename U, typename V>
     friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
 
-    template <typename P, typename URP, typename... R, std::size_t... I>
-    friend void detail::map_as_sender_(P&, URP&, std::index_sequence<I...>);
-
-    template <typename S, typename F, typename...R>
-    friend auto detail::join_(S&&, F&&, R&&...);
-
-    template <typename S, typename F, typename...R>
-    friend auto detail::zip_(S&&, F&&, R&&...);
-
-    template <typename S, typename F, typename...R>
-    friend auto detail::merge_(S&&, F&&, R&&...);
+    friend struct detail::channel_combiner;
 
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
+
     using result_type = T;
 
     receiver() = default;
@@ -1187,8 +1181,7 @@ class sender {
     template <typename U, typename V>
     friend auto channel(V)->std::pair<sender<U>, receiver<U>>;
 
-    template <typename RC, typename P, typename...R, std::size_t... I>
-    friend void detail::map_as_sender_(RC&, P&, std::index_sequence<I...>);
+    friend struct detail::channel_combiner;
 
     sender(ptr_t p) : _p(std::move(p)) {}
 

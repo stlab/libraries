@@ -38,6 +38,5 @@ target_link_libraries(
     #${Boost_THREAD_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT})
 
-
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
