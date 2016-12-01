@@ -34,14 +34,16 @@ BOOST_AUTO_TEST_CASE(int_receiver) {
     BOOST_REQUIRE_EQUAL(true, receive.ready());
 }
 
-BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
+using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
+
+BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
     BOOST_AUTO_TEST_CASE(int_channel) {
         BOOST_TEST_MESSAGE("int channel");
 
-        BOOST_REQUIRE_EQUAL(false, _receive.ready());
+        BOOST_REQUIRE_EQUAL(false, _receive[0].ready());
 
-        _receive.set_ready();
-        BOOST_REQUIRE_EQUAL(true, _receive.ready());
+        _receive[0].set_ready();
+        BOOST_REQUIRE_EQUAL(true, _receive[0].ready());
     }
 
 
@@ -50,10 +52,10 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
 
         std::atomic_int result{0};
 
-        auto check = _receive | [&_result = result](int x) { _result = x; };
-        auto sut = std::move(_send);
+        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        auto sut = std::move(_send[0]);
 
-        _receive.set_ready();
+        _receive[0].set_ready();
         sut(42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
@@ -67,10 +69,10 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         stlab::sender<int> sut;
         std::atomic_int result{ 0 };
 
-        auto check = _receive | [&_result = result](int x) { _result = x; };
-        sut = std::move(_send);
+        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        sut = std::move(_send[0]);
 
-        _receive.set_ready();
+        _receive[0].set_ready();
         sut(42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
@@ -83,10 +85,10 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive | [&_result = result](int x) { _result = x; };
-        auto sut(_send);
+        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        auto sut(_send[0]);
 
-        _receive.set_ready();
+        _receive[0].set_ready();
         sut(42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
@@ -95,7 +97,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
 
         result = 0;
 
-        _send(4711);
+        _send[0](4711);
 
         wait_until_done([&_result = result]() { return _result == 4711; });
 
@@ -108,10 +110,10 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         stlab::sender<int> sut;
         std::atomic_int result{ 0 };
 
-        auto check = _receive | [&_result = result](int x) { _result = x; };
-        sut = _send;
+        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        sut = _send[0];
 
-        _receive.set_ready();
+        _receive[0].set_ready();
         sut(42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
@@ -120,7 +122,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
     
         result = 0;
         
-        _send(4711);
+        _send[0](4711);
 
         wait_until_done([&_result = result]() { return _result == 4711; });
 
@@ -132,11 +134,11 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         
         std::atomic_int result{ 0 };
     
-        auto sut = std::move(_receive);
+        auto sut = std::move(_receive[0]);
 
         auto check = sut | [&_result = result](int x) { _result = x; };
         sut.set_ready();
-        _send(42);
+        _send[0](42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
 
@@ -149,11 +151,11 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         stlab::receiver<int> sut;
         std::atomic_int result{ 0 };
 
-        sut = std::move(_receive);
+        sut = std::move(_receive[0]);
         auto check = sut | [&_result = result](int x) { _result = x; };
 
         sut.set_ready();
-        _send(42);
+        _send[0](42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
 
@@ -165,13 +167,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
 
         std::atomic_int result{ 0 };
 
-        auto sut(_receive);
+        auto sut(_receive[0]);
 
         auto check = sut | [&_result = result](int x) { _result = x; };
     
-        _receive.set_ready();
+        _receive[0].set_ready();
         sut.set_ready();
-        _send(42);
+        _send[0](42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
 
@@ -184,14 +186,14 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture<int>)
         stlab::receiver<int> sut;
         std::atomic_int result{ 0 };
 
-        sut = _receive;
+        sut = _receive[0];
 
         auto check = sut | [&_result = result](int x) { _result = x; };
 
-        _receive.set_ready();
+        _receive[0].set_ready();
         sut.set_ready();
 
-        _send(42);
+        _send[0](42);
 
         wait_until_done([&_result = result]() { return _result == 42; });
 

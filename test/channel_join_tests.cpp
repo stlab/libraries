@@ -17,168 +17,244 @@ Distributed under the Boost Software License, Version 1.0.
 
 using namespace stlab;
 
-BOOST_FIXTURE_TEST_SUITE(int_channel_join_void_functor, channel_test_fixture<int>)
+using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
 
-    BOOST_AUTO_TEST_CASE(int_channel_1_join_void_functor_one_value) {
-        BOOST_TEST_MESSAGE("int channel 1 join void functor one value");
+BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_one_value, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int channel void functor one value one value");
 
-        std::atomic_int result{ 0 };
+    std::atomic_int result{ 0 };
 
-        auto check = join(default_scheduler(), [&_result = result](int x) { _result = x; }, _receive);
+    auto check = join(default_scheduler(), [&_result = result](int x) { _result = x; }, _receive[0]);
 
-        _receive.set_ready();
-        _send(1);
+    _receive[0].set_ready();
+    _send[0](1);
 
-        wait_until_done([&_result = result]() { return _result != 0; });
+    wait_until_done([&_result = result]() { return _result != 0; });
 
-        BOOST_REQUIRE_EQUAL(1, result);
+    BOOST_REQUIRE_EQUAL(1, result);
+}
+
+BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_one_value_async, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int channel void functor one value asynchronously");
+
+    std::atomic_int result{ 0 };
+
+    auto check = join(default_scheduler(), [&_result = result](int x) { _result = x; }, _receive[0]);
+
+    _receive[0].set_ready();
+    auto f = async(default_scheduler(), [_sender = _send[0]]{ _sender(1); });
+
+    wait_until_done([&_result = result]() { return _result != 0; });
+
+    BOOST_REQUIRE_EQUAL(1, result);
+}
+
+BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_many_values, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int channel void functor many values");
+
+    std::atomic_int result{ 0 };
+
+    auto check = join(default_scheduler(), [&_result = result](int x) { _result += x; }, _receive[0]);
+
+    _receive[0].set_ready();
+    for (auto i = 1; i <= 100; ++i)
+        _send[0](i);
+
+    auto expected = 100 * (100+1) / 2;
+
+    wait_until_done([&_result = result, _expected = expected]() { return _result >= _expected; });
+
+    BOOST_REQUIRE_EQUAL(expected, result);
+}
+
+BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_many_values_async, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int channel void functor many values asynchronously");
+
+    std::atomic_int result{ 0 };
+
+    auto check = join(default_scheduler(), [&_result = result](int x) { _result += x; }, _receive[0]);
+
+    _receive[0].set_ready();
+    std::vector<future<void>> f(100);
+    for (auto i = 1; i <= 100; ++i) {
+        f.push_back(async(default_scheduler(), [_sender = _send[0], _i = i]{ _sender(_i); }));
     }
 
-    BOOST_AUTO_TEST_CASE(int_channel_1_join_void_functor_one_value_async) {
-        BOOST_TEST_MESSAGE("int channel 1 join void functor one value asynchronously");
+    auto expected = 100 * (100+1) / 2;
+    wait_until_done([&_result = result, _expected = expected]() { return _result >= _expected; });
 
-        std::atomic_int result{ 0 };
+    BOOST_REQUIRE_EQUAL(expected, result);
+}
 
-        auto check = join(default_scheduler(), [&_result = result](int x) { _result = x; }, _receive);
+using channel_test_fixture_int_2 = channel_test_fixture<int, 2>;
 
-        _receive.set_ready();
-        auto f = async(default_scheduler(), [_sender = _send]{ _sender(1); });
+BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_one_value, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int channel same type void functor oane value");
 
-        wait_until_done([&_result = result]() { return _result != 0; });
+    std::atomic_int result{ 0 };
 
-        BOOST_REQUIRE_EQUAL(1, result);
+    auto check = join(default_scheduler(),
+                         [&_result = result](int x, int y) { _result +=  2*x + 3*y; }, _receive[0], _receive[1]);
+
+    _receive[0].set_ready();
+    _receive[1].set_ready();
+    _send[0](2);
+    _send[1](3);
+
+    wait_until_done([&_result = result]() { return _result != 0; });
+
+    BOOST_REQUIRE_EQUAL(13, result);
+}
+
+BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_one_value_async, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int channel same type void functor one value asynchronously");
+
+    std::atomic_int result{ 0 };
+
+    auto check = join(default_scheduler(),
+                      [&_result = result](int x, int y) { _result +=  2*x + 3*y; }, _receive[0], _receive[1]);
+
+    _receive[0].set_ready();
+    _receive[1].set_ready();
+    auto f=async(default_scheduler(), [_send1 = _send[0], &_send2 = _send[1]]{// one copy,one reference
+        _send1(2);
+        _send2(3);
+    });
+
+
+    wait_until_done([&_result = result]() { return _result != 0; });
+
+    BOOST_REQUIRE_EQUAL(13, result);
+}
+
+BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_many_values, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int channel same type void functor many values");
+
+    std::atomic_int result{ 0 };
+
+    auto check = join(default_scheduler(),
+                             [&_result = result](int x, int y) { _result +=  2*x + 3*y; }, _receive[0], _receive[1]);
+
+    _receive[0].set_ready();
+    _receive[1].set_ready();
+    for (auto i = 0; i < 10; i++) {
+        _send[0](i);
+        _send[1](i+1);
     }
 
-    BOOST_AUTO_TEST_CASE(int_channel_1_join_void_functor_many_values) {
-        BOOST_TEST_MESSAGE("int channel 1 join void functor many values");
+    wait_until_done([&_result = result]() { return _result >= 255; });
 
-        std::atomic_int result{ 0 };
+    BOOST_REQUIRE_EQUAL(3 + 2+6 + 4+9 + 6+12 + 8+15 + 10+18 + 12+21 + 14+24 + 16+27 + 18+30 , result);
+}
 
-        auto check = join(default_scheduler(), [&_result = result](int x) { _result += x; }, _receive);
+BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_many_values_async, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int channel same type void functor many values asynchronously");
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i)
-            _send(i);
+    std::atomic_int result{ 0 };
 
-        wait_until_done([&_result = result]() { return _result >= 45; });
+    auto check = join(default_scheduler(),
+                      [&_result = result](int x, int y) { _result +=  2*x + 3*y; }, _receive[0], _receive[1]);
 
-        BOOST_REQUIRE_EQUAL(45, result);
+    _receive[0].set_ready();
+    _receive[1].set_ready();
+    std::vector<future<void>> f(20);
+    for (auto i = 0; i < 10; i++) {
+        f.push_back(async(default_scheduler(), [_send1 = _send[0], _i = i] { _send1(_i); }));
+        f.push_back(async(default_scheduler(), [&_send2 = _send[1],_i = i] { _send2(_i+1); }));
     }
 
-    BOOST_AUTO_TEST_CASE(int_channel_1_join_void_functor_many_values_async) {
-        BOOST_TEST_MESSAGE("int channel 1 join void functor many values asynchronously");
+    const auto expected = 3 + 2+6 + 4+9 + 6+12 + 8+15 + 10+18 + 12+21 + 14+24 + 16+27 + 18+30;
+    wait_until_done([&_result = result, _expected = expected]() { return _result >= expected; });
 
-        std::atomic_int result{ 0 };
+    BOOST_REQUIRE_EQUAL(expected, result);
+}
 
-        auto check = join(default_scheduler(), [&_result = result](int x) { _result += x; }, _receive);
+using channel_test_fixture_int_5 = channel_test_fixture<int, 5>;
+BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor, channel_test_fixture_int_5) {
+    BOOST_TEST_MESSAGE("int channel same type void functor");
 
-        _receive.set_ready();
-        std::vector<future<void>> f(10);
-        for (auto i = 0; i < 10; ++i) {
-            f.push_back(async(default_scheduler(), [_sender = _send, _i = i]{ _sender(_i); }));
-        }
+    std::atomic_int result{ 0 };
 
-        wait_until_done([&_result = result]() { return _result >= 45; });
+    auto check = join(default_scheduler(),
+                 [&_result = result](int v, int w, int x, int y, int z) {
+                     _result +=  2*v + 3*w + 4*x + 5*y + 6*z; },
+                 _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
 
-        BOOST_REQUIRE_EQUAL(45, result);
+    for (auto& r : _receive)
+        r.set_ready();
+
+    auto i = 2;
+    for (auto& s : _send)
+        s(i++);
+
+    const auto expectation = 4+9+16+25+36;
+    wait_until_done([&_result = result]() { return _result != 0; });
+
+    BOOST_REQUIRE_EQUAL(expectation, result);
+}
+
+BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_async, channel_test_fixture_int_5) {
+    BOOST_TEST_MESSAGE("int channel same type void functor asynchronous");
+
+    std::atomic_int result{ 0 };
+
+    auto check = join(default_scheduler(),
+                      [&_result = result](int v, int w, int x, int y, int z) {
+                          _result +=  2*v + 3*w + 4*x + 5*y + 6*z; },
+                      _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
+
+    for (auto& r : _receive)
+        r.set_ready();
+
+    std::vector<future<void>> f(5);
+    for (auto i = 0; i < 5; i++) {
+        f.push_back(async(default_scheduler(), [_send = _send[i], _i = i]{ _send(_i+2); }));
     }
 
-    BOOST_AUTO_TEST_CASE(int_channel_2_join_same_type_void_functor) {
-        BOOST_TEST_MESSAGE("int channel 2 join same type void functor");
+    wait_until_done([&_result = result]() { return _result != 0; });
+    auto expected = 4+9+16+25+36;
 
-        std::atomic_int result{ 0 };
-        sender<int> send2;
-        receiver<int> receive2;
-        std::tie(send2, receive2) = channel<int>(default_scheduler());
+    BOOST_REQUIRE_EQUAL(expected, result);
+}
 
-        auto check = join(default_scheduler(),
-                             [&_result = result](int x, int y) { _result +=  2*x + 3*y; }, _receive, receive2);
+using channel_types_test_fixture_int_string = channel_types_test_fixture<int, std::string>;
 
-        _receive.set_ready();
-        receive2.set_ready();
-        _send(2);
-        send2(3);
+BOOST_FIXTURE_TEST_CASE(int_channel_different_type_void_functor, channel_types_test_fixture_int_string) {
+    BOOST_TEST_MESSAGE("int channel different type void functor");
 
-        wait_until_done([&_result = result]() { return _result != 0; });
+    std::atomic_int result{ 0 };
 
-        BOOST_REQUIRE_EQUAL(13, result);
-    }
+    auto check = join(default_scheduler(),
+                      [&_result = result](int x, std::string y) { _result +=  2 + y.size(); },
+                      receive<0>(),
+                      receive<1>());
 
-    BOOST_AUTO_TEST_CASE(int_channel_2_join_same_type_void_functor_many_values) {
-        BOOST_TEST_MESSAGE("int channel 2 join same type void functor many values");
+    receive<0>().set_ready();
+    receive<1>().set_ready();
+    send<0>()(2);
+    send<1>()(std::string("Foo"));
 
-        std::atomic_int result{ 0 };
-        sender<int> send2;
-        receiver<int> receive2;
-        std::tie(send2, receive2) = channel<int>(default_scheduler());
+    wait_until_done([&_result = result]() { return _result != 0; });
 
-        auto check = join(default_scheduler(),
-                                 [&_result = result](int x, int y) { _result +=  2*x + 3*y; }, _receive, receive2);
+    BOOST_REQUIRE_EQUAL(5, result);
+}
 
-        _receive.set_ready();
-        receive2.set_ready();
-        for (auto i = 0; i < 10; i++) {
-            _send(i);
-            send2(i+1);
-        }
+BOOST_FIXTURE_TEST_CASE(int_channel_2_join_different_type_void_functor_async, channel_types_test_fixture_int_string) {
+    BOOST_TEST_MESSAGE("int channel 2 join different type void functor asynchronous");
 
-        wait_until_done([&_result = result]() { return _result >= 255; });
+    std::atomic_int result{ 0 };
 
-        BOOST_REQUIRE_EQUAL(3 + 2+6 + 4+9 + 6+12 + 8+15 + 10+18 + 12+21 + 14+24 + 16+27 + 18+30 , result);
-    }
+    auto check = join(default_scheduler(),
+                      [&_result = result](int x, std::string y) { _result +=  2 + y.size(); },
+                      receive<0>(),
+                      receive<1>());
 
-    BOOST_AUTO_TEST_CASE(int_channel_5_join_same_type_void_functor) {
-        BOOST_TEST_MESSAGE("int channel 5 join same type void functor");
+    receive<0>().set_ready();
+    receive<1>().set_ready();
+    auto f1 = async(default_scheduler(), [_send = send<0>()] { _send(2); });
+    auto f2 = async(default_scheduler(), [_send = send<1>()] { _send("Foo"); });
 
-        std::atomic_int result{ 0 };
-        sender<int> send2, send3, send4, send5;
-        receiver<int> receive2, receive3, receive4, receive5;
-        std::tie(send2, receive2) = channel<int>(default_scheduler());
-        std::tie(send3, receive3) = channel<int>(default_scheduler());
-        std::tie(send4, receive4) = channel<int>(default_scheduler());
-        std::tie(send5, receive5) = channel<int>(default_scheduler());
+    wait_until_done([&_result = result]() { return _result != 0; });
 
-        auto check = join(default_scheduler(),
-                     [&_result = result](int v, int w, int x, int y, int z) {
-                         _result +=  2*v + 3*w + 4*x + 5*y + 6*z; },
-                     _receive, receive2, receive3, receive4, receive5);
-
-        _receive.set_ready();
-        receive2.set_ready();
-        receive3.set_ready();
-        receive4.set_ready();
-        receive5.set_ready();
-
-        _send(2);
-        send2(3);
-        send3(4);
-        send4(5);
-        send5(6);
-
-        wait_until_done([&_result = result]() { return _result != 0; });
-
-        BOOST_REQUIRE_EQUAL(4+9+16+25+36, result);
-    }
-
-    BOOST_AUTO_TEST_CASE(int_channel_2_join_different_type_void_functor) {
-        BOOST_TEST_MESSAGE("int channel 2 join different type void functor");
-
-        std::atomic_int result{ 0 };
-        sender<std::string> send2;
-        receiver<std::string> receive2;
-        std::tie(send2, receive2) = channel<std::string>(default_scheduler());
-
-        auto check = join(default_scheduler(),
-                                 [&_result = result](int x, std::string y) { _result +=  2 + y.size(); }, _receive, receive2);
-
-        _receive.set_ready();
-        receive2.set_ready();
-        _send(2);
-        send2(std::string("Foo"));
-
-        wait_until_done([&_result = result]() { return _result != 0; });
-
-        BOOST_REQUIRE_EQUAL(5, result);
-    }
-
-BOOST_AUTO_TEST_SUITE_END()
+    BOOST_REQUIRE_EQUAL(5, result);
+}

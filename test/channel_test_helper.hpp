@@ -11,24 +11,48 @@ Distributed under the Boost Software License, Version 1.0.
 
 #include <stlab/channel.hpp>
 
-template <typename T>
-class channel_test_fixture
+struct channel_test_fixture_base
 {
-public:
-    stlab::sender<T> _send;
-    stlab::receiver<T> _receive;
-
-    channel_test_fixture() 
-    {
-        std::tie(_send, _receive) = stlab::channel<T>(stlab::default_scheduler());
-    }
-
     template <typename F>
     void wait_until_done(F&& f) const {
         while (!std::forward<F>(f)()) {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
+};
+
+template <typename T, std::size_t N>
+struct channel_test_fixture : channel_test_fixture_base
+{
+    std::array<stlab::sender<T>, N>  _send;
+    std::array<stlab::receiver<T>,N> _receive;
+
+    channel_test_fixture() 
+    {
+        for (auto i = 0; i < N; i++)
+            std::tie(_send[i], _receive[i]) = stlab::channel<T>(stlab::default_scheduler());
+    }
+};
+
+
+template <typename U, typename V>
+struct channel_types_test_fixture : channel_test_fixture_base
+{
+    std::tuple<stlab::sender<U>, stlab::sender<V>>   _send;
+    std::tuple<stlab::receiver<U>, stlab::receiver<V>> _receive;
+
+    channel_types_test_fixture()
+    {
+        std::tie(send<0>(), receive<0>()) = stlab::channel<U>(stlab::default_scheduler());
+        std::tie(send<1>(), receive<1>()) = stlab::channel<V>(stlab::default_scheduler());
+    }
+
+    template<std::size_t I>
+    auto& send() { return std::get<I>(_send); }
+
+    template <std::size_t I>
+    auto& receive() { return std::get<I>(_receive); }
+
 };
 
 

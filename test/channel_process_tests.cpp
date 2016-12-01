@@ -44,7 +44,9 @@ struct sum
     auto state() const { return _state; }
 };
 
-BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<int>)
+using channel_test_fixture_int_1 = channel_test_fixture<int,1>;
+
+BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_int_1)
 
     BOOST_AUTO_TEST_CASE(int_channel_process_with_one_step) {
         BOOST_TEST_MESSAGE("int channel process with one step");
@@ -52,10 +54,11 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
         std::atomic_int index{ 0 };
         std::vector<int> results(10);
 
-        auto check = _receive | sum<1>() | [&_index = index, &_results = results](int x) { _results[_index++] = x; };
+        auto check = _receive[0] | sum<1>() | [&_index = index, &_results = results](int x) { _results[_index++] = x; };
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i) _send(i);
+        _receive[0].set_ready();
+        for (auto i = 0; i < 10; ++i)
+            _send[0](i);
 
         wait_until_done([&_index = index] { return _index == 10; });
 
@@ -70,10 +73,11 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
         std::atomic_int index{ 0 };
         std::vector<int> results(5);
 
-        auto check = _receive | sum<2>() | [&_index = index, &_results = results](int x) { _results[_index++] = x; };
+        auto check = _receive[0] | sum<2>() | [&_index = index, &_results = results](int x) { _results[_index++] = x; };
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i) _send(i);
+        _receive[0].set_ready();
+        for (auto i = 0; i < 10; ++i)
+            _send[0](i);
 
         wait_until_done([&_index = index] { return _index == 5; });
 
@@ -89,10 +93,11 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive | sum<10>() | [&_result = result](int x) { _result = x; };
+        auto check = _receive[0] | sum<10>() | [&_result = result](int x) { _result = x; };
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i) _send(i);
+        _receive[0].set_ready();
+        for (auto i = 0; i < 10; ++i)
+            _send[0](i);
 
         wait_until_done([&_result = result] { return _result != 0; });
 
@@ -135,11 +140,12 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
         std::atomic_int index2{ 0 };
         std::vector<int> results2(10);
 
-        auto check1 = _receive | sum<1>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
-        auto check2 = _receive | sum<1>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
+        auto check1 = _receive[0] | sum<1>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
+        auto check2 = _receive[0] | sum<1>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i) _send(i);
+        _receive[0].set_ready();
+        for (auto i = 0; i < 10; ++i)
+            _send[0](i);
 
         wait_until_done([&_index1 = index1, &_index2 = index2] { return _index1 == 10 && _index2 == 10; });
 
@@ -157,11 +163,12 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
         std::atomic_int index2{ 0 };
         std::vector<int> results2(5);
 
-        auto check1 = _receive | sum<2>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
-        auto check2 = _receive | sum<2>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
+        auto check1 = _receive[0] | sum<2>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
+        auto check2 = _receive[0] | sum<2>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i) _send(i);
+        _receive[0].set_ready();
+        for (auto i = 0; i < 10; ++i)
+            _send[0](i);
 
         wait_until_done([&_index1 = index1, &_index2 = index2] { return _index1 == 5 && _index2 == 5; });
 
@@ -178,11 +185,12 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture<
         std::atomic_int result1{ 0 };
         std::atomic_int result2{ 0 };
 
-        auto check1 = _receive | sum<10>() | [&_result = result1](int x) { _result = x; };
-        auto check2 = _receive | sum<10>() | [&_result = result2](int x) { _result = x; };
+        auto check1 = _receive[0] | sum<10>() | [&_result = result1](int x) { _result = x; };
+        auto check2 = _receive[0] | sum<10>() | [&_result = result2](int x) { _result = x; };
 
-        _receive.set_ready();
-        for (auto i = 0; i < 10; ++i) _send(i);
+        _receive[0].set_ready();
+        for (auto i = 0; i < 10; ++i)
+            _send[0](i);
 
         wait_until_done([&_result1 = result1, &_result2 = result2] { return _result1 != 0 && _result2 != 0; });
 

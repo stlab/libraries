@@ -114,7 +114,7 @@ struct first_
 template <typename... T>
 using first_t = typename first_<T...>::type;
 
-/**************************************************************************************************/
+/********************************************************** ****************************************/
 
 template <typename> struct argument_of;
 template <typename R, typename Arg>
