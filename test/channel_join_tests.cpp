@@ -164,7 +164,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_many_values_asyn
     }
 
     const auto expected = 3 + 2+6 + 4+9 + 6+12 + 8+15 + 10+18 + 12+21 + 14+24 + 16+27 + 18+30;
-    wait_until_done([&_result = result, _expected = expected]() { return _result >= expected; });
+    wait_until_done([&]() { return result >= expected; });
 
     BOOST_REQUIRE_EQUAL(expected, result);
 }
@@ -188,7 +188,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor, channel_test_fi
         s(i++);
 
     const auto expectation = 4+9+16+25+36;
-    wait_until_done([&_result = result]() { return _result != 0; });
+    wait_until_done([&]() { return result != 0; });
 
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
@@ -211,7 +211,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_async, channel_t
         f.push_back(async(default_scheduler(), [_send = _send[i], _i = i]{ _send(_i+2); }));
     }
 
-    wait_until_done([&_result = result]() { return _result != 0; });
+    wait_until_done([&]() { return result != 0; });
     auto expected = 4+9+16+25+36;
 
     BOOST_REQUIRE_EQUAL(expected, result);

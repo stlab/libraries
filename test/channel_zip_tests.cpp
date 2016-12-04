@@ -166,26 +166,23 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async
     BOOST_TEST_MESSAGE("int zip channel same type void functor many values asynchronously");
 
     std::atomic_int result{ 0 };
-    std::atomic_int incrementer{1};
     auto check = zip(default_scheduler(),
-                     [&_result = result, &_incrementer = incrementer](int x) {
-                         printf("%d\n",x);
-                         _result +=  _incrementer*x;
-                         ++_incrementer;
+                     [&_result = result](int x) {
+                         _result +=  x;
                      },
                      _receive[0], _receive[1]);
 
     _receive[0].set_ready();
     _receive[1].set_ready();
-    std::vector<future<void>> f(20);
-    for (auto i = 0; i < 10; i+=2) {
+    std::vector<future<void>> f(200);
+    for (auto i = 1; i <= 200; i +=2 ) {
         f.push_back(async(default_scheduler(), [&_send1 = _send[0], _i = i] { _send1(_i); }));
-        f.push_back(async(default_scheduler(), [&_send2 = _send[1], _i = i] { _send2(_i); }));
+        f.push_back(async(default_scheduler(), [&_send2 = _send[1], _i = i] { _send2(_i+1); }));
     }
 
-    auto expectation = 0*1 + 1*2 + 1*3 + 2*4 + 2*5 + 3*6 + 3*7 + 4*8 + 4*9 + 5*10 +
-        5*11 + 6*12 + 6*13 + 7*14 + 7*15 + 8*16 + 8*17 + 9*18 + 9*19 + 10*20;
-    wait_until_done([&]() {  printf("%d %d\n", expectation, (int)result.load()); return result >= expectation; });
+    auto expectation = 200 * (200 + 1) / 2;
+        
+    wait_until_done([&]() {  return result >= expectation; });
 
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
