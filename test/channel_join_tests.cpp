@@ -19,8 +19,8 @@ using namespace stlab;
 
 using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
 
-BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_one_value, channel_test_fixture_int_1) {
-    BOOST_TEST_MESSAGE("int channel void functor one value one value");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_one_value, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int join channel void functor one value one value");
 
     std::atomic_int result{ 0 };
 
@@ -34,8 +34,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_one_value, channel_test_fixture
     BOOST_REQUIRE_EQUAL(1, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_one_value_async, channel_test_fixture_int_1) {
-    BOOST_TEST_MESSAGE("int channel void functor one value asynchronously");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_one_value_async, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int join channel void functor one value asynchronously");
 
     std::atomic_int result{ 0 };
 
@@ -49,8 +49,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_one_value_async, channel_test_f
     BOOST_REQUIRE_EQUAL(1, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_many_values, channel_test_fixture_int_1) {
-    BOOST_TEST_MESSAGE("int channel void functor many values");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_many_values, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int join channel void functor many values");
 
     std::atomic_int result{ 0 };
 
@@ -67,8 +67,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_many_values, channel_test_fixtu
     BOOST_REQUIRE_EQUAL(expected, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_many_values_async, channel_test_fixture_int_1) {
-    BOOST_TEST_MESSAGE("int channel void functor many values asynchronously");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_many_values_async, channel_test_fixture_int_1) {
+    BOOST_TEST_MESSAGE("int join channel void functor many values asynchronously");
 
     std::atomic_int result{ 0 };
 
@@ -88,8 +88,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_void_functor_many_values_async, channel_test
 
 using channel_test_fixture_int_2 = channel_test_fixture<int, 2>;
 
-BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_one_value, channel_test_fixture_int_2) {
-    BOOST_TEST_MESSAGE("int channel same type void functor oane value");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_one_value, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int join channel same type void functor oane value");
 
     std::atomic_int result{ 0 };
 
@@ -106,8 +106,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_one_value, channel_te
     BOOST_REQUIRE_EQUAL(13, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_one_value_async, channel_test_fixture_int_2) {
-    BOOST_TEST_MESSAGE("int channel same type void functor one value asynchronously");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_one_value_async, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int join channel same type void functor one value asynchronously");
 
     std::atomic_int result{ 0 };
 
@@ -127,8 +127,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_one_value_async, chan
     BOOST_REQUIRE_EQUAL(13, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_many_values, channel_test_fixture_int_2) {
-    BOOST_TEST_MESSAGE("int channel same type void functor many values");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_many_values, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int join channel same type void functor many values");
 
     std::atomic_int result{ 0 };
 
@@ -147,8 +147,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_many_values, channel_
     BOOST_REQUIRE_EQUAL(3 + 2+6 + 4+9 + 6+12 + 8+15 + 10+18 + 12+21 + 14+24 + 16+27 + 18+30 , result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_many_values_async, channel_test_fixture_int_2) {
-    BOOST_TEST_MESSAGE("int channel same type void functor many values asynchronously");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_many_values_async, channel_test_fixture_int_2) {
+    BOOST_TEST_MESSAGE("int join channel same type void functor many values asynchronously");
 
     std::atomic_int result{ 0 };
 
@@ -170,8 +170,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_many_values_async, ch
 }
 
 using channel_test_fixture_int_5 = channel_test_fixture<int, 5>;
-BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor, channel_test_fixture_int_5) {
-    BOOST_TEST_MESSAGE("int channel same type void functor");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor, channel_test_fixture_int_5) {
+    BOOST_TEST_MESSAGE("int join channel same type void functor");
 
     std::atomic_int result{ 0 };
 
@@ -193,8 +193,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor, channel_test_fixture
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_async, channel_test_fixture_int_5) {
-    BOOST_TEST_MESSAGE("int channel same type void functor asynchronous");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_async, channel_test_fixture_int_5) {
+    BOOST_TEST_MESSAGE("int join channel same type void functor asynchronous");
 
     std::atomic_int result{ 0 };
 
@@ -219,8 +219,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_same_type_void_functor_async, channel_test_f
 
 using channel_types_test_fixture_int_string = channel_types_test_fixture<int, std::string>;
 
-BOOST_FIXTURE_TEST_CASE(int_channel_different_type_void_functor, channel_types_test_fixture_int_string) {
-    BOOST_TEST_MESSAGE("int channel different type void functor");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_different_type_void_functor, channel_types_test_fixture_int_string) {
+    BOOST_TEST_MESSAGE("int join channel different type void functor");
 
     std::atomic_int result{ 0 };
 
@@ -239,8 +239,8 @@ BOOST_FIXTURE_TEST_CASE(int_channel_different_type_void_functor, channel_types_t
     BOOST_REQUIRE_EQUAL(5, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_channel_2_join_different_type_void_functor_async, channel_types_test_fixture_int_string) {
-    BOOST_TEST_MESSAGE("int channel 2 join different type void functor asynchronous");
+BOOST_FIXTURE_TEST_CASE(int_join_channel_2_join_different_type_void_functor_async, channel_types_test_fixture_int_string) {
+    BOOST_TEST_MESSAGE("int join channel 2 join different type void functor asynchronous");
 
     std::atomic_int result{ 0 };
 
@@ -258,3 +258,6 @@ BOOST_FIXTURE_TEST_CASE(int_channel_2_join_different_type_void_functor_async, ch
 
     BOOST_REQUIRE_EQUAL(5, result);
 }
+
+
+// TODO test as well switch order of sending values

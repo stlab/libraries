@@ -546,6 +546,7 @@ struct shared_process_sender_i : public shared_process_sender<Arg>
 {
     shared_process<Q, T, R, Args...>&  _shared_process;
 
+
     shared_process_sender_i(shared_process<Q, T, R, Args...>& sp)
         : _shared_process(sp)
     {}
@@ -623,7 +624,7 @@ struct shared_process : shared_process_receiver<R>,
     queue_strategy           _queue;
 
     timed_schedule_t         _scheduler;
-    T                        _process;
+    process_t                _process;
 
     std::mutex               _process_mutex;
 
@@ -986,7 +987,6 @@ struct shared_process : shared_process_receiver<R>,
 // currently has a bug in accepting friend functions with auto return type
 struct channel_combiner
 {
-
     template <typename P, typename URP, typename... R, std::size_t... I>
     static void map_as_sender_(P& p, URP& upstream_receiver_processes, std::index_sequence<I...>) {
         using shared_process_t = typename P::element_type;
@@ -1024,6 +1024,7 @@ struct channel_combiner
     }
 
 
+
     template <typename S, typename F, typename...R>
     static auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
         // TODO FP static_assert, that all upstream_receiver are convertable to the first type
@@ -1040,6 +1041,8 @@ struct channel_combiner
 
         return receiver<result_t>(std::move(zip_process));
     }
+
+
 
     template <typename S, typename F, typename...R>
     static auto merge_(S&& s, F&& f, R&&... upstream_receiver) {
@@ -1078,7 +1081,7 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 /**************************************************************************************************/
 
 template <typename S, typename F, typename...R>
-auto join(S s, F f, R&&... upstream_receiver){
+auto join(S s, F f, R&&... upstream_receiver) {
     return detail::channel_combiner::join_(std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
 
