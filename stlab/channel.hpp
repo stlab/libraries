@@ -139,13 +139,13 @@ using avoid = std::conditional_t<std::is_same<void, T>::value, avoid_, T>;
 /**************************************************************************************************/
 
 template <typename F, std::size_t...I, typename...T>
-auto invoke_(F&& f, std::tuple<boost::variant<T, std::exception_ptr>...>& t, std::index_sequence<I...>)
+auto invoke_(F&& f, std::tuple<T...>& t, std::index_sequence<I...>)
 {
     return std::forward<F>(f)(std::move(std::get<I>(t))...);
 }
 
 template <typename F, typename... Args>
-auto avoid_invoke(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
+auto avoid_invoke(F&& f, std::tuple<Args...>& t)
         -> std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
             yield_type<F, Args...>>
 {
@@ -194,7 +194,6 @@ struct shared_process_sender {
     virtual ~shared_process_sender() = default;
 
     virtual void send(avoid<T> x) = 0;
-    virtual void send(std::exception_ptr) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
 };
