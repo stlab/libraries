@@ -162,13 +162,21 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values, chan
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
 
-BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async, channel_test_fixture_int_2) {
+
+using channel_test_fixture_pair_2 = channel_test_fixture<std::pair<int, std::size_t>, 5>;
+
+BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async, channel_test_fixture_pair_2) {
     BOOST_TEST_MESSAGE("int zip channel same type void functor many values asynchronously");
 
-    std::atomic_int result{ 0 };
+    std::atomic_int  result{ 0 };
+    std::atomic_bool zipped_ok{ true };
+    int              expected_input = std::size_t( 0 );
+
     auto check = zip(default_scheduler(),
-                     [&_result = result](int x) {
-                         _result +=  x;
+                     [&](std::pair<int, std::size_t> x) {
+                         result +=  x.first;
+                         zipped_ok = zipped_ok && (x.second == expected_input);
+                         expected_input = expected_input==1? 0 : 1;
                      },
                      _receive[0], _receive[1]);
 
@@ -176,14 +184,19 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async
     _receive[1].set_ready();
     std::vector<future<void>> f(200);
     for (auto i = 1; i <= 200; i +=2 ) {
-        f.push_back(async(default_scheduler(), [&_send1 = _send[0], _i = i] { _send1(_i); }));
-        f.push_back(async(default_scheduler(), [&_send2 = _send[1], _i = i] { _send2(_i+1); }));
+        f.push_back(async(default_scheduler(), [&_send1 = _send[0], _i = i] {
+            _send1(std::make_pair(_i, std::size_t(0)));
+        }));
+        f.push_back(async(default_scheduler(), [&_send2 = _send[1], _i = i] {
+            _send2(std::make_pair(_i+1, std::size_t(1)));
+        }));
     }
 
     auto expectation = 200 * (200 + 1) / 2;
-        
+
     wait_until_done([&]() {  return result >= expectation; });
 
+    BOOST_REQUIRE_EQUAL(true, zipped_ok);
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
 
