@@ -80,4 +80,64 @@ public:
 };
 
 
+template <std::size_t N>
+struct sum
+{
+    int _number_additions{ 0 };
+    int _x{ 0 };
+    stlab::process_state_scheduled _state{ stlab::await_forever };
+
+    void await(int x)
+    {
+        _x += x;
+        ++_number_additions;
+        if (_number_additions == N)
+        {
+            _state = stlab::yield_immediate;
+        }
+    }
+
+    int yield()
+    {
+        auto result = _x;
+        _state = stlab::await_forever;
+        _number_additions = 0;
+        _x = 0;
+        return result;
+    }
+
+    auto state() const { return _state; }
+};
+
+
+template <std::size_t N>
+struct collector
+{
+    int _collected_items{ 0 };
+    std::vector<int> _c;
+
+    stlab::process_state_scheduled _state{ stlab::await_forever };
+
+    void await(int x)
+    {
+        _c.push_back(x);
+        ++_collected_items;
+        if (_collected_items == N)
+        {
+            _state = stlab::yield_immediate;
+        }
+    }
+
+    auto yield()
+    {
+        auto result = _c;
+        _state = stlab::await_forever;
+        _collected_items = 0;
+        _c.clear();
+        return result;
+    }
+
+    auto state() const { return _state; }
+};
+
 #endif

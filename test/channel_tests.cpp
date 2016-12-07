@@ -52,13 +52,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
 
         std::atomic_int result{0};
 
-        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        auto check = _receive[0] | [&](int x) { result = x; };
         auto sut = std::move(_send[0]);
 
         _receive[0].set_ready();
         sut(42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -69,13 +69,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
         stlab::sender<int> sut;
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        auto check = _receive[0] | [&](int x) { result = x; };
         sut = std::move(_send[0]);
 
         _receive[0].set_ready();
         sut(42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -85,13 +85,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        auto check = _receive[0] | [&](int x) { result = x; };
         auto sut(_send[0]);
 
         _receive[0].set_ready();
         sut(42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
 
@@ -99,7 +99,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
 
         _send[0](4711);
 
-        wait_until_done([&_result = result]() { return _result == 4711; });
+        wait_until_done([&] { return result == 4711; });
 
         BOOST_REQUIRE_EQUAL(4711, result);
     }
@@ -110,13 +110,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
         stlab::sender<int> sut;
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](int x) { _result = x; };
+        auto check = _receive[0] | [&](int x) { result = x; };
         sut = _send[0];
 
         _receive[0].set_ready();
         sut(42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     
@@ -124,7 +124,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
         
         _send[0](4711);
 
-        wait_until_done([&_result = result]() { return _result == 4711; });
+        wait_until_done([&] { return result == 4711; });
 
         BOOST_REQUIRE_EQUAL(4711, result);
     }
@@ -136,11 +136,11 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
     
         auto sut = std::move(_receive[0]);
 
-        auto check = sut | [&_result = result](int x) { _result = x; };
+        auto check = sut | [&](int x) { result = x; };
         sut.set_ready();
         _send[0](42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -152,12 +152,12 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
         std::atomic_int result{ 0 };
 
         sut = std::move(_receive[0]);
-        auto check = sut | [&_result = result](int x) { _result = x; };
+        auto check = sut | [&](int x) { result = x; };
 
         sut.set_ready();
         _send[0](42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -169,13 +169,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
 
         auto sut(_receive[0]);
 
-        auto check = sut | [&_result = result](int x) { _result = x; };
+        auto check = sut | [&](int x) { result = x; };
     
         _receive[0].set_ready();
         sut.set_ready();
         _send[0](42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&]() { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
@@ -188,18 +188,21 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
 
         sut = _receive[0];
 
-        auto check = sut | [&_result = result](int x) { _result = x; };
+        auto check = sut | [&](int x) { result = x; };
 
         _receive[0].set_ready();
         sut.set_ready();
 
         _send[0](42);
 
-        wait_until_done([&_result = result]() { return _result == 42; });
+        wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
     }
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
 
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
@@ -210,7 +213,7 @@ BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) | [&_result = result](int x) { _result += x; };
+        auto check = receive | stlab::buffer_size(bs) | [&](int x) { result += x; };
 
         receive.set_ready();
         send(1);
@@ -232,7 +235,7 @@ BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) | [&_result = result](int x) { _result += x; };
+        auto check = receive | stlab::buffer_size(bs) | [&](int x) { result += x; };
 
         receive.set_ready();
         send(1);
@@ -255,7 +258,7 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) | [&_result = result](int x) { _result += x; };
+        auto check = receive | stlab::buffer_size(bs) | [&](int x) { result += x; };
 
         receive.set_ready();
         for (auto i = 0; i < 10;++i) send(1);

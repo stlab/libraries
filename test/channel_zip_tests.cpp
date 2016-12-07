@@ -24,12 +24,12 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_one_value, channel_test_fix
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&_result = result](int x) { _result = x; }, _receive[0]);
+    auto check = zip(default_scheduler(), [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
     _send[0](1);
 
-    wait_until_done([&_result = result]() { return _result != 0; });
+    wait_until_done([&] { return result != 0; });
 
     BOOST_REQUIRE_EQUAL(1, result);
 }
@@ -39,12 +39,12 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_one_value_async, channel_te
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&_result = result](int x) { _result = x; }, _receive[0]);
+    auto check = zip(default_scheduler(), [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
     auto f = async(default_scheduler(), [_sender = _send[0]]{ _sender(1); });
 
-    wait_until_done([&_result = result]() { return _result != 0; });
+    wait_until_done([&]() { return result != 0; });
 
     BOOST_REQUIRE_EQUAL(1, result);
 }
@@ -54,7 +54,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_many_values, channel_test_f
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&_result = result](int x) { _result += x; }, _receive[0]);
+    auto check = zip(default_scheduler(), [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     for (auto i = 1; i <= 100; ++i)
@@ -62,7 +62,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_many_values, channel_test_f
 
     auto expected = 100 * (100+1) / 2;
 
-    wait_until_done([&_result = result, _expected = expected]() { return _result >= _expected; });
+    wait_until_done([&] { return result >= expected; });
 
     BOOST_REQUIRE_EQUAL(expected, result);
 }
@@ -72,16 +72,16 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_many_values_async, channel_
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&_result = result](int x) { _result += x; }, _receive[0]);
+    auto check = zip(default_scheduler(), [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     std::vector<future<void>> f(100);
     for (auto i = 1; i <= 100; ++i) {
-        f.push_back(async(default_scheduler(), [_sender = _send[0], _i = i]{ _sender(_i); }));
+        f.push_back(async(default_scheduler(), [_sender = _send[0], i]{ _sender(i); }));
     }
 
     auto expected = 100 * (100+1) / 2;
-    wait_until_done([&_result = result, _expected = expected]() { return _result >= _expected; });
+    wait_until_done([&] { return result >= expected; });
 
     BOOST_REQUIRE_EQUAL(expected, result);
 }
@@ -94,9 +94,9 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value, channe
     std::atomic_int result{ 0 };
     int incrementer{1};
     auto check = zip(default_scheduler(),
-                      [&_result = result, &_incrementer = incrementer](int x) {
-                          _result +=  _incrementer*x;
-                          ++_incrementer;
+                      [&](int x) {
+                          result += incrementer*x;
+                          ++incrementer;
                       },
                      _receive[0], _receive[1]);
 
@@ -106,7 +106,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value, channe
     _send[1](3);
 
     auto expectation = 2 + 2*3;
-    wait_until_done([&]() { return result >= expectation; });
+    wait_until_done([&] { return result >= expectation; });
 
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
@@ -117,9 +117,9 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value_async, 
     std::atomic_int result{ 0 };
     int incrementer{1};
     auto check = zip(default_scheduler(),
-                     [&_result = result, &_incrementer = incrementer](int x) {
-                         _result +=  _incrementer*x;
-                         ++_incrementer;
+                     [&](int x) {
+                         result += incrementer*x;
+                         ++incrementer;
                      },
                      _receive[0], _receive[1]);
 
@@ -131,7 +131,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value_async, 
     });
 
     auto expectation = 2 + 2*3;
-    wait_until_done([&]() { return result >= expectation; });
+    wait_until_done([&] { return result >= expectation; });
 
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
@@ -142,9 +142,9 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values, chan
     std::atomic_int result{ 0 };
     int incrementer{1};
     auto check = zip(default_scheduler(),
-                     [&_result = result, &_incrementer = incrementer](int x) {
-                         _result +=  _incrementer*x;
-                         ++_incrementer;
+                     [&](int x) {
+                         result += incrementer*x;
+                         ++incrementer;
                      },
                      _receive[0], _receive[1]);
 
@@ -157,7 +157,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values, chan
 
     auto expectation = 0*1 + 1*2 + 1*3 + 2*4 + 2*5 + 3*6 + 3*7 + 4*8 + 4*9 + 5*10 +
         5*11 + 6*12 + 6*13 + 7*14 + 7*15 + 8*16 + 8*17 + 9*18 + 9*19 + 10*20;
-    wait_until_done([&]() { return result >= expectation; });
+    wait_until_done([&] { return result >= expectation; });
 
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
@@ -194,7 +194,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async
 
     auto expectation = 200 * (200 + 1) / 2;
 
-    wait_until_done([&]() {  return result >= expectation; });
+    wait_until_done([&] {  return result >= expectation; });
 
     BOOST_REQUIRE_EQUAL(true, zipped_ok);
     BOOST_REQUIRE_EQUAL(expectation, result);
@@ -210,9 +210,9 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor, channel_test_fix
     std::atomic_int incrementer{1};
 
     auto check = zip(default_scheduler(),
-                      [&_result = result, &_incrementer = incrementer](int x) {
-                          _result +=  x*_incrementer;
-                        ++_incrementer;
+                      [&](int x) {
+                          result +=  incrementer * x;
+                        ++incrementer;
                       },
                       _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
 
@@ -224,7 +224,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor, channel_test_fix
         s(i++);
 
     const auto expected = 2*1 + 3*2 + 4*3 + 5*4 + 6*5;
-    wait_until_done([&]() { return result >= expected; });
+    wait_until_done([&] { return result >= expected; });
 
     BOOST_REQUIRE_EQUAL(expected, result);
 }
@@ -236,9 +236,9 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_async, channel_te
     std::atomic_int incrementer{1};
 
     auto check = zip(default_scheduler(),
-                     [&_result = result, &_incrementer = incrementer](int x) {
-                         _result +=  x*_incrementer;
-                         ++_incrementer;
+                     [&](int x) {
+                         result += incrementer * x;
+                         ++incrementer;
                      },
                      _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
 
@@ -252,7 +252,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_async, channel_te
     }
 
     const auto expected = 2*1 + 3*2 + 4*3 + 5*4 + 6*5;
-    wait_until_done([&]() { return result >= expected; });
+    wait_until_done([&] { return result >= expected; });
 
     BOOST_REQUIRE_EQUAL(expected, result);
 }

@@ -26,12 +26,12 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
         BOOST_TEST_MESSAGE("int channel void functor one value");
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](int x) { _result += x; };
+        auto check = _receive[0] | [&](int x) { result += x; };
 
         _receive[0].set_ready();
         _send[0](1);
 
-        wait_until_done([&_result = result]() { return _result != 0; });
+        wait_until_done([&]() { return result != 0; });
 
         BOOST_REQUIRE_EQUAL(1, result);
     }
@@ -41,13 +41,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
         BOOST_TEST_MESSAGE("int channel void functor two values");
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](int x) { _result += x; };
+        auto check = _receive[0] | [&](int x) { result += x; };
 
         _receive[0].set_ready();
         _send[0](1);
         _send[0](2);
 
-        wait_until_done([&_result = result]() { return _result == 3; });
+        wait_until_done([&]() { return result == 3; });
         BOOST_REQUIRE_EQUAL(3, result);
     }
 
@@ -56,13 +56,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](int x) { _result += x;  };
+        auto check = _receive[0] | [&](int x) { result += x;  };
 
         _receive[0].set_ready();
         for (int i = 0; i < 10; ++i)
             _send[0](1);
 
-        wait_until_done([&_result = result]() { return _result == 10; });
+        wait_until_done([&]() { return result == 10; });
         BOOST_REQUIRE_EQUAL(10, result);
     }
 
@@ -80,7 +80,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
         for (int i = 0; i < 10; ++i)
             _send[0](i);
 
-        wait_until_done([&_result1 = result1, &_result2 = result2]() { return _result1 == 45 && _result2 == 45; });
+        wait_until_done([&]() { return result1 == 45 && result2 == 45; });
 
         BOOST_REQUIRE_EQUAL(45, result1);
         BOOST_REQUIRE_EQUAL(45, result2);
@@ -92,13 +92,13 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [](int x) { return x + x; } | [&_result = result](int x) { _result += x; };
+        auto check = _receive[0] | [](int x) { return x + x; } | [&](int x) { result += x; };
 
         _receive[0].set_ready();
         for (int i = 0; i < 10; ++i)
             _send[0](i);
 
-        wait_until_done([&_result = result]() { return _result == 90; });
+        wait_until_done([&]() { return result == 90; });
         BOOST_REQUIRE_EQUAL(90, result);
     }
 
@@ -115,7 +115,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
         for (int i = 0; i < 10; ++i)
             _send[0](i);
 
-        wait_until_done([&_result1 = result1, &_result2 = result2] { return _result1 == 90 && _result2 == 90; });
+        wait_until_done([&] { return result1 == 90 && result2 == 90; });
 
         BOOST_REQUIRE_EQUAL(90, result1);
         BOOST_REQUIRE_EQUAL(90, result2);
@@ -139,7 +139,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
 
         _receive[0].set_ready();
 
-        wait_until_done([&_result1 = result1, &_result2 = result2] { return _result1 == 90 && _result2 == 90; });
+        wait_until_done([&] { return result1 == 90 && result2 == 90; });
 
         BOOST_REQUIRE_EQUAL(90, result1);
         BOOST_REQUIRE_EQUAL(90, result2);
@@ -157,7 +157,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
+        auto check = _receive[0] | [&](std::unique_ptr<int> x) { result += *x; };
 
         _receive[0].set_ready();
         for (int i = 0; i < 10; ++i) {
@@ -166,7 +166,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
             _send[0](std::move(arg));
         }
 
-        wait_until_done([&_result = result]() { return _result == 10; });
+        wait_until_done([&]() { return result == 10; });
         BOOST_REQUIRE_EQUAL(10, result);
     }
 
@@ -175,7 +175,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
+        auto check = _receive[0] | [&](std::unique_ptr<int> x) { result += *x; };
 
         _receive[0].set_ready();
         std::vector<future<void>>  f;
@@ -187,7 +187,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
             }));
         }
 
-        wait_until_done([&_result = result]() { return _result == 10; });
+        wait_until_done([&]() { return result == 10; });
         BOOST_REQUIRE_EQUAL(10, result);
     }
 
@@ -196,7 +196,9 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
+        auto check = _receive[0] |
+                [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } |
+                [&](std::unique_ptr<int> x) { result += *x; };
 
         _receive[0].set_ready();
         for (int i = 0; i < 10; ++i) {
@@ -215,7 +217,9 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
+        auto check = _receive[0] |
+                [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } |
+                [&](std::unique_ptr<int> x) { result += *x; };
 
         _receive[0].set_ready();
         std::vector<future<void>>  f;
