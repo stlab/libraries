@@ -10,6 +10,7 @@ Distributed under the Boost Software License, Version 1.0.
 #define _CHANNEL_TEST_HELPER_
 
 #include <stlab/channel.hpp>
+#include <vector>
 
 struct channel_test_fixture_base
 {
