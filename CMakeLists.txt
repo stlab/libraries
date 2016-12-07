@@ -15,6 +15,7 @@ endif()
 
 if(WIN32)
   add_definitions(-D_WIN32_WINNT=0x0601)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif(WIN32)
 
 set (Boost_MULTITHREADED ON) 

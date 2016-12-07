@@ -12,7 +12,11 @@ Distributed under the Boost Software License, Version 1.0.
 
 #include <stlab/channel.hpp>
 
+#include <vector>
+
 #include "channel_test_helper.hpp"
+
+using namespace stlab;
 
 using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
 
@@ -166,32 +170,66 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         BOOST_REQUIRE_EQUAL(10, result);
     }
 
-    #ifdef STLAB_CHANNEL_MOVE_ONLY_SUPPORT
+    BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor_async) {
+        BOOST_TEST_MESSAGE("move only int channel void functor asynchronously");
 
-    BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor) {
-            BOOST_TEST_MESSAGE("move only int channel int functor");
+        std::atomic_int result{ 0 };
 
-            stlab::sender<std::unique_ptr<int>> send;
-            stlab::receiver<std::unique_ptr<int>> receive;
-            std::tie(send, receive) = stlab::channel<std::unique_ptr<int>>(stlab::default_scheduler());
-            std::atomic_int result{ 0 };
+        auto check = _receive[0] | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
 
-            auto check = receive | [](std::unique<int> x) { *x += *x; return std::move(x); } | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
-
-            receive.set_ready();
-            for (int i = 0; i < 10; ++i) {
+        _receive[0].set_ready();
+        std::vector<future<void>>  f;
+        for (int i = 0; i < 10; ++i) {
+            f.push_back(async(default_scheduler(), [&_send = _send[0]] {
                 auto arg = std::make_unique<int>();
                 *arg = 1;
-                send(std::move(arg));
-            }
-
-            while (result < 20) {
-                std::this_thread::sleep_for(std::chrono::microseconds(1));
-            }
-
-            BOOST_REQUIRE_EQUAL(20, result);
+                _send(std::move(arg));
+            }));
         }
 
-    #endif
+        wait_until_done([&_result = result]() { return _result == 10; });
+        BOOST_REQUIRE_EQUAL(10, result);
+    }
+
+    BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor) {
+        BOOST_TEST_MESSAGE("move only int channel int functor");
+
+        std::atomic_int result{ 0 };
+
+        auto check = _receive[0] | [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
+
+        _receive[0].set_ready();
+        for (int i = 0; i < 10; ++i) {
+            auto arg = std::make_unique<int>();
+            *arg = 1;
+            _send[0](std::move(arg));
+        }
+
+        wait_until_done([&]() {  return result >= 20; });
+
+        BOOST_REQUIRE_EQUAL(20, result);
+    }
+
+    BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor_async) {
+        BOOST_TEST_MESSAGE("move only int channel int functor asynchronously");
+
+        std::atomic_int result{ 0 };
+
+        auto check = _receive[0] | [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } | [&_result = result](std::unique_ptr<int> x) { _result += *x; };
+
+        _receive[0].set_ready();
+        std::vector<future<void>>  f;
+        for (int i = 0; i < 10; ++i) {
+            f.push_back(async(default_scheduler(), [&_send = _send[0]]{
+                auto arg = std::make_unique<int>();
+            *arg = 1;
+            _send(std::move(arg));
+            }));
+        }
+
+        wait_until_done([&]() {  return result >= 20; });
+
+        BOOST_REQUIRE_EQUAL(20, result);
+    }
 
 BOOST_AUTO_TEST_SUITE_END()

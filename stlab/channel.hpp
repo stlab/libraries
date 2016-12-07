@@ -36,7 +36,7 @@ namespace stlab {
 
 /**************************************************************************************************/
 
-template <typename> class sender;
+template <typename, typename = void> class sender;
 template <typename> class receiver;
 
 /**************************************************************************************************/
@@ -91,7 +91,7 @@ I for_each_n(I p, N n, F f) {
 
 struct identity {
     template <typename T>
-    T operator()(T x) { return x; }
+    T operator()(T&& x) { return std::forward<T>(x); }
 };
 
 /**************************************************************************************************/
@@ -172,24 +172,24 @@ auto avoid_invoke(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>
 /**************************************************************************************************/
 
 template <typename F, std::size_t...I, typename...T>
-auto invoke_variant_(F&& f, std::tuple<boost::variant<T, std::exception_ptr>...>& t, std::index_sequence<I...>)
+auto invoke_variant_(F&& f, std::tuple<boost::variant<T, std::exception_ptr>...>&& t, std::index_sequence<I...>)
 {
     return std::forward<F>(f)(std::move(boost::get<T>(std::get<I>(t)))...);
 }
 
 template <typename F, typename... Args>
-auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
+auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>&& t)
 ->std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
     yield_type<F, Args...>>
 {
-    return invoke_variant_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
+    return invoke_variant_(std::forward<F>(f), std::move(t), std::make_index_sequence<sizeof...(Args)>());
 }
 
 template <typename F, typename... Args>
-auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>& t)
+auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>&& t)
 -> std::enable_if_t<std::is_same<void, yield_type<F, Args...>>::value, avoid_>
 {
-    invoke_variant_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
+    invoke_variant_(std::forward<F>(f), std::move(t), std::make_index_sequence<sizeof...(Args)>());
     return avoid_();
 }
 
@@ -449,18 +449,18 @@ struct zip_queue_strategy
     queue_t             _queue;
 
 
-    bool empty() const { return get_i<0, Size>::go(_queue, _index, [](const auto& c) { return c.empty(); }, true); }
+    bool empty() const { return get_i(_queue, _index, [](const auto& c) { return c.empty(); }, true); }
 
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
-        return std::make_tuple(get_i<0, Size>::go(_queue, 
-                                                  _index, 
-                                                  [](auto& c) { return c.front(); }, 
-                                                  item_t{} ));
+        return std::make_tuple(get_i(_queue, 
+                                     _index, 
+                                     [](auto& c) { return c.front(); }, 
+                                     item_t{} ));
     }
 
     void pop_front() {
-        void_i<0, Size>::go(_queue, _index, [](auto& c) { c.pop_front(); });
+        void_i(_queue, _index, [](auto& c) { c.pop_front(); });
         _popped_index = _index;
         ++_index;
         if (_index == Size) _index = 0; // restart from the first sender
@@ -504,13 +504,13 @@ struct merge_queue_strategy
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
         _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
-        return std::make_tuple(get_i<0, Size>::go(_queue, 
-                                                  _index, [](auto& c) { return c.front(); }, 
-                                                  item_t{} ));
+        return std::make_tuple(get_i(_queue, 
+                                     _index, [](auto& c) { return c.front(); }, 
+                                     item_t{} ));
     }
 
     void pop_front() {
-        void_i<0, Size>::go(_queue, _index, [](auto& c) { c.pop_front(); });
+        void_i(_queue, _index, [](auto& c) { c.pop_front(); });
         _popped_index = _index;
         ++_index;
         if (_index == Size) _index = 0; // restart from the first sender
@@ -646,8 +646,8 @@ struct downstream<R, std::enable_if_t<!std::is_copy_constructible<R>::value && !
     std::size_t size() const { return 1; }
 
     template <typename... Args>
-    void send(std::size_t n, Args&&... args) {
-        (*_data).(std::forward<Args>...);
+    void send(std::size_t, Args&&... args) {
+        if (_data) (*_data)(std::forward<Args>(args)...);
     }
 };
 
@@ -951,7 +951,7 @@ struct shared_process : shared_process_receiver<R>,
             }
             else {
                 try {
-                    broadcast(avoid_invoke_variant(_process, message.get()));
+                    broadcast(avoid_invoke_variant(_process, std::move(message.get())));
                 }
                 catch (...) {
                     broadcast(std::move(std::current_exception()));
@@ -1074,7 +1074,10 @@ struct channel_combiner
 
     template <typename S, typename F, typename...R>
     static auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
-        // TODO FP static_assert, that all upstream_receiver are convertable to the first type
+
+        static_assert(all_true<std::is_convertible<receiver_t<R>, receiver_t<first_t<R...>>>::value...>{}, 
+            "All receiver types must be convertible to the type of the firsts receiver type!");
+
         using result_t = yield_type<F, receiver_t<first_t<R...>>>;
 
         auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
@@ -1093,7 +1096,10 @@ struct channel_combiner
 
     template <typename S, typename F, typename...R>
     static auto merge_(S&& s, F&& f, R&&... upstream_receiver) {
-        // TODO FP static_assert, that all upstream_receiver are convertable to the first type
+
+        static_assert(all_true<std::is_convertible<receiver_t<R>, receiver_t<first_t<R...>>>::value...>{},
+            "All receiver types must be convertible to the type of the firsts receiver type!");
+
         using result_t = yield_type<F, receiver_t<first_t<R...>>>;
 
         auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
@@ -1155,7 +1161,7 @@ class receiver {
     ptr_t _p;
     bool _ready = false;
 
-    template <typename U>
+    template <typename U, typename>
     friend class sender;
 
     template <typename U>
@@ -1221,7 +1227,8 @@ class receiver {
 /**************************************************************************************************/
 
 template <typename T>
-class sender {
+class sender<T, detail::enable_if_copyable<T>>
+{
     using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
     ptr_t _p;
 
@@ -1254,6 +1261,48 @@ class sender {
         auto tmp = x; *this = std::move(tmp); return *this;
     }
 
+    sender& operator=(sender&&) noexcept = default;
+
+    void close() {
+        auto p = _p.lock();
+        if (p) p->remove_sender();
+        _p.reset();
+    }
+
+    template <typename... A>
+    void operator()(A&&... args) const {
+        auto p = _p.lock();
+        if (p) p->send(std::forward<A>(args)...);
+    }
+};
+
+template <typename T>
+class sender<T, detail::enable_if_not_copyable<T>>
+{
+    using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
+    ptr_t _p;
+
+    template <typename U>
+    friend class receiver;
+
+    template <typename U, typename V>
+    friend auto channel(V)->std::pair<sender<U>, receiver<U>>;
+
+    friend struct detail::channel_combiner;
+
+    sender(ptr_t p) : _p(std::move(p)) {}
+
+public:
+    sender() = default;
+
+    ~sender() {
+        auto p = _p.lock();
+        if (p) p->remove_sender();
+    }
+
+    sender(const sender& x) = delete;
+    sender(sender&&) noexcept = default;
+    sender& operator=(const sender& x) = delete;
     sender& operator=(sender&&) noexcept = default;
 
     void close() {

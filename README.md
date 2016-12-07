@@ -63,46 +63,47 @@ auto schedule = [](auto f) // F is void() and movable
 Here is an example scheduler that executes the task in the Qt main loop, e.g. to
 update an UI element.
 ```C++
-class QtScheduler
+class QtScheduler 
 {
-    class EventReceiver;
+  class EventReceiver;
 
-    class SchedulerEvent : public QEvent
-    {
-        std::function<void()> _f;
-        std::unique_ptr<EventReceiver> _receiver;
+  class SchedulerEvent : public QEvent
+  {
+    std::function<void()> _f;
+    std::unique_ptr<EventReceiver> _receiver;
 
-    public:
-        explicit SchedulerEvent(std::function<void()> f)
-            : QEvent(QEvent::User)
-            , _f(std::move(f))
-            , _receiver(new EventReceiver()) {
-        }
+  public:
+    explicit SchedulerEvent(std::function<void()> f)
+      : QEvent(QEvent::User)
+      , _f(std::move(f))
+      , _receiver(new EventReceiver()) {
+      _receiver()->moveToThread(QApplication::instance()->thread());
+    }
 
-        void execute() { _f(); }
+    void execute() { _f(); }
 
-        QObject *receiver() const { return _receiver.get(); }
-    };
+    QObject *receiver() const { return _receiver.get(); }
+  };
 
-    class EventReceiver : public QObject
-    {
-    public:
-        bool event(QEvent *event) override {
-            auto myEvent = dynamic_cast<SchedulerEvent*>(event);
-            if (myEvent) {
-                myEvent->execute();
-                return true;
-            }
-            return false;
-        }
-    };
+  class EventReceiver : public QObject
+  {
+  public:
+    bool event(QEvent *event) override {
+      auto myEvent = dynamic_cast<SchedulerEvent*>(event);
+      if (myEvent) {
+        myEvent->execute();
+        return true;
+      }
+      return false;
+    }
+  };
 
 public:
-    template <typename F>
-    void operator()(F&& f) {
-        auto event = new SchedulerEvent(std::forward<F>(f));
-        QApplication::postEvent(event->receiver(), event);
-    }
+  template <typename F>
+  void operator()(std::chrono::system_clock::time_point /*when*/, F&& f) {
+    auto event = new SchedulerEvent(std::forward<F>(f));
+    QApplication::postEvent(event->receiver(), event);
+  }
 };
 
 ```
