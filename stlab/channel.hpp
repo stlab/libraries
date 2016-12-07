@@ -357,7 +357,7 @@ void await_variant_args(P& p, std::tuple<boost::variant<T, std::exception_ptr>..
 template <typename...Args>
 bool argument_with_error(const std::tuple<boost::variant<Args, std::exception_ptr>...>& args)
 {
-    return tuple_find(args, [](auto c) { return static_cast<message_t>(c.which()) == message_t::error; }) != sizeof...(Args);
+    return tuple_find(args, [](auto&& c) { return static_cast<message_t>(c.which()) == message_t::error; }) != sizeof...(Args);
 }
 
 /**************************************************************************************************/
@@ -602,7 +602,55 @@ struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
 {
     shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) : shared_process_sender_i<Q, T, R, Args, I, Args...>(sp)... {}
 };
-    
+
+/**************************************************************************************************/
+
+template <typename R, typename Enabled = void>
+struct downstream;
+
+
+template <typename R>
+struct downstream<R, std::enable_if_t<std::is_copy_constructible<R>::value || std::is_same<R, void>::value >>
+{
+    std::deque<sender<R>> _data;
+
+    template <typename F>
+    void append_receiver(F&& f) {
+        _data.emplace_back(std::forward<F>(f));
+    }
+
+    void clear() { _data.clear(); }
+
+    std::size_t size() const { return _data.size(); }
+
+    template <typename... Args>
+    void send(std::size_t n, Args... args) {
+        for_each_n(begin(_data), n, [&](const auto& e){
+            e(args...);
+        });
+    }
+};
+
+template <typename R>
+struct downstream<R, std::enable_if_t<!std::is_copy_constructible<R>::value && !std::is_same<R, void>::value >>
+{
+    boost::optional<sender<R>> _data;
+
+    template <typename F>
+    void append_receiver(F&& f) {
+        _data = std::forward<F>(f);
+    }
+
+    void clear() { _data = boost::none; }
+
+    std::size_t size() const { return 1; }
+
+    template <typename... Args>
+    void send(std::size_t n, Args&&... args) {
+        (*_data).(std::forward<Args>...);
+    }
+};
+
 /**************************************************************************************************/
 
 template<typename Q, typename T, typename R, typename... Args>
@@ -619,8 +667,8 @@ struct shared_process : shared_process_receiver<R>,
     using queue_strategy    = Q;
     using process_t         = T;
 
-    std::mutex                   _downstream_mutex;
-    std::deque<sender<result>>   _downstream;
+    std::mutex               _downstream_mutex;
+    downstream<R>            _downstream;
     queue_strategy           _queue;
 
     timed_schedule_t         _scheduler;
@@ -921,7 +969,7 @@ struct shared_process : shared_process_receiver<R>,
     }
 
     template <typename... A>
-    void broadcast(const A&... args) {
+    void broadcast(A&&... args) {
         /*
             We broadcast the result to any processes currently attached to receiver
         */
@@ -953,9 +1001,8 @@ struct shared_process : shared_process_receiver<R>,
             n elements are good.
         */
 
-        for_each_n(begin(_downstream), n, [&](const auto& e){
-            e(args...);
-        });
+        _downstream.send(n, std::forward<A>(args)...);
+
 
         clear_to_send(); // unsuspend this process
     }
@@ -968,7 +1015,7 @@ struct shared_process : shared_process_receiver<R>,
         */
         {
             std::unique_lock<std::mutex> lock(_downstream_mutex);
-            _downstream.emplace_back(f);
+            _downstream.append_receiver(std::move(f));
         }
     }
 
