@@ -245,7 +245,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_2_join_different_type_void_functor_asyn
     std::atomic_int result{ 0 };
 
     auto check = join(default_scheduler(),
-                      [&](int x, std::string y) { result +=  2 + static_cast<int>(y.size()); },
+                      [&](int x, std::string y) { result +=  x + static_cast<int>(y.size()); },
                       receive<0>(),
                       receive<1>());
 
@@ -258,6 +258,3 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_2_join_different_type_void_functor_asyn
 
     BOOST_REQUIRE_EQUAL(5, result);
 }
-
-
-// TODO test as well switch order of sending values
