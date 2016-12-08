@@ -849,7 +849,7 @@ struct shared_process : shared_process_receiver<R>,
             // in case that the timeout function is just been executed then we have to re-schedule 
             // the current run
             std::unique_lock<std::mutex> lock(_process_mutex);
-            if (!_process_timeout_function.unique())
+            if (_process_timeout_function && !_process_timeout_function.unique())
                 do_run = true;
             else // otherwise we cancel the timeout
                 _process_timeout_function.reset();
