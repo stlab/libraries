@@ -128,7 +128,7 @@ struct collector
         }
     }
 
-    auto yield()
+    std::vector<int> yield()
     {
         auto result = _c;
         _state = stlab::await_forever;

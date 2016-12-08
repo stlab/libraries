@@ -681,7 +681,7 @@ struct shared_process : shared_process_receiver<R>,
     bool                     _process_close_queue = false;
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
-
+    std::shared_ptr<std::function<void()>> _process_timeout_function;
     std::atomic_size_t       _sender_count{0};
     std::atomic_size_t       _receiver_count;
 
@@ -844,6 +844,20 @@ struct shared_process : shared_process_receiver<R>,
 
     template <typename U>
     auto step() -> std::enable_if_t<has_process_yield_v<U>> {
+        bool do_run{ false };
+        {
+            // in case that the timeout function is just been executed then we have to re-schedule 
+            // the current run
+            std::unique_lock<std::mutex> lock(_process_mutex);
+            if (!_process_timeout_function.unique())
+                do_run = true;
+            else // otherwise we cancel the timeout
+                _process_timeout_function.reset();
+        }
+        if (do_run) {
+            run();
+            return;
+        }
         /*
             While we are awaiting we will flush the queue. The assumption here is that work
             is done on yield()
@@ -882,34 +896,35 @@ struct shared_process : shared_process_receiver<R>,
             }
             else {
                 /*
-                    REVISIT (sparent) : The case is not implemented.
+                REVISIT (sparent) : The case is not implemented.
 
-                    Schedule a timeout. If a new value is received then cancel pending timeout.
+                Schedule a timeout. If a new value is received then cancel pending timeout.
 
-                    Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
-                    not sufficient since process might have changed state many times before timeout
-                    is invoked.
+                Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
+                not sufficient since process might have changed state many times before timeout
+                is invoked.
 
-                    Timeout may occur concurrent with other operation - requires syncronization.
+                Timeout may occur concurrent with other operation - requires syncronization.
                 */
-                assert(false && "await with non-max/min timout not yet supported.");
 
+                _process_timeout_function = std::make_shared<std::function<void()>>([_weak_this = make_weak_ptr(this->shared_from_this())]{
+                    auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
+                    if (!_this) return;
+                    if (get_process_state(_this->_process).first != process_state::yield)
+                    {
+                        _this->try_broadcast();
+                    }
+                    // now we release the current timeout function
+                    std::unique_lock<std::mutex> lock(_this->_process_mutex);
+                    _this->_process_timeout_function.reset();
+                });
 
-#if 0 // This logic is flawed
-                if (get_process_state(_process).first == process_state::await &&
-                    get_process_state(_process).second > std::chrono::system_clock::now())
-                {
-                    _scheduler(get_process_state(_process).second, [_this = this->shared_from_this()]{
-                        if (get_process_state(_this->_process).first != process_state::yield)
-                        {
-                            _this->broadcast(_this->_process.yield());
-                        }
-                    });
-                }
-                else {
-                    task_done();
-                }
-#endif
+                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()), _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
+                    auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
+                    if (!_this) return;
+                    auto timeout_function = _weak_process_timeout.lock();
+                    if (timeout_function) (*timeout_function)();
+                });
             }
         }
         catch (...) { // this catches exceptions during _process.await() and _process.yield()
