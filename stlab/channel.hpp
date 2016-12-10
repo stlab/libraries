@@ -912,6 +912,7 @@ struct shared_process : shared_process_receiver<R>,
                     if (!_this) return;
                     if (get_process_state(_this->_process).first != process_state::yield)
                     {
+                        printf("Await timeout");
                         _this->try_broadcast();
                     }
                     // now we release the current timeout function
@@ -919,7 +920,8 @@ struct shared_process : shared_process_receiver<R>,
                     _this->_process_timeout_function.reset();
                 });
 
-                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()), _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
+                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()),
+                                  _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
                     auto timeout_function = _weak_process_timeout.lock();

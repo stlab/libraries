@@ -6,6 +6,7 @@ set(SOURCE
   channel_merge_tests.cpp
   channel_process_tests.cpp
   channel_tests.cpp
+  channel_test_helper.cpp
   channel_zip_tests.cpp
   future_recover_tests.cpp
   future_tests.cpp
