@@ -7,9 +7,8 @@ entities:
     defined-in-header: stlab/future.hpp
     declaration: |
         template <typename T> class future;
-    description:
-    member-types:
-      - type: 'value_type'
-        definition: '`T`'
+    description: TODO This implements a new future
+    details: stlab_future
     member-functions:
+  - kind: class
 ---
