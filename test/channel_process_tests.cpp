@@ -238,10 +238,15 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed) {
     receive.set_ready();
     send(42);
 
-    manual_scheduler::run_next_task(); // initial number
+    manual_scheduler::run_next_task();
 
     manual_scheduler::wait_until_queue_size_of(1);
+    manual_scheduler::run_next_task();
 
+    manual_scheduler::wait_until_queue_size_of(1);
+    manual_scheduler::run_next_task();
+
+    manual_scheduler::wait_until_queue_size_of(1);
     manual_scheduler::run_next_task();
 
     while(result == 0) {
@@ -249,4 +254,31 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed) {
     }
 
     BOOST_REQUIRE_EQUAL(42, result);
+}
+
+BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
+    BOOST_TEST_MESSAGE("int channel process with two steps timed w/o timeout");
+
+    std::atomic_int result{ 0 };
+    sender<int> send;
+    receiver<int> receive;
+
+    std::tie(send, receive) = channel<int>(default_scheduler());
+
+    auto check = receive | timed_sum(2) | [&](int x) { result = x; };
+
+    receive.set_ready();
+    send(42);
+
+    while (timed_sum::current_sum() != 42) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    send(43);
+
+    while (result == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    BOOST_REQUIRE_EQUAL(85, result);
 }

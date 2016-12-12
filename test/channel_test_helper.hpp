@@ -29,6 +29,7 @@ public:
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
+
     static void run_next_task() {
         if (_tasks.empty()) {
             printf("Function lost\n");
@@ -145,22 +146,32 @@ inline stlab::process_state_scheduled await_soon() {
 
 struct timed_sum
 {
+    int _limit;
     int _number_additions{ 0 };
-    int _x{ 0 };
+    static std::atomic_int _x;
+
+    timed_sum(int limit = 0) : _limit(limit) { _x = 0; }
+
     stlab::process_state_scheduled _state{ await_soon() };
 
     void await(int x) {
         _x += x;
         ++_number_additions;
+        if (_limit && _number_additions == _limit)
+        {
+            _state = stlab::yield_immediate;
+        }
     }
 
     int yield() {
-        auto result = _x;
+        auto result = _x.load();
         _state = stlab::await_forever;
         _number_additions = 0;
         _x = 0;
         return result;
     }
+
+    static int current_sum() { return _x.load(); }
 
     auto state() const { return _state; }
 };
