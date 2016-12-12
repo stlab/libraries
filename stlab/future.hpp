@@ -572,7 +572,7 @@ class future<T, detail::enable_if_copyable<T>> {
 
     future() = default;
 
-    bool valid() const { return static_cast<bool>(std::atomic_load(&_p)); }
+    bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
     auto then(F&& f) const& {
@@ -886,8 +886,6 @@ struct when_all_shared {
     void failure(std::exception_ptr error) {
         auto before = _error_happened.test_and_set();
         if (before == false) {
-            for (auto& h : _holds)
-                h.cancel_try();
             _error = std::move(error);
             _f();
         }
@@ -1082,8 +1080,6 @@ namespace detail
         static void go(C& context, F&& f, size_t index) {
             auto before = context._single_event_trigger.test_and_set();
             if (!before) {
-                for (auto& h : context._holds)
-                    h.cancel_try();
                 context.apply(std::forward<F>(f), index);
                 context._f();
             }
