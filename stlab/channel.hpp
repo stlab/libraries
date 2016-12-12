@@ -575,7 +575,7 @@ struct shared_process_sender_i : public shared_process_sender<Arg>
         {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
             _shared_process._queue.template append<I>(std::forward<U>(u)); // TODO (sparent) : overwrite here.
-            do_run = !_shared_process._receiver_count && !_shared_process._process_running;
+            do_run = !_shared_process._receiver_count && (!_shared_process._process_running || _shared_process._process_timeout_function);
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
         if (do_run) _shared_process.run();
@@ -851,7 +851,7 @@ struct shared_process : shared_process_receiver<R>,
             std::unique_lock<std::mutex> lock(_process_mutex);
             if (_process_timeout_function && !_process_timeout_function.unique())
                 do_run = true;
-            else // otherwise we cancel the timeout
+            else // If a new value is received then cancel pending timeout.
                 _process_timeout_function.reset();
         }
         if (do_run) {
@@ -895,18 +895,7 @@ struct shared_process : shared_process_receiver<R>,
                 broadcast(_process.yield());
             }
             else {
-                /*
-                REVISIT (sparent) : The case is not implemented.
-
-                Schedule a timeout. If a new value is received then cancel pending timeout.
-
-                Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
-                not sufficient since process might have changed state many times before timeout
-                is invoked.
-
-                Timeout may occur concurrent with other operation - requires syncronization.
-                */
-
+                /* Schedule a timeout. */
                 _process_timeout_function = std::make_shared<std::function<void()>>([_weak_this = make_weak_ptr(this->shared_from_this())]{
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
@@ -919,7 +908,8 @@ struct shared_process : shared_process_receiver<R>,
                     _this->_process_timeout_function.reset();
                 });
 
-                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()), _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
+                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()),
+                                  _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
                     auto timeout_function = _weak_process_timeout.lock();
