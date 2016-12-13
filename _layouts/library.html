@@ -52,7 +52,7 @@ layout: default
             {% highlight c++ %}{{ entity.declaration }}{% endhighlight %}
 			<table>
 			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-			<tr><a href="{{entity.details}}">{% highlight cpp %}{{ entity.name }}{% endhighlight %}</tr></a>
+			<tr><a href="{{entity.link}}">{% highlight cpp %}{{ entity.name }}{% endhighlight %}</tr></a>
 			</table>
         {% endcase %}
     {% endfor %}

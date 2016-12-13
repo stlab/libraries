@@ -9,12 +9,10 @@
 {% assign -figure-decimal = figure-number %}
 {% endif %}
 
-{% assign -figure-ref = '[figure ' | append: -figure-decimal
-        | append: '](#' | append: include.name | append: ')' %}
+{% assign -figure-ref = '[figure ' | append: -figure-decimal | append: '](#' | append: include.name | append: ')' %}
 
 {% if figure-reference %}
-    {% assign figure-reference = ((figure-reference | join: '$') | append: '$'
-        | append: -figure-ref) | split: '$' %}
+    {% assign figure-reference = ((figure-reference | join: '$') | append: '$' | append: -figure-ref) | split: '$' %}
 {% else %}
     {% assign figure-reference = -figure-ref | split: '$'  %}
 {% endif %}
