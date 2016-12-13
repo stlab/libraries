@@ -34,7 +34,7 @@ layout: default
             <table>
             {% for fun in entity.functions %}
             <tr>
-                <td><a href="{{fun.pure-name}}">{{fun.name}}</a></td>
+                <td><a href="{{entity.pure-name}}/{{fun.pure-name}}">{{fun.name}}</a></td>
                 <td>{{fun.description}}</td>
             </tr>
             {% endfor %}
