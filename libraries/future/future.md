@@ -8,7 +8,6 @@ declaration: future()
 description: Constructs a new future object
 entities:
   - kind: methods
-    descripion: Foo
     list:
       - name: stlab::future::future
         pure-name: future

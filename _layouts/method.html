@@ -8,23 +8,24 @@ layout: default
   </header>
 
   <article class="post-content">
-  <table>
-    <tr>{% highlight c++ %}{{ page.full-name }}{% endhighlight %}</tr>
+    <table>
+      <tr>{% highlight c++ %}{{ page.full-name }}{% endhighlight %}</tr>
       <tr>Defined in &lt{{page.defined-in-header}}&gt</tr>
+      <tr>{{ page.description }}</tr>
     </table>
     {% for entity in page.entities %}
-        {% case entity.kind %}
-          {% when 'methods' %}
-            <table>
+      {% case entity.kind %}
+        {% when 'methods' %}
+          <table>
             {% for item in entity.list %}
             <tr>
-              <td style="float:right">{% highlight c++ %}{{ item.pure-name }}{% endhighlight %}</td>
+              <td>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</td>
               <td>{{ item.description }}</td>
             </tr>
             {% endfor %}
             </table>
         {% else %}
-        {% endcase %}
+      {% endcase %}
     {% endfor %}
     {{ content }}
   </article>

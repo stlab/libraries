@@ -5,10 +5,9 @@ full-name: stlab::future::~future
 pure-name: future
 defined-in-header: stlab/future.hpp 
 declaration: ~future()
-description: Destructs the future object. A not started task will be canceled. A started task will be abandoned.
+description: Destructs the future object. A not started task will be canceled. An already running task will be abandoned and no potentially attached continuation will be triggered.
 entities:
   - kind: methods
-    descripion: Foo
     list:
       - name: stlab::future::~future
         pure-name: ~future
