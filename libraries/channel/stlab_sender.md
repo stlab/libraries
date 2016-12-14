@@ -1,7 +1,7 @@
 ---
 layout: class
 title: stlab::sender
-tag: library
+tags: [library]
 entities:
   - kind: class
     name: stlab::sender

@@ -1,7 +1,7 @@
 ---
 layout: method
 title: stlab::future
-tag: library
+tags: [library]
 full-name: stlab::future::~future
 pure-name: future
 defined-in-header: stlab/future.hpp 

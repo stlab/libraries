@@ -1,7 +1,7 @@
 ---
 layout: method
 title: stlab::future
-tag: library
+tags: [library]
 full-name: stlab::future::recover
 pure-name: recover
 defined-in-header: stlab/future.hpp 
