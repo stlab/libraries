@@ -8,21 +8,18 @@ layout: default
   </header>
 
   <article class="post-content">
+  <table>
+    <tr>{% highlight c++ %}{{ page.full-name }}{% endhighlight %}</tr>
+      <tr>Defined in &lt{{page.defined-in-header}}&gt</tr>
+    </table>
     {% for entity in page.entities %}
-        <table>
-            <tr>{% highlight c++ %}{{ entity.name }}{% endhighlight %}</tr>
-            <tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-            <tr>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</tr>
-            <tr> {{entity.description | markdownify }}</tr>
-        </table>
-    
         {% case entity.kind %}
           {% when 'methods' %}
             <table>
-            {% for method in entity.method-overloads %}
+            {% for item in entity.list %}
             <tr>
-                <td>{{method.name}}</a></td>
-                <td>{{method.description}}</td>
+              <td style="float:right">{% highlight c++ %}{{ item.pure-name }}{% endhighlight %}</td>
+              <td>{{ item.description }}</td>
             </tr>
             {% endfor %}
             </table>

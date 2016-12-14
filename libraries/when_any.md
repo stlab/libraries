@@ -28,4 +28,6 @@ entities:
         description: Futures that shall be joined
   - kind: result
     description: Creates a future that reduces a number of input futures to the first that successds
+  - kind: example
+    code: Fill in a code example
 ---

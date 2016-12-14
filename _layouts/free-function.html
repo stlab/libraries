@@ -32,6 +32,9 @@ layout: default
       {% when 'result'%}
         <h3>Return value</h3>
         {{ entity.description }}
+      {% when 'example'%}
+        <h3>Example</h3>
+        {{ entity.code }}
       {% else %}
       {% endcase %}
     {% endfor %}
