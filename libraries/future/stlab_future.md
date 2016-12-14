@@ -1,6 +1,7 @@
 ---
 layout: class
 title: stlab::future
+tag: library
 entities:
   - kind: class
     name: stlab::future

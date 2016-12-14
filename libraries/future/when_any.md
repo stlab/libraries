@@ -1,6 +1,7 @@
 ---
 layout: free-function
 title: stlab::when_any
+tag: library
 entities:
   - kind: overloads
     list:

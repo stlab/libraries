@@ -1,6 +1,7 @@
 ---
 layout: page
 title: "Chat"
+category: top-level
 date: 2014-06-17 21:41
 sharing: true
 footer: true

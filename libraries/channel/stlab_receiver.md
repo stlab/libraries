@@ -1,6 +1,7 @@
 ---
 layout: class
 title: stlab::receiver
+tag: library
 entities:
   - kind: class
     name: stlab::receiver
