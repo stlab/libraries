@@ -31,6 +31,7 @@
 #include <ppapi/cpp/completion_callback.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 #include <Windows.h>
+#include <experimental/coroutine>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
@@ -572,59 +573,68 @@ class future<T, detail::enable_if_copyable<T>> {
 
     future() = default;
 
-    bool valid() const { return static_cast<bool>(_p); }
+    bool valid() const { return static_cast<bool>(std::atomic_load(&_p)); }
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(valid());
-        return _p->then(std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& {
-        assert(valid());
-        return _p->then(std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto then(F&& f) && {
-        assert(valid());
-        return _p->then_r(_p.unique(), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then_r(p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(valid());
-        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then_r(p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(valid());
-        return _p->recover(std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(valid());
-        return _p->recover(std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(valid());
-        return _p->recover_r(_p.unique(), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover_r(p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(valid());
-        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover_r(p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(valid()); 
-        then([_hold = _p](auto f){ }, [](const auto& x){ });
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        then([_hold = p](auto f){ }, [](const auto& x){ });
     }
 
     /*
@@ -634,18 +644,23 @@ class future<T, detail::enable_if_copyable<T>> {
         
         void cancel() { *this = future(); }
     */
-
+    /*
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<T>> p = _p;
         _p.reset();
         _p = p.lock();
         return !_p;
+    }*/
+
+    void cancel() {
+        std::atomic_store(&_p, ptr_t());
     }
 
     auto get_try() const& {
-        assert(valid()); 
-        return _p->get_try();
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->get_try();
     }
 
     // Fp Does it make sense to have this? At the moment I don't see a real use case for it.
@@ -654,13 +669,15 @@ class future<T, detail::enable_if_copyable<T>> {
     // because in this case _p is not unique any more and internally it is forwarded to
     // the l-value get_try.
     auto get_try() && {
-        assert(valid()); 
-        return _p->get_try_r(_p.unique());
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->get_try_r(p.unique());
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(valid());
-        return _p->_error;
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->_error;
     }
 };
 
@@ -690,61 +707,70 @@ class future<void, void> {
 
     future() = default;
 
-    bool valid() const { return static_cast<bool>(_p); }
+    bool valid() const { return static_cast<bool>(std::atomic_load(&_p)); }
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(valid()); 
-        return _p->then(std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& {
-        assert(valid());
-        return _p->then(std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto then(F&& f) && {
-        assert(valid());
-        return _p->then_r(_p.unique(), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then_r(p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(valid());
-        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->then_r(p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(valid()); 
-        return _p->recover(std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(valid());
-        return _p->recover(std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(valid());
-        return _p->recover_r(_p.unique(), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover_r(p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(valid());
-        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->recover_r(p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(valid()); 
-        then([_hold = _p](auto f){ }, [](){ });
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        then([_hold = p](auto f){ }, [](){ });
     }
-
+    /*
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<void>> p = _p;
@@ -752,15 +778,21 @@ class future<void, void> {
         _p = p.lock();
         return !_p;
     }
+     */
+    void cancel() {
+        std::atomic_store(&_p, ptr_t());
+    }
 
     bool get_try() {
-        assert(valid());
-        return _p->get_try();
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->get_try();
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(valid());
-        return _p->_error;
+        //assert(valid());
+        auto p = std::atomic_load(&_p);
+        return p->_error;
     }
 
 };
@@ -886,6 +918,7 @@ struct when_all_shared {
     void failure(std::exception_ptr error) {
         auto before = _error_happened.test_and_set();
         if (before == false) {
+            for (auto& h : _holds) h.cancel();
             _error = std::move(error);
             _f();
         }
@@ -1567,11 +1600,115 @@ inline future<void> make_ready_future() {
     return p.second;
 }
 
+
 /**************************************************************************************************/
 
 } // namespace stlab
 
 /**************************************************************************************************/
+
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS 
+
+template<typename T, typename... Args>
+struct std::experimental::coroutine_traits<stlab::future<T>, Args...>
+{	// defines resumable traits for functions returning future<_Ty>
+	struct promise_type
+	{
+		promise<T> _promise;
+
+		future<T> get_return_object() {
+			return (_promise.get_future());
+		}
+
+		bool initial_suspend() const {
+			return false;
+		}
+
+		bool final_suspend() const {
+			return false;
+		}
+
+		template<typename U>
+		void return_value(U&& val) {
+			_promise.set_value(std::forward<U>(val));
+		}
+
+		void set_exception(exception_ptr error) {
+			_promise.set_exception(std::move(error));
+		}
+	};
+};
+
+template<typename... Args>
+struct std::experimental::coroutine_traits<stlab::future<void>, Args...>
+{	// defines resumable traits for functions returning future<void>
+	struct promise_type
+	{
+		promise<void> _promise;
+
+		future<void> get_return_object() {
+			return (_promise.get_future());
+		}
+
+		bool initial_suspend() const {
+			return false;
+		}
+
+		bool final_suspend() const {
+			return false;
+		}
+
+		void return_void() {
+			_promise.set_value();
+		}
+
+		void set_exception(exception_ptr error)
+		{
+			_promise.set_exception(std::move(error));
+		}
+	};
+};
+
+namespace stlab {
+
+	template<typename T>
+	bool await_ready(future<T>& f) {
+		return f.get_try();
+	}
+
+	template<typename T>
+	void await_suspend(future<T>& f, std::experimental::coroutine_handle<> _ResumeCb)
+	{	
+		auto r = f.then([_f = _ResumeCb]) { _f(); });
+		r.detach();
+		/*
+		// change to .then when future gets .then
+		std::thread _WaitingThread([&_Fut, _ResumeCb] {
+			_Fut.wait();
+			_ResumeCb();
+		});
+		_WaitingThread.detach();
+		*/
+	}
+
+	
+	template<typename T>
+	auto await_resume(future<T>& f)
+	{
+		return f.get_try().value();
+	}
+
+	/*
+	template<>
+	auto await_resume(future<void>& f)
+	{
+		return f.get_try();
+	}*/
+}
+
+#endif 
+
 
 #endif
 
