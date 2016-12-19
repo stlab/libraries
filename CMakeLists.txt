@@ -26,7 +26,7 @@ if(CMAKE_USE_PTHREADS_INIT)
     set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-pthread")
 endif()
 
-find_package( Boost 1.60.0 COMPONENTS unit_test_framework system thread)
+find_package( Boost 1.60.0 COMPONENTS unit_test_framework)
 
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 

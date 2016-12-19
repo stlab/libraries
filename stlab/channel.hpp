@@ -41,12 +41,12 @@ template <typename> class receiver;
 
 /**************************************************************************************************/
 /*
- * close on a process is called when a process is in an await state to signal that no more data is coming. 
+ * close on a process is called when a process is in an a_wait state to signal that no more data is coming. 
  * In response to a close, a process can switch to a yield state to yield values, otherwise it is destructed.
- * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
+ * a_wait_try is a_wait if a value is available, otherwise yield (allowing for an interruptible task).
  */
 enum class process_state {
-    await,
+    a_wait,
     yield,
 };
 
@@ -60,7 +60,7 @@ enum class message_t {
 using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
 
 constexpr process_state_scheduled await_forever {
-    process_state::await,
+    process_state::a_wait,
     std::chrono::system_clock::time_point::max()
 };
 
@@ -859,11 +859,11 @@ struct shared_process : shared_process_receiver<R>,
             return;
         }
         /*
-            While we are awaiting we will flush the queue. The assumption here is that work
+            While we are a_waiting we will flush the queue. The assumption here is that work
             is done on yield()
         */
         try {
-            while (get_process_state(_process).first == process_state::await) {
+            while (get_process_state(_process).first == process_state::a_wait) {
                 if (!dequeue()) break;
             }
 
@@ -882,11 +882,11 @@ struct shared_process : shared_process_receiver<R>,
             }
 
             /*
-                We are in an await state and the queue is empty.
+                We are in an a_wait state and the queue is empty.
 
-                If we await forever then task_done() leaving us in an await state.
-                else if we await with an expired timeout then go ahead and yield now.
-                else schedule a timeout when we will yield if not canceled by intervening await.
+                If we a_wait forever then task_done() leaving us in an a_wait state.
+                else if we a_wait with an expired timeout then go ahead and yield now.
+                else schedule a timeout when we will yield if not canceled by intervening a_wait.
             */
             else if (when == std::chrono::system_clock::time_point::max()) {
                 task_done();
@@ -927,7 +927,7 @@ struct shared_process : shared_process_receiver<R>,
                 });
             }
         }
-        catch (...) { // this catches exceptions during _process.await() and _process.yield()
+        catch (...) { // this catches exceptions during _process.a_wait() and _process.yield()
             broadcast(std::move(std::current_exception()));
         }
     }
@@ -943,7 +943,7 @@ struct shared_process : shared_process_receiver<R>,
     /*
         REVISIT (sparent) : See above comments on step() and ensure consistency.
                 
-        What is this code doing, if we don't have a yield then it also assumes no await?
+        What is this code doing, if we don't have a yield then it also assumes no a_wait?
     */
 
     template <typename U>
@@ -1349,13 +1349,13 @@ struct function_process<R (Args...)> {
     function_process(F&& f) : _f(std::forward<F>(f)) { }
 
     template <typename... A>
-    void await(A&&... args) {
+    void a_wait(A&&... args) {
         _bound = std::bind(_f, std::forward<A>(args)...);
         _done = false;
     }
 
     R yield() { _done = true; return _bound(); }
-    process_state state() const { return _done ? process_state::await : process_state::yield; }
+    process_state state() const { return _done ? process_state::a_wait : process_state::yield; }
 };
 
 /**************************************************************************************************/
