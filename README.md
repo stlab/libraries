@@ -159,7 +159,7 @@ class future {
     template <typename S, typename F>
     auto recover(S&& s, F&& f) &&; // -> future<result_of_t<F(T)>>
 
-    bool cancel_try();
+    void cancel();
 
     auto get_try() const&; // -> T == void ? bool : optional<T>
     auto get_try() &&; // -> T == void ? bool : optional<T>
