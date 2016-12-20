@@ -6,6 +6,10 @@
 
 /**************************************************************************************************/
 
+
+
+#if 0
+
 struct IUnknown;
 #include <iostream>
 #include <stlab/future.hpp>
@@ -17,7 +21,6 @@ struct IUnknown;
 using namespace stlab;
 using namespace std;
 
-#if 0
 
 /*
 Copyright 2015 Adobe Systems Incorporated
@@ -233,6 +236,7 @@ void activeProgressExample()
 }
 #endif
 
+#if 0
 #include <tuple>
 #include <iostream>
 
@@ -483,4 +487,32 @@ int main(int argc, char **argv)
     }
     int i;
     cin >> i;
+}
+
+#endif
+
+#include <experimental/coroutine>
+#include <stlab/future.hpp>
+#include <iostream>
+
+
+stlab::future<int> get_the_answer() {
+    auto result = co_await stlab::async(stlab::default_scheduler(), 
+        [] { 
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
+            return 42; 
+        });
+    
+    co_return result;
+}
+
+int main()
+{
+    auto w = get_the_answer();
+
+    while (!w.get_try())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    std::cout << w.get_try().value() << '\n';
 }

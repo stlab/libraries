@@ -10,7 +10,6 @@
 #define STLAB_FUTURE_HPP
 
 #include <atomic>
-#include <future>
 #include <initializer_list>
 #include <memory>
 #include <mutex>
@@ -31,6 +30,10 @@
 #include <ppapi/cpp/completion_callback.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 #include <Windows.h>
+#ifdef _EXPERIMENTAL_RESUMABLE_
+#define STLAB_WITH_COROUTINE_SUPPORT
+#include <experimental/coroutine>
+#endif
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
@@ -41,6 +44,57 @@
 /**************************************************************************************************/
 
 namespace stlab {
+
+enum class future_error_codes {	// names for futures errors
+    broken_promise = 1,
+    no_state
+};
+
+/**************************************************************************************************/
+
+namespace detail 
+{
+    inline const char *Future_error_map(future_error_codes code) noexcept
+    {	// convert to name of future error
+        switch (code)
+        {	// switch on error code value
+        case future_error_codes::broken_promise:
+            return ("broken promise");
+
+        case future_error_codes::no_state:
+            return ("no state");
+
+        default:
+            return nullptr;
+        }
+    }
+}
+
+/**************************************************************************************************/
+
+// future exception
+
+class future_error : public std::logic_error
+{	
+public:
+    explicit future_error(future_error_codes code)
+        : logic_error(""), _code(code)
+    {}
+
+    const future_error_codes& code() const noexcept
+    {
+        return _code;
+    }
+
+    const char *what() const noexcept override
+    {
+        return detail::Future_error_map(_code);
+    }
+
+private:
+    const future_error_codes _code;	// the stored error code
+};
+
 
 /**************************************************************************************************/
 
@@ -478,8 +532,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
             std::unique_lock<std::mutex> lock(this->_mutex);
             if (!this->_ready) {
                 _f = function_t();
-                this->_error = std::make_exception_ptr(std::future_error(
-                    std::future_errc::broken_promise));
+                this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
                 this->_ready = true;
             }
         }
@@ -666,6 +719,46 @@ class future<T, detail::enable_if_copyable<T>> {
         auto p = std::atomic_load(&_p);
         return p->_error;
     }
+
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+    struct promise_type
+    {
+        ptr_t _p;
+        future<T> get_return_object() {
+            return future<T>(_p);
+        }
+
+        bool initial_suspend() const {
+            return false;
+        }
+
+        bool final_suspend() const {
+            return false;
+        }
+
+        template<typename U>
+        void return_value(U&& val) {
+            _p->_result = std::forward<U>(val);
+        }
+
+        void set_exception(std::exception_ptr error) {
+            _p->_error = std::move(error);
+        }
+    };
+
+    bool await_ready() const {
+        return _p->get_try();
+    }
+
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+        auto r = then([_ch = std::move(ch)]{ _ch.resume(); });
+        r.detach();
+    }
+
+    auto await_resume() const {
+        return get_try().value();
+    }
+#endif
 };
 
 /**************************************************************************************************/
@@ -770,6 +863,44 @@ class future<void, void> {
         auto p = std::atomic_load(&_p);
         return p->_error;
     }
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+    struct promise_type
+    {
+        ptr_t _p;
+        future<void> get_return_object() {
+            return future<void>(_p);
+        }
+
+        bool initial_suspend() const {
+            return false;
+        }
+
+        bool final_suspend() const {
+            return false;
+        }
+
+        void return_void() {
+            _p->_ready = true;
+        }
+
+        void set_exception(std::exception_ptr error) {
+            _p->_error = std::move(error);
+        }
+    };
+
+    bool await_ready() const {
+        return _p->get_try();
+    }
+
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+        auto r = then([_ch = std::move(ch)]{ _ch.resume(); });
+        r.detach();
+    }
+
+    auto await_resume() const {
+        return get_try();
+    }
+#endif
 
 };
 
@@ -1582,24 +1713,31 @@ struct main_scheduler {
 /**************************************************************************************************/
 
 template <typename T>
-future<T> make_ready_future(T&& x) {
-    auto p = package<T(T)>(default_scheduler(), [](auto&& x) { return x; });
-    p.first(x);
+stlab::future<std::decay_t<T>> make_ready_future(T&& x) {
+    auto p = package<std::decay_t<T>(std::decay_t<T>)>(default_scheduler(), [](auto&& x) { return std::forward<decltype(x)>(x); });
+    p.first(std::forward<T>(x));
     return p.second;
 }
 
-inline future<void> make_ready_future() {
+template <typename T>
+stlab::future<T> make_exceptional_future(std::exception_ptr error)
+{
+    auto p = package<T(T)>(default_scheduler(), [_error = error](auto&& x) { std::rethrow_exception(_error); return std::forward<decltype(x)>(x); });
+    p.first(T{});
+    return p.second;
+}
+
+inline stlab::future<void> make_ready_future() {
     auto p = package<void()>(default_scheduler(), [](){});
     p.first();
     return p.second;
 }
+
 
 /**************************************************************************************************/
 
 } // namespace stlab
 
 /**************************************************************************************************/
+#endif 
 
-#endif
-
-/**************************************************************************************************/
