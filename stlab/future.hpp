@@ -724,17 +724,18 @@ class future<T, detail::enable_if_copyable<T>> {
     struct promise_type
     {
         ptr_t _p;
+
         future<T> get_return_object() {
-            return future<T>(_p);
+            return future<T>();
         }
 
-        bool initial_suspend() const {
+        auto initial_suspend() const {
             return false;
         }
 
-        bool final_suspend() const {
-            return false;
-        }
+		bool final_suspend() const {
+			return false;
+		}
 
         template<typename U>
         void return_value(U&& val) {
@@ -745,21 +746,32 @@ class future<T, detail::enable_if_copyable<T>> {
             _p->_error = std::move(error);
         }
     };
-
-    bool await_ready() const {
-        return _p->get_try();
-    }
-
-    void await_suspend(std::experimental::coroutine_handle<> ch) {
-        auto r = then([_ch = std::move(ch)]{ _ch.resume(); });
-        r.detach();
-    }
-
-    auto await_resume() const {
-        return get_try().value();
-    }
 #endif
 };
+
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+
+template<typename T>
+auto operator co_await(future<T>& val) {
+
+	struct future_awaiter
+	{
+		future<T>& _f;
+
+		bool await_ready() const { return static_cast<bool>(_f.get_try()); }
+
+		void await_suspend(std::experimental::coroutine_handle<> ch) {
+			auto r = _f.then([ch] { ch.resume(); });
+			r.detach();
+		}
+
+		auto await_resume() { return _f.get_try().value(); }
+	};
+
+	return future_awaiter{val};
+}
+
+#endif
 
 /**************************************************************************************************/
 
@@ -887,19 +899,6 @@ class future<void, void> {
             _p->_error = std::move(error);
         }
     };
-
-    bool await_ready() const {
-        return _p->get_try();
-    }
-
-    void await_suspend(std::experimental::coroutine_handle<> ch) {
-        auto r = then([_ch = std::move(ch)]{ _ch.resume(); });
-        r.detach();
-    }
-
-    auto await_resume() const {
-        return get_try();
-    }
 #endif
 
 };
@@ -1007,7 +1006,7 @@ auto package_with_broken_promise(S s, F f) -> std::pair<detail::packaged_task_fr
     auto p = std::make_shared<detail::shared<Sig>>(std::move(s), std::move(f));
     auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
         future<detail::result_of_t_<Sig>>(p));
-    result.second._p->_error = std::make_exception_ptr(std::future_error(std::future_errc::broken_promise));
+    result.second._p->_error = std::make_exception_ptr(stlab::future_error(stlab::future_error_codes::broken_promise));
     result.second._p->_ready = true;
     return result;
 }
@@ -1713,21 +1712,21 @@ struct main_scheduler {
 /**************************************************************************************************/
 
 template <typename T>
-stlab::future<std::decay_t<T>> make_ready_future(T&& x) {
+future<std::decay_t<T>> make_ready_future(T&& x) {
     auto p = package<std::decay_t<T>(std::decay_t<T>)>(default_scheduler(), [](auto&& x) { return std::forward<decltype(x)>(x); });
     p.first(std::forward<T>(x));
     return p.second;
 }
 
 template <typename T>
-stlab::future<T> make_exceptional_future(std::exception_ptr error)
+future<T> make_exceptional_future(std::exception_ptr error)
 {
     auto p = package<T(T)>(default_scheduler(), [_error = error](auto&& x) { std::rethrow_exception(_error); return std::forward<decltype(x)>(x); });
     p.first(T{});
     return p.second;
 }
 
-inline stlab::future<void> make_ready_future() {
+inline future<void> make_ready_future() {
     auto p = package<void()>(default_scheduler(), [](){});
     p.first();
     return p.second;
