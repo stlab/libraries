@@ -59,10 +59,10 @@ namespace detail
         switch (code)
         {	// switch on error code value
         case future_error_codes::broken_promise:
-            return ("broken promise");
+            return "broken promise";
 
         case future_error_codes::no_state:
-            return ("no state");
+            return "no state";
 
         default:
             return nullptr;
@@ -81,13 +81,11 @@ public:
         : logic_error(""), _code(code)
     {}
 
-    const future_error_codes& code() const noexcept
-    {
+    const future_error_codes& code() const noexcept {
         return _code;
     }
 
-    const char *what() const noexcept override
-    {
+    const char *what() const noexcept override {
         return detail::Future_error_map(_code);
     }
 
@@ -166,6 +164,8 @@ template <typename, typename = void> class future;
 
 using schedule_t = std::function<void(std::function<void()>)>;
 using timed_schedule_t = std::function<void(std::chrono::system_clock::time_point, std::function<void()>)>;
+
+struct default_scheduler;
 
 /**************************************************************************************************/
 
@@ -725,53 +725,43 @@ class future<T, detail::enable_if_copyable<T>> {
     {
         ptr_t _p;
 
+        promise_type();// : _p(std::make_shared<detail::shared_base<T>>(default_scheduler())) {}
+
         future<T> get_return_object() {
-            return future<T>();
+            return future<T>(_p);
         }
 
         auto initial_suspend() const {
             return false;
         }
 
-		bool final_suspend() const {
-			return false;
-		}
+        bool final_suspend() const {
+            return false;
+        }
 
         template<typename U>
         void return_value(U&& val) {
             _p->_result = std::forward<U>(val);
+            _p->_ready = true;
         }
 
         void set_exception(std::exception_ptr error) {
             _p->_error = std::move(error);
+            _p->_ready = true;
         }
     };
+
+    bool await_ready() { return static_cast<bool>(get_try()); }
+
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+        then([ch](auto&&) { ch.resume(); }).detach();
+    }
+
+    auto await_resume() { return get_try().value(); }
+
 #endif
 };
 
-#ifdef STLAB_WITH_COROUTINE_SUPPORT
-
-template<typename T>
-auto operator co_await(future<T>& val) {
-
-	struct future_awaiter
-	{
-		future<T>& _f;
-
-		bool await_ready() const { return static_cast<bool>(_f.get_try()); }
-
-		void await_suspend(std::experimental::coroutine_handle<> ch) {
-			auto r = _f.then([ch] { ch.resume(); });
-			r.detach();
-		}
-
-		auto await_resume() { return _f.get_try().value(); }
-	};
-
-	return future_awaiter{val};
-}
-
-#endif
 
 /**************************************************************************************************/
 
@@ -875,10 +865,14 @@ class future<void, void> {
         auto p = std::atomic_load(&_p);
         return p->_error;
     }
+
 #ifdef STLAB_WITH_COROUTINE_SUPPORT
     struct promise_type
     {
         ptr_t _p;
+
+        promise_type() : _p(std::make_shared<detail::shared_base<void>>(default_scheduler())) {}
+        
         future<void> get_return_object() {
             return future<void>(_p);
         }
@@ -897,8 +891,18 @@ class future<void, void> {
 
         void set_exception(std::exception_ptr error) {
             _p->_error = std::move(error);
+            _p->_ready = true;
         }
     };
+
+    bool await_ready() { return get_try(); }
+
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+        then([ch]{ ch.resume(); }).detach();
+    }
+
+    auto await_resume() { return get_try(); }
+
 #endif
 
 };
@@ -992,6 +996,47 @@ class future<T, detail::enable_if_not_copyable<T>> {
         auto p = std::atomic_load(&_p);
         return p->_error;
     }
+
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+    struct promise_type
+    {
+        ptr_t _p;
+
+        promise_type() : _p(std::make_shared<detail::shared_base<T>>(default_scheduler())) {}
+
+        future<T> get_return_object() {
+            return future<T>(_p);
+        }
+
+        auto initial_suspend() const {
+            return false;
+        }
+
+        bool final_suspend() const {
+            return false;
+        }
+
+        template<typename U>
+        void return_value(U&& val) {
+            _p->_result = std::forward<U>(val);
+            _p->_ready = true;
+        }
+
+        void set_exception(std::exception_ptr error) {
+            _p->_error = std::move(error);
+            _p->_ready = true;
+        }
+    };
+
+    bool await_ready() { return static_cast<bool>(get_try()); }
+
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+        then([ch](auto&&) { ch.resume(); }).detach();
+    }
+
+    auto await_resume() { return get_try().value(); }
+
+#endif
 };
 
 template <typename Sig, typename S, typename F>
@@ -1710,6 +1755,13 @@ struct main_scheduler {
 #endif
 
 /**************************************************************************************************/
+
+template <typename T>
+future<T, detail::enable_if_copyable<T>>::promise_type::promise_type()
+{
+    _p = std::make_shared<detail::shared_base<T>>(default_scheduler());
+}
+
 
 template <typename T>
 future<std::decay_t<T>> make_ready_future(T&& x) {
