@@ -495,7 +495,7 @@ int main(int argc, char **argv)
 #include <stlab/future.hpp>
 #include <iostream>
 
-
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
 stlab::future<int> get_the_answer() {
     auto result = co_await stlab::async(stlab::default_scheduler(), 
         [] { 
@@ -506,16 +506,15 @@ stlab::future<int> get_the_answer() {
     co_return result;
 }
 
-
-
 stlab::future<void> wait_for_the_answer() {
-    auto result = co_await stlab::async(stlab::default_scheduler(),
+    co_await stlab::async(stlab::default_scheduler(),
         [] {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         });
 
-    co_return result;
+    co_return;
 }
+
 
 int main()
 {
@@ -534,5 +533,5 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     std::cout << "The answer is there\n";
-
 }
+#endif
