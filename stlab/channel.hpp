@@ -1355,7 +1355,7 @@ struct function_process<R (Args...)> {
     }
 
     R yield() { _done = true; return _bound(); }
-    process_state state() const { return _done ? process_state::c_await : process_state::yield; }
+    process_state state() const { return _done ? process_state::c_await : process_state::c_yield; }
 };
 
 /**************************************************************************************************/

@@ -725,7 +725,7 @@ class future<T, detail::enable_if_copyable<T>> {
     {
         ptr_t _p;
 
-        promise_type();// : _p(std::make_shared<detail::shared_base<T>>(default_scheduler())) {}
+		promise_type();// : _p(std::make_shared<detail::shared_base<T>>(default_scheduler())) {}
 
         future<T> get_return_object() {
             return future<T>(_p);
@@ -866,12 +866,12 @@ class future<void, void> {
         return p->_error;
     }
 
-#ifdef STLAB_WITH_COROUTINE_SUPPORT
+
     struct promise_type
     {
         ptr_t _p;
 
-        promise_type() : _p(std::make_shared<detail::shared_base<void>>(default_scheduler())) {}
+		promise_type(); // : _p(std::make_shared<detail::shared_base<void>>(default_scheduler())) {}
         
         future<void> get_return_object() {
             return future<void>(_p);
@@ -897,13 +897,15 @@ class future<void, void> {
 
     bool await_ready() { return get_try(); }
 
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
     void await_suspend(std::experimental::coroutine_handle<> ch) {
         then([ch]{ ch.resume(); }).detach();
     }
+#endif
 
     auto await_resume() { return get_try(); }
 
-#endif
+
 
 };
 
@@ -1755,6 +1757,24 @@ struct main_scheduler {
 #endif
 
 /**************************************************************************************************/
+
+template <typename T>
+future<T, detail::enable_if_copyable<T>>::promise_type::promise_type()
+{
+	_p = std::make_shared<detail::shared_base<T>>(default_scheduler());
+}
+
+template <typename T>
+future<T, detail::enable_if_not_copyable<T>>::promise_type::promise_type()
+{
+	_p = std::make_shared<detail::shared_base<T>>(default_scheduler());
+}
+
+template <>
+future<void, void>::promise_type::promise_type()
+{
+	_p = std::make_shared<detail::shared_base<void>>(default_scheduler());
+}
 
 template <typename T>
 future<T, detail::enable_if_copyable<T>>::promise_type::promise_type()
