@@ -167,7 +167,7 @@ template <typename S, typename F, typename... Ts>
 auto when_all(S, F, future<Ts>... args); // -> future<result_of_t<F(Ts...)>>
 
 template <typename S, typename F, typename T, typename... Ts>
-auto when_all(S, F, future<T>, future<Ts>... args); // -> future<result_of_t<F(T,size_t)>>
+auto when_any(S, F, future<T>, future<Ts>... args); // -> future<result_of_t<F(T,size_t)>>
 
 
 template <typename S, // models task scheduler
