@@ -466,7 +466,11 @@ void annotatedProcesses() {
 
     std::atomic_int v{0};
 
-    auto result = receive | buffer_size{3} & [](int x) { return x*2; } | scheduler(default_scheduler()) & [](int x) { return x+1; }
+    auto result = receive 
+        | buffer_size{ 3 }  & [](int x) { return x * 2; }
+        | buffer_size{ 3 } & scheduler{ default_scheduler() } & [](int x) { return x * 2; } 
+        | scheduler{ default_scheduler() } & [](int x) { return x + 1; }
+        | scheduler{ default_scheduler() } & buffer_size{ 3 } & [](int x) { return x * 2; }
         | [&v](int x) { v = x;};
 
     receive.set_ready();
@@ -498,11 +502,14 @@ int main(int argc, char **argv)
 #endif // 0    
     while (true) {
         annotatedProcesses();
+#if 0
         channelExample();
         joinChannels();
         zipChannels();
         mergeChannels();
         failingProcess();
+
+#endif // 0
     }
     int i;
     cin >> i;
