@@ -1173,19 +1173,11 @@ struct annotations;
 
 /**************************************************************************************************/
 
-struct scheduler;
-
 struct buffer_size
 {
     const std::size_t _value;
 
     explicit buffer_size(size_t v) : _value(v) {}
-
-    detail::annotations operator&(const scheduler& s) const;
-    detail::annotations operator&(scheduler&& s) const;
-
-    template <typename F>
-    detail::annotated_process<F> operator&(F&& f) const;
 };
 
 struct scheduler
@@ -1193,12 +1185,6 @@ struct scheduler
     timed_schedule_t _s;
 
     explicit scheduler(timed_schedule_t s) : _s(std::move(s)) {}
-
-    detail::annotations operator&(const buffer_size& bs) const;
-    detail::annotations operator&(buffer_size&& bs) const;
-
-    template <typename F>
-    detail::annotated_process<F> operator&(F&& f) const;
 };
 
 /**************************************************************************************************/
@@ -1213,9 +1199,6 @@ struct annotations
 
     explicit annotations(timed_schedule_t s) : _scheduler(std::move(s)) {}
     explicit annotations(std::size_t bs) : _buffer_size(bs) {}
-
-    template <typename F>
-    annotated_process<F> operator&(F&& f) const;
 };
 
 template <typename F>
@@ -1226,54 +1209,124 @@ struct annotated_process
     F                  _f;
     annotations        _annotations;
 
-    annotated_process(F f, const scheduler& s) : _f(std::move(f)), _annotations(std::move(s._s)) {}
+    annotated_process(F f, const scheduler& s) : _f(std::move(f)), _annotations(s._s) {}
     annotated_process(F f, const buffer_size& bs) : _f(std::move(f)), _annotations(bs._value) {}
-    annotated_process(F f, const annotations& a) : _f(std::move(f)), _annotations(a) {}
+
+    annotated_process(F f, scheduler&& s) : _f(std::move(f)), _annotations(std::move(s._s)) {}
+    annotated_process(F f, buffer_size&& bs) : _f(std::move(f)), _annotations(bs._value) {}
+    annotated_process(F f, annotations&& a) : _f(std::move(f)), _annotations(std::move(a)) {}
 };
 
-}
-
-inline
-detail::annotations buffer_size::operator&(const scheduler& s) const {
-    detail::annotations result{ _value };
-    result._scheduler = s._s;
+template <typename B, typename S>
+detail::annotations combine_bs_scheduler(B&& b, S&& s) {
+    detail::annotations result{ b._value };
+    result._scheduler = std::forward<S>(s)._s;
     return result;
 }
 
+}
+
 inline
-detail::annotations buffer_size::operator&(scheduler&& s) const {
-    detail::annotations result{ _value };
-    result._scheduler = std::move(s._s);
+detail::annotations operator&(const buffer_size& bs, const scheduler& s){
+    return detail::combine_bs_scheduler(bs, s);
+}
+
+inline
+detail::annotations operator&(const buffer_size& bs, scheduler&& s) {
+    return detail::combine_bs_scheduler(bs, std::move(s));
+}
+
+inline
+detail::annotations operator&(buffer_size&& bs, scheduler&& s) {
+    return detail::combine_bs_scheduler(std::move(bs), std::move(s));
+}
+
+inline
+detail::annotations operator&(buffer_size&& bs, const scheduler& s) {
+    return detail::combine_bs_scheduler(std::move(bs), s);
+}
+
+inline
+detail::annotations operator&(const scheduler& s, const buffer_size& bs) {
+    return detail::combine_bs_scheduler(bs, s);
+}
+
+inline
+detail::annotations operator&(const scheduler& s, buffer_size&& bs) {
+    return detail::combine_bs_scheduler(std::move(bs), s);
+}
+
+inline
+detail::annotations operator&(scheduler&& s, buffer_size&& bs) {
+    return detail::combine_bs_scheduler(std::move(bs), std::move(s));
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(const buffer_size& bs, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), bs);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(buffer_size&& bs, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(bs));
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, const buffer_size& bs) {
+    return detail::annotated_process<F>(std::forward<F>(f), bs);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, buffer_size&& bs) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(bs));
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(const scheduler& s, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), s);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(scheduler&& s, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(s));
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, const scheduler& s) {
+    return detail::annotated_process<F>(std::forward<F>(f), s);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, scheduler&& s) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(s));
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(detail::annotations&& a, F&& f) {
+    return detail::annotated_process<F>{std::forward<F>(f), std::move(a)};
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, detail::annotations&& a) {
+    return detail::annotated_process<F>{std::forward<F>(f), std::move(a)};
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, scheduler&& s) {
+    auto result{ std::move(a) };
+    a._annotations._scheduler = std::move(s._s);
     return result;
 }
 
 template <typename F>
-detail::annotated_process<F> buffer_size::operator&(F&& f) const {
-    return detail::annotated_process<F>(std::forward<F>(f), *this);
-}
-
-inline
-detail::annotations scheduler::operator&(const buffer_size& bs) const {
-    detail::annotations result{ _s };
-    result._buffer_size = bs._value;
+detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, buffer_size&& bs) {
+    auto result{ std::move(a) };
+    a._annotations._buffer_size = bs._value;
     return result;
-}
-
-inline
-detail::annotations scheduler::operator&(buffer_size&& bs) const {
-    detail::annotations result{ _s };
-    result._buffer_size = bs._value;
-    return result;
-}
-
-template <typename F>
-detail::annotated_process<F> scheduler::operator&(F&& f) const {
-    return detail::annotated_process<F>(std::forward<F>(f), *this);
-}
-
-template <typename F>
-detail::annotated_process<F> detail::annotations::operator&(F&& f) const {
-    return annotated_process<F>{std::forward<F>(f), *this};
 }
 
 

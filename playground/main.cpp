@@ -467,11 +467,19 @@ void annotatedProcesses() {
     std::atomic_int v{0};
 
     auto result = receive 
-        | buffer_size{ 3 }  & [](int x) { return x * 2; }
+        | buffer_size{ 3 } & [](int x) { return x * 2; }
+        | [](int x) { return x * 2; } & buffer_size{ 2 }
         | buffer_size{ 3 } & scheduler{ default_scheduler() } & [](int x) { return x * 2; } 
+
         | scheduler{ default_scheduler() } & [](int x) { return x + 1; }
+        | [](int x) { return x + 1; } & scheduler{ default_scheduler() }
         | scheduler{ default_scheduler() } & buffer_size{ 3 } & [](int x) { return x * 2; }
+    
+        | [](int x) { return x + 1; } & scheduler{ default_scheduler() } & buffer_size{ 3 }
+        | [](int x) { return x * 2; } & buffer_size{ 3 } & scheduler{ default_scheduler() }
+        
         | [&v](int x) { v = x;};
+        
 
     receive.set_ready();
 
