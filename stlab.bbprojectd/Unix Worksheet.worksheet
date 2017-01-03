@@ -7,6 +7,11 @@
 	<key>WorksheetContents</key>
 	<string>### Editing better-code
 ## Jeykll for github pages
+
+# Requires xcode command line tools (make sure to update when xcode is updated):
+
+xcode-select --install
+
 # In Terminal
 open -a terminal --args ~/Projects/github.com/stlab/stlab.github.io
 
