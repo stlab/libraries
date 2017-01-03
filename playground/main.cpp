@@ -6,12 +6,15 @@
 
 /**************************************************************************************************/
 
+struct IUnknown;
+#include <cstdio>
 #include <iostream>
 #include <stlab/future.hpp>
 #include <utility>
 #include <exception>
 #include <stlab/channel.hpp>
 #include <sstream>
+
 using namespace stlab;
 using namespace std;
 
@@ -257,6 +260,7 @@ struct sum {
 
 void channelExample() {
 
+    printf("%s\n", __FUNCTION__);
     sender<int> send;
     receiver<int> receive;
 
@@ -265,7 +269,7 @@ void channelExample() {
     std::atomic_bool all_done{ false };
     auto hold = receive
         | sum()
-        | [&_all_done = all_done](int x) { cout << x << '\n'; if (x == 6) _all_done = true; };
+        | [&_all_done = all_done](int x) { printf("%s %d\n", __FUNCTION__, x); if (x == 6) _all_done = true; };
 
     receive.set_ready();
 
@@ -273,8 +277,104 @@ void channelExample() {
     send(2);
     send(3);
     send.close();
+    hold.set_ready();
 
     while (!all_done.load()) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+
+void joinChannels(){
+    printf("%s\n", __FUNCTION__);
+    sender<int> send1, send2;
+    receiver<int> receive1, receive2;
+
+    tie(send1, receive1) = channel<int>(default_scheduler());
+    tie(send2, receive2) = channel<int>(default_scheduler());
+
+    std::atomic_int all_done{ 0 };
+    auto joined = join(default_scheduler(),[](int x, int y) { return x + y; }, receive1, receive2)
+        | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
+
+    receive1.set_ready();
+    receive2.set_ready();
+
+    send1(1);
+    send2(2);
+
+    send1(3);
+    send2(4);
+    send1.close();
+    send2.close();
+
+    while (all_done < 2) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+void zipChannels() {
+    printf("%s\n", __FUNCTION__);
+    sender<int> send1, send2, send3;
+    receiver<int> receive1, receive2, receive3;
+
+    tie(send1, receive1) = channel<int>(default_scheduler());
+    tie(send2, receive2) = channel<int>(default_scheduler());
+    tie(send3, receive3) = channel<int>(default_scheduler());
+
+    std::atomic_int all_done{ 0 };
+    auto joined = zip(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+        | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
+
+    receive1.set_ready();
+    receive2.set_ready();
+    receive3.set_ready();
+
+    send1(1);
+    send3(3);
+    send2(2);
+    send2(5);
+    send3(6);
+    send1(4);
+
+    send1.close();
+    send2.close();
+    send3.close();
+
+    while (all_done < 6) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+void mergeChannels() {
+    printf("%s\n", __FUNCTION__);
+    sender<int> send1, send2, send3;
+    receiver<int> receive1, receive2, receive3;
+
+    tie(send1, receive1) = channel<int>(default_scheduler());
+    tie(send2, receive2) = channel<int>(default_scheduler());
+    tie(send3, receive3) = channel<int>(default_scheduler());
+
+    std::atomic_int all_done{ 0 };
+    auto joined = merge(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+        | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
+
+    receive1.set_ready();
+    receive2.set_ready();
+    receive3.set_ready();
+
+    send1(1);
+    send3(3);
+    send2(2);
+    send2(5);
+    send3(6);
+    send1(4);
+
+    send1.close();
+    send2.close();
+    send3.close();
+
+    while (all_done < 6) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
@@ -294,7 +394,11 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
+
     channelExample();
+    joinChannels();
+    zipChannels();
+    mergeChannels();
     int i;
     cin >> i;
 }
