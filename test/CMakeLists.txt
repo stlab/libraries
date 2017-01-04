@@ -11,9 +11,10 @@ set(SOURCE
   future_recover_tests.cpp
   future_tests.cpp
   future_then_tests.cpp
-  future_when_all_arguments_test.cpp
+  future_when_all_arguments_tests.cpp
   future_when_all_range_tests.cpp
-  future_when_any_tests.cpp
+  future_when_any_arguments_tests.cpp
+  future_when_any_range_tests.cpp
   test_helper.cpp
   tuple_algorithm_test.cpp
   main.cpp

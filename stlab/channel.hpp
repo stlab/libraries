@@ -5,6 +5,7 @@
 */
 
 /**************************************************************************************************/
+
 #ifndef STLAB_CHANNEL_HPP
 #define STLAB_CHANNEL_HPP
 
@@ -41,12 +42,13 @@ template <typename> class receiver;
 
 /**************************************************************************************************/
 /*
- * close on a process is called when a process is in an a_wait state to signal that no more data is coming. 
+ * close on a process is called when a process is in an await state to signal that no more data is coming. 
  * In response to a close, a process can switch to a yield state to yield values, otherwise it is destructed.
- * a_wait_try is a_wait if a value is available, otherwise yield (allowing for an interruptible task).
+ * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
  */
+
 enum class process_state {
-    a_wait,
+    await,
     yield,
 };
 
@@ -60,7 +62,7 @@ enum class message_t {
 using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
 
 constexpr process_state_scheduled await_forever {
-    process_state::a_wait,
+    process_state::await,
     std::chrono::system_clock::time_point::max()
 };
 
@@ -107,7 +109,7 @@ struct first_
 template <typename... T>
 using first_t = typename first_<T...>::type;
 
-/********************************************************** ****************************************/
+/**************************************************************************************************/
 
 template <typename> struct argument_of;
 template <typename R, typename Arg>
@@ -856,7 +858,7 @@ struct shared_process : shared_process_receiver<R>,
             is done on yield()
         */
         try {
-            while (get_process_state(_process).first == process_state::a_wait) {
+            while (get_process_state(_process).first == process_state::await) {
                 if (!dequeue()) break;
             }
 
@@ -926,7 +928,7 @@ struct shared_process : shared_process_receiver<R>,
     /*
         REVISIT (sparent) : See above comments on step() and ensure consistency.
                 
-        What is this code doing, if we don't have a yield then it also assumes no a_wait?
+        What is this code doing, if we don't have a yield then it also assumes no await?
     */
 
     template <typename U>
@@ -1246,7 +1248,6 @@ class receiver {
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
-
     using result_type = T;
 
     receiver() = default;
@@ -1312,11 +1313,6 @@ class receiver {
     }
 
 };
-
-template <typename R, typename Arg>
-auto operator&(std::function<R(Arg)> f, timed_schedule_t s) {
-    return detail::annotated_process<std::function<R(Arg)>>(f, s);
-}
 
 /**************************************************************************************************/
 
@@ -1428,13 +1424,13 @@ struct function_process<R (Args...)> {
     function_process(F&& f) : _f(std::forward<F>(f)) { }
 
     template <typename... A>
-    void a_wait(A&&... args) {
+    void await(A&&... args) {
         _bound = std::bind(_f, std::forward<A>(args)...);
         _done = false;
     }
 
     R yield() { _done = true; return _bound(); }
-    process_state state() const { return _done ? process_state::a_wait : process_state::yield; }
+    process_state state() const { return _done ? process_state::await : process_state::yield; }
 };
 
 /**************************************************************************************************/
