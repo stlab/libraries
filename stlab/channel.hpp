@@ -114,7 +114,7 @@ struct first_
 template <typename... T>
 using first_t = typename first_<T...>::type;
 
-/********************************************************** ****************************************/
+/**************************************************************************************************/
 
 template <typename> struct argument_of;
 template <typename R, typename Arg>
@@ -1190,7 +1190,6 @@ class receiver {
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
-
     using result_type = T;
 
     receiver() = default;
@@ -1355,7 +1354,7 @@ struct function_process<R (Args...)> {
     }
 
     R yield() { _done = true; return _bound(); }
-    process_state state() const { return _done ? process_state::c_await : process_state::c_yield; }
+    process_state state() const { return _done ? process_state::await : process_state::yield; }
 };
 
 /**************************************************************************************************/

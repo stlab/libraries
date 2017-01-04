@@ -11,6 +11,7 @@
 #if 0
 
 struct IUnknown;
+#include <cstdio>
 #include <iostream>
 #include <stlab/future.hpp>
 #include <utility>
