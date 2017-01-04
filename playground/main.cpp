@@ -458,30 +458,6 @@ void failingProcess() {
     }
 }
 
-void annotatedProcesses() {
-    printf("%s\n", __FUNCTION__);
-    sender<int> send;
-    receiver<int> receive;
-
-    tie(send, receive) = channel<int>(default_scheduler());
-
-    std::atomic_int v{0};
-
-    auto result = receive | buffer_size{3} & [](int x) { return x*2; } | scheduler(default_scheduler()) & [](int x) { return x+1; }
-        | [&v](int x) { v = x;};
-
-    receive.set_ready();
-
-    send(1);
-
-
-    while (v == 0) {
-        this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-}
-
-
-
 int main(int argc, char **argv)
 {
 #if 0
@@ -498,7 +474,6 @@ int main(int argc, char **argv)
 
 #endif // 0    
     while (true) {
-        annotatedProcesses();
         channelExample();
         joinChannels();
         zipChannels();

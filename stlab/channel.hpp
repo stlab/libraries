@@ -71,6 +71,13 @@ constexpr process_state_scheduled yield_immediate {
     std::chrono::system_clock::time_point::min()
 };
 
+/**************************************************************************************************/
+
+struct buffer_size
+{
+    const std::size_t _value;
+    explicit buffer_size(size_t v) : _value(v) {}
+};
 
 /**************************************************************************************************/
 
@@ -1154,79 +1161,6 @@ auto merge(S s, F f, R&&... upstream_receiver) {
 
 /**************************************************************************************************/
 
-namespace detail {
-
-template<typename F>
-struct annotated_process;
-}
-
-/**************************************************************************************************/
-
-struct buffer_size
-{
-    const std::size_t _value;
-    explicit buffer_size(size_t v) : _value(v) {}
-
-    template <typename F>
-    detail::annotated_process<F> operator&(F&& f);
-
-
-};
-
-struct scheduler
-{
-    timed_schedule_t _s;
-    scheduler(timed_schedule_t s) : _s(std::move(s)) {}
-
-    template <typename F>
-    detail::annotated_process<F> operator&(F&& f);
-};
-
-/**************************************************************************************************/
-
-
-
-namespace detail
-{
-
-template <typename F>
-struct annotated_process
-{
-    using process_type = F;
-    F                                  _f;
-    boost::optional<timed_schedule_t>  _scheduler;
-    boost::optional<std::size_t>       _buffer_size;
-
-    annotated_process(F f, const scheduler& s) : _f(std::move(f)), _scheduler(std::move(s._s)) {}
-    annotated_process(F f, const buffer_size& bs) : _f(std::move(f)), _buffer_size(bs._value) {}
-
-    annotated_process& operator&(const scheduler& s) {
-        _scheduler = std::move(s._s);
-        return *this;
-    }
-
-    annotated_process& operator&(const buffer_size& bs) {
-        _buffer_size = bs._value;
-        return *this;
-    }
-};
-
-}
-
-
-template <typename F>
-detail::annotated_process<F> buffer_size::operator&(F&& f) {
-    return detail::annotated_process<F>(std::forward<F>(f), *this);
-}
-
-template <typename F>
-detail::annotated_process<F> scheduler::operator&(F&& f) {
-    return detail::annotated_process<F>(std::forward<F>(f), *this);
-}
-
-
-/**************************************************************************************************/
-
 template <typename T>
 class receiver {
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
@@ -1294,24 +1228,6 @@ class receiver {
     void set_buffer_size(size_t queue_size) {
         _p->set_buffer_size(queue_size);
     }
-
-    template <typename F>
-    auto operator|(detail::annotated_process<F>&& ap) {
-        auto scheduler = ap._scheduler.value_or(_p->scheduler());
-        // TODO - report error if not constructed or _ready.
-        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>,
-                F,
-                detail::yield_type<F, T>,
-                T>>(scheduler, std::move(ap._f), _p);
-
-        _p->map(sender<T>(p));
-
-        if (ap._buffer_size)
-            p->set_buffer_size(ap._buffer_size.value());
-
-        return receiver<detail::yield_type<F, T>>(std::move(p));
-    }
-
 };
 
 /**************************************************************************************************/
