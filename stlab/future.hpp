@@ -891,21 +891,53 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>  _args;
     future<void>                        _holds[sizeof...(Ts)] {};
     std::atomic_size_t                  _remaining{sizeof...(Ts)};
-    std::atomic_flag                    _error_happened = ATOMIC_FLAG_INIT;
+    std::atomic_flag                    _error_happened{ ATOMIC_FLAG_INIT };
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
-    void done() { if (--_remaining == 0) _f(); }
+    template <std::size_t index, typename FF>
+    void done(FF& f) { 
+        std::get<index>(_args) = std::move(f.get_try().value()); 
+        if (--_remaining == 0) _f(); 
+    }
 
     void failure(std::exception_ptr error) {
         auto before = _error_happened.test_and_set();
         if (before == false) {
-            for (auto& h : _holds) h.cancel();
             _error = std::move(error);
             _f();
         }
     }
 
+};
+
+template <typename F, size_t S, typename R>
+struct when_any_shared {
+    // decay
+    boost::optional<R>                  _arg;
+    future<void>                        _holds[S]{};
+    std::atomic_size_t                  _remaining{S};
+    std::atomic_flag                    _value_received{ ATOMIC_FLAG_INIT };
+    boost::optional<std::exception_ptr> _error;
+    size_t                              _index;
+    packaged_task<>                     _f;
+
+    void failure(std::exception_ptr error) {
+        if (--_remaining == 0) {
+            _error = std::move(error);
+            _f();
+        }
+    }
+
+    template <size_t index, typename FF>
+    void done(FF&& f) {
+        auto before = _value_received.test_and_set();
+        if (before == false) {
+            _arg = std::move(std::forward<FF>(f).get_try().value());
+            _index = index;
+            _f();
+        }
+    }
 };
 
 inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
@@ -923,8 +955,17 @@ auto apply_when_all_args(const F& f, P& p) {
     return apply_when_all_args_(f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
 }
 
+template <typename F, typename P>
+auto apply_when_any_arg(const F& f, P& p) {
+    if (p->_error) {
+        std::rethrow_exception(p->_error.get());
+    }
+
+    return f(std::move(p->_arg.get()), p->_index);
+}
+
 template <std::size_t i, typename P, typename T>
-void attach_when_all_arg_(const std::shared_ptr<P>& p, T a) {
+void attach_when_arg_(const std::shared_ptr<P>& p, T a) {
     p->_holds[i] = std::move(a).recover([_w = std::weak_ptr<P>(p)](auto x){
         auto p = _w.lock(); if (!p) return;
 
@@ -933,20 +974,19 @@ void attach_when_all_arg_(const std::shared_ptr<P>& p, T a) {
             p->failure(*error);
         }
         else {
-            std::get<i>(p->_args) = std::move(x).get_try().value();
-            p->done();
+            p->template done<i>(x);
         }
     });
 }
 
 template <typename P, typename... Ts, std::size_t... I>
-void attach_when_all_args_(std::index_sequence<I...>, const std::shared_ptr<P>& p, Ts... a) {
-    (void)std::initializer_list<int>{(attach_when_all_arg_<I>(p, a), 0)...};
+void attach_when_args_(std::index_sequence<I...>, const std::shared_ptr<P>& p, Ts... a) {
+    (void)std::initializer_list<int>{(attach_when_arg_<I>(p, a), 0)...};
 }
 
 template <typename P, typename... Ts>
-void attach_when_all_args(const std::shared_ptr<P>& p, Ts... a) {
-    attach_when_all_args_(std::make_index_sequence<sizeof...(Ts)>(), p, std::move(a)...);
+void attach_when_args(const std::shared_ptr<P>& p, Ts... a) {
+    attach_when_args_(std::make_index_sequence<sizeof...(Ts)>(), p, std::move(a)...);
 }
 
 } // namespace detail
@@ -963,7 +1003,24 @@ auto when_all(S s, F f, future<Ts>... args) {
     });
     shared->_f = std::move(p.first);
 
-    detail::attach_when_all_args(shared, std::move(args)...);
+    detail::attach_when_args(shared, std::move(args)...);
+
+    return std::move(p.second);
+}
+
+/**************************************************************************************************/
+
+template <typename S, typename F, typename T, typename... Ts>
+auto when_any(S s, F f, future<T> arg, future<Ts>... args) {
+    using result_t = typename std::result_of<F(T, size_t)>::type;
+
+    auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts)+1, T>>();
+    auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared]{
+        return detail::apply_when_any_arg(_f, _p);
+    });
+    shared->_f = std::move(p.first);
+
+    detail::attach_when_args(shared, std::move(arg), std::move(args)...);
 
     return std::move(p.second);
 }

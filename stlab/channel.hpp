@@ -5,6 +5,7 @@
 */
 
 /**************************************************************************************************/
+
 #ifndef STLAB_CHANNEL_HPP
 #define STLAB_CHANNEL_HPP
 
@@ -17,7 +18,6 @@
 #include <utility>
 
 #include <boost/variant.hpp>
-
 #include <stlab/future.hpp>
 #include <stlab/tuple_algorithm.hpp>
 
@@ -45,17 +45,15 @@ template <typename> class receiver;
  * In response to a close, a process can switch to a yield state to yield values, otherwise it is destructed.
  * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
  */
+
 enum class process_state {
     await,
     yield,
 };
-
 enum class message_t { 
     argument, 
     error 
 };
-
-/**************************************************************************************************/
 
 using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
 
@@ -114,7 +112,7 @@ struct first_
 template <typename... T>
 using first_t = typename first_<T...>::type;
 
-/********************************************************** ****************************************/
+/**************************************************************************************************/
 
 template <typename> struct argument_of;
 template <typename R, typename Arg>
@@ -168,15 +166,11 @@ auto avoid_invoke(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>
     invoke_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
     return avoid_();
 }
-
-/**************************************************************************************************/
-
 template <typename F, std::size_t...I, typename...T>
 auto invoke_variant_(F&& f, std::tuple<boost::variant<T, std::exception_ptr>...>&& t, std::index_sequence<I...>)
 {
     return std::forward<F>(f)(std::move(boost::get<T>(std::get<I>(t)))...);
 }
-
 template <typename F, typename... Args>
 auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>&& t)
 ->std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
@@ -184,7 +178,6 @@ auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_
 {
     return invoke_variant_(std::forward<F>(f), std::move(t), std::make_index_sequence<sizeof...(Args)>());
 }
-
 template <typename F, typename... Args>
 auto avoid_invoke_variant(F&& f, std::tuple<boost::variant<Args, std::exception_ptr>...>&& t)
 -> std::enable_if_t<std::is_same<void, yield_type<F, Args...>>::value, avoid_>
@@ -234,7 +227,8 @@ struct shared_process_sender {
 
 /**************************************************************************************************/
 
-// the following implements the C++ standard proposal N4502
+// the following is based on the C++ standard proposal N4502
+
 #if __GNUC__ < 5 && ! defined __clang__
 // http://stackoverflow.com/a/28967049/1353549
 template <typename...>
@@ -256,9 +250,7 @@ struct nonesuch
     nonesuch(nonesuch const&) = delete;
     void operator= (nonesuch const&) = delete;
 };
-
-
-// primary template handles all types not supporting the archetypal Op:
+// Primary template handles all types not supporting the operation.
 template<class Default , class, template<class...> class Op, class... Args>
 struct detector
 {
@@ -266,7 +258,6 @@ struct detector
     using type = Default;
 };
 
-// the specialization recognizes and handles only types supporting Op:
 template<class Default, template<class...> class Op, class... Args>
 struct detector<Default, void_t<Op<Args...>>, Op, Args...>
 {
@@ -276,7 +267,7 @@ struct detector<Default, void_t<Op<Args...>>, Op, Args...>
 
 template<template<class...> class Op, class... Args>
 using is_detected = typename detector<nonesuch, void, Op, Args...>::value_t;
-
+// Specialization recognizes/validates only types supporting the archetype.
 template<template<class...> class Op, class... Args>
 constexpr bool is_detected_v = is_detected<Op, Args...>::value;
 
@@ -321,28 +312,24 @@ auto get_process_state(const T& x) -> std::enable_if_t<!has_process_state_v<T>, 
 
 template <typename T, typename...U>
 using process_set_error_t = decltype(std::declval<T&>().set_error(std::declval<std::tuple<boost::variant<U, std::exception_ptr>...>>()));
-
 template <typename T, typename...U>
 constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, T, U...>;
-
 template <typename T, typename...U>
 auto set_process_error(T& x, std::tuple<boost::variant<U, std::exception_ptr>...> error) -> std::enable_if_t<has_set_process_error_v<T, U...>, void> {
     x.set_error(std::move(error));
 }
-
 template <typename T, typename... U>
 auto set_process_error(T&, std::tuple<boost::variant<U, std::exception_ptr>...> error) -> std::enable_if_t<!has_set_process_error_v<T, U...>, void> {
 }
-
-/**************************************************************************************************/
-
 template <typename T>
 using process_yield_t = decltype(std::declval<T&>().yield());
 
 template <typename T>
 constexpr bool has_process_yield_v = is_detected_v<process_yield_t, T>;
 
+
 /**************************************************************************************************/
+
 
 template <typename P, typename...T, std::size_t... I>
 void await_variant_args_(P& p, std::tuple<boost::variant<T, std::exception_ptr>...>& args, std::index_sequence<I...>) {
@@ -359,7 +346,6 @@ bool argument_with_error(const std::tuple<boost::variant<Args, std::exception_pt
 {
     return tuple_find(args, [](auto&& c) { return static_cast<message_t>(c.which()) == message_t::error; }) != sizeof...(Args);
 }
-
 /**************************************************************************************************/
 /**************************************************************************************************/
 /**************************************************************************************************/
@@ -368,7 +354,7 @@ template <typename T>
 struct default_queue_strategy
 {
     using value_type = std::tuple<boost::variant<T, std::exception_ptr>>;
-    
+
     std::deque<boost::variant<T, std::exception_ptr>> _queue;
 
     bool empty() const {
@@ -400,7 +386,7 @@ struct join_queue_strategy
 {
     static const std::size_t Size = sizeof...(T);
     using value_type    = std::tuple<boost::variant<T, std::exception_ptr>...>;
-    using queue_size_t  = std::array<std::size_t, Size>;
+    using queue_size_t = std::array<std::size_t, Size>;
     using queue_t       = std::tuple<std::deque<boost::variant<T, std::exception_ptr>>...>;
 
     queue_t             _queue;
