@@ -31,12 +31,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(
     future_test
     future
-    #Boost::unit_test_framework
-    #Boost::system
-    #Boost::thread
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    #${Boost_SYSTEM_LIBRARY}
-    #${Boost_THREAD_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT})
 
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
