@@ -5,6 +5,7 @@
 */
 
 /**************************************************************************************************/
+
 #ifndef STLAB_CHANNEL_HPP
 #define STLAB_CHANNEL_HPP
 
@@ -107,7 +108,7 @@ struct first_
 template <typename... T>
 using first_t = typename first_<T...>::type;
 
-/********************************************************** ****************************************/
+/**************************************************************************************************/
 
 template <typename> struct argument_of;
 template <typename R, typename Arg>
@@ -595,7 +596,7 @@ struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
 {
     shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) : shared_process_sender_i<Q, T, R, Args, I, Args...>(sp)... {}
 };
-
+    
 /**************************************************************************************************/
 
 template <typename R, typename Enabled = void>
