@@ -136,9 +136,7 @@ install:
   # Build Boost
   ############################################################################
   - |
-    if [[ "${BOOST_BUILD}" == "true" ]]; then
-      (cd ${BOOST_DIR} && ./bootstrap.sh --toolset=${COMPILER} && ./b2 --with-test)
-    fi
+    (cd ${BOOST_DIR} && ./bootstrap.sh --toolset=${COMPILER} && ./b2 --with-test)
   ############################################################################
   # Install Clang, libc++ and libc++abi
   ############################################################################
@@ -178,7 +176,7 @@ script:
   # Build and run the unit tests 
   ############################################################################
   - |
-    if [[ "${UNIT_TESTS}" == "true" && "${BOOST_BUILD}" == "true" ]]; then
+    if [[ "${UNIT_TESTS}" == "true" ]]; then
       chmod +x ./build.ch
       ./build.ch
     fi
