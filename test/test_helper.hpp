@@ -22,7 +22,7 @@ using lock_t = std::unique_lock<std::mutex>;
 
 namespace test_helper
 {
-    template <size_t no>
+    template <std::size_t no>
     struct custom_scheduler {
         using result_type = void;
 
@@ -46,9 +46,10 @@ namespace test_helper
         static std::atomic_int _usage_counter;
     };
 
+#ifndef WIN32
     template <std::size_t N>
     std::atomic_int custom_scheduler<N>::_usage_counter{0};
-
+#endif
 
     class test_exception : public std::exception {
         const std::string _error;
