@@ -36,6 +36,7 @@ matrix:
       env: 
         - COMPILER=clang++-3.6
         - TOOLSET=clang
+        - LIBS=libc++
     - compiler: clang
       addons:
         apt:
@@ -47,6 +48,7 @@ matrix:
       env: 
         - COMPILER=clang++-3.7
         - TOOLSET=clang
+        - LIBS=libc++
     - compiler: clang
       addons:
         apt:
@@ -58,6 +60,7 @@ matrix:
       env: 
         - COMPILER=clang++-3.8
         - TOOLSET=clang
+        - LIBS=libc++
 before_script:
     - chmod +x configure.sh
     - chmod +x build.sh
