@@ -26,7 +26,8 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 _error = true;
                 throw test_exception("failure"); })
             .recover([](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
+                if (failedFuture.error())
+                    check_failure<test_exception>(failedFuture, "failure");
             });
 
         wait_until_future_completed(sut);
