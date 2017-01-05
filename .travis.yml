@@ -136,7 +136,7 @@ install:
   # Build Boost
   ############################################################################
   - |
-    (cd ${BOOST_DIR} && ./bootstrap.sh --toolset=${COMPILER} && ./b2 --with-test)
+    (cd ${BOOST_DIR} && ./bootstrap.sh --with-toolset=gcc && ./b2 --with-test)
   ############################################################################
   # Install Clang, libc++ and libc++abi
   ############################################################################
