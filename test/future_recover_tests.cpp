@@ -26,11 +26,14 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 _error = true;
                 throw test_exception("failure"); })
             .recover([](auto failedFuture) {
+printf("Before check\n");
                 if (failedFuture.error())
                     check_failure<test_exception>(failedFuture, "failure");
+printf("After check\n");
             });
-
+printf("Before wait until completed\n");
         wait_until_future_completed(sut);
+printf("After wait until completed\n");
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
