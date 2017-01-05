@@ -177,8 +177,11 @@ script:
   ############################################################################
   - |
     if [[ "${UNIT_TESTS}" == "true" ]]; then
-      chmod +x ./build.ch
-      ./build.ch
+      cd ${TRAVIS_BUILD_DIR}
+      cd build
+      make
+      ./test/future_test --log_level=message
+      echo all done
     fi
 
 notifications:
