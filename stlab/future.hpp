@@ -904,6 +904,7 @@ struct when_all_shared {
     void failure(std::exception_ptr error) {
         auto before = _error_happened.test_and_set();
         if (before == false) {
+            for (auto& h : _holds) h.cancel();
             _error = std::move(error);
             _f();
         }

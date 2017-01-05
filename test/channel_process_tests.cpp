@@ -29,7 +29,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         std::atomic_int index{ 0 };
         std::vector<int> results(10,0);
 
-        auto check = _receive[0] | sum<1>() | [&](int x) { results[index++] = x; };
+        auto check = _receive[0] | sum<1>() | [&](int x) { results[index] = x; ++index; };
 
         _receive[0].set_ready();
         for (auto i = 0; i < 10; ++i)
@@ -48,7 +48,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         std::atomic_int index{0};
         std::vector<int> results(10,0);
 
-        auto check = _receive[0] | sum<1>() | [&](int x) { results[index++] = x; };
+        auto check = _receive[0] | sum<1>() | [&](int x) { results[x] = x; ++index; };
 
         _receive[0].set_ready();
         std::vector<future<void>> f(10);
@@ -71,7 +71,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         std::atomic_int index{ 0 };
         std::vector<int> results(5,0);
 
-        auto check = _receive[0] | sum<2>() | [&](int x) { results[index++] = x; };
+        auto check = _receive[0] | sum<2>() | [&](int x) { results[index] = x; ++index; };
 
         _receive[0].set_ready();
         for (auto i = 0; i < 10; ++i)
@@ -84,6 +84,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
             BOOST_REQUIRE_EQUAL(expectation[i], results[i]);
         }
     }
+
 
     BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_async) {
         BOOST_TEST_MESSAGE("int channel process with two steps asynchronously");
@@ -159,12 +160,12 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         BOOST_TEST_MESSAGE("int channel split process one step");
 
         std::atomic_int index1{ 0 };
-        std::vector<int> results1(10);
+        std::vector<int> results1(10,0);
         std::atomic_int index2{ 0 };
-        std::vector<int> results2(10);
+        std::vector<int> results2(10,0);
 
-        auto check1 = _receive[0] | sum<1>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
-        auto check2 = _receive[0] | sum<1>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
+        auto check1 = _receive[0] | sum<1>() | [&_index = index1, &_results = results1](int x) { _results[x] = x; ++_index; };
+        auto check2 = _receive[0] | sum<1>() | [&_index = index2, &_results = results2](int x) { _results[x] = x; ++_index; };
 
         _receive[0].set_ready();
         for (auto i = 0; i < 10; ++i)
@@ -186,8 +187,8 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         std::atomic_int index2{ 0 };
         std::vector<int> results2(5);
 
-        auto check1 = _receive[0] | sum<2>() | [&_index = index1, &_results = results1](int x) { _results[_index++] = x; };
-        auto check2 = _receive[0] | sum<2>() | [&_index = index2, &_results = results2](int x) { _results[_index++] = x; };
+        auto check1 = _receive[0] | sum<2>() | [&_index = index1, &_results = results1](int x) { _results[_index] = x; ++_index; };
+        auto check2 = _receive[0] | sum<2>() | [&_index = index2, &_results = results2](int x) { _results[_index] = x; ++_index; };
 
         _receive[0].set_ready();
         for (auto i = 0; i < 10; ++i)
@@ -222,3 +223,62 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
     }
 BOOST_AUTO_TEST_SUITE_END()
 
+
+BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed) {
+    BOOST_TEST_MESSAGE("int channel process with two steps timed");
+
+    std::atomic_int result{ 0 };
+    sender<int> send;
+    receiver<int> receive;
+
+    std::tie(send, receive) = channel<int>(manual_scheduler());
+
+    auto check = receive | timed_sum() | [&](int x) { result = x; };
+
+    receive.set_ready();
+    send(42);
+
+    manual_scheduler::run_next_task();
+
+    manual_scheduler::wait_until_queue_size_of(1);
+    manual_scheduler::run_next_task();
+
+    manual_scheduler::wait_until_queue_size_of(1);
+    manual_scheduler::run_next_task();
+
+    manual_scheduler::wait_until_queue_size_of(1);
+    manual_scheduler::run_next_task();
+
+    while(result == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    BOOST_REQUIRE_EQUAL(42, result);
+}
+
+BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
+    BOOST_TEST_MESSAGE("int channel process with two steps timed w/o timeout");
+
+    std::atomic_int result{ 0 };
+    sender<int> send;
+    receiver<int> receive;
+
+    std::tie(send, receive) = channel<int>(default_scheduler());
+
+    auto check = receive | timed_sum(2) | [&](int x) { result = x; };
+
+    receive.set_ready();
+    send(42);
+
+    while (timed_sum::current_sum() != 42) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    send(43);
+
+    while (result == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    BOOST_REQUIRE_EQUAL(85, result);
+}

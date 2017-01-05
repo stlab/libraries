@@ -186,6 +186,26 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
     }
+
+    BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
+        BOOST_TEST_MESSAGE("running future recover while failed when_all on l-value");
+
+        int result{ 0 };
+        auto f1 = async(custom_scheduler<0>(), [] { throw test_exception("failure"); return 42; });
+        auto f2 = async(custom_scheduler<1>(), [] { return 42; });
+
+        auto sut = when_all(custom_scheduler<0>(), [](int x, int y) {
+            return x + y;
+        }, f1, f2).recover([](auto error) {
+            if (error.error()) 
+                return 815; 
+            else 
+                return 0;
+        }).then([&](int x) { result = x; });
+
+        wait_until_future_completed(sut);
+        BOOST_REQUIRE_EQUAL(815, result);
+    }
 BOOST_AUTO_TEST_SUITE_END()
 
 

@@ -10,13 +10,43 @@ Distributed under the Boost Software License, Version 1.0.
 #define _CHANNEL_TEST_HELPER_
 
 #include <stlab/channel.hpp>
+#include <queue>
+
+class manual_scheduler
+{
+    static std::queue<std::function<void()>> _tasks;
+
+public:
+    static void clear() { while (!_tasks.empty()) _tasks.pop(); }
+
+    template <typename F>
+    void operator()(std::chrono::system_clock::time_point when, F f) {
+        _tasks.push(std::move(f));
+    }
+
+    static void wait_until_queue_size_of(std::size_t n){
+        while (_tasks.size() < n) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+
+    static void run_next_task() {
+        if (_tasks.empty()) {
+            printf("Function lost\n");
+            return;
+        }
+        auto t = std::move(_tasks.front());
+        _tasks.pop();
+        stlab::default_scheduler()(std::chrono::system_clock::time_point::min(), std::move(t));
+    }
+};
 
 struct channel_test_fixture_base
 {
     template <typename F>
     void wait_until_done(F&& f) const {
         while (!std::forward<F>(f)()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 };
@@ -109,6 +139,43 @@ struct sum
     auto state() const { return _state; }
 };
 
+inline stlab::process_state_scheduled await_soon() {
+    return std::make_pair(stlab::process_state::await,
+    std::chrono::system_clock::now() + std::chrono::minutes(60));
+}
+
+struct timed_sum
+{
+    int _limit;
+    int _number_additions{ 0 };
+    static std::atomic_int _x;
+
+    timed_sum(int limit = 0) : _limit(limit) { _x = 0; }
+
+    stlab::process_state_scheduled _state{ await_soon() };
+
+    void await(int x) {
+        _x += x;
+        ++_number_additions;
+        if (_limit && _number_additions == _limit)
+        {
+            _state = stlab::yield_immediate;
+        }
+    }
+
+    int yield() {
+        auto result = _x.load();
+        _state = stlab::await_forever;
+        _number_additions = 0;
+        _x = 0;
+        return result;
+    }
+
+    static int current_sum() { return _x.load(); }
+
+    auto state() const { return _state; }
+};
+
 
 template <std::size_t N>
 struct collector
@@ -139,5 +206,7 @@ struct collector
 
     auto state() const { return _state; }
 };
+
+
 
 #endif
