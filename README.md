@@ -71,12 +71,13 @@ class QtScheduler
         std::function<void()> _f;
         std::unique_ptr<EventReceiver> _receiver;
 
-    public:
-        explicit SchedulerEvent(std::function<void()> f)
-            : QEvent(QEvent::User)
-            , _f(std::move(f))
-            , _receiver(new EventReceiver()) {
-        }
+  public:
+    explicit SchedulerEvent(std::function<void()> f)
+      : QEvent(QEvent::User)
+      , _f(std::move(f))
+      , _receiver(new EventReceiver()) {
+      _receiver()->moveToThread(QApplication::instance()->thread());
+    }
 
         void execute() { _f(); }
 
@@ -97,11 +98,11 @@ class QtScheduler
     };
 
 public:
-    template <typename F>
-    void operator()(F f) {
-        auto event = new SchedulerEvent(std::move(f));
-        QApplication::postEvent(event->receiver(), event);
-    }
+  template <typename F>
+  void operator()(std::chrono::system_clock::time_point /*when*/, F&& f) {
+    auto event = new SchedulerEvent(std::forward<F>(f));
+    QApplication::postEvent(event->receiver(), event);
+  }
 };
 
 ```

@@ -275,7 +275,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         thread_block_context block_context;
         std::atomic_int any_task_execution_counter{ 0 };
         std::atomic_int result{ 0 };
-        std::array<int, 4> intrim_results = { 0,0,0,0 };
+        std::array<int, 4> intrim_results = { {0,0,0,0} };
 
         {
             lock_t block(*block_context._mutex);

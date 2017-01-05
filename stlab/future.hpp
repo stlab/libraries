@@ -138,14 +138,22 @@ auto package(S, F)
 
 namespace detail {
 
-template <typename> struct shared;
-template <typename, typename = void> struct shared_base;
+template <bool...> struct bool_pack;
+template <bool... v>
+using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
+
+/**************************************************************************************************/
 
 template <typename T>
 using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value>;
 
 template <typename T>
 using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
+
+/**************************************************************************************************/
+
+template <typename> struct shared;
+template <typename, typename = void> struct shared_base;
 
 /**************************************************************************************************/
 
@@ -598,7 +606,6 @@ class future<T, detail::enable_if_copyable<T>> {
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(valid());
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
@@ -615,7 +622,7 @@ class future<T, detail::enable_if_copyable<T>> {
     }
 
     void detach() const {
-        assert(valid()); 
+        assert(valid());
         then([_hold = _p](auto f){ }, [](const auto& x){ });
     }
 
@@ -626,7 +633,6 @@ class future<T, detail::enable_if_copyable<T>> {
         
         void cancel() { *this = future(); }
     */
-
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<T>> p = _p;
@@ -636,7 +642,7 @@ class future<T, detail::enable_if_copyable<T>> {
     }
 
     auto get_try() const& {
-        assert(valid()); 
+        assert(valid());
         return _p->get_try();
     }
 
@@ -646,7 +652,7 @@ class future<T, detail::enable_if_copyable<T>> {
     // because in this case _p is not unique any more and internally it is forwarded to
     // the l-value get_try.
     auto get_try() && {
-        assert(valid()); 
+        assert(valid());
         return _p->get_try_r(_p.unique());
     }
 
@@ -686,7 +692,7 @@ class future<void, void> {
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(valid()); 
+        assert(valid());
         return _p->then(std::forward<F>(f));
     }
 
@@ -710,7 +716,7 @@ class future<void, void> {
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(valid()); 
+        assert(valid());
         return _p->recover(std::forward<F>(f));
     }
 
@@ -733,10 +739,10 @@ class future<void, void> {
     }
 
     void detach() const {
-        assert(valid()); 
+        assert(valid());
         then([_hold = _p](auto f){ }, [](){ });
     }
-
+    
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<void>> p = _p;
@@ -744,7 +750,7 @@ class future<void, void> {
         _p = p.lock();
         return !_p;
     }
-
+     
     bool get_try() {
         assert(valid());
         return _p->get_try();
@@ -1629,11 +1635,14 @@ inline future<void> make_ready_future() {
     return p.second;
 }
 
+
 /**************************************************************************************************/
 
 } // namespace stlab
 
 /**************************************************************************************************/
+
+
 
 #endif
 

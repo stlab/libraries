@@ -4,7 +4,7 @@ project(SlabFuture C CXX)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")  
   #set(CMAKE_CXX_FLAGS "-g -Wall -O3 -std=c++14 -fsanitize=thread -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
-  set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions -ftemplate-backtrace-limit=0 -D_GLIBCXX_USE_CXX11_ABI=0")
+  set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
   set(CMAKE_LINK_FLAGS "-pthreads")
   SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS})
 endif()
@@ -15,7 +15,6 @@ endif()
 
 if(WIN32)
   add_definitions(-D_WIN32_WINNT=0x0601)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif(WIN32)
 
 set (Boost_MULTITHREADED ON) 
@@ -26,7 +25,7 @@ if(CMAKE_USE_PTHREADS_INIT)
     set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-pthread")
 endif()
 
-find_package( Boost 1.60.0 COMPONENTS unit_test_framework)
+find_package( Boost 1.60.0 COMPONENTS unit_test_framework system thread)
 
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
