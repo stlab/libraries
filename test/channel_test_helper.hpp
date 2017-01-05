@@ -59,7 +59,7 @@ struct channel_test_fixture : channel_test_fixture_base
 
     channel_test_fixture() 
     {
-        for (auto i = 0; i < N; i++)
+        for (std::size_t i = 0; i < N; i++)
             std::tie(_send[i], _receive[i]) = stlab::channel<T>(stlab::default_scheduler());
     }
 };

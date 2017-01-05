@@ -181,7 +181,6 @@ script:
       cd build
       make
       ./test/future_test --log_level=message
-      echo all done
     fi
 
 notifications:
