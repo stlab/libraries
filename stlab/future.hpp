@@ -875,7 +875,7 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>  _args;
     future<void>                        _holds[sizeof...(Ts)] {};
     std::atomic_size_t                  _remaining{sizeof...(Ts)};
-    std::atomic_flag                    _error_happened{ ATOMIC_FLAG_INIT };
+    std::atomic_flag                    _error_happened = ATOMIC_FLAG_INIT;
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
@@ -901,7 +901,7 @@ struct when_any_shared {
     boost::optional<R>                  _arg;
     future<void>                        _holds[S]{};
     std::atomic_size_t                  _remaining{S};
-    std::atomic_flag                    _value_received{ ATOMIC_FLAG_INIT };
+    std::atomic_flag                    _value_received = ATOMIC_FLAG_INIT;
     boost::optional<std::exception_ptr> _error;
     size_t                              _index;
     packaged_task<>                     _f;

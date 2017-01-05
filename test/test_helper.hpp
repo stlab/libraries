@@ -46,6 +46,9 @@ namespace test_helper
         static std::atomic_int _usage_counter;
     };
 
+    template <std::size_t N>
+    std::atomic_int custom_scheduler<N>::_usage_counter{0};
+
 
     class test_exception : public std::exception {
         const std::string _error;

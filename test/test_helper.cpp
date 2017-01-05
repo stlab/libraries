@@ -10,11 +10,6 @@ Distributed under the Boost Software License, Version 1.0.
 
 using namespace test_helper;
 
-template<>
-std::atomic_int custom_scheduler<0>::_usage_counter{ 0 };
-template<>
-std::atomic_int custom_scheduler<1>::_usage_counter{ 0 };
-
 test_exception::test_exception(const std::string& error)
     : _error(error)
 {}
