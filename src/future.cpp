@@ -147,6 +147,7 @@ class task_system
                 while (chrono::system_clock::now() < _timed_queue.front().first) {
                     auto when = _timed_queue.front().first;
                     _condition.wait_until(lock, when);
+                    if (_stop) break;
                 }
                 pop_heap(begin(_timed_queue), end(_timed_queue), greater_first());
                 task = move(_timed_queue.back().second);
@@ -171,9 +172,9 @@ TRACE("Start tear down task_system");
             lock_t lock(_timed_queue_mutex);
             _stop = true;
         }
-        _condition.notify_all();
+        _condition.notify_one();
         _timed_queue_thread.join();
-
+TRACE("timed queue joined");
         for (auto& e : _q) e.done();
 TRACE("All queues joined");
         for (auto& e : _threads) e.join();
