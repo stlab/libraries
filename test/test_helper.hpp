@@ -157,8 +157,8 @@ namespace test_helper
         template <typename F>
         void wait_until_future_is_ready(F& f) {
             while (true) {
-                if (f.get_try()) break;
                 printf("wait to be ready\n");
+                if (f.get_try()) break;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         }

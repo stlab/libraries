@@ -448,8 +448,11 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             ready = _ready;
         }
         if (ready) {
+printf("Ready\n");
+        if (_error) {
 printf("Before rethrow\n");
-            if (_error) std::rethrow_exception(_error.value());
+            std::rethrow_exception(_error.value());
+        }
             return true;
         }
         return false;
@@ -491,6 +494,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
         if (_f) try {
             this->set_value(_f, std::move(args)...);
         } catch(...) {
+printf("Exception caught while operator()\n");
             this->set_exception(std::current_exception());
         }
         _f = function_t();
