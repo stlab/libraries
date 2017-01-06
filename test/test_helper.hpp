@@ -123,6 +123,7 @@ namespace test_helper
 
         template <typename E, typename F>
         static void check_failure(F& f, const char* message) {
+#if 0
             try {
                 printf("Before access that should rethrow\n");
                 f.get_try();
@@ -139,7 +140,8 @@ namespace test_helper
             catch (...) {
                 printf("Unknown exception caught\n");
             }
-            //BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
+#endif
+            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
         }
 
         template <typename E, typename... F>
@@ -157,10 +159,24 @@ namespace test_helper
     private:
         template <typename F>
         void wait_until_future_is_ready(F& f) {
-            while (true) {
-                printf("wait to be ready\n");
-                if (f.get_try()) break;
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            try {
+                while (true) {
+                    printf("wait to be ready\n");
+                    if (f.get_try()) break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            }
+            catch (const test_exception&) {
+                printf("test_exception exception caught\n");
+            }
+            catch (const boost::bad_optional_access&) {
+                printf("Bad optional access caught\n");
+            }
+            catch (const std::exception&) {
+                printf("Other std::exception caught\n");
+            }
+            catch (...) {
+                printf("Unknown exception caught\n");
             }
         }
 
