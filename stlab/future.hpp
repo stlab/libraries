@@ -753,12 +753,13 @@ class future<void, void> {
      
     bool get_try() {
         assert(valid());
-        printf("%s _p:%d", __FUNCTION__, _p ? 1 : 0);
+        printf("%s _p:%d\n", __FUNCTION__, _p ? 1 : 0);
         return _p->get_try();
     }
 
     boost::optional<std::exception_ptr> error() const {
         assert(valid());
+        printf("%s _p:%d\n", __FUNCTION__, _p ? 1 : 0);
         return _p->_error;
     }
 
