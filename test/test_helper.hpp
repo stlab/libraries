@@ -122,8 +122,17 @@ namespace test_helper
 
         template <typename E, typename F>
         static void check_failure(F& f, const char* message) {
-printf("Before excpetion check with boost\n");
-            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
+            try {
+                printf("Before access that will throw\n");
+                f.get_try();
+            }
+            catch (const E& e) {
+                printf("Specified exception caught and message%d\n", (std::string(message) == std::string(e.what()))? 1 : 0);
+            }
+            catch (...) {
+                printf("Specified exception not caught\n");
+            }
+            //BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
         }
 
         template <typename E, typename... F>

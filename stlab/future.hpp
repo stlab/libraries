@@ -448,6 +448,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             ready = _ready;
         }
         if (ready) {
+printf("Before rethrow\n");
             if (_error) std::rethrow_exception(_error.get());
             return true;
         }
