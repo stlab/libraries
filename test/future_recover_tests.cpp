@@ -28,7 +28,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
             .recover([](auto failedFuture) {
 TRACE("");
                 if (failedFuture.error())
-                    check_failure<test_exception>(failedFuture, "failure");
+                    check_failure<test_helper::test_exception>(failedFuture, "failure");
 TRACE("");
             });
 TRACE("");
