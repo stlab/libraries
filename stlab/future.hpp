@@ -281,7 +281,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(_error.value());
             return _result;
         }
         return boost::none;
@@ -296,7 +296,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(_error.value());
             return std::move(_result);
         }
         return boost::none;
@@ -379,7 +379,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(_error.value());
             return std::move(_result);
         }
         return boost::none;
@@ -449,7 +449,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         }
         if (ready) {
 printf("Before rethrow\n");
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(_error.value());
             return true;
         }
         return false;
@@ -945,7 +945,7 @@ auto apply_when_all_args(const F& f, P& p) {
 template <typename F, typename P>
 auto apply_when_any_arg(const F& f, P& p) {
     if (p->_error) {
-        std::rethrow_exception(p->_error.get());
+        std::rethrow_exception(p->_error.value());
     }
 
     return f(std::move(p->_arg.get()), p->_index);
@@ -1186,7 +1186,7 @@ namespace detail
 
         auto execute() {
             if (this->_error) {
-                std::rethrow_exception(this->_error.get());
+                std::rethrow_exception(this->_error.value());
             }
             return CR::operator()();
         }
