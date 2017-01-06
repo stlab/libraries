@@ -38,6 +38,10 @@
 #endif
 #endif
 
+// usefull makro for debugging
+#define STLAB_TRACE(S) \
+    printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -267,8 +271,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             then = move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling // FP After usage of recover with scheduling
-        for (const auto& e : then) { e.first(std::move(e.second)); }
+        // propagate exception without scheduling
+        for (const auto& e : then) { e.second(); }
     }
 
     template <typename F, typename... Args>
@@ -361,9 +365,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
                 then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling // FP After usage of recover with scheduling
-        if (then.second)
-            then.first(std::move(then.second));
+        // propagate exception without scheduling
+        if (then.second) then.second();
     }
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
@@ -437,8 +440,8 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling // FP After usage of recover with scheduling
-        for (const auto& e : then) { e.first(std::move(e.second)); }
+        // propagate exception without scheduling 
+        for (const auto& e : then) { e.second(); }
     }
 
     auto get_try() -> bool {
@@ -606,7 +609,6 @@ class future<T, detail::enable_if_copyable<T>> {
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(valid());
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
@@ -623,7 +625,7 @@ class future<T, detail::enable_if_copyable<T>> {
     }
 
     void detach() const {
-        assert(valid()); 
+        assert(valid());
         then([_hold = _p](auto f){ }, [](const auto& x){ });
     }
 
@@ -634,7 +636,6 @@ class future<T, detail::enable_if_copyable<T>> {
         
         void cancel() { *this = future(); }
     */
-
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<T>> p = _p;
@@ -644,7 +645,7 @@ class future<T, detail::enable_if_copyable<T>> {
     }
 
     auto get_try() const& {
-        assert(valid()); 
+        assert(valid());
         return _p->get_try();
     }
 
@@ -654,7 +655,7 @@ class future<T, detail::enable_if_copyable<T>> {
     // because in this case _p is not unique any more and internally it is forwarded to
     // the l-value get_try.
     auto get_try() && {
-        assert(valid()); 
+        assert(valid());
         return _p->get_try_r(_p.unique());
     }
 
@@ -694,7 +695,7 @@ class future<void, void> {
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(valid()); 
+        assert(valid());
         return _p->then(std::forward<F>(f));
     }
 
@@ -718,7 +719,7 @@ class future<void, void> {
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(valid()); 
+        assert(valid());
         return _p->recover(std::forward<F>(f));
     }
 
@@ -741,10 +742,10 @@ class future<void, void> {
     }
 
     void detach() const {
-        assert(valid()); 
+        assert(valid());
         then([_hold = _p](auto f){ }, [](){ });
     }
-
+    
     bool cancel_try() {
         if (!_p.unique()) return false;
         std::weak_ptr<detail::shared_base<void>> p = _p;
@@ -752,7 +753,7 @@ class future<void, void> {
         _p = p.lock();
         return !_p;
     }
-
+     
     bool get_try() {
         assert(valid());
         return _p->get_try();
@@ -877,7 +878,7 @@ struct when_all_shared {
     std::tuple<boost::optional<Ts>...>  _args;
     future<void>                        _holds[sizeof...(Ts)] {};
     std::atomic_size_t                  _remaining{sizeof...(Ts)};
-    std::atomic_flag                    _error_happened{ ATOMIC_FLAG_INIT };
+    std::atomic_flag                    _error_happened = ATOMIC_FLAG_INIT;
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
@@ -903,7 +904,7 @@ struct when_any_shared {
     boost::optional<R>                  _arg;
     future<void>                        _holds[S]{};
     std::atomic_size_t                  _remaining{S};
-    std::atomic_flag                    _value_received{ ATOMIC_FLAG_INIT };
+    std::atomic_flag                    _value_received = ATOMIC_FLAG_INIT;
     boost::optional<std::exception_ptr> _error;
     size_t                              _index;
     packaged_task<>                     _f;
@@ -1637,11 +1638,14 @@ inline future<void> make_ready_future() {
     return p.second;
 }
 
+
 /**************************************************************************************************/
 
 } // namespace stlab
 
 /**************************************************************************************************/
+
+
 
 #endif
 

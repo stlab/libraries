@@ -569,7 +569,7 @@ struct shared_process_sender_i : public shared_process_sender<Arg>
         {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
             _shared_process._queue.template append<I>(std::forward<U>(u)); // TODO (sparent) : overwrite here.
-            do_run = !_shared_process._receiver_count && !_shared_process._process_running;
+            do_run = !_shared_process._receiver_count && (!_shared_process._process_running || _shared_process._process_timeout_function);
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
         if (do_run) _shared_process.run();
@@ -596,7 +596,7 @@ struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
 {
     shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) : shared_process_sender_i<Q, T, R, Args, I, Args...>(sp)... {}
 };
-    
+
 /**************************************************************************************************/
 
 template <typename R, typename Enabled = void>
@@ -845,7 +845,7 @@ struct shared_process : shared_process_receiver<R>,
             std::unique_lock<std::mutex> lock(_process_mutex);
             if (_process_timeout_function && !_process_timeout_function.unique())
                 do_run = true;
-            else // otherwise we cancel the timeout
+            else // If a new value is received then cancel pending timeout.
                 _process_timeout_function.reset();
         }
         if (do_run) {
@@ -853,7 +853,7 @@ struct shared_process : shared_process_receiver<R>,
             return;
         }
         /*
-            While we are awaiting we will flush the queue. The assumption here is that work
+            While we are a_waiting we will flush the queue. The assumption here is that work
             is done on yield()
         */
         try {
@@ -876,11 +876,11 @@ struct shared_process : shared_process_receiver<R>,
             }
 
             /*
-                We are in an await state and the queue is empty.
+                We are in an a_wait state and the queue is empty.
 
-                If we await forever then task_done() leaving us in an await state.
-                else if we await with an expired timeout then go ahead and yield now.
-                else schedule a timeout when we will yield if not canceled by intervening await.
+                If we a_wait forever then task_done() leaving us in an a_wait state.
+                else if we a_wait with an expired timeout then go ahead and yield now.
+                else schedule a timeout when we will yield if not canceled by intervening a_wait.
             */
             else if (when == std::chrono::system_clock::time_point::max()) {
                 task_done();
@@ -889,18 +889,7 @@ struct shared_process : shared_process_receiver<R>,
                 broadcast(_process.yield());
             }
             else {
-                /*
-                REVISIT (sparent) : The case is not implemented.
-
-                Schedule a timeout. If a new value is received then cancel pending timeout.
-
-                Mechanism for cancelation? Possibly a shared/weak ptr. Checking yield state is
-                not sufficient since process might have changed state many times before timeout
-                is invoked.
-
-                Timeout may occur concurrent with other operation - requires syncronization.
-                */
-
+                /* Schedule a timeout. */
                 _process_timeout_function = std::make_shared<std::function<void()>>([_weak_this = make_weak_ptr(this->shared_from_this())]{
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
@@ -913,7 +902,8 @@ struct shared_process : shared_process_receiver<R>,
                     _this->_process_timeout_function.reset();
                 });
 
-                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()), _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
+                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()),
+                                  _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
                     auto timeout_function = _weak_process_timeout.lock();
@@ -921,7 +911,7 @@ struct shared_process : shared_process_receiver<R>,
                 });
             }
         }
-        catch (...) { // this catches exceptions during _process.await() and _process.yield()
+        catch (...) { // this catches exceptions during _process.a_wait() and _process.yield()
             broadcast(std::move(std::current_exception()));
         }
     }
@@ -1329,10 +1319,6 @@ detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, buffer_
     a._annotations._buffer_size = bs._value;
     return result;
 }
-
-
-/**************************************************************************************************/
-
 template <typename T>
 class receiver {
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
@@ -1354,7 +1340,6 @@ class receiver {
     receiver(ptr_t p) : _p(std::move(p)) { }
 
   public:
-
     using result_type = T;
 
     receiver() = default;

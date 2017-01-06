@@ -509,17 +509,20 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
-    while (true) {
-        annotatedProcesses();
+    annotatedProcesses();
+
 #if 0
+
+    while (true) {
         channelExample();
         joinChannels();
         zipChannels();
         mergeChannels();
         failingProcess();
+    }
 
 #endif // 0
-    }
+
     int i;
     cin >> i;
 }
