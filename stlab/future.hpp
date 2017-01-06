@@ -753,6 +753,7 @@ class future<void, void> {
      
     bool get_try() {
         assert(valid());
+        printf("%s _p:%d", __FUNCTION__, _p ? 1 : 0);
         return _p->get_try();
     }
 
