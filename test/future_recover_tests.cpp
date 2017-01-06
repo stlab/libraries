@@ -36,7 +36,7 @@ printf("Before wait until completed\n");
 printf("After wait until completed\n");
 
         BOOST_REQUIRE(error);
-        BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_lvalue) {
@@ -54,7 +54,7 @@ printf("After wait until completed\n");
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE(error);
-        BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_with_custom_scheduler_on_rvalue) {
@@ -73,7 +73,7 @@ printf("After wait until completed\n");
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_with_custom_scheduler_on_lvalue) {
@@ -92,7 +92,7 @@ printf("After wait until completed\n");
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_rvalue) {
@@ -162,7 +162,7 @@ printf("After wait until completed\n");
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_with_custom_scheduler_on_lvalue) {
@@ -188,7 +188,7 @@ printf("After wait until completed\n");
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {

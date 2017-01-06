@@ -438,7 +438,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             _ready = true;
         }
         // propagate exception without scheduling // FP After usage of recover with scheduling
-        for (const auto& e : then) { e.first(std::move(e.second)); }
+        for (const auto& e : then) { /*e.first(std::move(e.second));*/ e.second(); }
     }
 
     auto get_try() -> bool {

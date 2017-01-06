@@ -62,8 +62,9 @@ namespace test_helper
         explicit test_exception(const char* error);
 
         test_exception& operator=(const test_exception&) = default;
-
         test_exception(const test_exception&) = default;
+        test_exception& operator=(test_exception&&) = default;
+        test_exception(test_exception&&) = default;
 
         virtual ~test_exception() {}
 
@@ -123,7 +124,7 @@ namespace test_helper
         template <typename E, typename F>
         static void check_failure(F& f, const char* message) {
             try {
-                printf("Before access that will throw\n");
+                printf("Before access that should rethrow\n");
                 f.get_try();
             }
             catch (const E& e) {
