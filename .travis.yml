@@ -167,8 +167,12 @@ before_script:
   ############################################################################
   # Go back to the root of the project and setup the build directory
   ############################################################################
-  - cd ${TRAVIS_BUILD_DIR}
-  - (mkdir build && cd build && cmake -DBOOST_ROOT=${BOOST_DIR} .. ${CMAKE_OPTIONS})
+  - |
+    cd ${TRAVIS_BUILD_DIR}
+    if [[ "${LLVM_VERSION}" == "3.6.2" || "${LLVM_VERSION}" == "3.7.1" ]]; then 
+      CXXFLAGS+="-stdlib=libc++"; 
+    fi  
+    (mkdir build && cd build && cmake -DBOOST_ROOT=${BOOST_DIR} .. ${CMAKE_OPTIONS})
 
 
 script:
