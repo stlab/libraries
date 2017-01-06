@@ -122,7 +122,7 @@ namespace test_helper
 
         template <typename E, typename F>
         static void check_failure(F& f, const char* message) {
-            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(_m) == std::string(e.what()); }));
+            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return printf("In check exception\n"); std::string(_m) == std::string(e.what()); }));
         }
 
         template <typename E, typename... F>
@@ -140,7 +140,9 @@ namespace test_helper
     private:
         template <typename F>
         void wait_until_future_is_ready(F& f) {
-            while (!f.get_try()) {
+            while (true) {
+                if (f.get_try()) break;
+                printf("wait to be ready\n");
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         }
