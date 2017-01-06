@@ -38,6 +38,9 @@
 #endif
 #endif
 
+#define TRACE(S) \
+    printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -448,9 +451,9 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             ready = _ready;
         }
         if (ready) {
-printf("Ready\n");
+TRACE("");
         if (_error) {
-printf("Before rethrow\n");
+TRACE("");
             std::rethrow_exception(_error.value());
         }
             return true;
@@ -494,7 +497,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
         if (_f) try {
             this->set_value(_f, std::move(args)...);
         } catch(...) {
-printf("Exception caught while operator()\n");
+TRACE("Exception caught while operator()");
             this->set_exception(std::current_exception());
         }
         _f = function_t();
@@ -758,13 +761,13 @@ class future<void, void> {
      
     bool get_try() {
         assert(valid());
-        printf("%s _p:%d\n", __FUNCTION__, _p ? 1 : 0);
+TRACE("get_try()");
         return _p->get_try();
     }
 
     boost::optional<std::exception_ptr> error() const {
         assert(valid());
-        printf("%s _p:%d\n", __FUNCTION__, _p ? 1 : 0);
+TRACE("error");
         return _p->_error;
     }
 

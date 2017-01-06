@@ -141,6 +141,7 @@ namespace test_helper
                 printf("Unknown exception caught\n");
             }
 #endif
+TRACE("");
             BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
         }
 
@@ -161,7 +162,7 @@ namespace test_helper
         void wait_until_future_is_ready(F& f) {
             try {
                 while (true) {
-                    printf("wait to be ready\n");
+TRACE("");
                     if (f.get_try()) break;
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
