@@ -129,8 +129,14 @@ namespace test_helper
             catch (const E& e) {
                 printf("Specified exception caught and message%d\n", (std::string(message) == std::string(e.what()))? 1 : 0);
             }
+            catch (const boost::bad_optional_access&) {
+                printf("Bad optional access caught\n");
+            }
+            catch (const std::exception&) {
+                printf("Other std::exception caught\n");
+            }
             catch (...) {
-                printf("Specified exception not caught\n");
+                printf("Unknown exception caught\n");
             }
             //BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
         }
