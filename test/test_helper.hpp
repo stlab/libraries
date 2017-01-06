@@ -122,6 +122,7 @@ namespace test_helper
 
         template <typename E, typename F>
         static void check_failure(F& f, const char* message) {
+printf("Before excpetion check with boost\n");
             BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { printf("In check exception\n"); return std::string(_m) == std::string(e.what()); }));
         }
 
