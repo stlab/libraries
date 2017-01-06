@@ -38,7 +38,8 @@
 #endif
 #endif
 
-#define TRACE(S) \
+// usefull makro for debugging
+#define STLAB_TRACE(S) \
     printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
 
 /**************************************************************************************************/
@@ -270,8 +271,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             then = move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling // FP After usage of recover with scheduling
-        for (const auto& e : then) { e.first(std::move(e.second)); }
+        // propagate exception without scheduling
+        for (const auto& e : then) { e.second(); }
     }
 
     template <typename F, typename... Args>
@@ -284,7 +285,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.value());
+            if (_error) std::rethrow_exception(_error.get());
             return _result;
         }
         return boost::none;
@@ -299,7 +300,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.value());
+            if (_error) std::rethrow_exception(_error.get());
             return std::move(_result);
         }
         return boost::none;
@@ -364,9 +365,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
                 then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling // FP After usage of recover with scheduling
-        if (then.second)
-            then.first(std::move(then.second));
+        // propagate exception without scheduling
+        if (then.second) then.second();
     }
     template <typename F, typename... Args>
     void set_value(const F& f, Args&&... args);
@@ -382,7 +382,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.value());
+            if (_error) std::rethrow_exception(_error.get());
             return std::move(_result);
         }
         return boost::none;
@@ -440,8 +440,8 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling // FP After usage of recover with scheduling
-        for (const auto& e : then) { /*e.first(std::move(e.second));*/ e.second(); }
+        // propagate exception without scheduling 
+        for (const auto& e : then) { e.second(); }
     }
 
     auto get_try() -> bool {
@@ -451,11 +451,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             ready = _ready;
         }
         if (ready) {
-TRACE("");
-        if (_error) {
-TRACE("");
-            std::rethrow_exception(_error.value());
-        }
+            if (_error) std::rethrow_exception(_error.get());
             return true;
         }
         return false;
@@ -497,7 +493,6 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
         if (_f) try {
             this->set_value(_f, std::move(args)...);
         } catch(...) {
-TRACE("Exception caught while operator()");
             this->set_exception(std::current_exception());
         }
         _f = function_t();
@@ -761,13 +756,11 @@ class future<void, void> {
      
     bool get_try() {
         assert(valid());
-TRACE("get_try()");
         return _p->get_try();
     }
 
     boost::optional<std::exception_ptr> error() const {
         assert(valid());
-TRACE("error");
         return _p->_error;
     }
 
@@ -952,7 +945,7 @@ auto apply_when_all_args(const F& f, P& p) {
 template <typename F, typename P>
 auto apply_when_any_arg(const F& f, P& p) {
     if (p->_error) {
-        std::rethrow_exception(p->_error.value());
+        std::rethrow_exception(p->_error.get());
     }
 
     return f(std::move(p->_arg.get()), p->_index);
@@ -1193,7 +1186,7 @@ namespace detail
 
         auto execute() {
             if (this->_error) {
-                std::rethrow_exception(this->_error.value());
+                std::rethrow_exception(this->_error.get());
             }
             return CR::operator()();
         }

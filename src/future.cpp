@@ -167,18 +167,16 @@ public:
     }
     
     ~task_system() {
-TRACE("Start tear down task_system");
         {
             lock_t lock(_timed_queue_mutex);
             _stop = true;
         }
         _condition.notify_one();
         _timed_queue_thread.join();
-TRACE("timed queue joined");
+
         for (auto& e : _q) e.done();
-TRACE("All queues joined");
+
         for (auto& e : _threads) e.join();
-TRACE("All threads joined");
     }
     
     template <typename F>
