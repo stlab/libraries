@@ -171,7 +171,7 @@ TRACE("Start tear down task_system");
             lock_t lock(_timed_queue_mutex);
             _stop = true;
         }
-        _condition.notify_one();
+        _condition.notify_all();
         _timed_queue_thread.join();
 
         for (auto& e : _q) e.done();
