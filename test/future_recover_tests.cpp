@@ -418,7 +418,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<std::unique
             check_failure<test_exception>(failedFuture, "failure");
             auto result = std::make_unique<int>();
             *result = 42;
-            return std::move(result);
+            return result;
         });
 
         auto result = wait_until_future_r_completed(sut);
@@ -444,7 +444,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<std::unique
                 check_failure<test_exception>(failedFuture, "failure");
                 auto result = std::make_unique<int>();
                 *result = 42;
-                return std::move(result);
+                return result;
             });
         }
 
@@ -467,7 +467,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<std::unique
             check_failure<test_exception>(failedFuture, "failure");
             auto result = std::make_unique<int>();
             *result = 42;
-            return std::move(result);
+            return result;
         });
 
         auto result = wait_until_future_r_completed(sut);
@@ -494,7 +494,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<std::unique
                 check_failure<test_exception>(failedFuture, "failure");
                 auto result = std::make_unique<int>();
                 *result = 42;
-                return std::move(result);
+                return result;
             });
         }
 
