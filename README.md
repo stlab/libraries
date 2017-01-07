@@ -98,7 +98,7 @@ class QtScheduler
     };
 
 public:
-  template <typename F>
+    template <typename F>
   void operator()(std::chrono::system_clock::time_point /*when*/, F&& f) {
     auto event = new SchedulerEvent(std::forward<F>(f));
     QApplication::postEvent(event->receiver(), event);

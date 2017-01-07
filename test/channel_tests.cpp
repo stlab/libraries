@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) | [&](int x) { result += x; };
+        auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
 
         receive.set_ready();
         send(1);
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) | [&](int x) { result += x; };
+        auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
 
         receive.set_ready();
         send(1);
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_scheduler());
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) | [&](int x) { result += x; };
+        auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
 
         receive.set_ready();
         for (auto i = 0; i < 10;++i) send(1);

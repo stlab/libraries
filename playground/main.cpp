@@ -458,6 +458,42 @@ void failingProcess() {
     }
 }
 
+void annotatedProcesses() {
+    printf("%s\n", __FUNCTION__);
+    sender<int> send;
+    receiver<int> receive;
+
+    tie(send, receive) = channel<int>(default_scheduler());
+
+    std::atomic_int v{0};
+
+    auto result = receive 
+        | buffer_size{ 3 } & [](int x) { return x * 2; }
+        | [](int x) { return x * 2; } & buffer_size{ 2 }
+        | buffer_size{ 3 } & scheduler{ default_scheduler() } & [](int x) { return x * 2; } 
+
+        | scheduler{ default_scheduler() } & [](int x) { return x + 1; }
+        | [](int x) { return x + 1; } & scheduler{ default_scheduler() }
+        | scheduler{ default_scheduler() } & buffer_size{ 3 } & [](int x) { return x * 2; }
+    
+        | [](int x) { return x + 1; } & scheduler{ default_scheduler() } & buffer_size{ 3 }
+        | [](int x) { return x * 2; } & buffer_size{ 3 } & scheduler{ default_scheduler() }
+        
+        | [&v](int x) { v = x;};
+        
+
+    receive.set_ready();
+
+    send(1);
+
+
+    while (v == 0) {
+        this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -473,6 +509,10 @@ int main(int argc, char **argv)
     activeProgressExample();
 
 #endif // 0    
+    annotatedProcesses();
+
+#if 0
+
     while (true) {
         channelExample();
         joinChannels();
@@ -480,6 +520,9 @@ int main(int argc, char **argv)
         mergeChannels();
         failingProcess();
     }
+
+#endif // 0
+
     int i;
     cin >> i;
 }

@@ -197,7 +197,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         std::atomic_int result{ 0 };
 
         auto check = _receive[0] |
-                [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } |
+                [](std::unique_ptr<int> x) { *x += *x; return x; } |
                 [&](std::unique_ptr<int> x) { result += *x; };
 
         _receive[0].set_ready();
@@ -218,7 +218,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         std::atomic_int result{ 0 };
 
         auto check = _receive[0] |
-                [](std::unique_ptr<int> x) { *x += *x; return std::move(x); } |
+                [](std::unique_ptr<int> x) { *x += *x; return x; } |
                 [&](std::unique_ptr<int> x) { result += *x; };
 
         _receive[0].set_ready();

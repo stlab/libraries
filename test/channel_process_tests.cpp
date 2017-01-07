@@ -105,10 +105,10 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         wait_until_done([&] { return index == 5; });
 
         std::vector<int> expectations = {0,1,2,3,4,5,6,7,8,9};
-        BOOST_REQUIRE_EQUAL(5, results.size());
+        BOOST_REQUIRE_EQUAL(std::size_t(5), results.size());
 
         for (const auto& c : results) {
-            BOOST_REQUIRE_EQUAL(2, c.size());
+            BOOST_REQUIRE_EQUAL(std::size_t(2), c.size());
             for (auto i : c) {
                 auto it = std::find(expectations.begin(), expectations.end(), i);
                 BOOST_REQUIRE_EQUAL(true, it != expectations.end());
