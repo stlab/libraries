@@ -155,7 +155,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         sut = async(custom_scheduler<0>(), [] { 
             auto r = std::make_unique<int>(); 
             *r = 42; 
-            return std::move(r); 
+            return r;
         });
 
         check_valid_future(sut);
@@ -173,7 +173,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
                 auto result = std::make_unique<int>(); 
                 *result = 42; 
                 _check = true;  
-                return std::move(result);
+                return result;
             }).detach();
         }
         while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
@@ -185,7 +185,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) {
             auto r = std::make_unique<int>();
             *r = x;
-            return std::move(r);
+            return r;
         });
 
         check_valid_future(sut);
@@ -202,7 +202,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
             .then(custom_scheduler<1>(), [](auto x) {
                 auto r = std::make_unique<int>();
                 *r = x;
-                return std::move(r);
+                return r;
             });
 
         check_valid_future(sut);
@@ -221,7 +221,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         sut = interim.then([](auto x) {
             auto r = std::make_unique<int>();
             *r = x;
-            return std::move(r);
+            return r;
         });
 
         check_valid_future(sut);
@@ -239,7 +239,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         sut = interim.then(custom_scheduler<1>(), [](auto x) {
             auto r = std::make_unique<int>();
             *r = x;
-            return std::move(r);
+            return r;
         });
 
         check_valid_future(sut);
@@ -256,11 +256,11 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         sut = async(custom_scheduler<0>(), [] {
                 auto result = std::make_unique<int>();
                 *result = 42;
-                return std::move(result); })
+                return result; })
             .then([](auto x) {
                 auto r = std::make_unique<int>();
                 *r = *x * 2;
-                return std::move(r);
+                return r;
             });
 
         check_valid_future(sut);
@@ -276,11 +276,11 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         sut = async(custom_scheduler<0>(), [] {
                 auto result = std::make_unique<int>();
                 *result = 42;
-                return std::move(result); })
+                return result; })
             .then(custom_scheduler<1>(), [](auto x) {
                 auto r = std::make_unique<int>();
                 *r = *x * 2;
-                return std::move(r);
+                return r;
             });
         
         check_valid_future(sut);

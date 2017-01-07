@@ -26,13 +26,13 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 _error = true;
                 throw test_exception("failure"); })
             .recover([](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
+                if (failedFuture.error())
+                    check_failure<test_helper::test_exception>(failedFuture, "failure");
             });
-
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE(error);
-        BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_lvalue) {
@@ -50,7 +50,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
         wait_until_future_completed(sut);
 
         BOOST_REQUIRE(error);
-        BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_with_custom_scheduler_on_rvalue) {
@@ -69,7 +69,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_with_custom_scheduler_on_lvalue) {
@@ -88,7 +88,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_rvalue) {
@@ -158,7 +158,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_with_custom_scheduler_on_lvalue) {
@@ -184,7 +184,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
@@ -321,7 +321,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_before_recover_initialized_with_custom_scheduler_on_lvalue) {
@@ -343,7 +343,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_after_recover_initialized_with_custom_scheduler_on_rvalue) {
@@ -370,7 +370,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_recover_int_simple_recover_failure_after_recover_initialized_with_custom_scheduler_on_lvalue) {
@@ -398,7 +398,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
         BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -475,7 +475,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<std::unique
         BOOST_REQUIRE_EQUAL(42, **result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
 
@@ -503,7 +503,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<std::unique
         BOOST_REQUIRE_EQUAL(42, **result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(0, custom_scheduler<1>::usage_counter());
     }
 
 BOOST_AUTO_TEST_SUITE_END()

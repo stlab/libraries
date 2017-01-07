@@ -54,8 +54,9 @@ if [ ! -e './boost_libraries/b2' ]; then
     echo "INFO : b2 not found: boostrapping."
 
     echo_run cd boost_libraries;
-
-    echo_run ./bootstrap.sh --with-toolset=${TOOLSET:-clang}
+    
+    #${TOOLSET:-clang}
+    echo_run ./bootstrap.sh --with-toolset=gcc 
     echo_run ./b2 --with-system --with-thread --with-atomic --with-chrono --with-test
 
     echo_run cd ..

@@ -46,7 +46,6 @@ template <typename> class receiver;
  * In response to a close, a process can switch to a yield state to yield values, otherwise it is destructed.
  * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
  */
-
 enum class process_state {
     await,
     yield,
@@ -71,13 +70,6 @@ constexpr process_state_scheduled yield_immediate {
     std::chrono::system_clock::time_point::min()
 };
 
-/**************************************************************************************************/
-
-struct buffer_size
-{
-    const std::size_t _value;
-    explicit buffer_size(size_t v) : _value(v) {}
-};
 
 /**************************************************************************************************/
 
@@ -1161,6 +1153,172 @@ auto merge(S s, F f, R&&... upstream_receiver) {
 
 /**************************************************************************************************/
 
+namespace detail {
+
+template<typename F>
+struct annotated_process;
+
+struct annotations;
+
+}
+
+/**************************************************************************************************/
+
+struct buffer_size
+{
+    const std::size_t _value;
+
+    explicit buffer_size(size_t v) : _value(v) {}
+};
+
+struct scheduler
+{
+    timed_schedule_t _s;
+
+    explicit scheduler(timed_schedule_t s) : _s(std::move(s)) {}
+};
+
+/**************************************************************************************************/
+
+namespace detail
+{
+
+struct annotations 
+{
+    boost::optional<timed_schedule_t>  _scheduler;
+    boost::optional<std::size_t>       _buffer_size;
+
+    explicit annotations(timed_schedule_t s) : _scheduler(std::move(s)) {}
+    explicit annotations(std::size_t bs) : _buffer_size(bs) {}
+};
+
+template <typename F>
+struct annotated_process
+{
+    using process_type = F;
+
+    F                  _f;
+    annotations        _annotations;
+
+    annotated_process(F f, const scheduler& s) : _f(std::move(f)), _annotations(s._s) {}
+    annotated_process(F f, const buffer_size& bs) : _f(std::move(f)), _annotations(bs._value) {}
+
+    annotated_process(F f, scheduler&& s) : _f(std::move(f)), _annotations(std::move(s._s)) {}
+    annotated_process(F f, buffer_size&& bs) : _f(std::move(f)), _annotations(bs._value) {}
+    annotated_process(F f, annotations&& a) : _f(std::move(f)), _annotations(std::move(a)) {}
+};
+
+template <typename B, typename S>
+detail::annotations combine_bs_scheduler(B&& b, S&& s) {
+    detail::annotations result{ b._value };
+    result._scheduler = std::forward<S>(s)._s;
+    return result;
+}
+
+}
+
+inline
+detail::annotations operator&(const buffer_size& bs, const scheduler& s){
+    return detail::combine_bs_scheduler(bs, s);
+}
+
+inline
+detail::annotations operator&(const buffer_size& bs, scheduler&& s) {
+    return detail::combine_bs_scheduler(bs, std::move(s));
+}
+
+inline
+detail::annotations operator&(buffer_size&& bs, scheduler&& s) {
+    return detail::combine_bs_scheduler(std::move(bs), std::move(s));
+}
+
+inline
+detail::annotations operator&(buffer_size&& bs, const scheduler& s) {
+    return detail::combine_bs_scheduler(std::move(bs), s);
+}
+
+inline
+detail::annotations operator&(const scheduler& s, const buffer_size& bs) {
+    return detail::combine_bs_scheduler(bs, s);
+}
+
+inline
+detail::annotations operator&(const scheduler& s, buffer_size&& bs) {
+    return detail::combine_bs_scheduler(std::move(bs), s);
+}
+
+inline
+detail::annotations operator&(scheduler&& s, buffer_size&& bs) {
+    return detail::combine_bs_scheduler(std::move(bs), std::move(s));
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(const buffer_size& bs, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), bs);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(buffer_size&& bs, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(bs));
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, const buffer_size& bs) {
+    return detail::annotated_process<F>(std::forward<F>(f), bs);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, buffer_size&& bs) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(bs));
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(const scheduler& s, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), s);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(scheduler&& s, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(s));
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, const scheduler& s) {
+    return detail::annotated_process<F>(std::forward<F>(f), s);
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, scheduler&& s) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(s));
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(detail::annotations&& a, F&& f) {
+    return detail::annotated_process<F>{std::forward<F>(f), std::move(a)};
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(F&& f, detail::annotations&& a) {
+    return detail::annotated_process<F>{std::forward<F>(f), std::move(a)};
+}
+
+
+template <typename F>
+detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, scheduler&& s) {
+    auto result{ std::move(a) };
+    a._annotations._scheduler = std::move(s._s);
+    return result;
+}
+
+template <typename F>
+detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, buffer_size&& bs) {
+    auto result{ std::move(a) };
+    a._annotations._buffer_size = bs._value;
+    return result;
+}
 template <typename T>
 class receiver {
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
@@ -1220,15 +1378,24 @@ class receiver {
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }
 
-    auto operator|(buffer_size bz) {
-        set_buffer_size(bz._value);
-        return *this;
-    }
+    template <typename F>
+    auto operator|(detail::annotated_process<F>&& ap) {
+        auto scheduler = ap._annotations._scheduler.value_or(_p->scheduler());
+        // TODO - report error if not constructed or _ready.
+        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>,
+                F,
+                detail::yield_type<F, T>,
+                T>>(scheduler, std::move(ap._f), _p);
 
-    void set_buffer_size(size_t queue_size) {
-        _p->set_buffer_size(queue_size);
+        _p->map(sender<T>(p));
+
+        if (ap._annotations._buffer_size)
+            p->set_buffer_size(ap._annotations._buffer_size.value());
+
+        return receiver<detail::yield_type<F, T>>(std::move(p));
     }
 };
+
 
 /**************************************************************************************************/
 
