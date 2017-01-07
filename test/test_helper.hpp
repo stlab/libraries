@@ -10,6 +10,8 @@ Distributed under the Boost Software License, Version 1.0.
 
 #define BOOST_TEST_DYN_LINK
 
+#include <stlab/default_executor.hpp>
+
 #include <atomic>
 #include <boost/test/unit_test.hpp>
 #include <exception>
@@ -30,7 +32,7 @@ namespace test_helper
         void operator()(F f) {
             ++_usage_counter;
 #ifdef WIN32 // The implementation on Windows uses a scheduler that allows 512 tasks in the pool in parallel
-            stlab::default_scheduler()(std::move(f));
+            stlab::default_executor()(std::move(f));
 #else
             // The default scheduler under Linux allows only as many tasks as there are physical cores. But this
             // can lead to a dead lock in some of the tests

@@ -10,6 +10,8 @@ Distributed under the Boost Software License, Version 1.0.
 #define _CHANNEL_TEST_HELPER_
 
 #include <stlab/channel.hpp>
+#include <stlab/default_executor.hpp>
+
 #include <queue>
 
 class manual_scheduler
@@ -37,7 +39,7 @@ public:
         }
         auto t = std::move(_tasks.front());
         _tasks.pop();
-        stlab::default_scheduler()(std::chrono::system_clock::time_point::min(), std::move(t));
+        stlab::default_executor()(std::chrono::system_clock::time_point::min(), std::move(t));
     }
 };
 
@@ -60,7 +62,7 @@ struct channel_test_fixture : channel_test_fixture_base
     channel_test_fixture() 
     {
         for (std::size_t i = 0; i < N; i++)
-            std::tie(_send[i], _receive[i]) = stlab::channel<T>(stlab::default_scheduler());
+            std::tie(_send[i], _receive[i]) = stlab::channel<T>(stlab::default_executor());
     }
 };
 
@@ -73,8 +75,8 @@ struct channel_types_test_fixture : channel_test_fixture_base
 
     channel_types_test_fixture()
     {
-        std::tie(send<0>(), receive<0>()) = stlab::channel<U>(stlab::default_scheduler());
-        std::tie(send<1>(), receive<1>()) = stlab::channel<V>(stlab::default_scheduler());
+        std::tie(send<0>(), receive<0>()) = stlab::channel<U>(stlab::default_executor());
+        std::tie(send<1>(), receive<1>()) = stlab::channel<V>(stlab::default_executor());
     }
 
     template<std::size_t I>
@@ -97,8 +99,8 @@ public:
 
     channel_combine_test_fixture()
     {
-        std::tie(_send1, _receive1) = stlab::channel<T1>(stlab::default_scheduler());
-        std::tie(_send2, _receive2) = stlab::channel<T2>(stlab::default_scheduler());
+        std::tie(_send1, _receive1) = stlab::channel<T1>(stlab::default_executor());
+        std::tie(_send2, _receive2) = stlab::channel<T2>(stlab::default_executor());
     }
 
     template <typename F>

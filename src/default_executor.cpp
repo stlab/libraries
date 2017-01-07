@@ -40,7 +40,7 @@ namespace {
 
 using lock_t = unique_lock<mutex>;
 
-class notification_queue 
+class notification_queue
 {
     deque<function<void()>> _q;
     bool                    _done{false};
@@ -55,7 +55,7 @@ public:
         _q.pop_front();
         return true;
     }
-    
+
     template<typename F>
     bool try_push(F&& f) {
         {
@@ -66,7 +66,7 @@ public:
         _ready.notify_one();
         return true;
     }
-    
+
     void done() {
         {
             unique_lock<mutex> lock{_mutex};
@@ -74,7 +74,7 @@ public:
         }
         _ready.notify_all();
     }
-    
+
     bool pop(function<void()>& x) {
         lock_t lock{_mutex};
         while (_q.empty() && !_done) _ready.wait(lock);
@@ -83,7 +83,7 @@ public:
         _q.pop_front();
         return true;
     }
-    
+
     template<typename F>
     void push(F&& f) {
         {
@@ -106,7 +106,7 @@ struct greater_first
     }
 };
 
-class task_system 
+class task_system
 {
     const unsigned              _count{thread::hardware_concurrency()};
     vector<thread>              _threads;
@@ -122,16 +122,16 @@ class task_system
     mutex               _timed_queue_mutex;
     thread              _timed_queue_thread;
 
-    
+
     void run(unsigned i) {
         while (true) {
             function<void()> f;
-            
+
             for (unsigned n = 0; n != _count * 32; ++n) {
                 if (_q[(i + n) % _count].try_pop(f)) break;
             }
             if (!f && !_q[i].pop(f)) break;
-            
+
             f();
         }
     }
@@ -165,7 +165,7 @@ public:
         }
         _timed_queue_thread = thread([this] { this->timed_queue_run(); });
     }
-    
+
     ~task_system() {
         {
             lock_t lock(_timed_queue_mutex);
@@ -178,15 +178,15 @@ public:
 
         for (auto& e : _threads) e.join();
     }
-    
+
     template <typename F>
     void async_(F&& f) {
         auto i = _index++;
-        
+
         for (unsigned n = 0; n != _count; ++n) {
             if (_q[(i + n) % _count].try_push(forward<F>(f))) return;
         }
-        
+
         _q[i % _count].push(forward<F>(f));
     }
 
@@ -195,7 +195,7 @@ public:
         {
             if (when == chrono::system_clock::time_point::min()) {
                 async_(forward<F>(f));
-            } 
+            }
             else {
                 lock_t lock(_timed_queue_mutex);
                 _timed_queue.emplace_back(when, forward<F>(f));
@@ -227,7 +227,7 @@ task_system& only_task_system() {
 }
 
 void async_(std::chrono::system_clock::time_point time_point, function<void()> f) {
-    if ( (time_point != std::chrono::system_clock::time_point()) && (time_point > std::chrono::system_clock::now()) )        
+    if ( (time_point != std::chrono::system_clock::time_point()) && (time_point > std::chrono::system_clock::now()) )
         only_task_system().async_(time_point, move(f));
     else
         async_(std::move(f));

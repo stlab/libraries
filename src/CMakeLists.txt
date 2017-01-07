@@ -3,17 +3,20 @@ project(future C CXX)
 include_directories("${PROJECT_SOURCE_DIR}/..")
 
 set(SOURCE
-  future.cpp
+  default_executor.cpp
+  main_executor.cpp
 )
 
 set(HEADERS
-  ../stlab/config.hpp
   ../stlab/channel.hpp
+  ../stlab/config.hpp
+  ../stlab/default_executor.hpp
   ../stlab/expected.hpp
   ../stlab/future.hpp
+  ../stlab/main_executor.hpp
   ../stlab/progress.hpp
   ../stlab/tuple_algorithm.hpp
-)
+  ../stlab/utility.hpp  )
 
 include_directories(${Boost_INCLUDE_DIRS})
 
