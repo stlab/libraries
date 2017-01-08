@@ -11,8 +11,10 @@ set(HEADERS
   ../stlab/channel.hpp
   ../stlab/config.hpp
   ../stlab/default_executor.hpp
+  ../stlab/executor_base.hpp
   ../stlab/expected.hpp
   ../stlab/future.hpp
+  ../stlab/immediate_executor.hpp
   ../stlab/main_executor.hpp
   ../stlab/progress.hpp
   ../stlab/tuple_algorithm.hpp

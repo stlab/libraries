@@ -18,13 +18,8 @@
 #include <vector>
 
 #include <boost/optional.hpp>
-
 #include <stlab/config.hpp>
-
-
-// usefull makro for debugging
-#define STLAB_TRACE(S) \
-    printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
+#include <stlab/executor_base.hpp>
 
 /**************************************************************************************************/
 
@@ -98,9 +93,6 @@ template <typename...> class packaged_task;
 
 template <typename, typename = void> class future;
 
-using schedule_t = std::function<void(std::function<void()>)>;
-using timed_schedule_t = std::function<void(std::chrono::system_clock::time_point, std::function<void()>)>;
-
 /**************************************************************************************************/
 
 namespace detail {
@@ -163,16 +155,16 @@ struct shared_task {
 
 template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::vector<std::pair<schedule_t, std::function<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
 
-    schedule_t                          _schedule;
+    executor_t                          _schedule;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _schedule(std::move(s)) { }
 
     template <typename F>
     auto then(F f) { return then(_schedule, std::move(f)); }
@@ -295,16 +287,16 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
 template <typename T>
 struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::pair<schedule_t, std::function<void()>>;
+    using then_t = std::pair<executor_t, std::function<void()>>;
 
-    schedule_t                          _schedule;
+    executor_t                          _schedule;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _schedule(std::move(s)) { }
 
     template <typename F>
     auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
@@ -377,15 +369,15 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
 template <>
 struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
-    using then_t = std::vector<std::pair<schedule_t, std::function<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
 
-    schedule_t                          _schedule;
+    executor_t                          _schedule;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _schedule(std::move(s)) { }
 
     template <typename F>
     auto then(F f) { return then(_schedule, std::move(f)); }
@@ -456,7 +448,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
     function_t _f;
 
     template <typename F>
-    shared(schedule_t s, F f) : shared_base<R>(std::move(s)), _f(std::move(f)) {
+    shared(executor_t s, F f) : shared_base<R>(std::move(s)), _f(std::move(f)) {
         _promise_count = 1;
     }
 

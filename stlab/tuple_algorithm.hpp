@@ -5,6 +5,7 @@ Distributed under the Boost Software License, Version 1.0.
 */
 
 /**************************************************************************************************/
+
 #ifndef STLAB_TUPLE_ALGORITHM_HPP
 #define STLAB_TUPLE_ALGORITHM_HPP
 
