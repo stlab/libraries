@@ -4,6 +4,8 @@
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/**************************************************************************************************/
+
 #ifndef SLABFUTURE_UTILITY_HPP
 #define SLABFUTURE_UTILITY_HPP
 

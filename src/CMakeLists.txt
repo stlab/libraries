@@ -4,7 +4,6 @@ include_directories("${PROJECT_SOURCE_DIR}/..")
 
 set(SOURCE
   default_executor.cpp
-  main_executor.cpp
 )
 
 set(HEADERS
