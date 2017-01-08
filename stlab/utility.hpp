@@ -14,6 +14,7 @@
 // usefull makro for debugging
 #define STLAB_TRACE(S) \
     printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
+
 #endif
 
 
