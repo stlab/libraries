@@ -157,17 +157,17 @@ template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
     using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
 
-    executor_t                          _schedule;
+    executor_t                          _executor;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(executor_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
-    auto then(F f) { return then(_schedule, std::move(f)); }
+    auto then(F f) { return then(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then(S s, F f) {
@@ -177,7 +177,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto recover(F f) { return recover(_schedule, std::move(f)); }
+    auto recover(F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover(S s, F f) {
@@ -200,7 +200,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+    auto then_r(bool unique, F f) { return then_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
@@ -210,13 +210,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto recover_r(bool unique, F f) { return recover_r(unique, _schedule, std::move(f)); }
-
-    /*
-        REVISIT (sparent) : Need to write test cases for all the r-value cases.
-        The logic here is that if this is the only reference and it is an rvalue than this
-        is the last recover clause added and so it can consume the value.
-    */
+    auto recover_r(bool unique, F f) { return recover_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool unique, S s, F f) {
@@ -289,17 +283,17 @@ template <typename T>
 struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
     using then_t = std::pair<executor_t, std::function<void()>>;
 
-    executor_t                          _schedule;
+    executor_t                          _executor;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(executor_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
-    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+    auto then_r(bool unique, F f) { return then_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
@@ -309,7 +303,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     }
 
     template <typename F>
-    auto recover_r(bool unique, F f) { return recover_r(unique, _schedule, std::move(f)); }
+    auto recover_r(bool unique, F f) { return recover_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool, S s, F f) {
@@ -371,16 +365,16 @@ template <>
 struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
 
-    executor_t                          _schedule;
+    executor_t                          _executor;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(executor_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
-    auto then(F f) { return then(_schedule, std::move(f)); }
+    auto then(F f) { return then(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then(S s, F f) {
@@ -391,19 +385,19 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     }
 
     template <typename F>
-    auto then_r(bool, F f) { return then(_schedule, std::move(f)); }
+    auto then_r(bool, F f) { return then(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then_r(bool, S s, F f) { return then(std::move(s), std::move(f)); }
 
     template <typename F>
-    auto recover(F f) { return recover(_schedule, std::move(f)); }
+    auto recover(F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>; 
 
     template <typename F>
-    auto recover_r(bool, F f) { return recover(_schedule, std::move(f)); }
+    auto recover_r(bool, F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool, S s, F f) { return recover(std::move(s), std::move(f)); }
@@ -908,12 +902,12 @@ void attach_when_args(const std::shared_ptr<P>& p, Ts... a) {
 
 /**************************************************************************************************/
 
-template <typename S, typename F, typename... Ts>
-auto when_all(S s, F f, future<Ts>... args) {
+template <typename E, typename F, typename... Ts>
+auto when_all(E executor, F f, future<Ts>... args) {
     using result_t = typename std::result_of<F(Ts...)>::type;
 
     auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
-    auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared] {
+    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
         return detail::apply_when_all_args(_f, _p);
     });
     shared->_f = std::move(p.first);
@@ -925,12 +919,12 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 /**************************************************************************************************/
 
-template <typename S, typename F, typename T, typename... Ts>
-auto when_any(S s, F f, future<T> arg, future<Ts>... args) {
+template <typename E, typename F, typename T, typename... Ts>
+auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
     using result_t = typename std::result_of<F(T, size_t)>::type;
 
     auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts)+1, T>>();
-    auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared]{
+    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
         return detail::apply_when_any_arg(_f, _p);
     });
     shared->_f = std::move(p.first);
@@ -1176,10 +1170,10 @@ namespace detail
 
 /**************************************************************************************************/
 
-template <typename S, // models task scheduler
+template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_all(S schedule, F f, const std::pair<I, I>& range) {
+auto when_all(E executor, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, std::vector<param_t>>;
@@ -1190,23 +1184,23 @@ auto when_all(S schedule, F f, const std::pair<I, I>& range) {
 
 
     if (range.first == range.second) {
-        auto p = package<result_t()>(std::move(schedule), 
+        auto p = package<result_t()>(std::move(executor),
                                      detail::context_result<F, false, context_result_t>(std::move(f), 0));
-        schedule(std::move(p.first));
+        executor(std::move(p.first));
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t,context_t>::do_it(std::move(schedule),
+    return detail::create_range_of_futures<result_t,context_t>::do_it(std::move(executor),
                                                                       std::move(f), 
                                                                       range.first, range.second);
 }
 
 /**************************************************************************************************/
 
-template <typename S, // models task scheduler
+template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_any(S schedule, F f, const std::pair<I, I>& range) {
+auto when_any(E executor, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
@@ -1216,12 +1210,12 @@ auto when_any(S schedule, F f, const std::pair<I, I>& range) {
                                              detail::all_trigger>;
 
     if (range.first == range.second) {
-        auto p = package_with_broken_promise<result_t()>(std::move(schedule), 
+        auto p = package_with_broken_promise<result_t()>(std::move(executor),
                                                          detail::context_result<F, true, context_result_t>(std::move(f), 0));
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t, context_t>::do_it(std::move(schedule),
+    return detail::create_range_of_futures<result_t, context_t>::do_it(std::move(executor),
                                                                        std::move(f),
                                                                        range.first, range.second);
 }
