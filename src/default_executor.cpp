@@ -13,6 +13,7 @@
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
