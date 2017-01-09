@@ -60,7 +60,7 @@ struct main_executor
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 
-using main_executor = default_scheduler;
+using main_executor = default_executor;
 
 
 #elif  (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \

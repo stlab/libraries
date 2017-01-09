@@ -24,6 +24,7 @@ Distributed under the Boost Software License, Version 1.0.
 #include <ppapi/cpp/completion_callback.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 #include <Windows.h>
+#include <memory>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
@@ -31,6 +32,13 @@ Distributed under the Boost Software License, Version 1.0.
 #endif
 #endif
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
 
 namespace stlab
 {
@@ -129,11 +137,12 @@ struct default_executor
     }
 };
 
-// TODO (sparent) : We need a main task scheduler for STLAB_TASK_SYSTEM_WINDOWS
-
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+
+namespace detail 
+{
 
 class task_system
 {
@@ -202,6 +211,8 @@ private:
         return ft;
     }
 };
+
+}
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 

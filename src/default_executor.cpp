@@ -6,13 +6,10 @@
 
 /**************************************************************************************************/
 
-#include <stlab/config.hpp>
+#include <stlab/default_executor.hpp>
 
 #if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
     || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
-
-#include <stlab/future.hpp>
-#include <functional>
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
