@@ -579,31 +579,26 @@ class future<T, detail::enable_if_copyable<T>> {
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(valid());
         return _p->then(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& {
-        assert(valid());
         return _p->then(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto then(F&& f) && {
-        assert(valid());
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(valid());
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(valid());
         return _p->recover(std::forward<F>(f));
     }
 
@@ -614,38 +609,23 @@ class future<T, detail::enable_if_copyable<T>> {
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(valid());
         then([_hold = _p](auto f){ }, [](const auto& x){ });
     }
 
-    /*
-        What is this? The bool is never tested. If _p is unique then the rest of the dance is not
-        necessary. Why would we continue to hold if someone else is holding? The should just be the
-        equivalent of:
-        
-        void cancel() { *this = future(); }
-    */
-    bool cancel_try() {
-        if (!_p.unique()) return false;
-        std::weak_ptr<detail::shared_base<T>> p = _p;
+    void reset() {
         _p.reset();
-        _p = p.lock();
-        return !_p;
     }
 
     auto get_try() const& {
-        assert(valid());
         return _p->get_try();
     }
 
@@ -655,12 +635,10 @@ class future<T, detail::enable_if_copyable<T>> {
     // because in this case _p is not unique any more and internally it is forwarded to
     // the l-value get_try.
     auto get_try() && {
-        assert(valid());
         return _p->get_try_r(_p.unique());
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(valid());
         return _p->_error;
     }
 };
@@ -695,72 +673,57 @@ class future<void, void> {
 
     template <typename F>
     auto then(F&& f) const& {
-        assert(valid());
         return _p->then(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) const& {
-        assert(valid());
         return _p->then(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto then(F&& f) && {
-        assert(valid());
         return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(valid());
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) const& {
-        assert(valid());
         return _p->recover(std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) const& {
-        assert(valid());
         return _p->recover(std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(valid());
         then([_hold = _p](auto f){ }, [](){ });
     }
-    
-    bool cancel_try() {
-        if (!_p.unique()) return false;
-        std::weak_ptr<detail::shared_base<void>> p = _p;
+
+    void reset() {
         _p.reset();
-        _p = p.lock();
-        return !_p;
     }
-     
-    bool get_try() {
-        assert(valid());
+
+    bool get_try() const& {
         return _p->get_try();
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(valid());
         return _p->_error;
     }
 
@@ -800,53 +763,41 @@ class future<T, detail::enable_if_not_copyable<T>> {
 
     template <typename F>
     auto then(F&& f) && {
-        assert(valid());
-        return _p->then_r(_p.unique(), std::forward<F>(f)); 
+        return _p->then_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        assert(valid());
         return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        assert(valid());
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        assert(valid()); 
         _p->then_r(_p.unique(), [_hold = _p](auto f) {}, [](auto&&) {});
     }
 
-    bool cancel_try() {
-        if (!_p.unique()) return false;
-        std::weak_ptr<detail::shared_base<T>> p = _p;
+    void reset() {
         _p.reset();
-        _p = p.lock();
-        return !_p;
     }
 
     auto get_try() const& {
-        assert(valid()); 
         return _p->get_try();
     }
 
     auto get_try() && {
-        assert(valid());
         return _p->get_try_r(_p.unique());
     }
 
     boost::optional<std::exception_ptr> error() const {
-        assert(valid());
         return _p->_error;
     }
 };
@@ -891,6 +842,7 @@ struct when_all_shared {
     void failure(std::exception_ptr error) {
         auto before = _error_happened.test_and_set();
         if (before == false) {
+            for (auto& h : _holds) h.reset();
             _error = std::move(error);
             _f();
         }
@@ -1133,40 +1085,44 @@ namespace detail
 
     /**************************************************************************************************/
 
+    /*
+     * This specialization is used for cases when only one ready future is enough to move forward.
+     * In case of when_any, the first successfull future triggers the continuation. All others are cancelled.
+     * In case of when_all, after the first error, this future cannot be fullfilled anymore and so we cancel the
+     * all the others.
+     */
     struct single_trigger
     {
         template <typename C, typename F>
-        static bool go(C& context, F&& f, size_t index) {
+        static void go(C& context, F&& f, size_t index) {
             auto before = context._single_event_trigger.test_and_set();
             if (!before) {
+                for (auto& h : context._holds) h.reset();
                 context.apply(std::forward<F>(f), index);
                 context._f();
-                return true;
             }
-            return false;
         }
     };
 
+    /*
+    * This specialization is used for cases when all futures must be fulfilled before the continuation is triggered.
+    * In case of when_any it means, that the error case handling is started, because all futures failed.
+    * In case of when_all it means, that after all futures were fulfilled, the continuation is started.
+    */
     struct all_trigger
     {
         template <typename C, typename F>
-        static bool go(C& context, F&& f, size_t index) {
+        static void go(C& context, F&& f, size_t index) {
             context.apply(std::forward<F>(f), index);
-            if (--context._remaining == 0) {
-                context._f();
-                return true;
-            }
-            return false;
+            if (--context._remaining == 0) context._f();
         }
 
         template <typename C>
-        static bool go(C& context, std::exception_ptr error, size_t index) {
+        static void go(C& context, std::exception_ptr error, size_t index) {
             if (--context._remaining == 0) {
                 context.apply(std::move(error), index);
                 context._f();
-                return true;
             }
-            return false;
         }
     };
 
@@ -1192,11 +1148,7 @@ namespace detail
         }
 
         void failure(std::exception_ptr& error, size_t index) {
-            if (FailureCollector::go(*this, error, index)) {
-                for (auto& h : _holds) {
-                    h.cancel_try();
-                }
-            }
+            FailureCollector::go(*this, error, index);
         }
 
         template <typename FF>
@@ -1640,14 +1592,11 @@ inline future<void> make_ready_future() {
     return p.second;
 }
 
-
 /**************************************************************************************************/
 
 } // namespace stlab
 
 /**************************************************************************************************/
-
-
 
 #endif
 

@@ -28,8 +28,9 @@ namespace test_helper
 
         template <typename F>
         void operator()(F f) {
-            ++_usage_counter;
-#ifdef WIN32 // The implementation on Windows uses a scheduler that allows 512 tasks in the pool in parallel
+            ++counter();
+            // The implementation on Windows or the mac uses a scheduler that allows many tasks in the pool in parallel
+#if defined(WIN32) || defined(__APPLE__)
             stlab::default_scheduler()(std::move(f));
 #else
             // The default scheduler under Linux allows only as many tasks as there are physical cores. But this
@@ -38,18 +39,18 @@ namespace test_helper
 #endif
         }
 
-        static int usage_counter() { return _usage_counter.load(); }
-        static void reset() { _usage_counter = 0; }
+        static int usage_counter() { return counter().load(); }
 
+        static void reset() { counter() = 0; }
+
+        static std::atomic_int& counter() {
+            static std::atomic_int counter;
+            return counter;
+        }
     private:
         const size_t _id = no; // only used for debugging purpose
-        static std::atomic_int _usage_counter;
     };
 
-#ifndef WIN32
-    template <std::size_t N>
-    std::atomic_int custom_scheduler<N>::_usage_counter{0};
-#endif
 
     class test_exception : public std::exception {
         const std::string _error;
