@@ -362,7 +362,7 @@ template <typename T>
 struct default_queue_strategy
 {
     using value_type = std::tuple<boost::variant<T, std::exception_ptr>>;
-    
+
     std::deque<boost::variant<T, std::exception_ptr>> _queue;
 
     bool empty() const {
