@@ -14,12 +14,15 @@
 #include <chrono>
 #include <deque>
 #include <memory>
+#include <mutex>
 #include <tuple>
 #include <utility>
 
+#include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
-#include <stlab/future.hpp>
+#include <stlab/executor_base.hpp>
+#include <stlab/traits.hpp>
 #include <stlab/tuple_algorithm.hpp>
 
 
@@ -209,7 +212,7 @@ struct shared_process_receiver {
     virtual void clear_to_send() = 0;
     virtual void add_receiver() = 0;
     virtual void remove_receiver() = 0;
-    virtual timed_executor_t executor() const = 0;
+    virtual executor_t executor() const = 0;
     virtual void set_buffer_size(size_t) = 0;
     virtual size_t buffer_size() const = 0;
 };
@@ -225,57 +228,6 @@ struct shared_process_sender {
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
 };
-
-/**************************************************************************************************/
-
-// the following implements the C++ standard proposal N4502
-#if __GNUC__ < 5 && ! defined __clang__
-// http://stackoverflow.com/a/28967049/1353549
-template <typename...>
-struct voider
-{
-    using type = void;
-};
-template <typename...Ts>
-using void_t = typename voider<Ts...>::type;
-#else
-template <typename...>
-using void_t = void;
-#endif
-
-struct nonesuch
-{
-    nonesuch() = delete;
-    ~nonesuch() = delete;
-    nonesuch(nonesuch const&) = delete;
-    void operator= (nonesuch const&) = delete;
-};
-
-
-// primary template handles all types not supporting the archetypal Op:
-template<class Default , class, template<class...> class Op, class... Args>
-struct detector
-{
-    using value_t = std::false_type;
-    using type = Default;
-};
-
-// the specialization recognizes and handles only types supporting Op:
-template<class Default, template<class...> class Op, class... Args>
-struct detector<Default, void_t<Op<Args...>>, Op, Args...>
-{
-    using value_t = std::true_type;
-    using type = Op<Args...>;
-};
-
-template<template<class...> class Op, class... Args>
-using is_detected = typename detector<nonesuch, void, Op, Args...>::value_t;
-
-template<template<class...> class Op, class... Args>
-constexpr bool is_detected_v = is_detected<Op, Args...>::value;
-
-template<template<class...> class Op, class... Args>
-using detected_t = typename detector<nonesuch, void, Op, Args...>::type;
 
 /**************************************************************************************************/
 
@@ -665,7 +617,7 @@ struct shared_process : shared_process_receiver<R>,
     downstream<R>            _downstream;
     queue_strategy           _queue;
 
-    timed_executor_t         _executor;
+    executor_t               _executor;
     process_t                _process;
 
     std::mutex               _process_mutex;
@@ -729,7 +681,7 @@ struct shared_process : shared_process_receiver<R>,
         }
     }
 
-    timed_executor_t executor() const override {
+    executor_t executor() const override {
         return _executor;
     }
 
@@ -872,7 +824,7 @@ struct shared_process : shared_process_receiver<R>,
             */
             if (state == process_state::yield) {
                 if (when <= now) broadcast(_process.yield());
-                else _executor(when, [_this = this->shared_from_this()]{ _this->try_broadcast(); });
+                else execute_at(when, _executor)( [_this = this->shared_from_this()]{ _this->try_broadcast(); });
             }
 
             /*
@@ -902,7 +854,7 @@ struct shared_process : shared_process_receiver<R>,
                     _this->_process_timeout_function.reset();
                 });
 
-                _executor(when, [_weak_this = make_weak_ptr(this->shared_from_this()),
+                execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this()),
                                   _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
@@ -961,7 +913,7 @@ struct shared_process : shared_process_receiver<R>,
     }
 
     void run() {
-        _executor(std::chrono::system_clock::time_point::min(), [_p = make_weak_ptr(this->shared_from_this())]{
+        _executor([_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
@@ -1173,9 +1125,9 @@ struct buffer_size
 
 struct executor
 {
-    timed_executor_t _e;
+    executor_t _e;
 
-    explicit executor(timed_executor_t e) : _e(std::move(e)) {}
+    explicit executor(executor_t e) : _e(std::move(e)) {}
 };
 
 /**************************************************************************************************/
@@ -1185,10 +1137,10 @@ namespace detail
 
 struct annotations 
 {
-    boost::optional<timed_executor_t>  _executor;
-    boost::optional<std::size_t>       _buffer_size;
+    boost::optional<executor_t>   _executor;
+    boost::optional<std::size_t>  _buffer_size;
 
-    explicit annotations(timed_executor_t e) : _executor(std::move(e)) {}
+    explicit annotations(executor_t e) : _executor(std::move(e)) {}
     explicit annotations(std::size_t bs) : _buffer_size(bs) {}
 };
 

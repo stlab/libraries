@@ -20,6 +20,7 @@
 #include <boost/optional.hpp>
 #include <stlab/config.hpp>
 #include <stlab/executor_base.hpp>
+#include <stlab/traits.hpp>
 
 /**************************************************************************************************/
 
@@ -117,18 +118,6 @@ auto package(S, F)
 /**************************************************************************************************/
 
 namespace detail {
-
-template <bool...> struct bool_pack;
-template <bool... v>
-using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
-
-/**************************************************************************************************/
-
-template <typename T>
-using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value>;
-
-template <typename T>
-using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
 
 /**************************************************************************************************/
 

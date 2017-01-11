@@ -8,23 +8,27 @@ Distributed under the Boost Software License, Version 1.0.
 #define SLABFUTURE_EXECUTOR_BASE_HPP
 
 #include <chrono>
-#include <boost/variant.hpp>
+#include <functional>
+#include <stlab/system_timer.hpp>
 
 namespace stlab
 {
 
 using executor_t = std::function<void(std::function<void()>)>;
-using timed_executor_t = std::function<void(std::chrono::system_clock::time_point, std::function<void()>)>;
 
-#if 0
+
 /*
  * returns an executor that will schedule any passed task to it to execute
  * at the given time point on the executor provided
  * */
 
-auto execute_at(std::chrono::system_clock::time_point when, timed_schedule_t executor)
+auto execute_at(std::chrono::system_clock::time_point when, executor_t executor)
 {
-    return detail::executor_wrapper(when, std::move(executor));
+    return [=](auto f) {
+        system_timer(when, [=]{
+            executor(f);
+        });
+    };
 }
 
 /*
@@ -32,11 +36,10 @@ auto execute_at(std::chrono::system_clock::time_point when, timed_schedule_t exe
  * executor duration after it is invoked
  * */
 template <typename E>
-auto execute_delayed(std::chrono::system_clock::duration, E executor) {
-    return executor;
+auto execute_delayed(std::chrono::system_clock::duration duration, E executor) {
+    return execute_at(std::chrono::system_clock::now() + duration, std::move(executor));
 }
 
-#endif
 }
 
 #endif // SLABFUTURE_EXECUTOR_BASE_HPP

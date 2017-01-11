@@ -16,8 +16,10 @@ set(HEADERS
   ../stlab/immediate_executor.hpp
   ../stlab/main_executor.hpp
   ../stlab/progress.hpp
+  ../stlab/traits.hpp
   ../stlab/tuple_algorithm.hpp
-  ../stlab/utility.hpp  )
+  ../stlab/system_timer.hpp
+  ../stlab/utility.hpp ../stlab/sytem_timer.hpp ../stlab/traits.hpp)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
