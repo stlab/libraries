@@ -325,7 +325,7 @@ auto set_process_error(boost::optional<T>& x, std::tuple<boost::variant<U, std::
 }
 
 template <typename T, typename... U>
-auto set_process_error(T&, std::tuple<boost::variant<U, std::exception_ptr>...> error) -> std::enable_if_t<!has_set_process_error_v<T, U...>, void> {
+auto set_process_error(boost::optional<T>&, std::tuple<boost::variant<U, std::exception_ptr>...> error) -> std::enable_if_t<!has_set_process_error_v<T, U...>, void> {
 }
 
 /**************************************************************************************************/
@@ -506,8 +506,6 @@ struct merge_queue_strategy
     void pop_front() {
         void_i(_queue, _index, [](auto& c) { c.pop_front(); });
         _popped_index = _index;
-        ++_index;
-        if (_index == Size) _index = 0; // restart from the first sender
     }
 
     auto size() const {
