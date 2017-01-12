@@ -10,6 +10,9 @@ Distributed under the Boost Software License, Version 1.0.
 
 #include <boost/test/unit_test.hpp>
 
+#include <stlab/channel.hpp>
+#include <stlab/future.hpp>
+
 #include "channel_test_helper.hpp"
 
 using namespace stlab;
@@ -21,7 +24,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_void_functor_one_value, channel_test_f
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(), [&](int x) { result = x; }, _receive[0]);
+    auto check = merge(default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
     _send[0](1);
@@ -36,10 +39,10 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_void_functor_one_value_async, channel_
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(), [&](int x) { result = x; }, _receive[0]);
+    auto check = merge(default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
-    auto f = async(default_executor(), [_sender = _send[0]] { _sender(1); });
+    auto f = async(default_executor, [_sender = _send[0]] { _sender(1); });
 
     wait_until_done([&] { return result != 0; });
 
@@ -51,7 +54,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_void_functor_many_values, channel_test
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(), [&](int x) { result += x; }, _receive[0]);
+    auto check = merge(default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     for (auto i = 1; i <= 100; ++i)
@@ -69,12 +72,12 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_void_functor_many_values_async, channe
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(), [&](int x) { result += x; }, _receive[0]);
+    auto check = merge(default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     std::vector<future<void>> f(100);
     for (auto i = 1; i <= 100; ++i) {
-        f.push_back(async(default_executor(), [_sender = _send[0], i]{ _sender(i); }));
+        f.push_back(async(default_executor, [_sender = _send[0], i]{ _sender(i); }));
     }
 
     auto expected = 100 * (100+1) / 2;
@@ -90,7 +93,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor_one_value, chan
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(),
+    auto check = merge(default_executor,
                       [&](int x) { result +=  x; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
@@ -108,12 +111,12 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor_one_value_async
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(),
+    auto check = merge(default_executor,
                       [&](int x) { result +=  x; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
     _receive[1].set_ready();
-    auto f=async(default_executor(), [_send1 = _send[0], &_send2 = _send[1]] {// one copy,one reference
+    auto f=async(default_executor, [_send1 = _send[0], &_send2 = _send[1]] {// one copy,one reference
         _send1(2);
         _send2(3);
     });
@@ -129,7 +132,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor_many_values, ch
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(),
+    auto check = merge(default_executor,
                       [&](int x) { result +=  x; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
@@ -150,15 +153,15 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor_many_values_asy
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(),
+    auto check = merge(default_executor,
                       [&](int x) { result +=  x; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
     _receive[1].set_ready();
     std::vector<future<void>> f(20);
     for (auto i = 0; i < 10; i++) {
-        f.push_back(async(default_executor(), [_send1 = _send[0], i] { _send1(i); }));
-        f.push_back(async(default_executor(), [&_send2 = _send[1], i] { _send2(i+1); }));
+        f.push_back(async(default_executor, [_send1 = _send[0], i] { _send1(i); }));
+        f.push_back(async(default_executor, [&_send2 = _send[1], i] { _send2(i+1); }));
     }
 
     const auto expected = 0+1 + 1+2 + 2+3 + 3+4 + 4+5 + 5+6 + 6+7 + 7+8 + 8+9 + 9+10;
@@ -173,7 +176,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor, channel_test_f
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(),
+    auto check = merge(default_executor,
                       [&](int x) { result +=  x; },
                       _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
 
@@ -195,7 +198,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor_async, channel_
 
     std::atomic_int result{ 0 };
 
-    auto check = merge(default_executor(),
+    auto check = merge(default_executor,
                       [&](int x) { result +=  x; },
                       _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
 
@@ -204,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_channel_same_type_void_functor_async, channel_
 
     std::vector<future<void>> f(5);
     for (auto i = 0; i < 5; i++) {
-        f.push_back(async(default_executor(), [_send = _send[i], i] { _send(i+2); }));
+        f.push_back(async(default_executor, [_send = _send[i], i] { _send(i+2); }));
     }
 
     const auto expectation = 2+3+4+5+6;

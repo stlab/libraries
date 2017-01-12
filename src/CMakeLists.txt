@@ -2,9 +2,8 @@ project(future C CXX)
 
 include_directories("${PROJECT_SOURCE_DIR}/..")
 
-set(SOURCE
-  default_executor.cpp
-)
+#set(SOURCE
+#)
 
 set(HEADERS
   ../stlab/channel.hpp
@@ -19,11 +18,11 @@ set(HEADERS
   ../stlab/traits.hpp
   ../stlab/tuple_algorithm.hpp
   ../stlab/system_timer.hpp
-  ../stlab/utility.hpp ../stlab/sytem_timer.hpp ../stlab/traits.hpp)
+  ../stlab/utility.hpp)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_library(future ${SOURCE} ${HEADERS})
-set_property(TARGET future PROPERTY CXX_STANDARD 14)
-set_property(TARGET future PROPERTY CXX_STANDARD_REQUIRED ON)
+#add_library(future ${SOURCE} ${HEADERS})
+#set_property(TARGET future PROPERTY CXX_STANDARD 14)
+#set_property(TARGET future PROPERTY CXX_STANDARD_REQUIRED ON)
 

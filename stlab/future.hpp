@@ -511,7 +511,7 @@ public:
 /**************************************************************************************************/
 
 template <typename T>
-class future<T, detail::enable_if_copyable<T>> {
+class future<T, enable_if_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 
@@ -691,7 +691,7 @@ class future<void, void> {
 /**************************************************************************************************/
 
 template <typename T>
-class future<T, detail::enable_if_not_copyable<T>> {
+class future<T, enable_if_not_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 

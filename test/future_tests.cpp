@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, 
 
 #if 0
 BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
-    auto sut = async(default_executor(), []()->std::unique_ptr<int> { 
+    auto sut = async(default_executor, []()->std::unique_ptr<int> { 
         auto r = std::make_unique<int>(); 
         *r = 42; 
         return std::move(r); 

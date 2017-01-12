@@ -11,6 +11,7 @@ Distributed under the Boost Software License, Version 1.0.
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/channel.hpp>
+#include <stlab/future.hpp>
 
 #include <vector>
 
@@ -127,7 +128,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
         std::vector<stlab::future<void>> inputs;
         for (auto i = 0; i < 10; ++i)
         {
-            inputs.emplace_back(stlab::async(stlab::default_executor(),
+            inputs.emplace_back(stlab::async(stlab::default_executor,
                 [&_send = _send, i]() { _send[0](i); }));
         }
 
@@ -180,7 +181,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         _receive[0].set_ready();
         std::vector<future<void>>  f;
         for (int i = 0; i < 10; ++i) {
-            f.push_back(async(default_executor(), [&_send = _send[0]] {
+            f.push_back(async(default_executor, [&_send = _send[0]] {
                 auto arg = std::make_unique<int>();
                 *arg = 1;
                 _send(std::move(arg));
@@ -224,7 +225,7 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         _receive[0].set_ready();
         std::vector<future<void>>  f;
         for (int i = 0; i < 10; ++i) {
-            f.push_back(async(default_executor(), [&_send = _send[0]]{
+            f.push_back(async(default_executor, [&_send = _send[0]]{
                 auto arg = std::make_unique<int>();
             *arg = 1;
             _send(std::move(arg));

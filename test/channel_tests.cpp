@@ -11,6 +11,7 @@ Distributed under the Boost Software License, Version 1.0.
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/channel.hpp>
+#include <stlab/future.hpp>
 
 #include "channel_test_helper.hpp"
 
@@ -210,7 +211,7 @@ BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     for (auto bs : { 0,1,2,10 }) {
         stlab::sender<int> send;
         stlab::receiver<int> receive;
-        std::tie(send, receive) = stlab::channel<int>(stlab::default_executor());
+        std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
         std::atomic_int result{ 0 };
 
         auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
@@ -232,7 +233,7 @@ BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
     for (auto bs : { 0,1,2,10 }) {
         stlab::sender<int> send;
         stlab::receiver<int> receive;
-        std::tie(send, receive) = stlab::channel<int>(stlab::default_executor());
+        std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
         std::atomic_int result{ 0 };
 
         auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
@@ -255,7 +256,7 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
     for (auto bs : { 0,1,2,10 }) {
         stlab::sender<int> send;
         stlab::receiver<int> receive;
-        std::tie(send, receive) = stlab::channel<int>(stlab::default_executor());
+        std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
         std::atomic_int result{ 0 };
 
         auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };

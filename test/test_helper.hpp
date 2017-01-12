@@ -34,7 +34,7 @@ namespace test_helper
             ++counter();
             // The implementation on Windows or the mac uses a scheduler that allows many tasks in the pool in parallel
 #if defined(WIN32) || defined(__APPLE__)
-            stlab::default_executor()(std::move(f));
+            stlab::default_executor(std::move(f));
 #else
             // The default scheduler under Linux allows only as many tasks as there are physical cores. But this
             // can lead to a dead lock in some of the tests

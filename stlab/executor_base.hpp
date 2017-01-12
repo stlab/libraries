@@ -16,25 +16,28 @@ namespace stlab
 
 using executor_t = std::function<void(std::function<void()>)>;
 
-
 /*
  * returns an executor that will schedule any passed task to it to execute
  * at the given time point on the executor provided
- * */
+ */
 
-auto execute_at(std::chrono::system_clock::time_point when, executor_t executor)
+inline executor_t execute_at(std::chrono::system_clock::time_point when, executor_t executor)
 {
     return [=](auto f) {
-        system_timer(when, [=]{
-            executor(f);
-        });
+		if ( (when != std::chrono::system_clock::time_point()) && (when > std::chrono::system_clock::now()) )
+            system_timer(when, [=]{
+                executor(f);
+		});
+		else 
+			executor(f);
     };
 }
 
 /*
  * returns an executor that will schedule the task to execute on the provided
  * executor duration after it is invoked
- * */
+ */
+
 template <typename E>
 auto execute_delayed(std::chrono::system_clock::duration duration, E executor) {
     return execute_at(std::chrono::system_clock::now() + duration, std::move(executor));

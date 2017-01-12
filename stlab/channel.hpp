@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <deque>
 #include <memory>
@@ -1352,7 +1353,7 @@ class receiver {
 /**************************************************************************************************/
 
 template <typename T>
-class sender<T, detail::enable_if_copyable<T>>
+class sender<T, enable_if_copyable<T>>
 {
     using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
     ptr_t _p;
@@ -1402,7 +1403,7 @@ class sender<T, detail::enable_if_copyable<T>>
 };
 
 template <typename T>
-class sender<T, detail::enable_if_not_copyable<T>>
+class sender<T, enable_if_not_copyable<T>>
 {
     using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
     ptr_t _p;

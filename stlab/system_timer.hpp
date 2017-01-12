@@ -26,6 +26,10 @@ Distributed under the Boost Software License, Version 1.0.
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#include <algorithm>
+#include <condition_variable>
+#include <thread>
+#include <vector>
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
 #include <dispatch/dispatch.h>
@@ -37,30 +41,28 @@ namespace stlab
 
 /**************************************************************************************************/
 
+namespace detail {
+
+/**************************************************************************************************/
+
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 
-struct system_timer
-{
+struct system_timer_type {
     using result_type = void;
 
 
-    template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F f) {
+    template<typename F>
+    void operator()(std::chrono::system_clock::time_point when, F f) const {
 
         using namespace std::chrono;
-
-        if (when == system_clock::time_point()) {
-            operator()(std::move(f));
-            return;
-        }
 
         using f_t = decltype(f);
 
         dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - system_clock::now()).count()),
                          dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
                          new f_t(std::move(f)),
-                         [](void* f_) {
-                             auto f = static_cast<f_t*>(f_);
+                         [](void *f_) {
+                             auto f = static_cast<f_t *>(f_);
                              (*f)();
                              delete f;
                          });
@@ -71,11 +73,11 @@ struct system_timer
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-class system_timer
+class system_timer_type
 {
 public:
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F&& f) {
+    void operator()(std::chrono::system_clock::time_point when, F&& f) const {
 
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
             new F(std::forward<F>(f)),
@@ -101,7 +103,7 @@ private:
         (*f)();
     }
 
-    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) {
+    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) const {
         FILETIME ft = { 0, 0 };
         SYSTEMTIME st = { 0 };
         time_t t = std::chrono::system_clock::to_time_t(when);
@@ -123,16 +125,17 @@ private:
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 
-class system_timer
+class system_timer_portable
 {
-    using element_t = pair<chrono::system_clock::time_point, std::function<void()>>;
-    using queue_t = vector<element_t>;
+    using element_t = std::pair<std::chrono::system_clock::time_point, std::function<void()>>;
+    using queue_t = std::vector<element_t>;
+    using lock_t = std::unique_lock<std::mutex>;
 
-    queue_t             _timed_queue;
-    condition_variable  _condition;
-    bool                _stop = false;
-    mutex               _timed_queue_mutex;
-    thread              _timed_queue_thread;
+    queue_t                 _timed_queue;
+    std::condition_variable _condition;
+    bool                    _stop = false;
+    std::mutex              _timed_queue_mutex;
+    std::thread             _timed_queue_thread;
 
 
     struct greater_first
@@ -147,19 +150,19 @@ class system_timer
 
     void timed_queue_run() {
         while (true) {
-            function<void()> task;
+            std::function<void()> task;
             {
                 lock_t lock(_timed_queue_mutex);
 
                 while (_timed_queue.empty() && !_stop) _condition.wait(lock);
                 if (_stop) return;
-                while (chrono::system_clock::now() < _timed_queue.front().first) {
+                while (std::chrono::system_clock::now() < _timed_queue.front().first) {
                     auto when = _timed_queue.front().first;
                     _condition.wait_until(lock, when);
                     if (_stop) return;
                 }
-                pop_heap(begin(_timed_queue), end(_timed_queue), greater_first());
-                task = move(_timed_queue.back().second);
+                std::pop_heap(begin(_timed_queue), end(_timed_queue), greater_first());
+                task = std::move(_timed_queue.back().second);
                 _timed_queue.pop_back();
             }
 
@@ -168,11 +171,11 @@ class system_timer
     }
 
 public:
-    task_system() {
-        _timed_queue_thread = thread([this] { this->timed_queue_run(); });
+    system_timer_portable() {
+        _timed_queue_thread = std::thread([this] { this->timed_queue_run(); });
     }
 
-    ~task_system() {
+    ~system_timer_portable() {
         {
             lock_t lock(_timed_queue_mutex);
             _stop = true;
@@ -182,22 +185,30 @@ public:
     }
 
     template <typename F>
-    void operator()(chrono::system_clock::time_point when, F&& f) {
-        {
-            if (when == chrono::system_clock::time_point::min()) {
-                async_(forward<F>(f));
-            }
-            else {
-                lock_t lock(_timed_queue_mutex);
-                _timed_queue.emplace_back(when, forward<F>(f));
-                push_heap(begin(_timed_queue), end(_timed_queue), greater_first());
-                _condition.notify_one();
-            }
-        }
+    void operator()(std::chrono::system_clock::time_point when, F&& f) {
+        lock_t lock(_timed_queue_mutex);
+        _timed_queue.emplace_back(when, std::forward<F>(f));
+        std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
+        _condition.notify_one();
     }
 };
 
+
+struct system_timer_type {
+	using result_type = void;
+
+	template <typename F>
+	void operator() (std::chrono::system_clock::time_point when, F&& f) const {
+		static system_timer_portable only_system_timer;
+		only_system_timer(when, std::forward<F>(f));
+	}
+};
+
 #endif
+
+} // namespace detail
+
+constexpr auto system_timer = detail::system_timer_type{};
 
 }
 
