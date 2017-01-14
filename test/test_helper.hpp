@@ -11,6 +11,7 @@ Distributed under the Boost Software License, Version 1.0.
 #define BOOST_TEST_DYN_LINK
 
 #include <atomic>
+#include <condition_variable>
 #include <boost/test/unit_test.hpp>
 #include <exception>
 #include <stlab/future.hpp>
