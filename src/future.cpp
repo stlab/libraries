@@ -147,6 +147,7 @@ class task_system
                 while (chrono::system_clock::now() < _timed_queue.front().first) {
                     auto when = _timed_queue.front().first;
                     _condition.wait_until(lock, when);
+                    if (_stop) break;
                 }
                 pop_heap(begin(_timed_queue), end(_timed_queue), greater_first());
                 task = move(_timed_queue.back().second);
@@ -174,6 +175,7 @@ public:
         _timed_queue_thread.join();
 
         for (auto& e : _q) e.done();
+
         for (auto& e : _threads) e.join();
     }
     

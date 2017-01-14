@@ -22,14 +22,15 @@ using lock_t = std::unique_lock<std::mutex>;
 
 namespace test_helper
 {
-    template <size_t no>
+    template <std::size_t no>
     struct custom_scheduler {
         using result_type = void;
 
         template <typename F>
         void operator()(F f) {
-            ++_usage_counter;
-#ifdef WIN32 // The implementation on Windows uses a scheduler that allows 512 tasks in the pool in parallel
+            ++counter();
+            // The implementation on Windows or the mac uses a scheduler that allows many tasks in the pool in parallel
+#if defined(WIN32) || defined(__APPLE__)
             stlab::default_scheduler()(std::move(f));
 #else
             // The default scheduler under Linux allows only as many tasks as there are physical cores. But this
@@ -38,12 +39,16 @@ namespace test_helper
 #endif
         }
 
-        static int usage_counter() { return _usage_counter.load(); }
-        static void reset() { _usage_counter = 0; }
+        static int usage_counter() { return counter().load(); }
 
+        static void reset() { counter() = 0; }
+
+        static std::atomic_int& counter() {
+            static std::atomic_int counter;
+            return counter;
+        }
     private:
         const size_t _id = no; // only used for debugging purpose
-        static std::atomic_int _usage_counter;
     };
 
 
@@ -58,8 +63,9 @@ namespace test_helper
         explicit test_exception(const char* error);
 
         test_exception& operator=(const test_exception&) = default;
-
         test_exception(const test_exception&) = default;
+        test_exception& operator=(test_exception&&) = default;
+        test_exception(test_exception&&) = default;
 
         virtual ~test_exception() {}
 
@@ -117,8 +123,8 @@ namespace test_helper
         }
 
         template <typename E, typename F>
-        static void check_failure(F&& f, const char* message) {
-            BOOST_REQUIRE_EXCEPTION(std::forward<F>(f).get_try(), E, ([_m = message](const auto& e) { return std::string(_m) == std::string(e.what()); }));
+        static void check_failure(F& f, const char* message) {
+            BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) { return std::string(_m) == std::string(e.what()); }));
         }
 
         template <typename E, typename... F>
@@ -144,7 +150,7 @@ namespace test_helper
         template <typename E, typename F>
         void wait_until_this_future_fails(F& f) {
             try {
-                while (!f.get_try()) {
+                while (!f.error()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             }

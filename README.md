@@ -79,7 +79,7 @@ class QtScheduler
       _receiver()->moveToThread(QApplication::instance()->thread());
     }
 
-        void execute() { _f(); }
+    void execute() { _f(); }
 
         QObject *receiver() const { return _receiver.get(); }
     };
@@ -98,11 +98,11 @@ class QtScheduler
     };
 
 public:
-  template <typename F>
+    template <typename F>
   void operator()(std::chrono::system_clock::time_point /*when*/, F&& f) {
     auto event = new SchedulerEvent(std::forward<F>(f));
-    QApplication::postEvent(event->receiver(), event);
-  }
+        QApplication::postEvent(event->receiver(), event);
+    }
 };
 
 ```
