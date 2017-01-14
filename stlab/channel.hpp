@@ -47,8 +47,8 @@ template <typename> class receiver;
  * await_try is await if a value is available, otherwise yield (allowing for an interruptible task).
  */
 enum class process_state {
-    await,
-    yield,
+    c_await,
+    c_yield,
 };
 
 enum class message_t { 
@@ -61,12 +61,12 @@ enum class message_t {
 using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
 
 constexpr process_state_scheduled await_forever {
-    process_state::await,
+    process_state::c_await,
     std::chrono::system_clock::time_point::max()
 };
 
 constexpr process_state_scheduled yield_immediate {
-    process_state::yield,
+    process_state::c_yield,
     std::chrono::system_clock::time_point::min()
 };
 
@@ -772,7 +772,7 @@ struct shared_process : shared_process_receiver<R>,
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
                 // FIXME (sparent): This is calling the process state ender the lock.
-                if (get_process_state(_process).first == process_state::yield || !_queue.empty()
+                if (get_process_state(_process).first == process_state::c_yield || !_queue.empty()
                         || _process_close_queue) {
                     do_run = true;
                 } else {
@@ -853,11 +853,11 @@ struct shared_process : shared_process_receiver<R>,
             return;
         }
         /*
-            While we are a_waiting we will flush the queue. The assumption here is that work
+            While we are awaiting we will flush the queue. The assumption here is that work
             is done on yield()
         */
         try {
-            while (get_process_state(_process).first == process_state::await) {
+            while (get_process_state(_process).first == process_state::c_await) {
                 if (!dequeue()) break;
             }
 
@@ -870,17 +870,17 @@ struct shared_process : shared_process_receiver<R>,
                 Once we hit yield, go ahead and call it. If the yield is delayed then schedule it. This
                 process will be considered running until it executes.
             */
-            if (state == process_state::yield) {
+            if (state == process_state::c_yield) {
                 if (when <= now) broadcast(_process.yield());
                 else _scheduler(when, [_this = this->shared_from_this()]{ _this->try_broadcast(); });
             }
 
             /*
-                We are in an a_wait state and the queue is empty.
+                We are in an await state and the queue is empty.
 
-                If we a_wait forever then task_done() leaving us in an a_wait state.
-                else if we a_wait with an expired timeout then go ahead and yield now.
-                else schedule a timeout when we will yield if not canceled by intervening a_wait.
+                If we await forever then task_done() leaving us in an await state.
+                else if we await with an expired timeout then go ahead and yield now.
+                else schedule a timeout when we will yield if not canceled by intervening await.
             */
             else if (when == std::chrono::system_clock::time_point::max()) {
                 task_done();
@@ -893,7 +893,7 @@ struct shared_process : shared_process_receiver<R>,
                 _process_timeout_function = std::make_shared<std::function<void()>>([_weak_this = make_weak_ptr(this->shared_from_this())]{
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
-                    if (get_process_state(_this->_process).first != process_state::yield)
+                    if (get_process_state(_this->_process).first != process_state::c_yield)
                     {
                         _this->try_broadcast();
                     }
@@ -1183,7 +1183,7 @@ struct scheduler
 namespace detail
 {
 
-struct annotations 
+struct annotations
 {
     boost::optional<timed_schedule_t>  _scheduler;
     boost::optional<std::size_t>       _buffer_size;
@@ -1513,7 +1513,7 @@ struct function_process<R (Args...)> {
     }
 
     R yield() { _done = true; return _bound(); }
-    process_state state() const { return _done ? process_state::await : process_state::yield; }
+    process_state state() const { return _done ? process_state::c_await : process_state::c_yield; }
 };
 
 /**************************************************************************************************/

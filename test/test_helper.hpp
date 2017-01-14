@@ -11,6 +11,7 @@ Distributed under the Boost Software License, Version 1.0.
 #define BOOST_TEST_DYN_LINK
 
 #include <atomic>
+#include <condition_variable>
 #include <boost/test/unit_test.hpp>
 #include <exception>
 #include <stlab/future.hpp>
@@ -110,7 +111,7 @@ namespace test_helper
 
         void check_valid_future() {}
 
-        void check_valid_future(const std::future<T>& f) {
+        void check_valid_future(const stlab::future<T>& f) {
             BOOST_REQUIRE(f.valid() == true);
             BOOST_REQUIRE(f.error().is_initialized() == false);
         }

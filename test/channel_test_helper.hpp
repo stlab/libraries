@@ -140,7 +140,7 @@ struct sum
 };
 
 inline stlab::process_state_scheduled await_soon() {
-    return std::make_pair(stlab::process_state::await,
+    return std::make_pair(stlab::process_state::c_await,
     std::chrono::system_clock::now() + std::chrono::minutes(60));
 }
 
