@@ -41,6 +41,10 @@ namespace stlab {
 
 /**************************************************************************************************/
 
+inline namespace v1 {
+
+/**************************************************************************************************/
+
 template <typename, typename = void> class sender;
 template <typename> class receiver;
 
@@ -1468,6 +1472,10 @@ struct function_process<R (Args...)> {
     R yield() { _done = true; return _bound(); }
     process_state state() const { return _done ? process_state::await : process_state::yield; }
 };
+
+/**************************************************************************************************/
+
+} // namespace v1
 
 /**************************************************************************************************/
 

@@ -11,8 +11,15 @@ Distributed under the Boost Software License, Version 1.0.
 #include <functional>
 #include <stlab/system_timer.hpp>
 
-namespace stlab
-{
+/**************************************************************************************************/
+
+namespace stlab {
+
+/**************************************************************************************************/
+
+inline namespace v1 {
+
+/**************************************************************************************************/
 
 using executor_t = std::function<void(std::function<void()>)>;
 
@@ -38,11 +45,19 @@ inline executor_t execute_at(std::chrono::system_clock::time_point when, executo
  * executor duration after it is invoked
  */
 
-template <typename E>
+template<typename E>
 auto execute_delayed(std::chrono::system_clock::duration duration, E executor) {
     return execute_at(std::chrono::system_clock::now() + duration, std::move(executor));
 }
 
-}
+/**************************************************************************************************/
+
+} // namespace v1
+
+/**************************************************************************************************/
+
+} // namespace stlab
+
+/**************************************************************************************************/
 
 #endif // SLABFUTURE_EXECUTOR_BASE_HPP
