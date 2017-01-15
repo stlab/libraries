@@ -14,7 +14,7 @@ entities:
         pure-name: operator|
         defined-in-header: stlab/channel.hpp 
         declaration: template <typename F> auto operator|(F&& f)
-        description: Attaches the given process to the receiver and returns a new receiver. Itcan either be a functor with a single parameter or a process that follows this signatur.
+        description: Attaches the given process to the receiver and returns a new receiver. It can either be a functor with a single parameter or a process that follows this signatur.
   - kind: example
     code: NoCode
 ---
