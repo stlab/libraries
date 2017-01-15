@@ -21,8 +21,8 @@ entities:
         description: Creates a recovering continuation
       - name: detach
         description: Detaches the current future
-      - name: cancel_try
-        description: Tries to cancel the future
+      - name: reset
+        description: Cancels this future
       - name: get_try
         description: Tries to access the futures result
       - name: error

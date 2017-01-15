@@ -20,14 +20,6 @@ entities:
         description: Returns true if this side of the channel is enabled to receive values
       - name: operator|
         description: Pipes the result of this channel to the next instance
-      - name: detach
-        description: Detaches the current future
-      - name: cancel_try
-        description: Tries to cancel the future
-      - name: get_try
-        description: Tries to access the futures result
-      - name: error
-        description: Returns a possibly stores exception
   - kind: free-functions
     functions:
       - name: stlab::join
