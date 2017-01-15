@@ -10,7 +10,6 @@
 #define STLAB_FUTURE_HPP
 
 #include <atomic>
-#include <future>
 #include <initializer_list>
 #include <memory>
 #include <mutex>
@@ -28,6 +27,53 @@ namespace stlab {
 
 /**************************************************************************************************/
 
+enum class future_error_codes {	// names for futures errors
+    broken_promise = 1,
+    no_state
+};
+
+/**************************************************************************************************/
+
+namespace detail
+{
+    inline const char *Future_error_map(future_error_codes code) noexcept
+    {	// convert to name of future error
+        switch (code)
+        {	// switch on error code value
+        case future_error_codes::broken_promise:
+            return "broken promise";
+
+        case future_error_codes::no_state:
+            return "no state";
+
+        default:
+            return nullptr;
+        }
+    }
+}
+
+/**************************************************************************************************/
+
+// future exception
+
+class future_error : public std::logic_error
+{
+public:
+    explicit future_error(future_error_codes code)
+        : logic_error(""), _code(code)
+    {}
+
+    const future_error_codes& code() const noexcept {
+        return _code;
+    }
+
+    const char *what() const noexcept override {
+        return detail::Future_error_map(_code);
+    }
+
+private:
+    const future_error_codes _code;	// the stored error code
+};
 namespace detail {
 
 /**************************************************************************************************/
@@ -440,8 +486,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
             std::unique_lock<std::mutex> lock(this->_mutex);
             if (!this->_ready) {
                 _f = function_t();
-                this->_error = std::make_exception_ptr(std::future_error(
-                    std::future_errc::broken_promise));
+                this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
                 this->_ready = true;
             }
         }
@@ -773,7 +818,7 @@ auto package_with_broken_promise(S s, F f) -> std::pair<detail::packaged_task_fr
     auto p = std::make_shared<detail::shared<Sig>>(std::move(s), std::move(f));
     auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
         future<detail::result_of_t_<Sig>>(p));
-    result.second._p->_error = std::make_exception_ptr(std::future_error(std::future_errc::broken_promise));
+    result.second._p->_error = std::make_exception_ptr(stlab::future_error(stlab::future_error_codes::broken_promise));
     result.second._p->_ready = true;
     return result;
 }
@@ -1319,6 +1364,7 @@ void shared_base<future<void>>::set_value(const F& f, Args&&... args) {
 } // namespace detail
 
 /**************************************************************************************************/
+
 
 } // namespace stlab
 

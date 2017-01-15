@@ -19,6 +19,7 @@
 
 #endif
 
+#include <stlab/default_executor.hpp>
 
 namespace stlab
 {
@@ -26,15 +27,26 @@ namespace stlab
 /**************************************************************************************************/
 
 template <typename T>
-future<T> make_ready_future(T&& x) {
-    auto p = package<T(T)>(default_executor, [](auto&& x) { return x; });
-    p.first(x);
+future<std::decay_t<T>> make_ready_future(T &&x) {
+    auto p = package<std::decay_t<T>(std::decay_t<T>)>(
+            default_executor, [](auto&& x) { return std::forward<decltype(x)>(x); });
+    p.first(std::forward<T>(x));
     return p.second;
 }
 
 inline future<void> make_ready_future() {
-    auto p = package<void()>(default_executor, [](){});
+    auto p = package<void()>(default_executor, []() {});
     p.first();
+    return p.second;
+}
+
+template <typename T>
+future<T> make_exceptional_future(std::exception_ptr error) {
+    auto p = package<T(T)>(default_executor, [_error = error](auto&& x) {
+        std::rethrow_exception(_error);
+        return std::forward<decltype(x)>(x);
+    });
+    p.first(T{});
     return p.second;
 }
 

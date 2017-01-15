@@ -113,7 +113,7 @@ namespace test_helper
 
         void check_valid_future() {}
 
-        void check_valid_future(const std::future<T>& f) {
+        void check_valid_future(const stlab::future<T>& f) {
             BOOST_REQUIRE(f.valid() == true);
             BOOST_REQUIRE(f.error().is_initialized() == false);
         }
