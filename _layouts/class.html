@@ -57,8 +57,11 @@ layout: default
 				<td>destructs the {{entity.pure-name}} object</td>
 			</tr>
             {% for fun in entity.member-functions %}
-			<tr>
-				<td><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></td>
+			<tr>{% if fun.link %}
+				<td><a href="{{entity.pure-name}}/{{fun.link}}">{{fun.name}}</a></td>
+                {% else %}
+                <td><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></td>
+                {% endif %}
 				<td>{{fun.description}}</td>
 			</tr>
 			{% endfor %}

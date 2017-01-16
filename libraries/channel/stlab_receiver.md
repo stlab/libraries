@@ -19,6 +19,7 @@ entities:
       - name: ready
         description: Returns true if this side of the channel is enabled to receive values
       - name: operator|
+        link: operator_pipe
         description: Pipes the result of this channel to the next instance
   - kind: free-functions
     functions:
