@@ -8,6 +8,27 @@ layout: default
   </header>
 
   <article class="post-content">
+    {% for entity in page.sections %}
+        {% case entity.kind %}
+          {% when 'collection' %}
+            <h3>{{entity.name}}</h3>
+            <table>
+                <tr>
+                    <td colspan="2">{{entity.description}}</td>
+                </tr>
+                {% for entry in entity.entities %}
+                  <tr>
+                      <td>
+                          <a href="{{entry.link}}">{% highlight cpp %}{{ entry.pure-name }}{% endhighlight %}</a>
+                      </td>
+                      <td>
+                          {{ entry.description }}
+                      </td>
+                  </tr>
+                {% endfor %}
+            </table>
+        {% endcase %}
+    {% endfor %}
     {% for entity in page.entities %}
         <a name="{{ entity.name | replace: '_', '-' }}">{{ entity.name }}</a>
         {% case entity.kind %}
@@ -48,12 +69,6 @@ layout: default
             {% endfor %}
             <h3>Return</h3>
             {{ entity.return | markdownify }}
-          {% when 'class' %}
-            {% highlight c++ %}{{ entity.declaration }}{% endhighlight %}
-			<table>
-			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-			<tr><a href="{{entity.link}}">{% highlight cpp %}{{ entity.name }}{% endhighlight %}</tr></a>
-			</table>
         {% endcase %}
     {% endfor %}
 

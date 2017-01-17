@@ -13,7 +13,6 @@ entities:
       - type: result_type
         definition: void
     member-functions:
-      - name: template <typename T> void operator()(F&& f) const
-        description: Executes the given function on the operating systems's thread pool. It uses a custom thread pool if the system does not provide a thread pool.
-      
+      - name: operator()
+        description: Executes the given function on the operating systems's thread pool.
 ---

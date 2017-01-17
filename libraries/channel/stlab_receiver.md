@@ -8,7 +8,7 @@ entities:
     pure-name: receiver
     defined-in-header: stlab/channel.hpp
     declaration: |
-        template <typename T> class receiver;
+        template <typename T> class receiver
     description: This class implements the receiving part of a CSP channel
     member-types:
       - type: 'value_type'

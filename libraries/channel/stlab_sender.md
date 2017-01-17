@@ -8,7 +8,7 @@ entities:
     pure-name: sender
     defined-in-header: stlab/channel.hpp
     declaration: |
-        template <typename T> class future;
+        template <typename T> class future
     description: This class implements the sending part of a CSP channel
     member-types:
       - type: 'value_type'
