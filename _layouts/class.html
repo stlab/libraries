@@ -29,8 +29,49 @@ layout: default
                 {% capture link %}[`{{ item }}`](#{{ item | replace: '_', '-' }}){% endcapture %}
                 {{ link | markdownify }}
             {% endfor %}
-          {% when 'function' %}
-            <h2>Function</h2>
+          {% when 'free-functions' %}
+            <h3>Functions</h3>
+            <table>
+            {% for fun in entity.functions %}
+            <tr>
+                <td><a href="{{fun.pure-name}}">{{fun.name}}</a></td>
+                <td>{{fun.description}}</td>
+            </tr>
+            {% endfor %}
+            </table>
+          {% when 'class' %}
+			<table>
+			<tr>{% highlight c++ %}{{ entity.name }}{% endhighlight %}</tr>
+			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
+			<tr>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</tr>
+			<tr> {{entity.description | markdownify }}</tr>
+			</table>
+			<h3>Member functions</h3>
+			<table>
+			<tr>
+				<td><a href="{{entity.pure-name}}/{{entity.pure-name}}">(constructor)</a></td>
+				<td>constructs the {{entity.pure-name}} object</td>
+			</tr>
+			<tr>
+				<td><a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a></td>
+				<td>destructs the {{entity.pure-name}} object</td>
+			</tr>
+            {% for fun in entity.member-functions %}
+			<tr>
+				<td><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></td>
+				<td>{{fun.description}}</td>
+			</tr>
+			{% endfor %}
+			</table>
+			
+        {% endcase %}
+    {% endfor %}
+
+    {{ content }}
+  </article>
+</div>
+
+<!--
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
@@ -48,16 +89,4 @@ layout: default
             {% endfor %}
             <h3>Return</h3>
             {{ entity.return | markdownify }}
-          {% when 'class' %}
-            {% highlight c++ %}{{ entity.declaration }}{% endhighlight %}
-			<table>
-			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-			<tr><a href="{{entity.link}}">{% highlight cpp %}{{ entity.name }}{% endhighlight %}</tr></a>
-			</table>
-        {% endcase %}
-    {% endfor %}
-
-    {{ content }}
-  </article>
-
-</div>
+-->

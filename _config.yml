@@ -20,6 +20,7 @@ github_username:  sean-parent
 exclude:
     - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)
     - _source
+    - stlab.bbprojectd/
 
 # Build settings
 markdown: kramdown

@@ -1,0 +1,64 @@
+---
+layout: default
+---
+<div class="post">
+
+  <header class="post-header">
+    <h1>{{ page.title }}</h1>
+  </header>
+
+  <article class="post-content">
+    <h3>Functions</h3>
+    {% for entity in page.entities %}
+      {% case entity.kind %}
+        {% when 'overloads' %}
+          <table>
+          {% for item in entity.list %}
+            <tr>
+              <td>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</td>
+              <td>{{ item.description }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% when 'parameters'%}
+        <table>
+        {% for item in entity.list %}
+            <tr>
+              <td style="float:right">{% highlight c++ %}{{ item.name }}{% endhighlight %}</td>
+              <td>{{ item.description }}</td>
+            </tr>
+        {% endfor %}
+        </table>
+      {% when 'result'%}
+        <h3>Return value</h3>
+        {{ entity.description }}
+      {% when 'example'%}
+        <h3>Example</h3>
+        {{ entity.code }}
+      {% else %}
+      {% endcase %}
+    {% endfor %}
+    {{ content }}
+  </article>
+</div>
+
+
+<!--
+            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
+            <h3>Parameters</h3>
+            {% for parameter in entity.parameters %}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% endcapture %}
+                {{ param | markdownify }}
+            {% endfor %}
+            <h3>Preconditions</h3>
+            {% for item in entity.preconditions %}
+                {{ item | markdownify }}
+            {% endfor %}
+            <h3>Notes</h3>
+            {% for item in entity.notes %}
+                {{ item | markdownify }}
+            {% endfor %}
+            <h3>Return</h3>
+            {{ entity.return | markdownify }}
+-->
