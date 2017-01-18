@@ -29,11 +29,11 @@ entities:
         description: Returns a possibly stored exception
   - kind: free-functions
     functions:
-      - name: stlab::when_all
+      - name: when_all
         defined-in-header: stlab/future.hpp
         description: Joins futures
         pure-name: when_all
-      - name: stlab::when_any
+      - name: when_any
         defined-in-header: stlab/future.hpp
         description: Reduces (correct name?) several futures into a single one
         pure-name: when_any

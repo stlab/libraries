@@ -41,10 +41,10 @@ layout: default
             </table>
           {% when 'class' %}
 			<table>
-			<tr>{% highlight c++ %}{{ entity.name }}{% endhighlight %}</tr>
-			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-			<tr>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</tr>
-			<tr> {{entity.description | markdownify }}</tr>
+			<tr><td>{% highlight c++ %}{{ entity.name }}{% endhighlight %}</td></tr>
+			<tr class="page-includes"><td>Defined in &lt{{ entity.defined-in-header }}&gt</td></tr>
+			<tr><td>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</td></tr>
+			<tr><td> {{entity.description | markdownify }}</td></tr>
 			</table>
 			<h3>Member functions</h3>
 			<table>

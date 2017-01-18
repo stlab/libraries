@@ -13,7 +13,9 @@ entities:
       - name: stlab::immediate_executor::operator()
         pure-name: operator()
         defined-in-header: stlab/immediate_executor.hpp 
-        declaration: template <typename F> void operator()(F&& f) const
+        declaration: |
+          template <typename F> 
+          void operator()(F&& f) const
         description: Execute the given function object immediately.
   - kind: example
     code: NoCode

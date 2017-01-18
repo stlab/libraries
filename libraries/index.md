@@ -1,6 +1,8 @@
 ---
 layout: library
 title: libraries
+description: This library provides high level constructs for implementing algorithms that eases the use of multiple CPU cores while minimizing the contention.
+authors: Sean Parent, Felix Petriconi
 sections:
   - kind: collection
     name: Futures
@@ -55,5 +57,5 @@ sections:
         defined-in-header: stlab/immediate_executor.hpp
         declaration: immediate_executor
         description: This class implements an executor that executes the task immediately
-    link: executor/stlab_immediate_executor
+        link: executor/stlab_immediate_executor
 ---
