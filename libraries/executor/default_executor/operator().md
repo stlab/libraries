@@ -21,6 +21,7 @@ entities:
     list:
       - name: f
         description: The function object that shall be executed on the thread pool.
+  - kind: result
   - kind: example
     code: NoCode
 ---
