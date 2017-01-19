@@ -13,7 +13,9 @@ entities:
       - name: stlab::main_executor::operator()
         pure-name: operator()
         defined-in-header: stlab/main_executor.hpp 
-        declaration: template <typename F> void operator()(F&& f) const
+        declaration: |
+          template <typename F> 
+          void operator()(F&& f) const
         description: This executors executes the given function object on the applications main loop.
   - kind: example
     code: NoCode

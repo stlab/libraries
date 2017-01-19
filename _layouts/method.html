@@ -9,9 +9,8 @@ layout: default
 
   <article class="post-content">
     <table>
-      <tr>{% highlight c++ %}{{ page.full-name }}{% endhighlight %}</tr>
-      <tr>Defined in &lt{{page.defined-in-header}}&gt</tr>
-      <tr>{{ page.description }}</tr>
+      <tr><td>{% highlight c++ %}{{ page.full-name }}{% endhighlight %}</td></tr>
+      <tr><td>{{ page.description }}</td></tr>
     </table>
     {% for entity in page.entities %}
       {% case entity.kind %}

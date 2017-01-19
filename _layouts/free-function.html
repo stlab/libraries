@@ -14,13 +14,13 @@ layout: default
         {% when 'overloads' %}
           <table>
           {% for item in entity.list %}
-            <tr>
-              <td>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</td>
-              <td>{{ item.description }}</td>
-            </tr>
+            <tr><td>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</td></tr>
+            <tr><td>{{ item.description }}</td></tr>
           {% endfor %}
         </table>
+
       {% when 'parameters'%}
+        <h3>Parameters</h3>
         <table>
         {% for item in entity.list %}
             <tr>
