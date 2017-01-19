@@ -4,10 +4,10 @@ title: stlab::channel
 tags: [library]
 entities:
   - kind: overloads
+    defined-in-header: stlab/channel.hpp
     list:
       - name: channel
         pure-name: channel
-        defined-in-header: stlab/channel.hpp
         declaration: |
             template <typename T, typename E>
             std::pair<sender<T>, receiver<T>> channel(E e)

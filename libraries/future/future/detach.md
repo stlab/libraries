@@ -1,4 +1,4 @@
-	---
+---
 layout: method
 title: stlab::future
 tags: [library]

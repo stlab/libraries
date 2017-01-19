@@ -4,6 +4,7 @@ title: stlab::join
 tags: [library]
 entities:
   - kind: overloads
+    defined-in-header: stlab/channel.hpp
     list:
       - name: join
         pure-name: join

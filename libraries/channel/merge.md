@@ -4,10 +4,10 @@ title: stlab::merge
 tags: [library]
 entities:
   - kind: overloads
+    defined-in-header: stlab/channel.hpp  
     list:
       - name: merge
         pure-name: merge
-        defined-in-header: stlab/channel.hpp
         declaration: |
             template <typename E, typename F, typename...R>
             auto merge(E e, F f, R&&... upstream_receiver)

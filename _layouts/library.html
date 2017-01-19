@@ -20,14 +20,14 @@ layout: default
         {% case entity.kind %}
           {% when 'collection' %}
             <h3>{{entity.name}}</h3>
-            <table>
+            <table class="t-dsc-begin">
                 <tr>
-                    <td colspan="2">{{entity.description}}</td>
+                    <td>{{entity.description}}</td>
                 </tr>
                 {% for entry in entity.entities %}
-                  <tr>
+                  <tr class="t-dsc">
                       <td>
-                          <a href="{{entry.link}}">{% highlight cpp %}{{ entry.pure-name }}{% endhighlight %}</a>
+                        <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
                       </td>
                       <td>
                           {{ entry.description }}

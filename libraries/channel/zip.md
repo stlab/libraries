@@ -4,10 +4,10 @@ title: stlab::zip
 tags: [library]
 entities:
   - kind: overloads
+    defined-in-header: stlab/channel.hpp  
     list:
       - name: zip
         pure-name: zip
-        defined-in-header: stlab/channel.hpp
         declaration: |
             template <typename E, typename F, typename...R>
             auto zip(E e, F f, R&&... upstream_receiver)
