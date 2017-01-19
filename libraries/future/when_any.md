@@ -4,7 +4,8 @@ title: stlab::when_any
 tags: [library]
 entities:
   - kind: overloads
-    defined-in-header: stlab/future.hpp  
+    defined-in-header: stlab/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp 
     list:
       - name: when_any
         pure-name: when_any

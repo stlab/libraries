@@ -7,6 +7,7 @@ entities:
     name: stlab::receiver
     pure-name: receiver
     defined-in-header: stlab/channel.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
     declaration: |
         template <typename T> 
         class receiver

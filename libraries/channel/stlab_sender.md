@@ -7,6 +7,7 @@ entities:
     name: stlab::sender
     pure-name: sender
     defined-in-header: stlab/channel.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
     declaration: |
         template <typename T> class future
     description: This class implements the sending part of a CSP channel

@@ -7,6 +7,7 @@ entities:
     name: stlab::future
     pure-name: future
     defined-in-header: stlab/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
     declaration: |
       template <typename T>
       class future

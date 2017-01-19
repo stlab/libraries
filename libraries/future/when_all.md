@@ -5,6 +5,7 @@ tags: [library]
 entities:
   - kind: overloads
     defined-in-header: stlab/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
     list:
       - name: when_all
         pure-name: when_all

@@ -5,6 +5,7 @@ tags: [library]
 entities:
   - kind: overloads
     defined-in-header: stlab/channel.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
     list:
       - name: join
         pure-name: join
