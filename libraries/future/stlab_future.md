@@ -48,6 +48,10 @@ entities:
         description: Returns a possibly stored exception
   - kind: free-functions
     functions:
+      - name: make_ready_future
+        defined-in-header: stlab/future.hpp
+        description: Creates a future that is already ready.
+        pure-name: make_ready_future
       - name: when_all
         defined-in-header: stlab/future.hpp
         description: Joins futures
