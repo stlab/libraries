@@ -15,6 +15,7 @@ entities:
         defined-in-header: stlab/main_executor.hpp 
         declaration: main_executor()
         description: Constructs a new main_executor object
+  - kind: parameters
   - kind: example
     code: NoCode
 ---

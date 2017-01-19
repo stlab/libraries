@@ -17,6 +17,10 @@ entities:
           template <typename F> 
           void operator()(F&& f) const
         description: This executors executes the given function object on the applications main loop.
+  - kind: parameters
+    list:
+      - name: f
+        description: The function object that shall be executed on the main loop.
   - kind: example
     code: NoCode
 ---

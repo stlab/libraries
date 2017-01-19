@@ -15,6 +15,8 @@ entities:
         defined-in-header: stlab/channel.hpp 
         declaration: void set_ready()
         description: Sets this receiver ready to receiver values. That implies that no more downstream processes can be attached.
+  - kind: parameters
+  - kind: result
   - kind: example
     code: NoCode
 ---

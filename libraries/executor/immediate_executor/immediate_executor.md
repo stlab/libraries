@@ -15,6 +15,7 @@ entities:
         defined-in-header: stlab/immediate_executor.hpp 
         declaration: immediate_executor()
         description: Constructs a new immediate_executor object
+  - kind: parameters
   - kind: example
     code: NoCode
 ---

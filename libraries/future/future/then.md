@@ -21,8 +21,8 @@ entities:
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
-          template <typename S, typename F> 
-          auto then(S&& s, F&& f) const&
+          template <typename E, typename F> 
+          auto then(E&& e, F&& f) const&
         description: Constructs a continuation using the provided scheduler.
       - name: stlab::future::then
         pure-name: then
@@ -35,9 +35,17 @@ entities:
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
-          template <typename S, typename F>
-          auto then(S&& s, F&& f) &&
+          template <typename E, typename F>
+          auto then(E&& e, F&& f) &&
         description: Constructs a continuation using the provided scheduler.
+  - kind: parameters
+    list:
+      - name: e
+        description: Executor which is used to schedule the resulting task
+      - name: f
+        description: Callable object that implements the recover function. Its parameter must be of type of this future instance.
+  - kind: result
+    description: a future of the type of the result type of the passed function object.
   - kind: example
     code: NoCode
 ---

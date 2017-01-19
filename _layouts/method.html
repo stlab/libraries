@@ -24,29 +24,35 @@ layout: default
 
             <p>{{ page.description }}</p>
 
-            <table>
             {% for item in entity.list %}
-            <tr>
-              <td>{{ forloop.index }})</td>
-              <td>{{ item.description }}</td>
-            </tr>
+            <div class="t-li1">
+              <span class="t-ti">{{ forloop.index }})</span>
+              {{ item.description }}
+            </div>
             {% endfor %}
-            </table>
       {% when 'parameters'%}
         <h3>Parameters</h3>
-        <table class="t-par-begin">
-        {% for item in entity.list %}
-            <tr class="t-par">
-              <td>{{ item.name }}</td>
-              <td> - </td>
-              <td>{{ item.description }}</td>
-            </tr>
-        {% endfor %}
-        </table>
+        {% if entity.list %} 
+          <table class="t-par-begin">
+          {% for item in entity.list %}
+              <tr class="t-par">
+                <td>{{ item.name }}</td>
+                <td> - </td>
+                <td>{{ item.description }}</td>
+              </tr>
+          {% endfor %}
+          </table>
+        {% else %}
+          <p>(none)</p>
+        {% endif %}
       {% when 'result'%}
         <h3>Return value</h3>
-        {{ entity.description }}            
+        {% if entity.description %}
+          {{ entity.description }} 
         {% else %}
+          <p>(none)</p>
+        {% endif %}             
+      {% else %}
       {% endcase %}
     {% endfor %}
     {{ content }}

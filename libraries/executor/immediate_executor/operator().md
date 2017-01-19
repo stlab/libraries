@@ -17,6 +17,10 @@ entities:
           template <typename F> 
           void operator()(F&& f) const
         description: Execute the given function object immediately.
+  - kind: parameters
+    list:
+      - name: f
+        description: The function object that shall now be executed.
   - kind: example
     code: NoCode
 ---

@@ -8,11 +8,12 @@ entities:
     pure-name: receiver
     defined-in-header: stlab/channel.hpp
     declaration: |
-        template <typename T> class receiver
+        template <typename T> 
+        class receiver
     description: This class implements the receiving part of a CSP channel
     member-types:
-      - type: 'value_type'
-        definition: '`T`'
+      - type: value_type
+        definition: T
     member-functions:
       - name: set_ready
         description: Enabled this end of the channel to receiver values
@@ -20,7 +21,7 @@ entities:
         description: Returns true if this side of the channel is enabled to receive values
       - name: operator|
         link: operator_pipe
-        description: Pipes the result of this channel to the next instance
+        description: Attaches the given process to the channel
   - kind: free-functions
     functions:
       - name: channel

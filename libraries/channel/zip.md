@@ -21,5 +21,5 @@ entities:
       - name: upstream_receiver
         description: The upstream receiver. 
   - kind: result
-    description: Returns a future that zips all passed arguments
+    description: a future that zips all passed arguments
 ---

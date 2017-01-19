@@ -13,7 +13,7 @@ entities:
       - type: result_type
         definition: void
     member-functions:
-      - name: template <typename T> void operator()(F&& f) const
+      - name: operator()
         description: Executes the given function on the application's main loop.
       
 ---

@@ -15,6 +15,7 @@ entities:
         defined-in-header: stlab/channel.hpp 
         declaration: sender()
         description: Constructs a new sender object
+  - kind: parameters
   - kind: example
     code: NoCode
 ---

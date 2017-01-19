@@ -15,6 +15,7 @@ entities:
         defined-in-header: stlab/default_executor.hpp 
         declaration: default_executor()
         description: Constructs a new default_executor object. Normaly all instances of this class refer to the same systems thread pool. In case that the operting system does not provide a thread pool, these instances refer to the same custom thread pool.
+  - kind: parameters
   - kind: example
     code: NoCode
 ---

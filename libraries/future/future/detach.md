@@ -14,7 +14,9 @@ entities:
         pure-name: detach
         defined-in-header: stlab/future.hpp 
         declaration: void detach() const
-        description: Lets the current task run  and detaches it from this instance.
+        description: Lets the current task run and detaches it from this instance.
+  - kind: parameters
+  - kind: result
   - kind: example
     code: NoCode
 ---

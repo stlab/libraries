@@ -27,5 +27,5 @@ entities:
       - name: args
         description: Futures that shall be joined
   - kind: result
-    description: Returns a future that joins all passed arguments
+    description: a future that joins all passed arguments and passes them to the associated function object
 ---

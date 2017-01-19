@@ -13,8 +13,18 @@ entities:
       - name: stlab::receiver::operator|
         pure-name: operator|
         defined-in-header: stlab/channel.hpp 
-        declaration: template <typename F> auto operator|(F&& f)
-        description: Attaches the given process to the receiver and returns a new receiver. It can either be a functor with a single parameter or a process that follows this signatur.
+        declaration: |
+          template <typename F> 
+          auto operator|(F&& f)
+        description: Attaches the given process to the receiver and returns a new receiver. It can either be a function object with a single parameter or a process that follows this signatur.
+  - kind: parameters
+    list:
+      - name: f
+        description: The process to be executed.
+      - name: args
+        description: Futures that shall be joined
+  - kind: result
+    description: A receiver of type of the result of the passed function object
   - kind: example
     code: NoCode
 ---

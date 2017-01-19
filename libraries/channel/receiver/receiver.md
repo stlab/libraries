@@ -15,6 +15,7 @@ entities:
         defined-in-header: stlab/channel.hpp 
         declaration: receiver()
         description: Constructs a new receiver object
+  - kind: parameters
   - kind: example
     code: NoCode
 ---

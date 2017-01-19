@@ -20,6 +20,9 @@ entities:
         defined-in-header: stlab/future.hpp 
         declaration: bool get_try() const&
         description: If T is void it returns true if the future succeeded, otherwise false. In case that an error occured it rethrows the captured exception.
+  - kind: parameters
+  - kind: result
+    description: if T is of type void, it returns true if the future has fulfiled; if T is a non-void type then it returns an optional with the result of the future if the future is already fulfilled, otherwise an empty optional
   - kind: example
     code: NoCode
 ---

@@ -17,6 +17,10 @@ entities:
           template <typename F> 
           void operator()(F&& f) const
         description: Pushes the given function object on the systems thread pool.
+  - kind: parameters
+    list:
+      - name: f
+        description: The function object that shall be executed on the thread pool.
   - kind: example
     code: NoCode
 ---

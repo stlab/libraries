@@ -52,9 +52,17 @@ layout: default
                     <div>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</div>
                 </td>
             </tr>
-			<tr><td> {{entity.description | markdownify }}</td></tr>
+			<tr><td>{{entity.description | markdownify }}</td></tr>
 			</table>
             <h3>Member types</h3>
+            <table class="t-dsc-begin">
+                {% for type in entity.member-types %}
+                    <tr class="t-dsc">
+                        <td>{{ type.type }}</td>
+                        <td>{{ type.definition }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
 			<h3>Member functions</h3>
 			<table class="t-dsc-begin">
             <tbody>
@@ -94,22 +102,3 @@ layout: default
   </article>
 </div>
 
-<!--
-            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-            <h3>Parameters</h3>
-            {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
-                {% endcapture %}
-                {{ param | markdownify }}
-            {% endfor %}
-            <h3>Preconditions</h3>
-            {% for item in entity.preconditions %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Notes</h3>
-            {% for item in entity.notes %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Return</h3>
-            {{ entity.return | markdownify }}
--->

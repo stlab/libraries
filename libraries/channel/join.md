@@ -16,11 +16,11 @@ entities:
   - kind: parameters
     list:
       - name: e
-        description: Executor which is used to schedule the resulting task
+        description: Executor which shall be used to execute the resulting task
       - name: f
         description: Callable object that implements the task. Its parameters correspond to the results from the upstream receivers. It is called when all upstream receiver have provided its values.
       - name: upstream_receiver
-        description: The upstream receiver. 
+        description: The upstream receiver.
   - kind: result
-    description: Returns a future that joins all passed arguments
+    description: a future that joins all passed arguments
 ---
