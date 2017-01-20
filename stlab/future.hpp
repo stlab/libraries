@@ -1259,7 +1259,7 @@ auto async(S schedule, F&& f, Args&&... args)
     auto p = package<std::result_of_t<F(Args...)>()>(schedule,
         std::bind([_f = std::forward<F>(f)](Args&... args) {
             return _f(std::move(args)...);
-        }, std::forward<Args>(args)...);
+        }, std::forward<Args>(args)...));
     
     schedule(std::move(p.first));
     

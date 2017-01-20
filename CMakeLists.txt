@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 project(SlabFuture C CXX)
 
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+set(CMAKE_SKIP_RPATH OFF)
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")  
   #set(CMAKE_CXX_FLAGS "-g -Wall -O3 -std=c++14 -fsanitize=thread -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
   set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions -ftemplate-backtrace-limit=0 -D_GLIBCXX_USE_CXX11_ABI=0")
@@ -9,29 +13,28 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
   SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS})
 endif()
 
-if (WIN32)
-    set(Boost_USE_STATIC_LIBS TRUE)
-endif()
-
 if(WIN32)
   add_definitions(-D_WIN32_WINNT=0x0601)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif(WIN32)
 
+set (Boost_USE_STATIC_LIBS TRUE)
 set (Boost_MULTITHREADED ON) 
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+
 find_package( Threads )
+
 if(CMAKE_USE_PTHREADS_INIT)
     set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-pthread")
 endif()
 
-find_package( Boost 1.60.0 COMPONENTS unit_test_framework)
+find_package(Boost 1.60.0 COMPONENTS unit_test_framework)
 
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+LINK_DIRECTORIES(${CONAN_LIB_DIRS})
 
 include_directories(.)
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${CONAN_INCLUDE_DIRS})
 
 add_subdirectory(src)
 add_subdirectory(test)
