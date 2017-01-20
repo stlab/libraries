@@ -17,10 +17,7 @@ before_install:
   - brew outdated cmake || brew upgrade cmake
 
 script:
-    - ls -alF
-    - cd ./stlab/libraries
-    - ls -alF
-    - ./xcode_setup.sh
+    - ./setup_xcode.sh
     - cd build
     - xcodebuild
     - cd bin # It'd be great if we could just run all the binaries we find in here...
