@@ -11,6 +11,7 @@ matrix:
           packages:
             - g++-5
       env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
+      install: if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
     - compiler: clang
       addons:
         apt:
@@ -20,18 +21,19 @@ matrix:
           packages:
             - clang-3.8
       env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
+      install: if [ "$CXX" = "g++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
 branches:
   except: /pr\/.*/
 before_install:
-    - pip install conan
+  - pip install conan
 script:
-    - mkdir build
-    - cd build
-    - conan install ./.. # --build=missing
-    - cmake .. && make
-    - cd bin # It'd be great if we could just run all the binaries we find in here...
-    - ./future_test
-    - ./serial_queue_test
+  - mkdir build
+  - cd build
+  - conan install ./.. # --build=missing
+  - cmake .. && make
+  - cd bin # It'd be great if we could just run all the binaries we find in here...
+  - ./future_test
+  - ./serial_queue_test
 notifications:
   recipients:
     - felix@petriconi.net
