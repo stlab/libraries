@@ -28,3 +28,9 @@
 *.app
 
 *.js
+
+# MacOS nonsense
+.DS_Store
+
+# cmake build directory
+build/

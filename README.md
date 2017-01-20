@@ -4,6 +4,17 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 [ This is temporary documentation - to be replaced at a later date. ]
 
+# Building
+
+First, you will need the following tools:
+
+- [`conan`](https://www.conan.io/) ([download](https://www.conan.io/downloads))
+- [`CMake`](https://cmake.org/) ([download](https://cmake.org/download/))
+
+Both are available via [Homebrew](http://brew.sh) on the Mac. `cmake` is available on Windows via [`scoop`](http://scoop.sh/).
+
+Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the platform of your choice. It will create the project file in the `build/` directory for your platform.
+
 # Build Status: [![Build Status](https://travis-ci.org/FelixPetriconi/libraries.svg?branch=UnitTests)](https://travis-ci.org/FelixPetriconi/libraries)
 
 ## <stlab/future>

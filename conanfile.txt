@@ -1,0 +1,10 @@
+[requires]
+# TBB/4.4.4@memsharded/testing
+Boost/1.60.0@lasote/stable
+
+[generators]
+cmake
+
+[imports]
+bin, *.dll -> ./bin # copies package bin folder DLLs to "bin" folder
+lib, *.dylib -> ./bin # copies package lib folder DLLs to "bin" folder
