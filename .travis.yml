@@ -15,9 +15,11 @@ before_install:
   - brew update
   - brew outdated conan || brew upgrade conan
   - brew outdated cmake || brew upgrade cmake
-  - brew outdated xctool || brew upgrade xctool
 
 script:
+    - ls -alF # debugging
+    - cd stlab/libraries
+    - ls -alF # debugging
     - xcode_setup.sh
     - cd build
     - xcodebuild
@@ -31,4 +33,5 @@ notifications:
   email:
     on_success: change
     on_failure: always
-  slack: stlab:P23OMUJ8T4Pa05OON0VDYwIf
+  slack:
+    - stlab:P23OMUJ8T4Pa05OON0VDYwIf
