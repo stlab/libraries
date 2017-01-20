@@ -1,47 +1,34 @@
-sudo: required
-dist: trusty
+language: objective-c
 
-language: cpp
+os: osx
+
+osx_image: xcode8.2
+
+compiler:
+  - clang
+  - gcc
 
 branches:
   except: /pr\/.*/
 
-matrix:
-  include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      env: 
-        - COMPILER=g++-5
-        - TOOLSET=gcc
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      env: 
-        - COMPILER=g++-6
-        - TOOLSET=gcc
-before_script:
-    - pip install conan
-      
+before_install:
+  - brew update
+  - brew outdated conan || brew upgrade conan
+  - brew outdated cmake || brew upgrade cmake
+  - brew outdated xctool || brew upgrade xctool
+
 script:
-    - mkdir build
+    - xcode_setup.sh
     - cd build
-    - conan install ./.. --build=missing
-    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER ./..
-    - make
-    - test/future_test
-    
+    - xcodebuild
+    - cd bin # It'd be great if we could just run all the binaries we find in here...
+    - future_test
+    - serial_queue_test
+
 notifications:
   recipients:
     - felix@petriconi.net
   email:
     on_success: change
     on_failure: always
+  slack: stlab:P23OMUJ8T4Pa05OON0VDYwIf
