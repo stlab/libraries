@@ -1,7 +1,5 @@
 @ECHO OFF
 
-ECHO %VS140COMNTOOLS%..\..\
-
 set VC_ROOT=%VS140COMNTOOLS%..\..\VC\
 
 if exist "%VC_ROOT%vcvarsall.bat" (

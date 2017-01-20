@@ -17,6 +17,9 @@ before_install:
   - brew outdated cmake || brew upgrade cmake
 
 script:
+    - ls -alF
+    - cd ./stlab/libraries
+    - ls -alF
     - ./xcode_setup.sh
     - cd build
     - xcodebuild
@@ -31,4 +34,5 @@ notifications:
     on_success: change
     on_failure: always
   slack:
-    - stlab:P23OMUJ8T4Pa05OON0VDYwIf
+    rooms:
+      secure: D2Q2H8/89cCSDjJXc6AmIAOEKIkoUBQZBH5sYIkc/FgB7+cLqeSQFNpe7N96t22SmvyIUsqPzxiEccEMTiLeRdo0S4BXAAkd3abB8wd2KFXe/mlpUpNNSYTowYA6I6EfY83Hb5QxVkIi5SiD6fwUo9VFXGpBQM5wmgU9CXE4Xk64RWziSKowGSOzIPytSduksG2p+wKQE6tK0o4NNPvOI0uzbzJuWUwHjaLU/tH12L/O/DmeLj+WO1939v1Xmm48p86JKr7uJzNNiTTVCGuAMLY3CLdTRYHpgvnfAxy93x0v0arvYiRrtABlfUP1RjthUPlmY0oESIx1EbgSUMXx1Bh0tvfJoRUq2H2qu9V1mMhIrMj7JzWcLb+9X3+vWg7UPgz8Y2kX8PZbzxCclIqesWsgBbaqsErbS6o5Fh2hvTMzIjRXm8oXc38wbC3jM11H0CD7tCEvpUHyPHfVGYgf0/qFNSoFU3qhfuWRdhi3Pa+En9/VcFmDrbh2P9ba2kDqVnXzz2q+xRZ1rfmzBiKOe05TVTm4535JbcRPCa4bgE+gT6PvVIlb4WSJk6pZleAlo/lh8Ugqc4fCRiShhxd0lKK+3+B1ImipuVeaNaTGUgfhtj4hhMzXEp9Xi+M3UyScnXvQhLc7pA3eYO6paXuVjBUIzAWOXzsPVwCVPFoObhY=
