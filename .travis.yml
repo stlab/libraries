@@ -10,16 +10,16 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env: COMPILER=g++-5
+      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
     - compiler: clang
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
+            - llvm-toolchain-precise-3.8
           packages:
-            - clang-3.7
-      env: COMPILER=clang++-3.7
+            - clang-3.8
+      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
 branches:
   except: /pr\/.*/
 before_install:
@@ -27,7 +27,7 @@ before_install:
 script:
     - mkdir build
     - cd build
-    - conan install ./.. --build=missing
+    - conan install ./.. # --build=missing
     - cmake .. && make
     - cd bin # It'd be great if we could just run all the binaries we find in here...
     - ./future_test
