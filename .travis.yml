@@ -29,13 +29,13 @@ matrix:
         - COMPILER=g++-6
         - TOOLSET=gcc
 before_script:
-    - chmod +x configure.sh
-    - ./configure.sh
+    - pip install conan
       
 script:
     - mkdir build
     - cd build
-    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=boost_libraries ./..
+    - conan install ./.. --build=missing
+    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER ./..
     - make
     - test/future_test
     
