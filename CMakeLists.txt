@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(SlabFuture C CXX)
+project(stlab C CXX)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
