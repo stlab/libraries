@@ -17,15 +17,12 @@ before_install:
   - brew outdated cmake || brew upgrade cmake
 
 script:
-    - ls -alF # debugging
-    - cd stlab/libraries
-    - ls -alF # debugging
-    - xcode_setup.sh
+    - ./xcode_setup.sh
     - cd build
     - xcodebuild
     - cd bin # It'd be great if we could just run all the binaries we find in here...
-    - future_test
-    - serial_queue_test
+    - ./future_test
+    - ./serial_queue_test
 
 notifications:
   recipients:
