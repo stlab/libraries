@@ -1,15 +1,17 @@
 @ECHO OFF
 
-set VC_ROOT=%ProgramFiles%\Microsoft Visual Studio 14.0\VC\
+ECHO %VS140COMNTOOLS%..\..\
 
-if exist "%VC_ROOT%bin\VCVARS32.BAT" (
-    call "%VC_ROOT%bin\VCVARS32.BAT"
+set VC_ROOT=%VS140COMNTOOLS%..\..\VC\
+
+if exist "%VC_ROOT%vcvarsall.bat" (
+    call "%VC_ROOT%vcvarsall.bat" x86_amd64
 )
 
 MKDIR build
 PUSHD build
 
-conan install .. --build=missing -s build_type=Debug -s compiler="Visual Studio" -s compiler.runtime="MDd"
+conan install .. -o Boost:shared=False --build=missing
 
 cmake -G "Visual Studio 14 Win64" ..
 
