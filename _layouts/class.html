@@ -54,15 +54,17 @@ layout: default
             </tr>
 			<tr><td>{{entity.description | markdownify }}</td></tr>
 			</table>
-            <h3>Member types</h3>
-            <table class="t-dsc-begin">
-                {% for type in entity.member-types %}
-                    <tr class="t-dsc">
-                        <td>{{ type.type }}</td>
-                        <td>{{ type.definition }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
+            {% if entity.member-types %}
+                <h3>Member types</h3>
+                <table class="t-dsc-begin">
+                    {% for type in entity.member-types %}
+                        <tr class="t-dsc">
+                            <td>{{ type.type }}</td>
+                            <td>{{ type.definition }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
 			<h3>Member functions</h3>
 			<table class="t-dsc-begin">
             <tbody>

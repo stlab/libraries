@@ -8,6 +8,7 @@ layout: default
   </header>
 
   <article class="post-content">
+    <!--div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr"-->
     {% for entity in page.entities %}
       {% case entity.kind %}
         {% when 'methods' %}
@@ -26,8 +27,7 @@ layout: default
 
             {% for item in entity.list %}
             <div class="t-li1">
-              <span class="t-ti">{{ forloop.index }})</span>
-              {{ item.description }}
+              <span class="t-li">{{ forloop.index }})</span>{{ item.description }}
             </div>
             {% endfor %}
       {% when 'parameters'%}
@@ -51,11 +51,26 @@ layout: default
           {{ entity.description }} 
         {% else %}
           <p>(none)</p>
-        {% endif %}             
+        {% endif %}    
+      {% when 'utilitys'%}
+        <h3>Utility classes</h3> 
+        <table class="t-dsc-begin">
+          {% for entry in entity.classes %}
+            <tr class="t-dsc">
+                <td>
+                  <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
+                </td>
+                <td>
+                    {{ entry.description }}
+                </td>
+            </tr>
+          {% endfor %}
+        </table>      
       {% else %}
       {% endcase %}
     {% endfor %}
     {{ content }}
+    <!--/div-->
   </article>
 </div>
 

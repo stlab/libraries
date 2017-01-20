@@ -8,10 +8,6 @@ layout: default
   </header>
 
   <div class="post-content">
-    Authors: {{ page.authors }}
-  </div>
-  
-  <div class="post-content">
     {{ page.description }}
   </div>
   
@@ -20,20 +16,18 @@ layout: default
         {% case entity.kind %}
           {% when 'collection' %}
             <h3>{{entity.name}}</h3>
+            <p>{{entity.description}}</p>
             <table class="t-dsc-begin">
-                <tr>
-                    <td>{{entity.description}}</td>
+              {% for entry in entity.entities %}
+                <tr class="t-dsc">
+                    <td>
+                      <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
+                    </td>
+                    <td>
+                        {{ entry.description }}
+                    </td>
                 </tr>
-                {% for entry in entity.entities %}
-                  <tr class="t-dsc">
-                      <td>
-                        <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
-                      </td>
-                      <td>
-                          {{ entry.description }}
-                      </td>
-                  </tr>
-                {% endfor %}
+              {% endfor %}
             </table>
         {% endcase %}
     {% endfor %}
