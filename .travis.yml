@@ -1,6 +1,9 @@
 sudo: required
 dist: trusty
 language: cpp
+cache:
+  directories:
+    - $HOME/.conan
 matrix:
   include:
     - compiler: gcc
