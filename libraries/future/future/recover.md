@@ -16,28 +16,28 @@ entities:
         declaration: |
           template <typename F> 
           auto recover(F&& f) const&
-        description: Constructs a continuation using the same scheduler as this.
+        description: Constructs a continuation using the same executor as this.
       - name: stlab::future::recover
         pure-name: recover
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename E, typename F> 
           auto recover(E&& e, F&& f) const&
-        description: Constructs a continuation using the provided scheduler.
+        description: Constructs a continuation using the provided executor.
       - name: stlab::future::recover
         pure-name: recover
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename F>
           auto recover(F&& f) &&
-        description: Constructs a continuation using the same scheduler as this.
+        description: Constructs a continuation using the same executor as this.
       - name: stlab::future::recover
         pure-name: recover
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename E, typename F>
           auto recover(E&& e, F&& f) &&
-        description: Constructs a continuation using the provided scheduler.
+        description: Constructs a continuation using the provided executor.
   - kind: parameters
     list:
       - name: e

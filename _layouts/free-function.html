@@ -31,7 +31,7 @@ layout: default
             {% for item in entity.list %}
             <tr>
               <td>{{ forloop.index }})</td>
-              <td>{{ item.description }}</td>
+              <td>{{ item.description | markdownify }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -44,7 +44,7 @@ layout: default
               <tr class="t-par">
                 <td>{{ item.name }}</td>
                 <td> - </td>
-                <td>{{ item.description }}</td>
+                <td>{{ item.description | markdownify }}</td>
               </tr>
           {% endfor %}
           </table>
@@ -53,7 +53,7 @@ layout: default
         {% endif %}
       {% when 'result'%}
         <h3>Return value</h3>
-        {{ entity.description }}
+        {{ entity.description | markdownify }}
       {% when 'example'%}
         <h3>Example</h3>
         {{ entity.code }}

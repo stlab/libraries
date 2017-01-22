@@ -12,7 +12,7 @@ entities:
         declaration: |
             template <typename E, typename F, typename...R>
             auto merge(E e, F f, R&&... upstream_receiver)
-        description: This function creates a process that executes the provided function object whenever an upstream process provides a value.
+        description: This function creates a process that executes the provided function object whenever an upstream process provides a value. There is no defined order in which the process `f` is called.
   - kind: parameters
     list:
       - name: e

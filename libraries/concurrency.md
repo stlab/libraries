@@ -17,7 +17,7 @@ sections:
         link: future/stlab_future
   - kind: collection
     name: Channels
-    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node can be a functor or process that provides an await() and yield() method.
+    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node can be a functor or process that provides an `await()` and `yield()` method.
     entities:
       - kind: class
         name: stlab::sender

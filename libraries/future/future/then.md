@@ -16,28 +16,28 @@ entities:
         declaration: |
           template <typename F> 
           auto then(F&& f) const&
-        description: Constructs a continuation using the same scheduler as this.
+        description: Constructs a continuation using the same executor as this.
       - name: stlab::future::then
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename E, typename F> 
           auto then(E&& e, F&& f) const&
-        description: Constructs a continuation using the provided scheduler.
+        description: Constructs a continuation using the provided executor.
       - name: stlab::future::then
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename F>
           auto then(F&& f) &&
-        description: Constructs a continuation using the same scheduler as this.
+        description: Constructs a continuation using the same executor as this.
       - name: stlab::future::then
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename E, typename F>
           auto then(E&& e, F&& f) &&
-        description: Constructs a continuation using the provided scheduler.
+        description: Constructs a continuation using the provided executor.
   - kind: parameters
     list:
       - name: e

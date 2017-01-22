@@ -12,7 +12,7 @@ entities:
         declaration: |
             template <typename E, typename F, typename...R>
             auto zip(E e, F f, R&&... upstream_receiver)
-        description: This function creates a process that executes the provided function object with the the results from the upstream process. The results are passed in a round-robin manner, starting with the result from the first receiver.
+        description: This function creates a process that executes the provided function object with the results from the upstream process. The results are passed in a round-robin manner, starting with the result from the first receiver.
   - kind: parameters
     list:
       - name: e

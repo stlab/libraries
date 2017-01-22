@@ -23,11 +23,11 @@ layout: default
             {% endfor %}
             </table>
 
-            <p>{{ page.description }}</p>
+            <p>{{ page.description | markdownify }}</p>
 
             {% for item in entity.list %}
             <div class="t-li1">
-              <span class="t-li">{{ forloop.index }})</span>{{ item.description }}
+              <span class="t-li">{{ forloop.index }})</span>{{ item.description | markdownify}}
             </div>
             {% endfor %}
       {% when 'parameters'%}
@@ -38,7 +38,7 @@ layout: default
               <tr class="t-par">
                 <td>{{ item.name }}</td>
                 <td> - </td>
-                <td>{{ item.description }}</td>
+                <td>{{ item.description | markdownify }}</td>
               </tr>
           {% endfor %}
           </table>
@@ -48,7 +48,7 @@ layout: default
       {% when 'result'%}
         <h3>Return value</h3>
         {% if entity.description %}
-          {{ entity.description }} 
+          {{ entity.description | markdownify }} 
         {% else %}
           <p>(none)</p>
         {% endif %}    
@@ -61,7 +61,7 @@ layout: default
                   <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
                 </td>
                 <td>
-                    {{ entry.description }}
+                    {{ entry.description | markdownify}}
                 </td>
             </tr>
           {% endfor %}

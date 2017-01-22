@@ -13,7 +13,7 @@ entities:
         declaration: |
             template <typename E, typename F, typename...R>
             auto join(E e, F f, R&&... upstream_receiver)
-        description: This function creates a process that executes the provided process and passes the results from the upstream receiver to it. 
+        description: This function creates a process that executes the provided process and passes the results from the upstream receiver to this one.
   - kind: parameters
     list:
       - name: e

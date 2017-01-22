@@ -16,7 +16,7 @@ layout: default
         {% case entity.kind %}
           {% when 'collection' %}
             <h3>{{entity.name}}</h3>
-            <p>{{entity.description}}</p>
+            <p>{{ entity.description | markdownify }}</p>
             <table class="t-dsc-begin">
               {% for entry in entity.entities %}
                 <tr class="t-dsc">
@@ -24,7 +24,7 @@ layout: default
                       <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
                     </td>
                     <td>
-                        {{ entry.description }}
+                        {{ entry.description | markdownify }}
                     </td>
                 </tr>
               {% endfor %}
@@ -39,12 +39,12 @@ layout: default
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
                 {% endcapture %}
                 {{ param | markdownify }}
             {% endfor %}
             <h3>Result</h3>
-            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description }}
+            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description | markdownify }}
             {% endcapture %}
             {{ result | markdownify }}
             <h3>See</h3>
@@ -57,7 +57,7 @@ layout: default
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
                 {% endcapture %}
                 {{ param | markdownify }}
             {% endfor %}

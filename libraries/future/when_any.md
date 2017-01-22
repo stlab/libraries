@@ -12,7 +12,7 @@ entities:
         declaration: |
             template <typename E, typename F, typename...Ts>
             auto when_any(E e, F f, future<Ts>... args)
-        description: This function create a future that continues whenever the first future of the passed arguments succeeds.
+        description: This function create a future that continues whenever the first future of the passed arguments `args` succeeds.
       - name: when_any
         pure-name: when_any
         declaration: |

@@ -6,7 +6,7 @@ full-name: stlab::sender::close
 pure-name: close
 defined-in-header: stlab/channel.hpp 
 declaration: close()
-description: Constructs this side of the channel
+description: Close this side of the channel. No more values will be accepted. Already sent value will be processed.
 entities:
   - kind: methods
     list:

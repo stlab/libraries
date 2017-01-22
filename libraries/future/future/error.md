@@ -6,7 +6,7 @@ full-name: stlab::future::error
 pure-name: error
 defined-in-header: stlab/future.hpp 
 declaration: error()
-description: Returns a stored exception pointer
+description: Returns a potentially stored exception pointer
 entities:
   - kind: methods
     list:

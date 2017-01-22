@@ -11,7 +11,11 @@ entities:
     declaration: |
         template <typename T> 
         class receiver
-    description: This class implements the receiving part of a CSP channel. Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must of a type that implements an await() and yield() method.
+    description: This class implements the receiving part of a CSP channel. Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must of a type that implements an `await()` and `yield()` method.
+    TODO: Split
+    TODO: Error handling
+    TODO: Move only types
+
     member-types:
       - type: value_type
         definition: T

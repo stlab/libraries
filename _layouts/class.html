@@ -15,12 +15,12 @@ layout: default
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
                 {% endcapture %}
                 {{ param | markdownify }}
             {% endfor %}
             <h3>Result</h3>
-            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description }}
+            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description | markdownify }}
             {% endcapture %}
             {{ result | markdownify }}
             <h3>See</h3>
@@ -82,7 +82,7 @@ layout: default
                         <a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a>
                     </div>
                 </td>
-				<td>destructs the {{entity.pure-name}} object</td>
+				<td>destructs the {{ entity.pure-name }} object</td>
 			</tr>
             {% for fun in entity.member-functions %}
 			<tr class="t-dsc">
@@ -91,7 +91,7 @@ layout: default
                 {% else %}
                 <td><div class="t-dsc-member-div"><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></div></td>
                 {% endif %}
-				<td>{{fun.description}}</td>
+				<td>{{ fun.description | markdownify }}</td>
 			</tr>
 			{% endfor %}
             </tbody>
