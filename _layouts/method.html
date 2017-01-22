@@ -27,7 +27,7 @@ layout: default
 
             {% for item in entity.list %}
             <div class="t-li1">
-              <span class="t-li">{{ forloop.index }})</span>{{ item.description | markdownify}}
+              <span class="t-li">{{ forloop.index }})</span>{{ item.description | markdownify }}
             </div>
             {% endfor %}
       {% when 'parameters'%}

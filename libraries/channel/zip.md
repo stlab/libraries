@@ -20,12 +20,12 @@ entities:
       - name: f
         description: Callable object that implements the task. All results from the upstream process must be convertable to the only argument of the provided function object.
       - name: upstream_receiver
-        description: The upstream receiver. 
+        description: The upstream receiver(s). 
   - kind: result
     description: a future that zips all passed arguments
 ---
 
-## Example ##
+### Example ###
 
 ~~~ c++
 #include <atomic>
@@ -76,6 +76,7 @@ int main() {
     }
 }
 ~~~
+{: .example_box}
 
 ### Output ###
 ~~~
@@ -86,3 +87,4 @@ int main() {
 5
 6
 ~~~
+{: .example_box}

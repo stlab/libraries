@@ -73,7 +73,7 @@ int main() {
         | buffer_size{ 3 } & executor{ default_executor } & [](int x) { return x * 2; } 
 
         | executor{ default_executor } & [](int x) { return x + 1; }
-        | [](int x) { return x + 1; } &executor{ main_executor }
+        | [](int x) { return x + 1; } & executor{ main_executor }
         | executor{ default_executor } & buffer_size{ 3 } & [](int x) { return x * 2; }
     
         | [](int x) { return x + 1; } & executor{ default_executor } & buffer_size{ 3 }
@@ -86,7 +86,8 @@ int main() {
     send(1);
 
     while (v == 0) {
-        this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 }
 ~~~
+{: .example_box}

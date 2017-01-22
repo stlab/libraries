@@ -19,3 +19,54 @@ entities:
   - kind: result
     description: Returns a pair of sender - receiver of type T that form a channel
 ---
+
+### Example ###
+
+~~~ c++
+#include <atomic>
+#include <iostream>
+#include <thread>
+
+#include <stlab/channel.hpp>
+#include <stlab/default_executor.hpp>
+
+using namespace std;
+using namespace stlab;
+
+int main() {
+    sender<int> send;
+    receiver<int> receive;
+
+    tie(send, receive) = channel<int>(default_executor);
+
+    std::atomic_bool done{ false };
+
+    auto hold = receive | [&_done = done](int x) {  
+        cout << x << '\n'; 
+        _done = true; 
+      };
+
+    // It is necessary to mark this side ready, when all connections are
+    // established
+    receive.set_ready();
+
+    send(1);
+    send(2);
+    send(3);
+
+    // Waiting just for illustrational purpose
+    while (!done.load()) {
+        this_thread::sleep_for(chrono::milliseconds(1));
+    }
+}
+~~~
+{: .example_box}
+
+### Output ###
+
+~~~
+1
+2
+3
+~~~
+{: .example_box}

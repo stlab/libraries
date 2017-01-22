@@ -16,9 +16,9 @@ entities:
       
       This future is copyable, so there is no need for a `std::shared_future`. 
       
-      If this future is only used as an rvalue and there are no copies then the value returned, by `get_try` or through a continuation, will be moved. 
+      If this future is only used as an rvalue and there are no copies, then the value, returned by `get_try` or through a continuation, will be moved. 
       
-      Multiple continutations may be attached to a single future with `then()`. `then()` is declared `const` since it does not mutate the result object of the future. The continuation is called with the value type, not the future. 
+      Multiple continutations - forming a split - may be attached to a single future with `then()`. `then()` is declared `const` since it does not mutate the result object of the future. The continuation is called with the value type, not the future. 
       
       A sink argument to a continuation should take the argument by value and move the object as needed. 
       
@@ -28,7 +28,7 @@ entities:
       If the last copy of a future destructs, the associated task and any held futures for the task arguments are released and the associated packaged_task will become a no-op if called. 
       
       There are no `wait()` or `get()` function. Instead there is a `get_try()` which returns an `optional<T>` (or if `T` is `void`, the result is a `bool` with `true` indicating the associated task has executed.
-        
+
       TODO: Error handling
     member-types:
       - type: value_type
@@ -67,3 +67,8 @@ entities:
         description: Reduces (correct name?) several futures into a single one
         pure-name: when_any
 ---
+
+
+### Single Future Example ###
+
+

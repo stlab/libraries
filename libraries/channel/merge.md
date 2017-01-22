@@ -26,7 +26,7 @@ entities:
 ---
 
 
-## Example ##
+### Example ###
 
 ~~~ c++
 #include <atomic>
@@ -74,9 +74,12 @@ int main() {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
+~~~
+{: .example_box}
 
 ### Output ###
 The order of the value is not defined!
+
 ~~~
 1
 3
@@ -85,3 +88,4 @@ The order of the value is not defined!
 5
 6
 ~~~
+{: .example_box}

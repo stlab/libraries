@@ -26,7 +26,7 @@ entities:
     description: a future that joins all passed arguments
 ---
 
-## Example ##
+### Example ###
 
 ~~~ c++
 #include <atomic>
@@ -68,8 +68,10 @@ int main() {
     }
 }
 ~~~
+{: .example_box}
 
 ### Output ###
 ~~~
 3
 ~~~
+{: .example_box}
