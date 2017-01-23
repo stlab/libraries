@@ -8,13 +8,13 @@ entities:
     tag: no constructor and destructor
     pure-name: process
     description: |
-      The process is a policy that must follow certain rules and no a concrete type.
+      The process is a policy that must follow certain rules; it is not a type that the library provides.
 
       Each channel is associated with a process. The process can either be
 
 
-        - a n-ary function object, further here called a function-process. 
-        - a type that must has properties, that are described below. It is further here called an await-process.
+        - an n-ary function object, further here called a function-process. 
+        - a type that must have properties, that are described below. It is further here called an await-process.
       Since a function-process does not need further explication, the following concentrates on await-processes.
     member-functions:
       - name: await
@@ -31,20 +31,20 @@ entities:
         pure-name: yield
 ---
 
-### Example ###
+### Signature of an await-process ###
+
+Here it is assumed that the process takes `T...`as argument and its result type is `U`.
 
 ~~~ c++
-struct sum {
-    process_state_scheduled _state = await_forever;
-    int _sum = 0;
+struct process 
+{
+    void await(T... val);
 
-    void await(int n) { _sum += n; }
+    U yield();
 
-    int yield() { _state = await_forever; return _sum; }
+    void close();
 
-    void close() { _state = yield_immediate; }
-
-    const auto& state() const { return _state; }
+    process_state_scheduled state() const;
 };
 
 ~~~

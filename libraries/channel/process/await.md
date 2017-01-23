@@ -20,7 +20,6 @@ entities:
   - kind: result
 ---
 
-
 ### Example ###
 
 ~~~ c++
