@@ -17,7 +17,7 @@ entities:
       - name: e
         description: Executor which is used to sends the passed values from the sender down to the receiver.
   - kind: result
-    description: Returns a pair of sender - receiver of type T that form a channel
+    description: Returns a pair of `sender` - `receiver` of type `T` that form a channel
 ---
 
 ### Example ###
@@ -46,7 +46,7 @@ int main() {
         _done = true; 
       };
 
-    // It is necessary to mark this side ready, when all connections are
+    // It is necessary to mark the receiver side as ready, when all connections are
     // established
     receive.set_ready();
 

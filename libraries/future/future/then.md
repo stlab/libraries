@@ -6,7 +6,7 @@ full-name: stlab::future::then
 pure-name: then
 defined-in-header: stlab/future.hpp 
 declaration: then()
-description: Creates a new continuation on the current object.
+description: Creates a new continuation on the current object. Multiple `then()` invocations on the same future realize a split. The result of this will be copied into all continuations. If `T` of `future<T>` is a move only type, then a plit is not possible of course.
 entities:
   - kind: methods
     list:
@@ -16,34 +16,34 @@ entities:
         declaration: |
           template <typename F> 
           auto then(F&& f) const&
-        description: Constructs a continuation using the same executor as this.
+        description: Constructs a continuation with the passed callable object using the same executor as this.
       - name: stlab::future::then
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename E, typename F> 
           auto then(E&& e, F&& f) const&
-        description: Constructs a continuation using the provided executor.
+        description: Constructs a continuation with the passed callable object using the provided executor.
       - name: stlab::future::then
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename F>
           auto then(F&& f) &&
-        description: Constructs a continuation using the same executor as this.
+        description: Constructs a continuation on a r-value with the passed callable object using the same executor as this.
       - name: stlab::future::then
         pure-name: then
         defined-in-header: stlab/future.hpp 
         declaration: |
           template <typename E, typename F>
           auto then(E&& e, F&& f) &&
-        description: Constructs a continuation using the provided executor.
+        description: Constructs a continuation on a r-value with the passed callable object using the provided executor.
   - kind: parameters
     list:
       - name: e
         description: Executor which is used to schedule the resulting task
       - name: f
-        description: Callable object that implements the recover function. Its parameter must be of type of this future instance.
+        description: Callable object that implements the continuation. `T` of this must be convertible to the parameter of `f`.
   - kind: result
     description: a future of the type of the result type of the passed function object.
   - kind: example

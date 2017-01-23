@@ -22,7 +22,6 @@ entities:
       - name: args
         description: The input values of the channel that is defined by this sender
   - kind: result
-    description: (none)
 ---
 
 ### Example ###

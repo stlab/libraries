@@ -36,17 +36,19 @@ layout: default
                 <td>
                     <div class="t-dsc-member-div"><a href="{{fun.pure-name}}">{{fun.name}}</a></div>
                 </td>
-                <td>{{fun.description}}</td>
+                <td>{{ fun.description  | markdownify }}</td>
             </tr>
             {% endfor %}
             </table>
           {% when 'class' %}
 			<table class="t-dsc-begin">
+            {% if entity.defined-in-header %}
             <tr class="t-dsc-header">
                 <td>
                     <div>Defined in header<a href="{{ entity.git-link }}"><code> &lt{{ entity.defined-in-header }}&gt</code></a></div>
                 </td>
             </tr>
+            {% endif %}
             <tr class="t-dcl">
                 <td>
                     <div>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</div>
@@ -68,22 +70,24 @@ layout: default
 			<h3>Member functions</h3>
 			<table class="t-dsc-begin">
             <tbody>
-			<tr class="t-dsc">
-				<td> 
-                    <div class="t-dsc-member-div">
-                        <a href="{{entity.pure-name}}/{{entity.pure-name}}">(constructor)</a>
-                    </div>
-                </td>
-				<td>constructs the {{entity.pure-name}} object</td>
-			</tr>
-			<tr class="t-dsc">
-				<td>
-                    <div class="t-dsc-member-div">
-                        <a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a>
-                    </div>
-                </td>
-				<td>destructs the {{ entity.pure-name }} object</td>
-			</tr>
+            {% if entity.tag and entity.tag != "no constructor and destructor" %}
+    			<tr class="t-dsc">
+    				<td> 
+                        <div class="t-dsc-member-div">
+                            <a href="{{entity.pure-name}}/{{entity.pure-name}}">(constructor)</a>
+                        </div>
+                    </td>
+    				<td>constructs the {{entity.pure-name}} object</td>
+    			</tr>
+    			<tr class="t-dsc">
+    				<td>
+                        <div class="t-dsc-member-div">
+                            <a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a>
+                        </div>
+                    </td>
+    				<td>destructs the {{ entity.pure-name }} object</td>
+    			</tr>
+            {% endif %}
             {% for fun in entity.member-functions %}
 			<tr class="t-dsc">
                 {% if fun.link %}

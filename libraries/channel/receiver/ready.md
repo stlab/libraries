@@ -18,5 +18,4 @@ entities:
   - kind: result
     description: if the receiver was set to ready, it returns `true`, otherwise `false`; the initial value is `false`.
   - kind: parameters
-    code: NoCode
 ---

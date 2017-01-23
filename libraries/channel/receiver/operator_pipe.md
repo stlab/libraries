@@ -44,8 +44,6 @@ entities:
         description: Encapsulates the buffer size of a process
         pure-name: buffer_size
         link: stlab_buffer_size
-  - kind: example
-    code: NoCode
 ---
 
 

@@ -24,15 +24,30 @@ sections:
         pure-name: sender
         defined-in-header: stlab/channel.hpp
         declaration: sender
-        description: This class implements the sending part of a CSP channel
+        description: |
+            This class implements the sending part of a CSP channel
+
+            <span class="t-mark">(class template)</span>
         link: channel/stlab_sender
       - kind: class
         name: stlab::receiver
         pure-name: receiver
         defined-in-header: stlab/channel.hpp
         declaration: receiver
-        description: This class implements the receiving part of a CSP channel
+        description: |
+            This class implements the receiving part of a CSP channel
+
+            <span class="t-mark">(class template)</span>
         link: channel/stlab_receiver
+      - kind: class
+        name: process
+        pure-name: process
+        declaration: process
+        description: |
+            Describes a process that gets executed whenever a value is passed into the channel
+
+            <span class="t-mark">(template policy)</span>
+        link: channel/policy_process
   - kind: collection
     name: Executors
     description: Collection of executors
