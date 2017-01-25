@@ -9,9 +9,9 @@ declaration: then()
 description: |
   Creates a new continuation on the current object. 
 
-  Multiple `then()` invocations on the same future realize a split. The result of this will be copied into all continuations. 
+  Multiple `then()` invocations on the same future object realize a split. The result of this will be copied into all continuations. 
 
-  If `T` of `future<T>` is a move only type, then a plit is not possible of course.
+  If `T` of `future<T>` is a move only type, then a split is not possible of course.
 entities:
   - kind: methods
     list:
