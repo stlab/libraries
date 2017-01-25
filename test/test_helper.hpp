@@ -1,14 +1,17 @@
 /*
-Copyright 2016 Felix Petriconi
-Distributed under the Boost Software License, Version 1.0.
-(See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+    Copyright 2015 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/**************************************************************************************************/
 
 #ifndef _TEST_HELPER_HPP_
 #define _TEST_HELPER_HPP_
 
 #define BOOST_TEST_DYN_LINK
+
+#include <stlab/default_executor.hpp>
 
 #include <atomic>
 #include <boost/test/unit_test.hpp>
@@ -31,7 +34,7 @@ namespace test_helper
             ++counter();
             // The implementation on Windows or the mac uses a scheduler that allows many tasks in the pool in parallel
 #if defined(WIN32) || defined(__APPLE__)
-            stlab::default_scheduler()(std::move(f));
+            stlab::default_executor(std::move(f));
 #else
             // The default scheduler under Linux allows only as many tasks as there are physical cores. But this
             // can lead to a dead lock in some of the tests

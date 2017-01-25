@@ -31,7 +31,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(
     future_test
-    future
+#    future
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT})
 

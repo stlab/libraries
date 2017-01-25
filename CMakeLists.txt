@@ -33,6 +33,6 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 include_directories(.)
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_subdirectory(src)
+#add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(playground)
