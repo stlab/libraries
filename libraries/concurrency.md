@@ -13,11 +13,14 @@ sections:
         pure-name: future
         defined-in-header: stlab/future.hpp
         declaration: future
-        description: This class implements a future
+        description: |
+            This class implements a future
+
+            <span class="t-mark">(class template)</span>
         link: future/stlab_future
   - kind: collection
     name: Channels
-    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node can be a functor or process that provides an `await()` and `yield()` method.
+    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/policy_process). 
     entities:
       - kind: class
         name: stlab::sender
@@ -78,7 +81,7 @@ sections:
 ### Requirements ###
 
 * C++14 compliant compiler (clang 3.6, gcc 5.3, Visual Studio 2015 Update 3)
-* boost 1.60.0 (optional, variant)
+* boost 1.60.0 (optional, variant and test for executing the UnitTests)
 
 ### Authors ###
-Sean Parent, Foster Brereton, Felix Petriconi
+Sean Parent, Felix Petriconi
