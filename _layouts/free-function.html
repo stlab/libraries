@@ -8,30 +8,52 @@ layout: default
   </header>
 
   <article class="post-content">
-    <h3>Functions</h3>
     {% for entity in page.entities %}
       {% case entity.kind %}
         {% when 'overloads' %}
-          <table>
+          <table class="t-dsc-begin">
+             <tr class="t-dsc-header">
+                <td>
+                    <div>Defined in header<a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
+                </td>
+            </tr>          
           {% for item in entity.list %}
-            <tr>
-              <td>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</td>
-              <td>{{ item.description }}</td>
+            <tr class="t-dcl">
+              <td>
+                <div>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</div>
+              </td>
+              <td>({{ forloop.index }})</td>
             </tr>
           {% endfor %}
+          <tr class="t-dcl"><td></td><td></td></tr>
         </table>
-      {% when 'parameters'%}
         <table>
-        {% for item in entity.list %}
+            {% for item in entity.list %}
             <tr>
-              <td style="float:right">{% highlight c++ %}{{ item.name }}{% endhighlight %}</td>
-              <td>{{ item.description }}</td>
+              <td>{{ forloop.index }})</td>
+              <td>{{ item.description | markdownify }}</td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </table>
+
+      {% when 'parameters'%}
+        <h3>Parameters</h3>
+        {% if entity.list %} 
+          <table class="t-par-begin">
+          {% for item in entity.list %}
+              <tr class="t-par">
+                <td>{{ item.name }}</td>
+                <td> - </td>
+                <td>{{ item.description | markdownify }}</td>
+              </tr>
+          {% endfor %}
+          </table>
+        {% else %}
+          <p>(none)</p>
+        {% endif %}
       {% when 'result'%}
         <h3>Return value</h3>
-        {{ entity.description }}
+        {{ entity.description | markdownify }}
       {% when 'example'%}
         <h3>Example</h3>
         {{ entity.code }}

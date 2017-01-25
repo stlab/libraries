@@ -9,19 +9,18 @@ layout: default
 
   <article class="post-content">
     {% for entity in page.entities %}
-        <a name="{{ entity.name | replace: '_', '-' }}">{{ entity.name }}</a>
         {% case entity.kind %}
           {% when 'type-function' %}
             <h2>Type Function</h2>
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
                 {% endcapture %}
                 {{ param | markdownify }}
             {% endfor %}
             <h3>Result</h3>
-            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description }}
+            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description | markdownify }}
             {% endcapture %}
             {{ result | markdownify }}
             <h3>See</h3>
@@ -30,38 +29,76 @@ layout: default
                 {{ link | markdownify }}
             {% endfor %}
           {% when 'free-functions' %}
-            <h3>Functions</h3>
-            <table>
+            <h3>Non-member functions</h3>
+            <table class="t-dsc-begin">
             {% for fun in entity.functions %}
-            <tr>
-                <td><a href="{{fun.pure-name}}">{{fun.name}}</a></td>
-                <td>{{fun.description}}</td>
+            <tr class="t-dsc">
+                <td>
+                    <div class="t-dsc-member-div"><a href="{{fun.pure-name}}">{{fun.name}}</a></div>
+                </td>
+                <td>{{ fun.description  | markdownify }}</td>
             </tr>
             {% endfor %}
             </table>
           {% when 'class' %}
-			<table>
-			<tr>{% highlight c++ %}{{ entity.name }}{% endhighlight %}</tr>
-			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-			<tr>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</tr>
-			<tr> {{entity.description | markdownify }}</tr>
+			<table class="t-dsc-begin">
+            {% if entity.defined-in-header %}
+            <tr class="t-dsc-header">
+                <td>
+                    <div>Defined in header<a href="{{ entity.git-link }}"><code> &lt{{ entity.defined-in-header }}&gt</code></a></div>
+                </td>
+            </tr>
+            {% endif %}
+            <tr class="t-dcl">
+                <td>
+                    <div>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</div>
+                </td>
+            </tr>
+			<tr><td>{{entity.description | markdownify }}</td></tr>
 			</table>
+            {% if entity.member-types %}
+                <h3>Member types</h3>
+                <table class="t-dsc-begin">
+                    {% for type in entity.member-types %}
+                        <tr class="t-dsc">
+                            <td>{{ type.type }}</td>
+                            <td>{{ type.definition }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
 			<h3>Member functions</h3>
-			<table>
-			<tr>
-				<td><a href="{{entity.pure-name}}/{{entity.pure-name}}">(constructor)</a></td>
-				<td>constructs the {{entity.pure-name}} object</td>
-			</tr>
-			<tr>
-				<td><a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a></td>
-				<td>destructs the {{entity.pure-name}} object</td>
-			</tr>
+			<table class="t-dsc-begin">
+            <tbody>
+            {% if entity.tag and entity.tag != "no constructor and destructor" %}
+    			<tr class="t-dsc">
+    				<td> 
+                        <div class="t-dsc-member-div">
+                            <a href="{{entity.pure-name}}/{{entity.pure-name}}">(constructor)</a>
+                        </div>
+                    </td>
+    				<td>constructs the {{entity.pure-name}} object</td>
+    			</tr>
+    			<tr class="t-dsc">
+    				<td>
+                        <div class="t-dsc-member-div">
+                            <a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a>
+                        </div>
+                    </td>
+    				<td>destructs the {{ entity.pure-name }} object</td>
+    			</tr>
+            {% endif %}
             {% for fun in entity.member-functions %}
-			<tr>
-				<td><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></td>
-				<td>{{fun.description}}</td>
+			<tr class="t-dsc">
+                {% if fun.link %}
+				<td><div class="t-dsc-member-div"><a href="{{entity.pure-name}}/{{fun.link}}">{{fun.name}}</a></div></td>
+                {% else %}
+                <td><div class="t-dsc-member-div"><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></div></td>
+                {% endif %}
+				<td>{{ fun.description | markdownify }}</td>
 			</tr>
 			{% endfor %}
+            </tbody>
 			</table>
 			
         {% endcase %}
@@ -71,22 +108,3 @@ layout: default
   </article>
 </div>
 
-<!--
-            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-            <h3>Parameters</h3>
-            {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
-                {% endcapture %}
-                {{ param | markdownify }}
-            {% endfor %}
-            <h3>Preconditions</h3>
-            {% for item in entity.preconditions %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Notes</h3>
-            {% for item in entity.notes %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Return</h3>
-            {{ entity.return | markdownify }}
--->

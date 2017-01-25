@@ -7,7 +7,30 @@ layout: default
     <h1>{{ page.title }}</h1>
   </header>
 
+  <div class="post-content">
+    {{ page.description }}
+  </div>
+  
   <article class="post-content">
+    {% for entity in page.sections %}
+        {% case entity.kind %}
+          {% when 'collection' %}
+            <h3>{{entity.name}}</h3>
+            <p>{{ entity.description | markdownify }}</p>
+            <table class="t-dsc-begin">
+              {% for entry in entity.entities %}
+                <tr class="t-dsc">
+                    <td>
+                      <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
+                    </td>
+                    <td>
+                        {{ entry.description | markdownify }}
+                    </td>
+                </tr>
+              {% endfor %}
+            </table>
+        {% endcase %}
+    {% endfor %}
     {% for entity in page.entities %}
         <a name="{{ entity.name | replace: '_', '-' }}">{{ entity.name }}</a>
         {% case entity.kind %}
@@ -16,12 +39,12 @@ layout: default
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
                 {% endcapture %}
                 {{ param | markdownify }}
             {% endfor %}
             <h3>Result</h3>
-            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description }}
+            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description | markdownify }}
             {% endcapture %}
             {{ result | markdownify }}
             <h3>See</h3>
@@ -34,7 +57,7 @@ layout: default
             {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
             <h3>Parameters</h3>
             {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
+                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
                 {% endcapture %}
                 {{ param | markdownify }}
             {% endfor %}
@@ -48,12 +71,6 @@ layout: default
             {% endfor %}
             <h3>Return</h3>
             {{ entity.return | markdownify }}
-          {% when 'class' %}
-            {% highlight c++ %}{{ entity.declaration }}{% endhighlight %}
-			<table>
-			<tr>Defined in &lt{{entity.defined-in-header}}&gt</tr>
-			<tr><a href="{{entity.link}}">{% highlight cpp %}{{ entity.name }}{% endhighlight %}</tr></a>
-			</table>
         {% endcase %}
     {% endfor %}
 
