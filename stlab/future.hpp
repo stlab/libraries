@@ -18,29 +18,9 @@
 #include <vector>
 
 #include <boost/optional.hpp>
-
 #include <stlab/config.hpp>
-
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
-#include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
-#include <emscripten.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
-#include <ppapi/cpp/module.h>
-#include <ppapi/cpp/core.h>
-#include <ppapi/cpp/completion_callback.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-#include <Windows.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-// REVISIT (sparent) : for testing only
-#if 0 && __APPLE__
-#include <dispatch/dispatch.h>
-#endif
-#endif
-
-// usefull makro for debugging
-#define STLAB_TRACE(S) \
-    printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
+#include <stlab/executor_base.hpp>
+#include <stlab/traits.hpp>
 
 /**************************************************************************************************/
 
@@ -114,9 +94,6 @@ template <typename...> class packaged_task;
 
 template <typename, typename = void> class future;
 
-using schedule_t = std::function<void(std::function<void()>)>;
-using timed_schedule_t = std::function<void(std::chrono::system_clock::time_point, std::function<void()>)>;
-
 /**************************************************************************************************/
 
 namespace detail {
@@ -141,18 +118,6 @@ auto package(S, F)
 /**************************************************************************************************/
 
 namespace detail {
-
-template <bool...> struct bool_pack;
-template <bool... v>
-using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
-
-/**************************************************************************************************/
-
-template <typename T>
-using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value>;
-
-template <typename T>
-using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
 
 /**************************************************************************************************/
 
@@ -179,19 +144,19 @@ struct shared_task {
 
 template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::vector<std::pair<schedule_t, std::function<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
 
-    schedule_t                          _schedule;
+    executor_t                          _executor;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
-    auto then(F f) { return then(_schedule, std::move(f)); }
+    auto then(F f) { return then(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then(S s, F f) {
@@ -201,7 +166,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto recover(F f) { return recover(_schedule, std::move(f)); }
+    auto recover(F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover(S s, F f) {
@@ -224,7 +189,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+    auto then_r(bool unique, F f) { return then_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
@@ -234,13 +199,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     }
 
     template <typename F>
-    auto recover_r(bool unique, F f) { return recover_r(unique, _schedule, std::move(f)); }
-
-    /*
-        REVISIT (sparent) : Need to write test cases for all the r-value cases.
-        The logic here is that if this is the only reference and it is an rvalue than this
-        is the last recover clause added and so it can consume the value.
-    */
+    auto recover_r(bool unique, F f) { return recover_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool unique, S s, F f) {
@@ -311,19 +270,19 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
 template <typename T>
 struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::pair<schedule_t, std::function<void()>>;
+    using then_t = std::pair<executor_t, std::function<void()>>;
 
-    schedule_t                          _schedule;
+    executor_t                          _executor;
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
-    auto then_r(bool unique, F f) { return then_r(unique, _schedule, std::move(f)); }
+    auto then_r(bool unique, F f) { return then_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
@@ -333,7 +292,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     }
 
     template <typename F>
-    auto recover_r(bool unique, F f) { return recover_r(unique, _schedule, std::move(f)); }
+    auto recover_r(bool unique, F f) { return recover_r(unique, _executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool, S s, F f) {
@@ -393,18 +352,18 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
 template <>
 struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
-    using then_t = std::vector<std::pair<schedule_t, std::function<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
 
-    schedule_t                          _schedule;
+    executor_t                          _executor;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
 
-    explicit shared_base(schedule_t s) : _schedule(std::move(s)) { }
+    explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
-    auto then(F f) { return then(_schedule, std::move(f)); }
+    auto then(F f) { return then(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then(S s, F f) {
@@ -415,19 +374,19 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     }
 
     template <typename F>
-    auto then_r(bool, F f) { return then(_schedule, std::move(f)); }
+    auto then_r(bool, F f) { return then(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto then_r(bool, S s, F f) { return then(std::move(s), std::move(f)); }
 
     template <typename F>
-    auto recover(F f) { return recover(_schedule, std::move(f)); }
+    auto recover(F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>; 
 
     template <typename F>
-    auto recover_r(bool, F f) { return recover(_schedule, std::move(f)); }
+    auto recover_r(bool, F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool, S s, F f) { return recover(std::move(s), std::move(f)); }
@@ -472,7 +431,7 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
     function_t _f;
 
     template <typename F>
-    shared(schedule_t s, F f) : shared_base<R>(std::move(s)), _f(std::move(f)) {
+    shared(executor_t s, F f) : shared_base<R>(std::move(s)), _f(std::move(f)) {
         _promise_count = 1;
     }
 
@@ -552,7 +511,7 @@ public:
 /**************************************************************************************************/
 
 template <typename T>
-class future<T, detail::enable_if_copyable<T>> {
+class future<T, enable_if_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 
@@ -732,7 +691,7 @@ class future<void, void> {
 /**************************************************************************************************/
 
 template <typename T>
-class future<T, detail::enable_if_not_copyable<T>> {
+class future<T, enable_if_not_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 
@@ -932,12 +891,12 @@ void attach_when_args(const std::shared_ptr<P>& p, Ts... a) {
 
 /**************************************************************************************************/
 
-template <typename S, typename F, typename... Ts>
-auto when_all(S s, F f, future<Ts>... args) {
+template <typename E, typename F, typename... Ts>
+auto when_all(E executor, F f, future<Ts>... args) {
     using result_t = typename std::result_of<F(Ts...)>::type;
 
     auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
-    auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared] {
+    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
         return detail::apply_when_all_args(_f, _p);
     });
     shared->_f = std::move(p.first);
@@ -949,12 +908,12 @@ auto when_all(S s, F f, future<Ts>... args) {
 
 /**************************************************************************************************/
 
-template <typename S, typename F, typename T, typename... Ts>
-auto when_any(S s, F f, future<T> arg, future<Ts>... args) {
+template <typename E, typename F, typename T, typename... Ts>
+auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
     using result_t = typename std::result_of<F(T, size_t)>::type;
 
     auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts)+1, T>>();
-    auto p = package<result_t()>(std::move(s), [_f = std::move(f), _p = shared]{
+    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
         return detail::apply_when_any_arg(_f, _p);
     });
     shared->_f = std::move(p.first);
@@ -1200,10 +1159,10 @@ namespace detail
 
 /**************************************************************************************************/
 
-template <typename S, // models task scheduler
+template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_all(S schedule, F f, const std::pair<I, I>& range) {
+auto when_all(E executor, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, std::vector<param_t>>;
@@ -1214,23 +1173,23 @@ auto when_all(S schedule, F f, const std::pair<I, I>& range) {
 
 
     if (range.first == range.second) {
-        auto p = package<result_t()>(std::move(schedule), 
+        auto p = package<result_t()>(std::move(executor),
                                      detail::context_result<F, false, context_result_t>(std::move(f), 0));
-        schedule(std::move(p.first));
+        executor(std::move(p.first));
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t,context_t>::do_it(std::move(schedule),
+    return detail::create_range_of_futures<result_t,context_t>::do_it(std::move(executor),
                                                                       std::move(f), 
                                                                       range.first, range.second);
 }
 
 /**************************************************************************************************/
 
-template <typename S, // models task scheduler
+template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_any(S schedule, F f, const std::pair<I, I>& range) {
+auto when_any(E executor, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
@@ -1240,28 +1199,28 @@ auto when_any(S schedule, F f, const std::pair<I, I>& range) {
                                              detail::all_trigger>;
 
     if (range.first == range.second) {
-        auto p = package_with_broken_promise<result_t()>(std::move(schedule), 
+        auto p = package_with_broken_promise<result_t()>(std::move(executor),
                                                          detail::context_result<F, true, context_result_t>(std::move(f), 0));
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t, context_t>::do_it(std::move(schedule),
+    return detail::create_range_of_futures<result_t, context_t>::do_it(std::move(executor),
                                                                        std::move(f),
                                                                        range.first, range.second);
 }
 
 /**************************************************************************************************/
 
-template <typename S, typename F, typename ...Args>
-auto async(S schedule, F&& f, Args&&... args)
+template <typename E, typename F, typename ...Args>
+auto async(E executor, F&& f, Args&&... args)
         -> future<std::result_of_t<F (Args...)>>
 {
-    auto p = package<std::result_of_t<F(Args...)>()>(schedule,
+    auto p = package<std::result_of_t<F(Args...)>()>(executor,
         std::bind([_f = std::forward<F>(f)](Args&... args) {
             return _f(std::move(args)...);
         }, std::forward<Args>(args)...));
     
-    schedule(std::move(p.first));
+    executor(std::move(p.first));
     
     return std::move(p.second);
 }
@@ -1357,246 +1316,15 @@ void shared_base<future<void>>::set_value(const F& f, Args&&... args) {
 
 /**************************************************************************************************/
 
-void async_(std::function<void()>);
-void async_(std::chrono::system_clock::time_point, std::function<void()>);
-
-/**************************************************************************************************/
-
 } // namespace detail
-
-/**************************************************************************************************/
-
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
-
-struct default_scheduler {
-    using result_type = void;
-
-
-    template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F f) {
-
-        using namespace std::chrono;
-
-        if (when == system_clock::time_point()) {
-            operator()(std::move(f));
-            return;
-        }
-
-        using f_t = decltype(f);
-
-        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - system_clock::now()).count()),
-                dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                new f_t(std::move(f)),
-                [](void* f_) {
-                    auto f = static_cast<f_t*>(f_);
-                    (*f)();
-                    delete f;
-                });
-    }
-
-    template <typename F>
-    void operator()(F f) {
-        using f_t = decltype(f);
-
-        dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                new f_t(std::move(f)),
-                [](void* f_) {
-                    auto f = static_cast<f_t*>(f_);
-                    (*f)();
-                    delete f;
-                });
-    }
-};
-
-struct main_scheduler {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) {
-        using f_t = decltype(f);
-
-        dispatch_async_f(dispatch_get_main_queue(),
-                new f_t(std::move(f)), [](void* f_) {
-                    auto f = static_cast<f_t*>(f_);
-                    (*f)();
-                    delete f;
-                });
-    }
-};
-
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
-
-struct default_scheduler {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) {
-        // REVISIT (sparent) : Using a negative timeout may give better performance. Need to test.
-        using f_t = decltype(f);
-
-        emscripten_async_call([](void* f_) {
-                    auto f = static_cast<f_t*>(f_);
-                    (*f)();
-                    delete f;
-                }, new f_t(std::move(f)), 0);
-    }
-};
-
-using main_scheduler = default_scheduler;
-
-#elif  (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
-    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL) \
-    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
-
-
-struct default_scheduler {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F f) {
-        detail::async_(when, std::move(f));
-    }
-
-    template <typename F>
-    void operator()(F f) {
-        detail::async_(std::move(f));
-    }
-};
-
-// TODO (sparent) : We need a main task scheduler for STLAB_TASK_SYSTEM_WINDOWS
-
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
-
-struct main_scheduler {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) {
-        using f_t = decltype(f);
-
-        pp::Module::Get()->core()->CallOnMainThread(0,
-            pp::CompletionCallback([](void* f_, int32_t) {
-                auto f = static_cast<f_t*>(f_);
-                (*f)();
-                delete f;
-            }, new f_t(std::move(f))), 0);
-    }
-};
-
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-
-class task_system
-{
-public:
-    template <typename F>
-    void async_(F&& f) {
-        auto work = CreateThreadpoolWork(&callback_impl<F>,
-            new F(std::forward<F>(f)),
-            nullptr);
-        if (work == nullptr) {
-            throw std::bad_alloc();
-        }
-        SubmitThreadpoolWork(work);
-    }
-
-    template <typename F>
-    void async_(std::chrono::system_clock::time_point when, F&& f) {
-
-        auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
-            new F(std::forward<F>(f)),
-            nullptr);
-        if (timer == nullptr) {
-            throw std::bad_alloc();
-        }
-
-        auto file_time = time_point_to_FILETIME(when);
-
-        SetThreadpoolTimer(timer,
-            &file_time,
-            0,
-            0);
-    }
-private:
-
-    template <typename F>
-    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
-        PVOID                 parameter,
-        PTP_WORK              /*Work*/) {
-        std::unique_ptr<F> f(static_cast<F*>(parameter));
-        (*f)();
-    }
-
-    template <typename F>
-    static void CALLBACK timer_callback_impl(PTP_CALLBACK_INSTANCE /*Instance*/,
-        PVOID                 parameter,
-        PTP_TIMER             /*timer*/) {
-        std::unique_ptr<F> f(static_cast<F*>(parameter));
-        (*f)();
-    }
-
-    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) {
-        FILETIME ft = { 0, 0 };
-        SYSTEMTIME st = { 0 };
-        time_t t = std::chrono::system_clock::to_time_t(when);
-        tm utc_tm;
-        if (!gmtime_s(&utc_tm, &t)) {
-            st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
-            st.wMinute = static_cast<WORD>(utc_tm.tm_min);
-            st.wHour = static_cast<WORD>(utc_tm.tm_hour);
-            st.wDay = static_cast<WORD>(utc_tm.tm_mday);
-            st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
-            st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
-            st.wMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(when.time_since_epoch()).count() % 1000;
-            SystemTimeToFileTime(&st, &ft);
-        }
-        return ft;
-    }
-};
-
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-
-// TODO (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
-struct main_scheduler {
-    using result_type = void;
-
-    #if __APPLE__
-    template <typename F>
-    void operator()(F f) {
-        using f_t = decltype(f);
-
-        ::dispatch_async_f(dispatch_get_main_queue(),
-                new f_t(std::move(f)), [](void* f_) {
-                    auto f = static_cast<f_t*>(f_);
-                    (*f)();
-                    delete f;
-                });
-    }
-    #endif
-};
-#endif
-
-#endif
-
-/**************************************************************************************************/
-
-template <typename T>
-future<T> make_ready_future(T&& x) {
-    auto p = package<T(T)>(default_scheduler(), [](auto&& x) { return x; });
-    p.first(x);
-    return p.second;
-}
-
-inline future<void> make_ready_future() {
-    auto p = package<void()>(default_scheduler(), [](){});
-    p.first();
-    return p.second;
-}
 
 /**************************************************************************************************/
 
 } // namespace stlab
 
 /**************************************************************************************************/
+
+
 
 #endif
 

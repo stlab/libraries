@@ -1,7 +1,7 @@
 /*
-Copyright 2016 Felix Petriconi
-Distributed under the Boost Software License, Version 1.0.
-(See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+    Copyright 2015 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
@@ -11,6 +11,8 @@ Distributed under the Boost Software License, Version 1.0.
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/channel.hpp>
+#include <stlab/future.hpp>
+
 #include <string>
 
 #include "channel_test_helper.hpp"
@@ -24,7 +26,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_one_value, channel_test_fix
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&](int x) { result = x; }, _receive[0]);
+    auto check = zip(default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
     _send[0](1);
@@ -39,10 +41,10 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_one_value_async, channel_te
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&](int x) { result = x; }, _receive[0]);
+    auto check = zip(default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
-    auto f = async(default_scheduler(), [_sender = _send[0]]{ _sender(1); });
+    auto f = async(default_executor, [_sender = _send[0]]{ _sender(1); });
 
     wait_until_done([&]() { return result != 0; });
 
@@ -54,7 +56,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_many_values, channel_test_f
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&](int x) { result += x; }, _receive[0]);
+    auto check = zip(default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     for (auto i = 1; i <= 100; ++i)
@@ -72,12 +74,12 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_void_functor_many_values_async, channel_
 
     std::atomic_int result{ 0 };
 
-    auto check = zip(default_scheduler(), [&](int x) { result += x; }, _receive[0]);
+    auto check = zip(default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     std::vector<future<void>> f(100);
     for (auto i = 1; i <= 100; ++i) {
-        f.push_back(async(default_scheduler(), [_sender = _send[0], i]{ _sender(i); }));
+        f.push_back(async(default_executor, [_sender = _send[0], i]{ _sender(i); }));
     }
 
     auto expected = 100 * (100+1) / 2;
@@ -93,7 +95,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value, channe
 
     std::atomic_int result{ 0 };
     int incrementer{1};
-    auto check = zip(default_scheduler(),
+    auto check = zip(default_executor,
                       [&](int x) {
                           result += incrementer*x;
                           ++incrementer;
@@ -116,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value_async, 
 
     std::atomic_int result{ 0 };
     int incrementer{1};
-    auto check = zip(default_scheduler(),
+    auto check = zip(default_executor,
                      [&](int x) {
                          result += incrementer*x;
                          ++incrementer;
@@ -125,7 +127,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_one_value_async, 
 
     _receive[0].set_ready();
     _receive[1].set_ready();
-    auto f=async(default_scheduler(), [_send1 = _send[0], &_send2 = _send[1]]{// one copy,one reference
+    auto f=async(default_executor, [_send1 = _send[0], &_send2 = _send[1]]{// one copy,one reference
         _send1(2);
         _send2(3);
     });
@@ -141,7 +143,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values, chan
 
     std::atomic_int result{ 0 };
     int incrementer{1};
-    auto check = zip(default_scheduler(),
+    auto check = zip(default_executor,
                      [&](int x) {
                          result += incrementer*x;
                          ++incrementer;
@@ -172,7 +174,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async
     std::atomic_bool zipped_ok{ true };
     int              expected_input = std::size_t( 0 );
 
-    auto check = zip(default_scheduler(),
+    auto check = zip(default_executor,
                      [&](std::pair<int, std::size_t> x) {
                          result +=  x.first;
                          zipped_ok = zipped_ok && (x.second == expected_input);
@@ -184,10 +186,10 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async
     _receive[1].set_ready();
     std::vector<future<void>> f(200);
     for (auto i = 1; i <= 200; i +=2 ) {
-        f.push_back(async(default_scheduler(), [&_send1 = _send[0], _i = i] {
+        f.push_back(async(default_executor, [&_send1 = _send[0], _i = i] {
             _send1(std::make_pair(_i, std::size_t(0)));
         }));
-        f.push_back(async(default_scheduler(), [&_send2 = _send[1], _i = i] {
+        f.push_back(async(default_executor, [&_send2 = _send[1], _i = i] {
             _send2(std::make_pair(_i+1, std::size_t(1)));
         }));
     }
@@ -209,7 +211,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor, channel_test_fix
     std::atomic_int result{ 0 };
     std::atomic_int incrementer{1};
 
-    auto check = zip(default_scheduler(),
+    auto check = zip(default_executor,
                       [&](int x) {
                           result +=  incrementer * x;
                         ++incrementer;
@@ -235,7 +237,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_async, channel_te
     std::atomic_int result{ 0 };
     std::atomic_int incrementer{1};
 
-    auto check = zip(default_scheduler(),
+    auto check = zip(default_executor,
                      [&](int x) {
                          result += incrementer * x;
                          ++incrementer;
@@ -248,7 +250,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_async, channel_te
 
     std::vector<future<void>> f(5);
     for (auto i = 0; i < 5; i++) {
-        f.push_back(async(default_scheduler(), [_send = _send[i], _i = i]{ _send(_i+2); }));
+        f.push_back(async(default_executor, [_send = _send[i], _i = i]{ _send(_i+2); }));
     }
 
     const auto expected = 2*1 + 3*2 + 4*3 + 5*4 + 6*5;

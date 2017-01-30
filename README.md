@@ -17,7 +17,7 @@ First, you will need the following tools:
 
 Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the platform of your choice. It will setup all necessary library dependencies and create the platform-specific project file in the `./build/` directory.
 
-# Build Status: [![Build Status](https://travis-ci.org/FelixPetriconi/libraries.svg?branch=UnitTests)](https://travis-ci.org/FelixPetriconi/libraries)
+# Build Status: [![Build Status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
 
 ## <stlab/future>
 
@@ -47,19 +47,19 @@ when_all() takes either an n'ary function and n futures as arguments or a variab
 
 when_any() takes either an n'ary function and n (>=1) futures as argument or a variable range of futures and proceeds when at least one of the futures successds.
 
-Here is a trivial scheduler using threads:
+Here is a trivial executor using threads:
 
 ```c++
-auto schedule = [](auto f) // F is void() and movable
+auto executor = [](auto f) // F is void() and movable
 {
     thread(move(f)).detach();
 };
 ```
 
-Here is an example scheduler function that uses Apple's libdispatch.
+Here is an example executor function that uses Apple's libdispatch.
 
 ```c++
-auto schedule = [](auto f) // F is void() and movable
+auto executor = [](auto f) // F is void() and movable
 {
     using f_t = decltype(f);
 
@@ -72,20 +72,20 @@ auto schedule = [](auto f) // F is void() and movable
 };
 ```
 
-Here is an example scheduler that executes the task in the Qt main loop, e.g. to
+Here is an example executor that executes the task in the Qt main loop, e.g. to
 update an UI element.
 ```C++
-class QtScheduler
+class QtExecutor
 {
     class EventReceiver;
 
-    class SchedulerEvent : public QEvent
+    class ExecutorEvent : public QEvent
     {
         std::function<void()> _f;
         std::unique_ptr<EventReceiver> _receiver;
 
   public:
-    explicit SchedulerEvent(std::function<void()> f)
+    explicit ExecutorEvent(std::function<void()> f)
       : QEvent(QEvent::User)
       , _f(std::move(f))
       , _receiver(new EventReceiver()) {
@@ -101,7 +101,7 @@ class QtScheduler
     {
     public:
         bool event(QEvent *event) override {
-            auto myEvent = dynamic_cast<SchedulerEvent*>(event);
+            auto myEvent = dynamic_cast<ExecutorEvent*>(event);
             if (myEvent) {
                 myEvent->execute();
                 return true;
@@ -111,9 +111,9 @@ class QtScheduler
     };
 
 public:
-    template <typename F>
+  template <typename F>
   void operator()(std::chrono::system_clock::time_point /*when*/, F&& f) {
-    auto event = new SchedulerEvent(std::forward<F>(f));
+    auto event = new ExecutorEvent(std::forward<F>(f));
         QApplication::postEvent(event->receiver(), event);
     }
 };
@@ -171,7 +171,7 @@ class future {
     template <typename S, typename F>
     auto recover(S&& s, F&& f) &&; // -> future<result_of_t<F(T)>>
 
-    void cancel();
+    void reset();
 
     auto get_try() const&; // -> T == void ? bool : optional<T>
     auto get_try() &&; // -> T == void ? bool : optional<T>
@@ -184,15 +184,15 @@ template <typename S, typename F, typename T, typename... Ts>
 auto when_any(S, F, future<T>, future<Ts>... args); // -> future<result_of_t<F(T,size_t)>>
 
 
-template <typename S, // models task scheduler
+template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_all(S schedule, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(const std::vector<typename std::iterator_traits<I>::value_type::result_type>)>>
+auto when_all(E executor, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(const std::vector<typename std::iterator_traits<I>::value_type::result_type>)>>
 
-template <typename S, // models task scheduler
+template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_any(S schedule, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(typename std::iterator_traits<I>::value_type::result_type, size_t)>>
+auto when_any(E executor, F f, const std::pair<I, I>& range); // -> future<result_of_t<F(typename std::iterator_traits<I>::value_type::result_type, size_t)>>
 
 
 template <typename Sig, typename S, typename F>

@@ -36,6 +36,6 @@ LINK_DIRECTORIES(${CONAN_LIB_DIRS})
 include_directories(.)
 include_directories(${CONAN_INCLUDE_DIRS})
 
-add_subdirectory(src)
+#add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(playground)

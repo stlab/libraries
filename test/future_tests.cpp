@@ -1,7 +1,7 @@
 /*
-Copyright 2016 Felix Petriconi
-Distributed under the Boost Software License, Version 1.0.
-(See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+    Copyright 2015 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, 
 
 #if 0
 BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
-    auto sut = async(default_scheduler(), []()->std::unique_ptr<int> { 
+    auto sut = async(default_executor, []()->std::unique_ptr<int> { 
         auto r = std::make_unique<int>(); 
         *r = 42; 
         return std::move(r); 
