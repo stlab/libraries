@@ -1,7 +1,7 @@
 /*
-Copyright 2016 Felix Petriconi
-Distributed under the Boost Software License, Version 1.0.
-(See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+    Copyright 2015 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
@@ -11,6 +11,8 @@ Distributed under the Boost Software License, Version 1.0.
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/channel.hpp>
+#include <stlab/future.hpp>
+
 #include <vector>
 #include <algorithm>
 
@@ -53,7 +55,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         _receive[0].set_ready();
         std::vector<future<void>> f(10);
         for (auto i = 0; i < 10; ++i) {
-            f.push_back(async(default_scheduler(), [_send = _send[0], i] {
+            f.push_back(async(default_executor, [_send = _send[0], i] {
                 _send(i);
             }));
         }
@@ -97,7 +99,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         _receive[0].set_ready();
         std::vector<future<void>> f(10);
         for (auto i = 0; i < 10; ++i) {
-            f.push_back(async(default_scheduler(), [_send = _send[0], i] {
+            f.push_back(async(default_executor, [_send = _send[0], i] {
                 _send(i);
             }));
         }
@@ -144,7 +146,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_
         _receive[0].set_ready();
         std::vector<future<void>> f(10);
         for (auto i = 0; i < 10; ++i) {
-            f.push_back(async(default_scheduler(), [_send = _send[0], i] {
+            f.push_back(async(default_executor, [_send = _send[0], i] {
                 _send(i);
             }));
         }
@@ -263,7 +265,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
     sender<int> send;
     receiver<int> receive;
 
-    std::tie(send, receive) = channel<int>(default_scheduler());
+    std::tie(send, receive) = channel<int>(default_executor);
 
     auto check = receive | timed_sum(2) | [&](int x) { result = x; };
 

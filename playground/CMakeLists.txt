@@ -13,7 +13,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(
     playground
-    future
+#    future
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_THREAD_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT})

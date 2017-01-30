@@ -8,12 +8,14 @@
 
 struct IUnknown;
 #include <cstdio>
-#include <iostream>
-#include <stlab/future.hpp>
-#include <utility>
 #include <exception>
-#include <stlab/channel.hpp>
+#include <iostream>
 #include <sstream>
+#include <utility>
+
+#include <stlab/channel.hpp>
+#include <stlab/default_executor.hpp>
+#include <stlab/future.hpp>
 
 using namespace stlab;
 using namespace std;
@@ -82,7 +84,7 @@ R fibonacci(N n) {
 /**************************************************************************************************/
 
 int main() {
-    auto x = async(default_scheduler(), [] { return fibonacci<cpp_int>(100); });
+    auto x = async(default_executor, [] { return fibonacci<cpp_int>(100); });
 
     auto y = x.then([](const cpp_int& x) { return cpp_int(x * 2); });
     auto z = x.then([](const cpp_int& x) { return cpp_int(x / 15); });
@@ -97,16 +99,16 @@ int main() {
 #if 0
 void simple_continuation() {
     cout << "start tasking test" << endl;
-    auto f1 = async(default_scheduler(), [] { return 42; }).then(
+    auto f1 = async(default_executor, [] { return 42; }).then(
         [](auto answer) { cout << "The Answer to the Ultimate Question of Life, the Universe and Everything is " << answer << endl << flush; });
     f1.detach();
 }
 
 void when_all_with_multiple_arguments() {
-    auto f2 = async(default_scheduler(), [] { return 10; });
+    auto f2 = async(default_executor, [] { return 10; });
     auto a1 = f2.then([](auto x) { return x + 2; });
     auto a2 = f2.then([](auto x) { return x + 3; });
-    auto a4 = when_all(default_scheduler(), [](auto x, auto y) {
+    auto a4 = when_all(default_executor, [](auto x, auto y) {
         cout << x << ", " << y << endl;
         return 4711;
     }, a1, a2);
@@ -118,7 +120,7 @@ void when_all_with_multiple_arguments() {
 
 void when_all_with_empty_range() {
     std::vector<stlab::future<int>> emptyFutures;
-    auto a5 = when_all(default_scheduler(), [](std::vector<int> v) {
+    auto a5 = when_all(default_executor, [](std::vector<int> v) {
         cout << "Result of no parallel tasks: " << v.size() << endl << flush;
     }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
     a5.detach();
@@ -126,12 +128,12 @@ void when_all_with_empty_range() {
 
 void when_all_with_filled_range() {
     std::vector<stlab::future<int>> someFutures;
-    someFutures.push_back(async(default_scheduler(), [] { return 1; }));
-    someFutures.push_back(async(default_scheduler(), [] { return 2; }));
-    someFutures.push_back(async(default_scheduler(), [] { return 3; }));
-    someFutures.push_back(async(default_scheduler(), [] { return 4; }));
+    someFutures.push_back(async(default_executor, [] { return 1; }));
+    someFutures.push_back(async(default_executor, [] { return 2; }));
+    someFutures.push_back(async(default_executor, [] { return 3; }));
+    someFutures.push_back(async(default_executor, [] { return 4; }));
 
-    auto a6 = when_all(default_scheduler(), [](std::vector<int> v) {
+    auto a6 = when_all(default_executor, [](std::vector<int> v) {
         cout << "Result of " << v.size() << " parallel executed tasks: ";
         for (auto i : v) {
             cout << i << " ";
@@ -147,7 +149,7 @@ void when_all_with_filled_range() {
 
 void continuation_with_error() {
     cout << "start tasking test" << endl;
-    auto f1 = async(default_scheduler(), []() -> int { throw std::exception("Error in continuation"); }).then(
+    auto f1 = async(default_executor, []() -> int { throw std::exception("Error in continuation"); }).then(
         [](auto answer) { cout << "The Answer to the Ultimate Question of Life, the Universe and Everything is " << answer << endl << flush; });
 
     try {
@@ -159,10 +161,10 @@ void continuation_with_error() {
 }
 
 void when_all_with_multiple_failing_arguments() {
-    auto f2 = async(default_scheduler(), [] { return 10; });
+    auto f2 = async(default_executor, [] { return 10; });
     auto a1 = f2.then([](auto x) -> int { throw std::exception("Error in first argument"); });
     auto a2 = f2.then([](auto x) { return x + 3; });
-    auto a4 = when_all(default_scheduler(), [](auto x, auto y) {
+    auto a4 = when_all(default_executor, [](auto x, auto y) {
         cout << x << ", " << y << endl;
     }, a1, a2);
 
@@ -176,12 +178,12 @@ void when_all_with_multiple_failing_arguments() {
 
 void when_all_with_failing_range() {
     std::vector<stlab::future<int>> someFutures;
-    someFutures.push_back(async(default_scheduler(), [] { return 1; }));
-    someFutures.push_back(async(default_scheduler(), []() ->int { throw std::exception("Error in 2nd task"); }));
-    someFutures.push_back(async(default_scheduler(), [] { return 3; }));
-    someFutures.push_back(async(default_scheduler(), [] { return 4; }));
+    someFutures.push_back(async(default_executor, [] { return 1; }));
+    someFutures.push_back(async(default_executor, []() ->int { throw std::exception("Error in 2nd task"); }));
+    someFutures.push_back(async(default_executor, [] { return 3; }));
+    someFutures.push_back(async(default_executor, [] { return 4; }));
 
-    auto a6 = when_all(default_scheduler(), [](std::vector<int> v) {
+    auto a6 = when_all(default_executor, [](std::vector<int> v) {
         cout << "Result of " << v.size() << " parallel executed tasks: ";
         for (auto i : v) {
             cout << i << " ";
@@ -199,7 +201,7 @@ void when_all_with_failing_range() {
 }
 
 void recover_with_a_continuation() {
-    auto f1 = async(default_scheduler(), []() -> int { throw std::exception("My fault"); });
+    auto f1 = async(default_executor, []() -> int { throw std::exception("My fault"); });
     f1.then([](auto x) { return 2; }).then([](auto x) { cout << x << endl; });
     auto a2 = f1.recover([](auto x) { return 3; }).then([](auto x) {
         cout << "Recovered from error and got: " << x << endl;
@@ -263,7 +265,7 @@ void channelExample() {
     sender<int> send;
     receiver<int> receive;
 
-    tie(send, receive) = channel<int>(default_scheduler());
+    tie(send, receive) = channel<int>(default_executor);
 
     std::atomic_bool all_done{ false };
     auto hold = receive
@@ -289,11 +291,11 @@ void joinChannels(){
     sender<int> send1, send2;
     receiver<int> receive1, receive2;
 
-    tie(send1, receive1) = channel<int>(default_scheduler());
-    tie(send2, receive2) = channel<int>(default_scheduler());
+    tie(send1, receive1) = channel<int>(default_executor);
+    tie(send2, receive2) = channel<int>(default_executor);
 
     std::atomic_int all_done{ 0 };
-    auto joined = join(default_scheduler(),[](int x, int y) { return x + y; }, receive1, receive2)
+    auto joined = join(default_executor,[](int x, int y) { return x + y; }, receive1, receive2)
         | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
@@ -318,12 +320,12 @@ void zipChannels() {
     sender<int> send1, send2, send3;
     receiver<int> receive1, receive2, receive3;
 
-    tie(send1, receive1) = channel<int>(default_scheduler());
-    tie(send2, receive2) = channel<int>(default_scheduler());
-    tie(send3, receive3) = channel<int>(default_scheduler());
+    tie(send1, receive1) = channel<int>(default_executor);
+    tie(send2, receive2) = channel<int>(default_executor);
+    tie(send3, receive3) = channel<int>(default_executor);
 
     std::atomic_int all_done{ 0 };
-    auto zipped = zip(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+    auto zipped = zip(default_executor, [](int x) { return x; }, receive1, receive2, receive3)
         | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
@@ -351,12 +353,12 @@ void mergeChannels() {
     sender<int> send1, send2, send3;
     receiver<int> receive1, receive2, receive3;
 
-    tie(send1, receive1) = channel<int>(default_scheduler());
-    tie(send2, receive2) = channel<int>(default_scheduler());
-    tie(send3, receive3) = channel<int>(default_scheduler());
+    tie(send1, receive1) = channel<int>(default_executor);
+    tie(send2, receive2) = channel<int>(default_executor);
+    tie(send3, receive3) = channel<int>(default_executor);
 
     std::atomic_int all_done{ 0 };
-    auto merged = merge(default_scheduler(), [](int x) { return x; }, receive1, receive2, receive3)
+    auto merged = merge(default_executor, [](int x) { return x; }, receive1, receive2, receive3)
         | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
@@ -431,13 +433,13 @@ void failingProcess() {
     sender<int> send1, send2;
     receiver<int> receive1, receive2;
 
-    tie(send1, receive1) = channel<int>(default_scheduler());
-    tie(send2, receive2) = channel<int>(default_scheduler());
+    tie(send1, receive1) = channel<int>(default_executor);
+    tie(send2, receive2) = channel<int>(default_executor);
 
     auto failing = receive2 | failing_process();
 
     std::atomic_int all_done{ 0 };
-    auto joined = join(default_scheduler(), sum_w_error(), receive1, failing)
+    auto joined = join(default_executor, sum_w_error(), receive1, failing)
         | [&_all_done = all_done](int x) { printf("\n%s %d\n\n", __FUNCTION__, x); ++_all_done; };
 
     receive1.set_ready();
@@ -463,21 +465,21 @@ void annotatedProcesses() {
     sender<int> send;
     receiver<int> receive;
 
-    tie(send, receive) = channel<int>(default_scheduler());
+    tie(send, receive) = channel<int>(default_executor);
 
     std::atomic_int v{0};
 
     auto result = receive 
         | buffer_size{ 3 } & [](int x) { return x * 2; }
         | [](int x) { return x * 2; } & buffer_size{ 2 }
-        | buffer_size{ 3 } & scheduler{ default_scheduler() } & [](int x) { return x * 2; } 
+        | buffer_size{ 3 } & executor{ default_executor } & [](int x) { return x * 2; } 
 
-        | scheduler{ default_scheduler() } & [](int x) { return x + 1; }
-        | [](int x) { return x + 1; } & scheduler{ default_scheduler() }
-        | scheduler{ default_scheduler() } & buffer_size{ 3 } & [](int x) { return x * 2; }
+        | executor{ default_executor } & [](int x) { return x + 1; }
+        | [](int x) { return x + 1; } &executor{ default_executor }
+        | executor{ default_executor } & buffer_size{ 3 } & [](int x) { return x * 2; }
     
-        | [](int x) { return x + 1; } & scheduler{ default_scheduler() } & buffer_size{ 3 }
-        | [](int x) { return x * 2; } & buffer_size{ 3 } & scheduler{ default_scheduler() }
+        | [](int x) { return x + 1; } &executor{ default_executor } & buffer_size{ 3 }
+        | [](int x) { return x * 2; } & buffer_size{ 3 } &executor{ default_executor }
         
         | [&v](int x) { v = x;};
         
