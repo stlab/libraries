@@ -4,6 +4,19 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 [ This is temporary documentation - to be replaced at a later date. ]
 
+# Building
+
+First, you will need the following tools:
+
+- [`conan`](https://www.conan.io/) ([download](https://www.conan.io/downloads))
+- [`CMake`](https://cmake.org/) ([download](https://cmake.org/download/))
+- (Mac) Xcode 8.2.1 or later
+- (MSVC) Visual Studio 2015 (14.0) Update 3 or later
+
+`conan` and `cmake` are available on the Mac via [Homebrew](http://brew.sh). `cmake` is available on Windows via [`scoop`](http://scoop.sh/).
+
+Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the platform of your choice. It will setup all necessary library dependencies and create the platform-specific project file in the `./build/` directory.
+
 # Build Status: [![Build Status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
 
 ## <stlab/future>

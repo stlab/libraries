@@ -29,6 +29,12 @@
 
 *.js
 
+# MacOS nonsense
+.DS_Store
+
+# cmake build directory
+build/
+
 .idea
 cmake-build-debug
 cmake-build-release
