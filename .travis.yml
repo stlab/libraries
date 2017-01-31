@@ -1,11 +1,9 @@
 sudo: required
 dist: trusty
-
 language: cpp
-
-branches:
-  except: /pr\/.*/
-
+cache:
+  directories:
+    - $HOME/.conan
 matrix:
   include:
     - compiler: gcc
@@ -15,33 +13,34 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env: 
-        - COMPILER=g++-5
-        - TOOLSET=gcc
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      env: 
-        - COMPILER=g++-6
-        - TOOLSET=gcc
-before_script:
-    - chmod +x configure.sh
-    - ./configure.sh
-      
+      install: if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+    # - compiler: clang
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-precise-3.8
+    #       packages:
+    #         - clang-3.8
+    #   install: if [ "$CXX" = "g++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
+branches:
+  except: /pr\/.*/
+before_install:
+  - pip install conan
 script:
-    - mkdir build
-    - cd build
-    - cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$COMPILER -DBOOST_ROOT=boost_libraries ./..
-    - make
-    - test/future_test
-    
+  - mkdir build
+  - cd build
+  - conan install ./.. --build=missing
+  - cmake .. && make
+  - cd bin # It'd be great if we could just run all the binaries we find in here...
+  - ./future_test
+  - ./serial_queue_test
 notifications:
   recipients:
     - felix@petriconi.net
   email:
     on_success: change
     on_failure: always
+  slack:
+    rooms:
+      secure: D2Q2H8/89cCSDjJXc6AmIAOEKIkoUBQZBH5sYIkc/FgB7+cLqeSQFNpe7N96t22SmvyIUsqPzxiEccEMTiLeRdo0S4BXAAkd3abB8wd2KFXe/mlpUpNNSYTowYA6I6EfY83Hb5QxVkIi5SiD6fwUo9VFXGpBQM5wmgU9CXE4Xk64RWziSKowGSOzIPytSduksG2p+wKQE6tK0o4NNPvOI0uzbzJuWUwHjaLU/tH12L/O/DmeLj+WO1939v1Xmm48p86JKr7uJzNNiTTVCGuAMLY3CLdTRYHpgvnfAxy93x0v0arvYiRrtABlfUP1RjthUPlmY0oESIx1EbgSUMXx1Bh0tvfJoRUq2H2qu9V1mMhIrMj7JzWcLb+9X3+vWg7UPgz8Y2kX8PZbzxCclIqesWsgBbaqsErbS6o5Fh2hvTMzIjRXm8oXc38wbC3jM11H0CD7tCEvpUHyPHfVGYgf0/qFNSoFU3qhfuWRdhi3Pa+En9/VcFmDrbh2P9ba2kDqVnXzz2q+xRZ1rfmzBiKOe05TVTm4535JbcRPCa4bgE+gT6PvVIlb4WSJk6pZleAlo/lh8Ugqc4fCRiShhxd0lKK+3+B1ImipuVeaNaTGUgfhtj4hhMzXEp9Xi+M3UyScnXvQhLc7pA3eYO6paXuVjBUIzAWOXzsPVwCVPFoObhY=
