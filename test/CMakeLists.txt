@@ -31,9 +31,25 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(
     future_test
-    future
+#    future
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT})
 
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+########## Serial queue ##########
+
+PROJECT(serial_queue_test)
+
+set(SOURCE
+    serial_queue_test.cpp
+)
+
+set(HEADERS
+)
+
+add_executable(serial_queue_test ${SOURCE} ${HEADERS})
+
+set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
+set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)

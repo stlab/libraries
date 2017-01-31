@@ -11,15 +11,19 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <deque>
 #include <memory>
+#include <mutex>
 #include <tuple>
 #include <utility>
 
+#include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
-#include <stlab/future.hpp>
+#include <stlab/executor_base.hpp>
+#include <stlab/traits.hpp>
 #include <stlab/tuple_algorithm.hpp>
 
 
@@ -209,7 +213,7 @@ struct shared_process_receiver {
     virtual void clear_to_send() = 0;
     virtual void add_receiver() = 0;
     virtual void remove_receiver() = 0;
-    virtual timed_schedule_t scheduler() const = 0;
+    virtual executor_t executor() const = 0;
     virtual void set_buffer_size(size_t) = 0;
     virtual size_t buffer_size() const = 0;
 };
@@ -225,57 +229,6 @@ struct shared_process_sender {
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
 };
-
-/**************************************************************************************************/
-
-// the following implements the C++ standard proposal N4502
-#if __GNUC__ < 5 && ! defined __clang__
-// http://stackoverflow.com/a/28967049/1353549
-template <typename...>
-struct voider
-{
-    using type = void;
-};
-template <typename...Ts>
-using void_t = typename voider<Ts...>::type;
-#else
-template <typename...>
-using void_t = void;
-#endif
-
-struct nonesuch
-{
-    nonesuch() = delete;
-    ~nonesuch() = delete;
-    nonesuch(nonesuch const&) = delete;
-    void operator= (nonesuch const&) = delete;
-};
-
-
-// primary template handles all types not supporting the archetypal Op:
-template<class Default , class, template<class...> class Op, class... Args>
-struct detector
-{
-    using value_t = std::false_type;
-    using type = Default;
-};
-
-// the specialization recognizes and handles only types supporting Op:
-template<class Default, template<class...> class Op, class... Args>
-struct detector<Default, void_t<Op<Args...>>, Op, Args...>
-{
-    using value_t = std::true_type;
-    using type = Op<Args...>;
-};
-
-template<template<class...> class Op, class... Args>
-using is_detected = typename detector<nonesuch, void, Op, Args...>::value_t;
-
-template<template<class...> class Op, class... Args>
-constexpr bool is_detected_v = is_detected<Op, Args...>::value;
-
-template<template<class...> class Op, class... Args>
-using detected_t = typename detector<nonesuch, void, Op, Args...>::type;
 
 /**************************************************************************************************/
 
@@ -665,7 +618,7 @@ struct shared_process : shared_process_receiver<R>,
     downstream<R>            _downstream;
     queue_strategy           _queue;
 
-    timed_schedule_t         _scheduler;
+    executor_t               _executor;
     process_t                _process;
 
     std::mutex               _process_mutex;
@@ -684,20 +637,20 @@ struct shared_process : shared_process_receiver<R>,
     const std::tuple<std::shared_ptr<shared_process_receiver<Args>>...> _upstream;
 
 
-    template <typename S, typename F>
-    shared_process(S&& s, F&& f) : 
+    template <typename E, typename F>
+    shared_process(E&& e, F&& f) :
         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
-        _scheduler(std::forward<S>(s)),
+        _executor(std::forward<E>(e)),
         _process(std::forward<F>(f))
     {
         _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
-    template <typename S, typename F, typename... U>
-    shared_process(S&& s, F&& f, U&&... u) :
+    template <typename E, typename F, typename... U>
+    shared_process(E&& e, F&& f, U&&... u) :
         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(*this),
-        _scheduler(std::forward<S>(s)),
+        _executor(std::forward<E>(e)),
         _process(std::forward<F>(f)), 
         _upstream(std::forward<U>(u)...)
     {
@@ -729,8 +682,8 @@ struct shared_process : shared_process_receiver<R>,
         }
     }
 
-    timed_schedule_t scheduler() const override {
-        return _scheduler;
+    executor_t executor() const override {
+        return _executor;
     }
 
     void task_done() {
@@ -872,7 +825,7 @@ struct shared_process : shared_process_receiver<R>,
             */
             if (state == process_state::yield) {
                 if (when <= now) broadcast(_process.yield());
-                else _scheduler(when, [_this = this->shared_from_this()]{ _this->try_broadcast(); });
+                else execute_at(when, _executor)( [_this = this->shared_from_this()]{ _this->try_broadcast(); });
             }
 
             /*
@@ -902,7 +855,7 @@ struct shared_process : shared_process_receiver<R>,
                     _this->_process_timeout_function.reset();
                 });
 
-                _scheduler(when, [_weak_this = make_weak_ptr(this->shared_from_this()),
+                execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this()),
                                   _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
@@ -961,7 +914,7 @@ struct shared_process : shared_process_receiver<R>,
     }
 
     void run() {
-        _scheduler(std::chrono::system_clock::time_point::min(), [_p = make_weak_ptr(this->shared_from_this())]{
+        _executor([_p = make_weak_ptr(this->shared_from_this())]{
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
@@ -1171,11 +1124,11 @@ struct buffer_size
     explicit buffer_size(size_t v) : _value(v) {}
 };
 
-struct scheduler
+struct executor
 {
-    timed_schedule_t _s;
+    executor_t _e;
 
-    explicit scheduler(timed_schedule_t s) : _s(std::move(s)) {}
+    explicit executor(executor_t e) : _e(std::move(e)) {}
 };
 
 /**************************************************************************************************/
@@ -1185,10 +1138,10 @@ namespace detail
 
 struct annotations 
 {
-    boost::optional<timed_schedule_t>  _scheduler;
-    boost::optional<std::size_t>       _buffer_size;
+    boost::optional<executor_t>   _executor;
+    boost::optional<std::size_t>  _buffer_size;
 
-    explicit annotations(timed_schedule_t s) : _scheduler(std::move(s)) {}
+    explicit annotations(executor_t e) : _executor(std::move(e)) {}
     explicit annotations(std::size_t bs) : _buffer_size(bs) {}
 };
 
@@ -1200,56 +1153,56 @@ struct annotated_process
     F                  _f;
     annotations        _annotations;
 
-    annotated_process(F f, const scheduler& s) : _f(std::move(f)), _annotations(s._s) {}
+    annotated_process(F f, const executor& e) : _f(std::move(f)), _annotations(e._e) {}
     annotated_process(F f, const buffer_size& bs) : _f(std::move(f)), _annotations(bs._value) {}
 
-    annotated_process(F f, scheduler&& s) : _f(std::move(f)), _annotations(std::move(s._s)) {}
+    annotated_process(F f, executor&& e) : _f(std::move(f)), _annotations(std::move(e._e)) {}
     annotated_process(F f, buffer_size&& bs) : _f(std::move(f)), _annotations(bs._value) {}
     annotated_process(F f, annotations&& a) : _f(std::move(f)), _annotations(std::move(a)) {}
 };
 
-template <typename B, typename S>
-detail::annotations combine_bs_scheduler(B&& b, S&& s) {
+template <typename B, typename E>
+detail::annotations combine_bs_executor(B&& b, E&& e) {
     detail::annotations result{ b._value };
-    result._scheduler = std::forward<S>(s)._s;
+    result._executor = std::forward<E>(e)._e;
     return result;
 }
 
 }
 
 inline
-detail::annotations operator&(const buffer_size& bs, const scheduler& s){
-    return detail::combine_bs_scheduler(bs, s);
+detail::annotations operator&(const buffer_size& bs, const executor& e){
+    return detail::combine_bs_executor(bs, e);
 }
 
 inline
-detail::annotations operator&(const buffer_size& bs, scheduler&& s) {
-    return detail::combine_bs_scheduler(bs, std::move(s));
+detail::annotations operator&(const buffer_size& bs, executor&& e) {
+    return detail::combine_bs_executor(bs, std::move(e));
 }
 
 inline
-detail::annotations operator&(buffer_size&& bs, scheduler&& s) {
-    return detail::combine_bs_scheduler(std::move(bs), std::move(s));
+detail::annotations operator&(buffer_size&& bs, executor&& e) {
+    return detail::combine_bs_executor(std::move(bs), std::move(e));
 }
 
 inline
-detail::annotations operator&(buffer_size&& bs, const scheduler& s) {
-    return detail::combine_bs_scheduler(std::move(bs), s);
+detail::annotations operator&(buffer_size&& bs, const executor& e) {
+    return detail::combine_bs_executor(std::move(bs), e);
 }
 
 inline
-detail::annotations operator&(const scheduler& s, const buffer_size& bs) {
-    return detail::combine_bs_scheduler(bs, s);
+detail::annotations operator&(const executor& e, const buffer_size& bs) {
+    return detail::combine_bs_executor(bs, e);
 }
 
 inline
-detail::annotations operator&(const scheduler& s, buffer_size&& bs) {
-    return detail::combine_bs_scheduler(std::move(bs), s);
+detail::annotations operator&(const executor& e, buffer_size&& bs) {
+    return detail::combine_bs_executor(std::move(bs), e);
 }
 
 inline
-detail::annotations operator&(scheduler&& s, buffer_size&& bs) {
-    return detail::combine_bs_scheduler(std::move(bs), std::move(s));
+detail::annotations operator&(executor&& e, buffer_size&& bs) {
+    return detail::combine_bs_executor(std::move(bs), std::move(e));
 }
 
 
@@ -1275,23 +1228,23 @@ detail::annotated_process<F> operator&(F&& f, buffer_size&& bs) {
 
 
 template <typename F>
-detail::annotated_process<F> operator&(const scheduler& s, F&& f) {
-    return detail::annotated_process<F>(std::forward<F>(f), s);
+detail::annotated_process<F> operator&(const executor& e, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), e);
 }
 
 template <typename F>
-detail::annotated_process<F> operator&(scheduler&& s, F&& f) {
-    return detail::annotated_process<F>(std::forward<F>(f), std::move(s));
+detail::annotated_process<F> operator&(executor&& e, F&& f) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(e));
 }
 
 template <typename F>
-detail::annotated_process<F> operator&(F&& f, const scheduler& s) {
-    return detail::annotated_process<F>(std::forward<F>(f), s);
+detail::annotated_process<F> operator&(F&& f, const executor& e) {
+    return detail::annotated_process<F>(std::forward<F>(f), e);
 }
 
 template <typename F>
-detail::annotated_process<F> operator&(F&& f, scheduler&& s) {
-    return detail::annotated_process<F>(std::forward<F>(f), std::move(s));
+detail::annotated_process<F> operator&(F&& f, executor&& e) {
+    return detail::annotated_process<F>(std::forward<F>(f), std::move(e));
 }
 
 
@@ -1307,9 +1260,9 @@ detail::annotated_process<F> operator&(F&& f, detail::annotations&& a) {
 
 
 template <typename F>
-detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, scheduler&& s) {
+detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, executor&& e) {
     auto result{ std::move(a) };
-    a._annotations._scheduler = std::move(s._s);
+    a._annotations._executor = std::move(e._e);
     return result;
 }
 
@@ -1373,19 +1326,19 @@ class receiver {
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, 
                                                          F, 
                                                          detail::yield_type<F, T>, 
-                                                         T>>(_p->scheduler(), std::forward<F>(f), _p);
+                                                         T>>(_p->executor(), std::forward<F>(f), _p);
         _p->map(sender<T>(p));
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }
 
     template <typename F>
     auto operator|(detail::annotated_process<F>&& ap) {
-        auto scheduler = ap._annotations._scheduler.value_or(_p->scheduler());
+        auto executor = ap._annotations._executor.value_or(_p->executor());
         // TODO - report error if not constructed or _ready.
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>,
                 F,
                 detail::yield_type<F, T>,
-                T>>(scheduler, std::move(ap._f), _p);
+                T>>(executor, std::move(ap._f), _p);
 
         _p->map(sender<T>(p));
 
@@ -1400,7 +1353,7 @@ class receiver {
 /**************************************************************************************************/
 
 template <typename T>
-class sender<T, detail::enable_if_copyable<T>>
+class sender<T, enable_if_copyable<T>>
 {
     using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
     ptr_t _p;
@@ -1450,7 +1403,7 @@ class sender<T, detail::enable_if_copyable<T>>
 };
 
 template <typename T>
-class sender<T, detail::enable_if_not_copyable<T>>
+class sender<T, enable_if_not_copyable<T>>
 {
     using ptr_t = std::weak_ptr<detail::shared_process_sender<T>>;
     ptr_t _p;

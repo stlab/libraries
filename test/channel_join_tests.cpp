@@ -1,7 +1,7 @@
 /*
-Copyright 2016 Felix Petriconi
-Distributed under the Boost Software License, Version 1.0.
-(See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+    Copyright 2015 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
@@ -11,6 +11,7 @@ Distributed under the Boost Software License, Version 1.0.
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/channel.hpp>
+#include <stlab/future.hpp>
 #include <string>
 
 #include "channel_test_helper.hpp"
@@ -24,7 +25,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_one_value, channel_test_fi
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(), [&](int x) { result = x; }, _receive[0]);
+    auto check = join(default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
     _send[0](1);
@@ -39,10 +40,10 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_one_value_async, channel_t
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(), [&](int x) { result = x; }, _receive[0]);
+    auto check = join(default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
-    auto f = async(default_scheduler(), [_sender = _send[0]]{ _sender(1); });
+    auto f = async(default_executor, [_sender = _send[0]]{ _sender(1); });
 
     wait_until_done([&]() { return result != 0; });
 
@@ -54,7 +55,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_many_values, channel_test_
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(), [&](int x) { result += x; }, _receive[0]);
+    auto check = join(default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     for (auto i = 1; i <= 100; ++i)
@@ -72,12 +73,12 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_void_functor_many_values_async, channel
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(), [&](int x) { result += x; }, _receive[0]);
+    auto check = join(default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     std::vector<future<void>> f(100);
     for (auto i = 1; i <= 100; ++i) {
-        f.push_back(async(default_scheduler(), [_sender = _send[0], _i = i]{ _sender(_i); }));
+        f.push_back(async(default_executor, [_sender = _send[0], _i = i]{ _sender(_i); }));
     }
 
     auto expected = 100 * (100+1) / 2;
@@ -93,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_one_value, chann
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                          [&](int x, int y) { result +=  2*x + 3*y; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
@@ -111,12 +112,12 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_one_value_async,
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                       [&](int x, int y) { result +=  2*x + 3*y; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
     _receive[1].set_ready();
-    auto f=async(default_scheduler(), [_send1 = _send[0], &_send2 = _send[1]]{// one copy,one reference
+    auto f=async(default_executor, [_send1 = _send[0], &_send2 = _send[1]]{// one copy,one reference
         _send1(2);
         _send2(3);
     });
@@ -132,7 +133,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_many_values, cha
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                              [&](int x, int y) { result +=  2*x + 3*y; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
@@ -152,15 +153,15 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_many_values_asyn
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                       [&](int x, int y) { result +=  2*x + 3*y; }, _receive[0], _receive[1]);
 
     _receive[0].set_ready();
     _receive[1].set_ready();
     std::vector<future<void>> f(20);
     for (auto i = 0; i < 10; i++) {
-        f.push_back(async(default_scheduler(), [_send1 = _send[0], _i = i] { _send1(_i); }));
-        f.push_back(async(default_scheduler(), [&_send2 = _send[1],_i = i] { _send2(_i+1); }));
+        f.push_back(async(default_executor, [_send1 = _send[0], _i = i] { _send1(_i); }));
+        f.push_back(async(default_executor, [&_send2 = _send[1],_i = i] { _send2(_i+1); }));
     }
 
     const auto expected = 3 + 2+6 + 4+9 + 6+12 + 8+15 + 10+18 + 12+21 + 14+24 + 16+27 + 18+30;
@@ -175,7 +176,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor, channel_test_fi
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                  [&](int v, int w, int x, int y, int z) {
                      result +=  2*v + 3*w + 4*x + 5*y + 6*z; },
                  _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
@@ -198,7 +199,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_async, channel_t
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                       [&](int v, int w, int x, int y, int z) {
                           result +=  2*v + 3*w + 4*x + 5*y + 6*z; },
                       _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
@@ -208,7 +209,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_same_type_void_functor_async, channel_t
 
     std::vector<future<void>> f(5);
     for (auto i = 0; i < 5; i++) {
-        f.push_back(async(default_scheduler(), [_send = _send[i], _i = i]{ _send(_i+2); }));
+        f.push_back(async(default_executor, [_send = _send[i], _i = i]{ _send(_i+2); }));
     }
 
     wait_until_done([&]() { return result != 0; });
@@ -224,7 +225,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_different_type_void_functor, channel_ty
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                       [&](int x, std::string y) { result +=  2 + static_cast<int>(y.size()); },
                       receive<0>(),
                       receive<1>());
@@ -244,15 +245,15 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_2_join_different_type_void_functor_asyn
 
     std::atomic_int result{ 0 };
 
-    auto check = join(default_scheduler(),
+    auto check = join(default_executor,
                       [&](int x, std::string y) { result +=  x + static_cast<int>(y.size()); },
                       receive<0>(),
                       receive<1>());
 
     receive<0>().set_ready();
     receive<1>().set_ready();
-    auto f1 = async(default_scheduler(), [_send = send<0>()] { _send(2); });
-    auto f2 = async(default_scheduler(), [_send = send<1>()] { _send("Foo"); });
+    auto f1 = async(default_executor, [_send = send<0>()] { _send(2); });
+    auto f2 = async(default_executor, [_send = send<1>()] { _send("Foo"); });
 
     wait_until_done([&]() { return result != 0; });
 
