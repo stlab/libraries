@@ -15,10 +15,15 @@ endif()
 
 if(WIN32)
   add_definitions(-D_WIN32_WINNT=0x0601)
+  add_definitions( -DBOOST_ALL_NO_LIB )
+  add_definitions( -DBOOST_ALL_DYN_LINK )
+  set (Boost_USE_STATIC_LIBS OFF)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+else()
+  set (Boost_USE_STATIC_LIBS ON)
 endif(WIN32)
 
-set (Boost_USE_STATIC_LIBS TRUE)
+
 set (Boost_MULTITHREADED ON) 
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
