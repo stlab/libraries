@@ -9,8 +9,6 @@
 #ifndef _TEST_HELPER_HPP_
 #define _TEST_HELPER_HPP_
 
-#define BOOST_TEST_DYN_LINK
-
 #include <stlab/default_executor.hpp>
 
 #include <atomic>
