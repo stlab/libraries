@@ -10,7 +10,7 @@ From time-to-time I've posted programming tips (often these have been internal e
 <dl class='posts'>
 {% for p in site.pages %}
     {% if p.tags contains 'tips' and p.url != page.url %}
-        <dt><a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title }}</a></dt>
+        <dt><a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title | markdownify }}</a></dt>
     {% endif %}
 {% endfor %}
 </dl>

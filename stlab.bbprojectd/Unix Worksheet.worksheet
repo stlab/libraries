@@ -13,8 +13,7 @@
 xcode-select --install
 
 # In Terminal
-open -a terminal --args ~/Projects/github.com/stlab/stlab.github.io
-
+open -a terminal ~/Projects/github.com/stlab/stlab.github.io
 
 cd ~/Projects/github.com/stlab/stlab.github.io
 bundle update
@@ -22,6 +21,7 @@ bundle exec jekyll serve --port 4001
 ##
 open -a "Google Chrome" "http://127.0.0.1:4001/"
 open -a "LiveReload"
+
 # Click on live-reload extension in Chrome
 
 ## Kramdown sytax reference
