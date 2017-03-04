@@ -22,7 +22,7 @@ void get(string& out) const;
 my_class::my_class(const string& in);
 ```
 
-There are there are several issues with the above code. It is error prone, inefficient, ambiguous, and unnecessarily verbose. Consider the same piece of code written as:
+There are several issues with the above code. It is error prone, inefficient, ambiguous, and unnecessarily verbose. Consider the same piece of code written as:
 
 ```cpp
 my_class y(obj.get());
