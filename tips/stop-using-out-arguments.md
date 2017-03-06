@@ -4,9 +4,9 @@ layout: page
 tags: [tips]
 comments: true
 ---
-## Out Arguments
+## The Problem with Out Arguments
 
-Despite lecturing about Return-Value-Optimization for over a decade, I still see a lot of code of the form:
+Despite lecturing about [Return-Value-Optimization](http://en.cppreference.com/w/cpp/language/copy_elision) for over a decade, I still see a lot of code of the form:
 
 ```cpp
 string x;
@@ -14,7 +14,7 @@ obj.get(x);
 my_class y(x);
 ```
 
-Where `string` is any complex type and the signatures of `get()` and `my_class::my_class()` are:
+Where `string` is any complex type (***Is there a formal definition of complex type?*** Non-[POD](http://en.cppreference.com/w/cpp/concept/PODType)?) and the signatures of `get()` and `my_class::my_class()` are:
 
 ```cpp
 void get(string& out) const;
@@ -22,14 +22,9 @@ void get(string& out) const;
 my_class::my_class(const string& in);
 ```
 
-There are several issues with the above code. It is error prone, inefficient, ambiguous, and unnecessarily verbose. Consider the same piece of code written as:
+There are several issues with the above code. Let's improve `get()` first, then we'll move on to `my_class`.
 
-```cpp
-my_class y(obj.get());
-```
-Besides being more compact, there is no ambiguity about what is getting modified, we are constructing only one object.
-
-There is a mistaken assumption that this piece of code is less efficient, introducing unnecessary copies. However, that has not been true for a very long time. To understand why, let's first look at `get()`. With an out parameter, the implementation of `get()` could take one of several forms, copying some existing date, such as a data member, calculating a new value and assigning it to `out`, or building up `out` to be the new value. Examples:
+With an out parameter, the implementation of `get()` could take one of several forms: copying some existing date (such as a data member), calculating a new value and assigning it, or building up `out` to be the new value. Examples:
 
 ```cpp
 void get(string& out) const { out = _member; }
@@ -40,9 +35,19 @@ void get(string& out) const {
 }
 ```
 
-The comment in the last examples points out why this is an error prone pattern, unless you are careful, you can accidentally rely on the prior state of the object making this an in-out argument. Worse, the caller has no way to know if the call is in/out and it is their responsibility to clear the value before the call.
+The problems with these examples are legion:
 
-Now, let us look at how we would write these same three example with a return value:
+1. ***Error Prone:*** The comment in the last examples points out why this is an error prone pattern. Unless you are careful, you can accidentally rely on the prior state of the object making this an in-out argument. Worse, the caller has no way to know if the call is in/out and it is their responsibility to clear the value before the call.
+
+2. ***Inefficient:*** The compiler is required to copy the data from the source (`obj`) into the destination (`x`). This leads to expenses that can otherwise be avoided.
+
+3. ***Ambiguous:*** Again, as the comment above points out, it can be hard for the caller to deduce the intent of the arguments as they are passed. This ambiguity leads us open to errors on both sides of the call.
+
+4. ***Unnecessarily Verbose:*** The code speaks for itself here: there is a lot being said to accomplish very little. This puts an undue burden on the developer, both in terms of understanding and maintaining the code.
+
+## Rewriting Out Arguments
+
+Let us look at how we would write these same three `get()` examples with a return value:
 
 ```cpp
 const string& get() const { return _member; }
@@ -54,24 +59,38 @@ string get() const {
 }
 ```
 
-In the first case, we avoid an unnecessary copy, if the client is only reading from the value, they don't need an additional copy.
+This version of the code is better in every way:
 
-In the second example, the compiler will use Return Value Optimization, which works because the result of a function is actually in the caller scope. So in both cases the string is constructed in place and no copy occurs. RVO has been implemented in optimized builds for every compiler I've tested for over a decade and it will be required with C++17 so a compliant compiler must perform the optimization always. And as of C++11, returning from a function is defined as a _move_ operation, so even if the copy isn't elided, so long as the type has a move constructor, no copy occurs. This code also avoid the ambiguity as to if the argument is in/out, both for the implementor and the caller.
+1. ***Error Free:*** Because the caller does not have to pass in objects to receive the values, there are no preconditions required.
 
-Just knowing this we can clean up our original example:
+2. ***Efficient:*** There is a mistaken assumption that this piece of code is less efficient, introducing unnecessary copies. However, that has not been true for a very long time.
+
+  In the first case, we avoid an unnecessary copy: if the client is only reading from the value, no copy takes place. (If they do need a copy, then the code is no worse than it was before.)
+
+  In the second example, the compiler will use Return Value Optimization, which works because the result of a function is actually in the caller scope. The third example uses Named Return Value Optimization (NRVO), which is a specific sub-case of RVO. So in both cases the string is constructed in place and no copy occurs.
+  
+  RVO has been implemented in optimized builds for every compiler I've tested for over a decade. It will be required with C++17, so a compliant compiler must perform the optimization always. As of C++11, returning from a function is defined as a `move` operation, so even if the copy isn't elided, so long as the type has a move constructor, no copy occurs.
+
+3. ***Unambiguous:*** This code also avoid the ambiguity as to if the argument is in/out, both for the implementor and the caller. What is getting modified is clear, and we are constructing only one object.
+
+4. ***Terse:*** The code is clearly more compact than its predecessor.
+
+Applying what we have just learned, we can clean up our original example:
 
 ```cpp
 string x = obj.get();
 my_class y(x);
 ```
 
-And we can even write the code without the temporary and it will be no-worse than the original code for performance:
+We can even write the code without the temporary, and it will be no less performant:
 
 ```cpp
 my_class y(obj.get());
 ```
 
-But we aren't looking for "no-worse" we want better. So let's look at `my_class::my_class()`. The `in` argument is what is known as a _sink_ argument. A sink argument is any argument that is stored by, or returned from, the function. Constructors are a common source of sink arguments as the argument is often used to initialize a member. Consider a very common implementation form:
+## Improving the In Argument
+
+But we aren't looking for "no-worse" - we want better. So let's look at `my_class::my_class()`. The `in` argument is what is known as a _sink_ argument. A sink argument is one that is stored by, or returned from, the function. Constructors are a common source of sink arguments as the argument is often used to initialize a member. Consider a very common implementation form:
 
 ```cpp
 my_class::my_class(const string& in) : _member(in) { }
@@ -88,6 +107,7 @@ In our calling example code, if `get()` is returning a `const string&` then the 
 ```cpp
 my_class::my_class(string x) { swap(_member, x); }
 ```
+
 ## In-Out Arguments
 
 But what if you _wanted_ an in-out argument? For example:
@@ -121,11 +141,13 @@ If you already had the object you wanted to append to, you can still do that:
 x = append(std::move(x));
 ```
 
-There are situations where an object has a large local part, so move is expensive, and it makes sense to modify the object in place, however, these should be treated as the exception.
+### When to Modify In-situ
 
-## Multiple Out arguments
+There are situations where an object has a large local part, so move is expensive, and it makes sense to modify the object in place. However, these should be treated as the exception, not the rule.
 
-One reason for use out arguments has been to return multiple items. This case is not quite as clear cut, but I will argue that even here you should return via the function result for most cases.
+## Multiple Out Arguments
+
+One reason for using out arguments has been to return multiple items. This case is not quite as clear cut, but I will argue that even here you should return via the function result for most cases.
 
 Here is an example:
 
@@ -162,7 +184,7 @@ tie(root, ext) = root_extension("path/file.jpg");
 
 `std::tie` and `std::make_tuple` were added in C++11 (though available prior to that as part of Boost and then TR1).
 
-This has most of the same advantages as single argument outputs though the syntax is currently a bit more cumbersome because of the requirement to use `tie()`. However, in C++17 (coming soon) we will have structured bindings so the invocation will look like:
+This has most of the same advantages as single argument outputs. Unfortunately, the syntax is a bit more cumbersome because of the requirement to use `tie()`. However, in C++17 we will have [structured bindings](https://skebanga.github.io/structured-bindings/) so the invocation will look like:
 
 ```cpp
 auto [root, ext] = root_extension("path/file.jpg");
@@ -182,7 +204,9 @@ And this will print:
 path/file-copy.jpg
 ```
 
-Without ever copying a string. `apply()` is available today on Mac in `<experimental/tuple>`.
+Without ever copying a string!
+
+`apply()` is available today on Mac in `<experimental/tuple>`.
 
 ## Final thoughts
 
