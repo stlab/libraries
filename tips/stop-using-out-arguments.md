@@ -6,7 +6,7 @@ comments: true
 ---
 ## Out Arguments
 
-Despite lecturing about Return-Value-Optimization for over a decade, I still see a lot of code of the form:
+I have been lecturing about return value optimization (RVO) for over a decade, yet I still see a lot of code written in this form:
 
 ```cpp
 string x;
@@ -14,7 +14,7 @@ obj.get(x);
 my_class y(x);
 ```
 
-Where `string` is any complex type and the signatures of `get()` and `my_class::my_class()` are:
+Where `string` is any complex type, `get()` is some function with an out argument, and `my_class::my_class()` is a constructor for some class type.
 
 ```cpp
 void get(string& out) const;
@@ -22,12 +22,7 @@ void get(string& out) const;
 my_class::my_class(const string& in);
 ```
 
-There are several issues with the above code. It is error prone, inefficient, ambiguous, and unnecessarily verbose. Consider the same piece of code written as:
-
-```cpp
-my_class y(obj.get());
-```
-Besides being more compact, there is no ambiguity about what is getting modified, we are constructing only one object.
+There are several issues with the above code. It is error prone, inefficient, ambiguous, and unnecessarily verbose.
 
 There is a mistaken assumption that this piece of code is less efficient, introducing unnecessary copies. However, that has not been true for a very long time. To understand why, let's first look at `get()`. With an out parameter, the implementation of `get()` could take one of several forms, copying some existing date, such as a data member, calculating a new value and assigning it to `out`, or building up `out` to be the new value. Examples:
 
@@ -70,6 +65,12 @@ And we can even write the code without the temporary and it will be no-worse tha
 ```cpp
 my_class y(obj.get());
 ```
+ Consider the same piece of code written as:
+
+```cpp
+my_class y(obj.get());
+```
+Besides being more compact, there is no ambiguity about what is getting modified, we are constructing only one object.
 
 But we aren't looking for "no-worse" we want better. So let's look at `my_class::my_class()`. The `in` argument is what is known as a _sink_ argument. A sink argument is any argument that is stored by, or returned from, the function. Constructors are a common source of sink arguments as the argument is often used to initialize a member. Consider a very common implementation form:
 
