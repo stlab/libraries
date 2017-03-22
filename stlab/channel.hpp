@@ -80,6 +80,59 @@ constexpr process_state_scheduled yield_immediate {
     std::chrono::system_clock::time_point::min()
 };
 
+/**************************************************************************************************/
+
+enum class channel_error_codes {	// names for channel errors
+  broken_promise = 1,
+  no_state
+};
+
+/**************************************************************************************************/
+
+namespace detail 
+{
+
+inline const char *channel_error_map(channel_error_codes code) noexcept
+{	// convert to name of channel error
+  switch (code)
+  {	// switch on error code value
+  case channel_error_codes::broken_promise:
+    return "broken promise";
+
+  case channel_error_codes::no_state:
+    return "no state";
+
+  default:
+    return nullptr;
+  }
+}
+
+/**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
+
+// channel exception
+
+class channel_error : public std::logic_error
+{
+public:
+  explicit channel_error(channel_error_codes code)
+    : logic_error(""), _code(code)
+  {}
+
+  const channel_error_codes& code() const noexcept {
+    return _code;
+  }
+
+  const char *what() const noexcept override {
+    return detail::channel_error_map(_code);
+  }
+
+private:
+  const channel_error_codes _code;
+};
 
 /**************************************************************************************************/
 
@@ -1321,6 +1374,9 @@ class receiver
 
     template <typename F>
     auto operator|(F&& f) const {
+        if (!_p || _ready)
+            throw channel_error(channel_error_codes::broken_promise);
+
         // TODO - report error if not constructed or _ready.
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, 
                                                          F, 
