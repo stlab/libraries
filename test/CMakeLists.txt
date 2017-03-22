@@ -44,9 +44,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(
     future_test
-#    future
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    ${CMAKE_THREAD_LIBS_INIT})
+    ${Boost_LIBRARIES} 
+    ${CMAKE_THREAD_LIBS_INIT} 
+    ${CONAN_LIBS})
 
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
