@@ -5,7 +5,7 @@ tags: [library]
 full-name: process::yield
 pure-name: await
 declaration: T yield()
-description: This method is called on an await-process whenever a new value was received from upstream. The type `T` stands here for any semi regular or move-only type. The number of arguments depends on  the number of attached upstream sender. Potential state changes from awaitable to yieldable should happen while this method is invoked.
+description: This method is called on an await-process whenever the `process_state_scheduled.first` is `process_state::yield` or a timeout was provided with the recent call to `state()` and that has elapsed.
 entities:
   - kind: methods
     list:
