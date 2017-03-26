@@ -2,11 +2,11 @@
 layout: library
 title: Concurrency
 tags: [library]
-description: This library provides high level C++ constructs for implementing algorithms that eases the use of multiple CPU cores while minimizing the contention. For further background information see as well [Better Code: Concurrency](http://sean-parent.stlab.cc/papers-and-presentations)
+description: This library provides high level constructs for implementing algorithms that eases the use of multiple CPU cores while minimizing the contention.
 sections:
   - kind: collection
     name: Futures
-    description: A future implementation which is different in several aspects compared to the futures of the C++ Standard. It supports continuations, splits and joins.
+    description: An alternative future implementation, that supports continuations, splits and joins.
     entities:
       - kind: class
         name: stlab::future
@@ -15,12 +15,11 @@ sections:
         declaration: future
         description: |
             This class implements a future
-
             <span class="t-mark">(class template)</span>
         link: future/stlab_future
   - kind: collection
     name: Channels
-    description: Communicating Sequential Processing (CSP) channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/policy_process). 
+    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/policy_process). 
     entities:
       - kind: class
         name: stlab::sender
