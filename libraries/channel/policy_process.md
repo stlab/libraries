@@ -23,6 +23,9 @@ entities:
       - name: close
         description: Closes the processing of this process
         pure-name: close
+      - name: set_error
+        description: Set the last occured error on the process
+        pure-name: set_error
       - name: state
         description: Returns the current state of the process
         pure-name: state
@@ -42,7 +45,9 @@ struct process
 
     U yield();
 
-    void close();
+    void close();                             // optional
+
+    void set_error(std::exception_ptr error); // optional
 
     process_state_scheduled state() const;
 };
