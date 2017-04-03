@@ -16,6 +16,7 @@ set(SOURCE
   future_when_any_arguments_tests.cpp
   future_when_any_range_tests.cpp
   test_helper.cpp
+  serial_queue_test.cpp
   tuple_algorithm_test.cpp
   main.cpp
 )
@@ -30,6 +31,7 @@ set(HEADERS
   ../stlab/immediate_executor.hpp
   ../stlab/main_executor.hpp
   ../stlab/progress.hpp
+  ../stlab/serial_queue.hpp
   ../stlab/traits.hpp
   ../stlab/tuple_algorithm.hpp
   ../stlab/system_timer.hpp

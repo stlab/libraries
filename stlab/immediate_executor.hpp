@@ -21,13 +21,16 @@ inline namespace v1 {
 
 struct immediate_executor
 {
+    using result_type = void;
+    static const bool is_serial = true;
+
     template <typename F>
     void operator()(F&& f) {
         std::forward<F>(f)();
     }
 
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point, && f) {
+    void operator()(std::chrono::system_clock::time_point,F&& f) {
         std::forward<F>(f)();
     }
 };
