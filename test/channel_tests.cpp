@@ -200,6 +200,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
     }
 
     BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
+        std::atomic_int result{ 0 };
         stlab::sender<int> A, X;
         stlab::receiver<int> B, Y;
         std::tie(A, B) = stlab::channel<int>(stlab::default_executor);
@@ -207,19 +208,16 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
 
         auto b = B | [](int x) { return x * 2; } | X;
 
-        std::atomic_int val{ 0 };
-
-        auto y = Y | [](int v) { return v + 2; } | [&val](int v) { val = v; };
+        auto y = Y | [](int v) { return v + 2; } | [&](int v) { result = v; };
 
         B.set_ready();
         Y.set_ready();
 
         A(20);
 
-        while (!val.load()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-        BOOST_REQUIRE_EQUAL(42, val.load());
+        wait_until_done([&] { return result == 42; });
+
+        BOOST_REQUIRE_EQUAL(42, result);
     }
 BOOST_AUTO_TEST_SUITE_END()
 
