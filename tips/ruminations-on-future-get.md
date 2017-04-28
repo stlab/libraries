@@ -33,16 +33,13 @@ auto cancelable_task(F&& f) {
     auto r = p->get_future();
 
     return std::make_pair([_p = std::weak_ptr<shared_t>(p)] (auto&&... args) {
-        auto p = _p.lock();
-        if (!p) return;
-        (*p)(std::forward<decltype(args)>(args)...);
+        if (auto p = _p.lock()) (*p)(std::forward<decltype(args)>(args)...);
     },
     std::async(std::launch::deferred, [_p = std::move(p), _r = std::move(r)] () mutable {
         return _r.get();
     }));
 }
 ```
-<br> {::comment}Anyway to get the br into css?{:/}
 
 The `cancelable_task()` function can be used similar to `std::packaged_task<>` to create a task which is cancelable, it becomes a no-op if the future is destructed without calling `get()` or `wait()`. Instead of creating a `packaged_task` instance and then calling `get_future()`, `cancelable_task()` returns a pair of the task and `std::future`. This is done because without the paired future, the task is destructed. (The interface will be a bit simpler to use with C++17 structured bindings.)
 
@@ -56,13 +53,15 @@ auto task_future = cancelable_task<int(int)>([](int x){
 task_future.first(42); // invoke the task
 cout << "result: " << task_future.second.get() << endl; // display result
 ```
-<br>
+
 This code will print:
+
 ```
 called: 42
 result: 42
 ```
-<br>
+
+However, if we destruct the future
 
 When dealing with futures there are three components. The task (or promise) that is executed to resolve the future, the executor (or launch policy) that invokes the task, and the future itself.
 

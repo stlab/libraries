@@ -35,7 +35,6 @@ Macros are not enclosed within a namespace, and names which are declared extern 
 
 ```cpp
 #define PRODUCT_CASE_RETURN_LABEL(label) ...
-
 extern "C" product_library_load();
 ```
 
@@ -67,9 +66,7 @@ Examples:
 
 ```cpp
 #include <adobe/vector.hpp>
-
 #include <boost/range.hpp>
-
 #include "local_file.hpp"
 ```
 
@@ -82,7 +79,7 @@ Sometimes a library you depend on doesn't quite meet your needs. If the reason i
 ```cpp
 // FIX <ORGANIZATION> <PROJECT NAME>
 // comparison between signed and unsigned type. Values expected to be positive
-// so cast to signed value.
+// so cast to unsigned value.
 // External Library <http://external_library>
 // bug# 2365, cl# 241
 

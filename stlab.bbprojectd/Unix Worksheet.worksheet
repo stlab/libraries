@@ -18,6 +18,15 @@ open -a terminal ~/Projects/github.com/stlab/stlab.github.io
 cd ~/Projects/github.com/stlab/stlab.github.io
 bundle update
 bundle exec jekyll serve --port 4001
+
+bundle exec jekyll build --watch
+
+# open a new terminal window to watch
+open -a terminal ~/Projects/github.com/stlab/stlab.github.io
+browser-sync start --server '_site' --file '_site'
+browser-sync start --config bs-config.js
+
+
 ##
 open -a "Google Chrome" "http://127.0.0.1:4001/"
 open -a "LiveReload"
