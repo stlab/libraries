@@ -15,7 +15,6 @@ sections:
         declaration: future
         description: |
             This class implements a future
-
             <span class="t-mark">(class template)</span>
         link: future/stlab_future
   - kind: collection

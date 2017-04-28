@@ -11,7 +11,7 @@ entities:
         declaration: |
             template <typename T, typename E>
             std::pair<sender<T>, receiver<T>> channel(E e)
-        description: This function create a channel that consists of a sending and a receiving part of the channel.
+        description: This function creates a channel that consists of a sending and a receiving part of the channel.
   - kind: parameters
     list:
       - name: e
