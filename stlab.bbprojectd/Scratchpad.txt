@@ -1,0 +1,17 @@
+Notes:
+
+Media Wiki                                      Kramdown                    Notes
+[http://link tag]                               [tag](http://link)
+
+[[Local Page]]                                  [Local Page](local-page)       
+
+; term : definition                             term                        Blank line before
+                                                : definition
+                                                
+''italic''                                      _italic_
+
+
+Media Wiki
+[[Image:bind_02.png|checkbox(bind: @cell)]]
+Kramdown
+{% include figure.md name='bind_02.png' caption='`checkbox(bind: @cell)`' %}

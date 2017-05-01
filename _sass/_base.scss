@@ -134,8 +134,16 @@ code {
     padding: 1px 5px;
 }
 
+dt {
+	font-weight:bold;
+	margin-top: 8px;
+}
+dd {
+	margin-left: 8px;
+}
+
 pre {
-    padding: 8px 12px;
+    padding: 8px 0px 8px 0px;
     overflow-x: auto;
 
     > code {

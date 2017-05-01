@@ -449,12 +449,13 @@ div.mainpagediv *
 
 pre,div.mw-geshi
 {
-  border:0px solid silver;
-  border-radius: 0px;
-  padding: 0;
-  margin: 0;
-  background-color:#FFFFFF;
-  overflow:auto;
+    border:0px solid silver;
+    border-radius: 0px;
+    padding: 0;
+    margin: 0;
+    margin-bottom: $spacing-unit / 2;
+    background-color:#FFFFFF;
+    overflow:auto;
 }
 
 span.mw-geshi
