@@ -36,8 +36,14 @@
 #endif
 #endif
 
-namespace stlab
-{
+
+/**************************************************************************************************/
+
+namespace stlab {
+
+/**************************************************************************************************/
+
+inline namespace v1 {
 
 /**************************************************************************************************/
 
@@ -195,22 +201,31 @@ public:
 
 
 struct system_timer_type {
-	using result_type = void;
+    using result_type = void;
 
-	template <typename F>
-	void operator() (std::chrono::system_clock::time_point when, F&& f) const {
-		static system_timer_portable only_system_timer;
-		only_system_timer(when, std::forward<F>(f));
-	}
+    template <typename F>
+    void operator() (std::chrono::system_clock::time_point when, F&& f) const {
+        static system_timer_portable only_system_timer;
+        only_system_timer(when, std::forward<F>(f));
+    }
 };
 
 #endif
 
+/**************************************************************************************************/
+
 } // namespace detail
+
+/**************************************************************************************************/
 
 constexpr auto system_timer = detail::system_timer_type{};
 
-}
+} // namespace v1
 
+/**************************************************************************************************/
+
+} // namespace stlab
+
+/**************************************************************************************************/
 
 #endif //SLABFUTURE_SYSTEM_TIMER_HPP

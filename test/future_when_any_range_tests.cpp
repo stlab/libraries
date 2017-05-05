@@ -27,7 +27,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
             [&_check = check](size_t index) { _check = true;}, 
             std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
-        wait_until_future_fails<std::future_error>(sut);
+        wait_until_future_fails<stlab::future_error>(sut);
 
         BOOST_REQUIRE(!check);
         BOOST_WARN_EQUAL(0, custom_scheduler<0>::usage_counter());
@@ -42,7 +42,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
             [&_check = check](int x, size_t index) { _check = true;}, 
             std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
-        wait_until_future_fails<std::future_error>(sut);
+        wait_until_future_fails<stlab::future_error>(sut);
 
         BOOST_REQUIRE(!check);
         BOOST_WARN_EQUAL(0, custom_scheduler<0>::usage_counter());
@@ -315,7 +315,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
             return x + 42;
         }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
-        wait_until_future_fails<std::future_error>(sut);
+        wait_until_future_fails<stlab::future_error>(sut);
 
         BOOST_REQUIRE(!check);
     }

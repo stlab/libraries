@@ -9,9 +9,13 @@
 #ifndef SLABFUTURE_TRAITS_HPP
 #define SLABFUTURE_TRAITS_HPP
 
+/**************************************************************************************************/
 
-namespace stlab
-{
+namespace stlab {
+
+/**************************************************************************************************/
+
+inline namespace v1 {
 
 /**************************************************************************************************/
 
@@ -30,8 +34,8 @@ using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::
 /**************************************************************************************************/
 
 
-// the following implements the C++ standard proposal N4502
-#if __GNUC__ < 5 && ! defined __clang__
+// the following implements the C++ standard 17 proposal N4502
+#if __GNUC__ < 5 && !defined __clang__
 // http://stackoverflow.com/a/28967049/1353549
 template <typename...>
 struct voider
@@ -81,6 +85,12 @@ using detected_t = typename detector<nonesuch, void, Op, Args...>::type;
 
 /**************************************************************************************************/
 
-}
+} // namespace v1
+
+/**************************************************************************************************/
+
+} // namespace stlab
+
+/**************************************************************************************************/
 
 #endif //SLABFUTURE_TRAITS_HPP
