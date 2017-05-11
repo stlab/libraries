@@ -21,7 +21,7 @@ entities:
       - name: process::state
         pure-name: state
         declaration: process_state_scheduled state() const
-        description: This method must return the state of the process. Subsequent calls without an intermittend `await()`, `close()` or `yield()` must return the same values. Otherwise the result is undefined.
+        description: This method must return the state of the process. Subsequent calls without an intermittent `await()`, `close()` or `yield()` must return the same values. Otherwise the result is undefined.
   - kind: parameters
   - kind: result
     description: the `process_state_scheduled` state
