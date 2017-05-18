@@ -110,6 +110,69 @@ In our calling example code, if `get()` is returning a `const string&` then the 
 my_class::my_class(string x) { swap(_member, x); }
 ```
 
+## Error codes
+
+A common usage of out params is to allow for an error state on return.  For example:
+
+```cpp
+bool getValue(std::string& out) { 
+    if(!canFetchValue) {
+        return false;
+    }
+    out = fetchValue();
+    return true;
+}
+```
+
+With everything we have learned above we could simply treat the empty state of an object as our invalid case. Assuming fetchValue doesn't throw.
+
+```cpp
+std::string getValue() { 
+    if(!canFetchValue) {
+        return "";
+    }
+    return fetchValue();
+}
+```
+
+Using the empty state for objects is prefered as it removes the need for null checks at the call site.
+If your type can't be constructed cheapily or has no obvious empty state, then you should consider using boost::optional (or std::optional if you are using c++17).
+
+Let us assume that an empty string is expensive to create for the following example.
+
+```cpp
+std::optional<std::string> getValue() { 
+    if(!canFetchValue) {
+        return {};
+    }
+    return fetchValue();
+}
+```
+
+Here we have avoided creating a string, and a very lightweight class in the error case. This may loook strange at first but by this allows for much more expressiveness in your function signature. It tells the caller that this operation could possibly fail and has to be aware of it. It can also reduce the amount of branching at the call site, while reducing the mental overhead of having to come up with sane values.
+
+For the default case:
+```cpp
+std::string value = getValue().value_or("not found");
+```
+
+Tricky default values 
+
+```cpp
+int getUserInt(std::string userInput) {
+    //parse user input
+    return -1; //invalid
+}
+```
+
+```cpp
+std::optional<int> getUserInt(std::string userInput) {
+    //parse user input
+    return {}; //invalid
+}
+```
+It is now obvious what the error case looks like and their is no ambiguity or worse, having to throw an exception for a common path and can avoid allocations! No more using pointers and nullptr checks to indicate/check for an empty state.
+
 ## In-Out Arguments
 
 What if you _want_ an in-out argument? For example:
@@ -212,8 +275,4 @@ Without ever copying a string!
 
 ## Final thoughts
 
-As with all goals, if you find case where using an out argument is better than using the function result, please do (and start a discussion here on the topic) but in most use cases I find that out arguments lose by all measures compared to using function results.
-
-
-
-
+As with all goals, if you find case where using an out argument is better than using the function result, please do (and start a discussion here on the topic) but in most use cases I find that out arguments lose by all measures compared to using function results. 
