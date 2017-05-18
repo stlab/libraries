@@ -1343,6 +1343,10 @@ class receiver
 
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }
+
+    auto operator|(sender<T> send) const {
+        return operator|([send](auto&& x) { send(std::forward<decltype(x)>(x)); });
+    }
 };
 
 
