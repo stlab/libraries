@@ -9,8 +9,6 @@
 #ifndef _TEST_HELPER_HPP_
 #define _TEST_HELPER_HPP_
 
-#define BOOST_TEST_DYN_LINK
-
 #include <stlab/default_executor.hpp>
 
 #include <atomic>
@@ -113,7 +111,7 @@ namespace test_helper
 
         void check_valid_future() {}
 
-        void check_valid_future(const std::future<T>& f) {
+        void check_valid_future(const stlab::future<T>& f) {
             BOOST_REQUIRE(f.valid() == true);
             BOOST_REQUIRE(f.error().is_initialized() == false);
         }

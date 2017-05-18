@@ -21,6 +21,18 @@ set(SOURCE
 )
 
 set(HEADERS
+  ../stlab/channel.hpp
+  ../stlab/config.hpp
+  ../stlab/default_executor.hpp
+  ../stlab/executor_base.hpp
+  ../stlab/future.hpp
+  ../stlab/immediate_executor.hpp
+  ../stlab/main_executor.hpp
+  ../stlab/progress.hpp
+  ../stlab/traits.hpp
+  ../stlab/tuple_algorithm.hpp
+  ../stlab/system_timer.hpp
+  ../stlab/utility.hpp
   channel_test_helper.hpp
   test_helper.hpp
 )
@@ -31,9 +43,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(
     future_test
-#    future
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    ${CMAKE_THREAD_LIBS_INIT})
+    ${Boost_LIBRARIES} 
+    ${CMAKE_THREAD_LIBS_INIT} 
+    ${CONAN_LIBS})
 
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
