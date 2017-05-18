@@ -171,7 +171,7 @@ std::optional<int> getUserInt(std::string userInput) {
     return {}; //invalud
 }
 ```
-It is now obvious what the error case looks like and their is no ambiguity or worse, having to throw an exception for a common path.
+It is now obvious what the error case looks like and their is no ambiguity or worse, having to throw an exception for a common path and can avoid allocations! No more using pointers and nullptr checks to indicate/check for an empty state.
 
 ## In-Out Arguments
 
