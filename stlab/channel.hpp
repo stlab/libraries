@@ -609,6 +609,9 @@ struct shared_process : shared_process_receiver<R>,
                         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>,
                         std::enable_shared_from_this<shared_process<Q, T, R, Args...>>
 {
+    static_assert( (has_process_yield_v<T> && has_process_state_v<T>) || (!has_process_yield_v<T> && !has_process_state_v<T>),
+                   "Processes that use .yield() must have .state() const");
+
     /*
         the downstream continuations are stored in a deque so we don't get reallocations
         on push back - this allows us to make calls while additional inserts happen.
@@ -742,7 +745,7 @@ struct shared_process : shared_process_receiver<R>,
     }
 
     auto pop_from_queue() {
-        boost::optional<typename Q::value_type> message; // TODO : make functional
+        boost::optional<typename Q::value_type> message;
         std::array<bool, sizeof...(Args)> do_cts = { {false} };
         bool do_close = false;
 
@@ -767,7 +770,7 @@ struct shared_process : shared_process_receiver<R>,
 
 
     bool dequeue() {
-        boost::optional<typename Q::value_type> message; // TODO : make functional
+        boost::optional<typename Q::value_type> message;
         std::array<bool, sizeof...(Args)> do_cts;
         bool do_close = false;
 
@@ -809,7 +812,7 @@ struct shared_process : shared_process_receiver<R>,
             return;
         }
         /*
-            While we are a_waiting we will flush the queue. The assumption here is that work
+            While we are waiting we will flush the queue. The assumption here is that work
             is done on yield()
         */
         try {
@@ -832,11 +835,11 @@ struct shared_process : shared_process_receiver<R>,
             }
 
             /*
-                We are in an a_wait state and the queue is empty.
+                We are in an await state and the queue is empty.
 
-                If we a_wait forever then task_done() leaving us in an a_wait state.
-                else if we a_wait with an expired timeout then go ahead and yield now.
-                else schedule a timeout when we will yield if not canceled by intervening a_wait.
+                If we await forever then task_done() leaving us in an await state.
+                else if we await with an expired timeout then go ahead and yield now.
+                else schedule a timeout when we will yield if not canceled by intervening await.
             */
             else if (when == std::chrono::system_clock::time_point::max()) {
                 task_done();
@@ -867,7 +870,7 @@ struct shared_process : shared_process_receiver<R>,
                 });
             }
         }
-        catch (...) { // this catches exceptions during _process.a_wait() and _process.yield()
+        catch (...) { // this catches exceptions during _process.await() and _process.yield()
             broadcast(std::move(std::current_exception()));
         }
     }
@@ -888,7 +891,7 @@ struct shared_process : shared_process_receiver<R>,
 
     template <typename U>
     auto step() -> std::enable_if_t<!has_process_yield_v<U>> {
-        boost::optional<typename Q::value_type> message; // TODO : make functional
+        boost::optional<typename Q::value_type> message;
         std::array<bool, sizeof...(Args)> do_cts;
         bool do_close = false;
 
