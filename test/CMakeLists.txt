@@ -25,7 +25,6 @@ set(HEADERS
   ../stlab/config.hpp
   ../stlab/default_executor.hpp
   ../stlab/executor_base.hpp
-  ../stlab/expected.hpp
   ../stlab/future.hpp
   ../stlab/immediate_executor.hpp
   ../stlab/main_executor.hpp
