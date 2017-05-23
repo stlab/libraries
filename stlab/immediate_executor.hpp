@@ -21,6 +21,9 @@ inline namespace v1 {
 
 struct immediate_executor
 {
+    using result_type = void;
+    static const bool is_serial = false;
+
     template <typename F>
     void operator()(F&& f) {
         std::forward<F>(f)();
