@@ -10,8 +10,18 @@ Media Wiki                                      Kramdown                    Note
                                                 
 ''italic''                                      _italic_
 
+# numbered list                                 1. numbered list
+
+<math>                                          $$
+...                                             ...
+</math>                                         $$
+
+*                                               *
+**                                                *                         Two space lead
+
 
 Media Wiki
 [[Image:bind_02.png|checkbox(bind: @cell)]]
 Kramdown
 {% include figure.md name='bind_02.png' caption='`checkbox(bind: @cell)`' %}
+
