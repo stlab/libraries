@@ -8,8 +8,6 @@ dl, dd, ol, ul, figure {
     padding: 0;
 }
 
-
-
 /**
  * Basic styling
  */
@@ -81,6 +79,7 @@ li {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
+    font-family:"Source Serif Pro",serif;
     font-weight: $base-font-weight;
 }
 
@@ -177,6 +176,22 @@ pre {
 }
 
 
+/**
+ * Breadcrumbs
+ */
+.breadcrumb {
+    list-style-type: none;
+
+    > li {
+        display: inline;
+    }
+    > li.active {
+        font-style: oblique;
+    }
+    > li.crumb:after {
+        content: " | ";
+    }
+}
 
 /**
  * Clearfix

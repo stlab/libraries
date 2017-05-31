@@ -244,27 +244,35 @@
 .post-content {
     margin-bottom: $spacing-unit;
 
-    h2 {
-        font-size: 32px;
+    h1 {
+        font-size: 2em;
 
         @include media-query($on-laptop) {
-            font-size: 28px;
+            font-size: 1.8em;
+        }
+    }
+
+    h2 {
+        font-size: 1.8em;
+
+        @include media-query($on-laptop) {
+            font-size: 1.6em;
         }
     }
 
     h3 {
-        font-size: 26px;
+        font-size: 1.6em;
 
         @include media-query($on-laptop) {
-            font-size: 22px;
+            font-size: 1.4em;
         }
     }
 
     h4 {
-        font-size: 20px;
+        font-size: 1.4em;
 
         @include media-query($on-laptop) {
-            font-size: 18px;
+            font-size: 1.2em;
         }
     }
 }
@@ -306,7 +314,7 @@ div#mw-panel
 
 html,body
 {
-  font-family:DejaVuSans,"DejaVu Sans",arial,sans-serif;
+  font-family:"Source Sans Pro",sans-serif;
   font-size:16px;
 }
 
@@ -338,19 +346,9 @@ ul li
   margin-top:.3em;
 }
 
-h1
-{
-  font-size:2em;
-}
-
-h3
-{
-  padding:1.1em 0 .2em .75em;
-}
-
 tt,code,pre,.mw-geshi,.t-lc,#wpTextbox1
 {
-  font-family:DejaVuSansMono,"DejaVu Sans Mono",courier,monospace!important;
+  font-family:"Source Code Pro",monospace!important;
 }
 
 code,table
@@ -1011,7 +1009,7 @@ body.cpp-navbar div#contentSub,body.cpp-page-template div#contentSub
 
 .t-dsc-see-tt > span
 {
-  font-family:DejaVuSansMono,"DejaVu Sans Mono",courier,monospace;
+  font-family:"Source Code Pro",monospace;
 }
 
 .dsctable td ul,.dsctable td ol,.dsctable td dl
@@ -1213,7 +1211,7 @@ body.cpp-navbar div#contentSub,body.cpp-page-template div#contentSub
 
 .t-nv-ln-table > div:nth-child(1)
 {
-  font-family:DejaVuSansMonoCondensed75,"DejaVu Sans Mono",courier,monospace;
+  font-family:"Source Code Pro",monospace;
   padding:0;
 }
 
@@ -1238,7 +1236,7 @@ body.cpp-navbar div#contentSub,body.cpp-page-template div#contentSub
   white-space:nowrap;
   text-align:right;
   font-weight:bold;
-  font-family:DejaVuSansMono,"DejaVu Sans Mono",courier,monospace;
+  font-family:"Source Code Pro",monospace;
 }
 
 .t-par > td:nth-child(3)
@@ -1361,7 +1359,7 @@ div#content .t-rev > td:first-child > ul:first-child
 .t-dsc-member-div > div:nth-child(1)
 {
   font-weight:bold;
-  font-family:DejaVuSansMono,"DejaVu Sans Mono",courier,monospace;
+  font-family:"Source Code Pro",monospace;
 }
 
 .t-dsc-member-div > div:nth-child(2)
@@ -1372,7 +1370,7 @@ div#content .t-rev > td:first-child > ul:first-child
 .t-dsc-member-nobold-div > div:nth-child(1),.t-dsc-member-nobold-div > div:nth-child(1) strong.selflink
 {
   font-weight:normal;
-  font-family:DejaVuSans,"DejaVu Sans",arial,sans-serif;
+  font-family:"Source Sans Pro",sans-serif;
 }
 
 .t-tr-text
@@ -2154,7 +2152,7 @@ div#content .gallerybox div.thumb
 
 .wikiEditor-ui-toolbar .section-help .page-table td.cell-syntax,.wikiEditor-ui-toolbar .section-help .page-table td.syntax
 {
-  font-family:monospace,"Courier New";
+  font-family:"Source Code Pro",monospace;
 }
 
 ul.permissions-errors > li
