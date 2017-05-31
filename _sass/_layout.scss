@@ -196,7 +196,7 @@
  * Page content
  */
 .page-content {
-    padding: $spacing-unit 0;
+    padding: $spacing-unit / 2 0;
 }
 
 .page-heading {
@@ -228,7 +228,7 @@
  * Posts
  */
 .post-header {
-    margin-bottom: $spacing-unit;
+    margin-bottom: $spacing-unit / 2;
 }
 
 .post-title {
@@ -275,9 +275,12 @@
     }
 }
 
+table {
+    border-collapse: collapse;
+}
+
 .declaration-table {
     margin-bottom: $spacing-unit / 2;
-    border-collapse: collapse;
     width: 100%;
 }
 
@@ -308,7 +311,6 @@
     margin-bottom: $spacing-unit / 2;
     border-bottom: 1px solid $grey-color;
     border-top: 1px solid $grey-color;
-    border-collapse: collapse;
     width: 100%;
 
     > tbody {

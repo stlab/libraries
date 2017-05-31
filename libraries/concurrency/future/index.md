@@ -2,7 +2,6 @@
 layout: class
 title: stlab::future
 tags: [library]
-breadcrumb: future
 entities:
   - kind: class
     name: stlab::future

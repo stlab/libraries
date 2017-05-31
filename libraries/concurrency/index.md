@@ -2,7 +2,6 @@
 layout: library
 title: Concurrency
 tags: [library]
-breadcrumb: concurrency
 description: |
     This library provides high level constructs for implementing algorithms that eases the use of multiple CPU cores while minimizing the contention.
     The future implementaton differs in several aspects compared to the C++11/14/17 standard futures: It provides continuations and joins, which were just added in a C++17 TS. But more important this futures propagate values through the graph and not futures. This allows an easy way of creating splits. That means a single future can have multiple continuations into different directions. An other important difference is that the futures support cancellation. So if one is not anymore interested in the result of a future, then one can destroy the future without the need to wait that the future is fullfilled, as it is the case with std::future (and boost::future). An already started future will run until its end, but will not trigger any continuation. So in all these cases, all chained continuations will never be triggered. Additionally the future interface is designed in a way, that one can use build in or custom build executors. 
@@ -61,21 +60,21 @@ sections:
         defined-in-header: stlab/default_executor.hpp
         declaration: default_executor
         description: This class implements an executor that schedules the tasks on a thread pool
-        link: executor/stlab_default_executor
+        link: executor/default_executor
       - kind: class
         name: stlab::main_executor
         pure-name: main_executor
         defined-in-header: stlab/main_executor.hpp
         declaration: main_executor
         description: This class implements an executor that schedules the tasks on the main loop
-        link: executor/stlab_main_executor
+        link: executor/main_executor
       - kind: class
         name: stlab::immediate_executor
         pure-name: immediate_executor
         defined-in-header: stlab/immediate_executor.hpp
         declaration: immediate_executor
         description: This class implements an executor that executes the task immediately
-        link: executor/stlab_immediate_executor
+        link: executor/immediate_executor
 ---
 
 ### Requirements ###

@@ -1,8 +1,7 @@
 ---
 layout: library
-title: libraries
+title: Libraries
 description: 
-breadcrumb: libraries
 ---
 
 ## [Concurrency](concurrency) ##

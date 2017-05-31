@@ -13,7 +13,7 @@
             {% assign j = forLoopMaxInt | plus: 0 %}
                 <li {% if i == j %}class="crumb active"{% else %}class="crumb"{% endif %}>
                     {% capture breadcrumb_page_page_url_without_index_html %}{{ breadcrumb_page.url | remove: "index.html" }}{% endcapture %}
-                    <a href="{{ site.baseurl }}{{breadcrumb_page_page_url_without_index_html}}">{{breadcrumb_page.breadcrumb}}</a>
+                    <a href="{{ site.baseurl }}{{breadcrumb_page_page_url_without_index_html}}">{{breadcrumb_page.title}}</a>
                 </li>
             {% endif %}
         {% endfor %}
