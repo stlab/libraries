@@ -12,33 +12,33 @@ layout: default
     {% for entity in page.entities %}
       {% case entity.kind %}
         {% when 'methods' %}
-          <table class="t-dsc-begin">
+          <table class='declaration-table'>
             {% for item in entity.list %}
-            <tr class="t-dsc">
+            <tr class='declaration-row'>
               <td>
-                <div class="t-dsc-member-div">{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</div>
+                {% highlight c++ %}{{ item.declaration }}{% endhighlight %}
               </td>
               <td>({{ forloop.index }})</td>
             </tr>
             {% endfor %}
             </table>
 
-            <p>{{ page.description | markdownify }}</p>
+            <h3>Description</h3>
+            {{ page.description | markdownify }}
 
             {% for item in entity.list %}
-            <div class="t-li1">
-              <span class="t-li">{{ forloop.index }})</span>{{ item.description | markdownify }}
+            <div class='declaration-row-defn'>
+              <span>({{ forloop.index }})</span>{{ item.description | markdownify }}
             </div>
             {% endfor %}
       {% when 'parameters'%}
         <h3>Parameters</h3>
         {% if entity.list %} 
-          <table class="t-par-begin">
+          <table class='definition-table'>
           {% for item in entity.list %}
-              <tr class="t-par">
-                <td>{{ item.name }}</td>
-                <td> - </td>
-                <td>{{ item.description | markdownify }}</td>
+              <tr>
+                <td class='decl'>{{ item.name }}</td>
+                <td class='defn'>{{ item.description | markdownify }}</td>
               </tr>
           {% endfor %}
           </table>
@@ -54,11 +54,11 @@ layout: default
         {% endif %}    
       {% when 'utilitys'%}
         <h3>Utility classes</h3> 
-        <table class="t-dsc-begin">
+        <table>
           {% for entry in entity.classes %}
-            <tr class="t-dsc">
+            <tr>
                 <td>
-                  <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
+                  <div><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
                 </td>
                 <td>
                     {{ entry.description | markdownify}}

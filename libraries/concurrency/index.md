@@ -19,7 +19,7 @@ sections:
         declaration: future
         description: |
             This class implements a future
-            <span class="t-mark">(class template)</span>
+        annotation: template
         link: future/index
   - kind: collection
     name: Channels
@@ -32,9 +32,8 @@ sections:
         declaration: sender
         description: |
             This class implements the sending part of a CSP channel
-
-            <span class="t-mark">(class template)</span>
-        link: channel/stlab_sender
+        link: channel/sender
+        annotation: template
       - kind: class
         name: stlab::receiver
         pure-name: receiver
@@ -42,18 +41,16 @@ sections:
         declaration: receiver
         description: |
             This class implements the receiving part of a CSP channel
-
-            <span class="t-mark">(class template)</span>
-        link: channel/stlab_receiver
+        link: channel/receiver
+        annotation: template
       - kind: class
         name: process
         pure-name: process
         declaration: process
         description: |
             Describes a process that gets executed whenever a value is passed into the channel
-
-            <span class="t-mark">(template policy)</span>
         link: channel/policy_process
+        annotation: concept
   - kind: collection
     name: Executors
     description: Collection of executors
