@@ -45,4 +45,24 @@ entities:
         defined-in-header: stlab/channel.hpp
         description: Zips several channels into a single one
         pure-name: zip
+  - kind: class
+    name: stlab::executor
+    pure-name: executor
+    defined-in-header: stlab/channel.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+    declaration: |
+        template <typename T> 
+        class executor
+    description: |
+      Executor type
+  - kind: class
+    name: stlab::buffer_size
+    pure-name: buffer_size
+    defined-in-header: stlab/channel.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+    declaration: |
+        template <typename T> 
+        class buffer_size
+    description: |
+      Executor type
 ---

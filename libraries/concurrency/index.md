@@ -48,7 +48,7 @@ sections:
         declaration: process
         description: |
             Describes a process that gets executed whenever a value is passed into the channel
-        link: channel/policy_process
+        link: channel/process
         annotation: concept
   - kind: collection
     name: Executors
