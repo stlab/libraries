@@ -402,36 +402,35 @@ table {
 .icon-table {
     margin: auto;
     border-collapse: separate;
-    border-spacing: 2em 0;
-
-    > tbody {
-        > tr {
-            > td {
-                padding-left: 3em;
-            }
-        }
-    }
+    border-spacing: 3em 0;
 }
 
 .icon-box {
+    background: $stlab-purple;
+    border-radius: 1em;
     > .top {
         border-radius: 1em 1em 0 0;
-        background: $stlab-purple;
         > .fa {
             display: inline-block;
             width: 2em;
             text-align: center;
-            line-height: 2em;
+            line-height: 1.6em;
             font-size: 5em;
             vertical-align: middle;
         }
     }
     > .bottom {
+        background: white;
         border-radius: 0 0 1em 1em;
         border-left: 1px solid $grey-color;
         border-right: 1px solid $grey-color;
         border-bottom: 1px solid $grey-color;
         font-weight: bold;
         text-align: center;
+        padding-top: .7em;
+        padding-bottom: .7em;
+    }
+    &:hover {
+        background: $stlab-grey;
     }
 }
