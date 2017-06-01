@@ -279,10 +279,18 @@
     }
 }
 
+/**
+ * Tables
+ */
+
 table {
     border-collapse: collapse;
 }
 
+/**
+ * Definition tables are indented on the left, and have horizontal lines between
+ * every row.
+ */
 .definition-table {
     margin-left: $spacing-unit / 2;
     margin-bottom: $spacing-unit / 2;
@@ -317,6 +325,10 @@ table {
     }
 }
 
+/**
+ * Declaration tables are identical to definition tables, but without the
+ * indent.
+ */
 .declaration-table {
     margin-bottom: $spacing-unit / 2;
     border-bottom: 1px solid $grey-color;
@@ -327,6 +339,40 @@ table {
         > tr {
             border-top: 1px solid $grey-color;
 
+            > th {
+                text-align: left;
+            }
+            > td {
+                > p {
+                    margin: 0;
+                    display: inline;
+                }
+                > span.annotation {
+                    color: green;
+                    font-style: oblique;
+                }
+            }
+            > td.decl {
+                font-family: $mono-font-family;
+            }
+            > td.defn {
+                padding-left: 1.5em;
+            }
+        }
+    }
+}
+
+/**
+ * Parameter tables are identical to definition tables, but without the
+ * horizontal lines.
+ */
+.parameter-table {
+    margin-left: $spacing-unit / 2;
+    margin-bottom: $spacing-unit / 2;
+    width: 100%;
+
+    > tbody {
+        > tr {
             > th {
                 text-align: left;
             }
