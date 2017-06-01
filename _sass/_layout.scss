@@ -395,3 +395,43 @@ table {
         }
     }
 }
+
+/**
+ * Front page iconography
+ */
+.icon-table {
+    margin: auto;
+    border-collapse: separate;
+    border-spacing: 2em 0;
+
+    > tbody {
+        > tr {
+            > td {
+                padding-left: 3em;
+            }
+        }
+    }
+}
+
+.icon-box {
+    > .top {
+        border-radius: 1em 1em 0 0;
+        background: $stlab-purple;
+        > .fa {
+            display: inline-block;
+            width: 2em;
+            text-align: center;
+            line-height: 2em;
+            font-size: 5em;
+            vertical-align: middle;
+        }
+    }
+    > .bottom {
+        border-radius: 0 0 1em 1em;
+        border-left: 1px solid $grey-color;
+        border-right: 1px solid $grey-color;
+        border-bottom: 1px solid $grey-color;
+        font-weight: bold;
+        text-align: center;
+    }
+}
