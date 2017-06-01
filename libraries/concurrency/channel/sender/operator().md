@@ -65,7 +65,6 @@ int main() {
     }
 }
 ~~~
-{: .example_box}
 
 ### Output ###
 
@@ -74,4 +73,3 @@ int main() {
 2
 3
 ~~~
-{: .example_box}

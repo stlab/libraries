@@ -75,7 +75,6 @@ int main() {
     }
 }
 ~~~
-{: .example_box}
 
 ### Output ###
 The order of the value is not defined!
@@ -88,4 +87,3 @@ The order of the value is not defined!
 5
 6
 ~~~
-{: .example_box}

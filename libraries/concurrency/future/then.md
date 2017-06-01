@@ -75,14 +75,12 @@ int main() {
     while (!y.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 ~~~
-{: .example_box}
 
 ### Result ###
 
 ~~~
 Result 42
 ~~~
-{: .example_box}
 
 ### Future Split Example ###
 
@@ -106,7 +104,6 @@ int main() {
     while (!c2.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 ~~~
-{: .example_box}
 
 ### Result ###
 
@@ -116,4 +113,3 @@ The order of the results is not defined.
 Split B 42
 Split A 42
 ~~~
-{: .example_box}

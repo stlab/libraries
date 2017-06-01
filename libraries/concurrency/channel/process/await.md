@@ -77,11 +77,9 @@ int main() {
     cout << "The sum is " << r.load() << '\n';
 }
 ~~~
-{: .example_box}
 
 ### Result ###
 
 ~~~
 The sum is 3
 ~~~
-{: .example_box}

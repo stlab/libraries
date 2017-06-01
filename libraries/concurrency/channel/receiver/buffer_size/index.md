@@ -47,4 +47,3 @@ int main() {
     }
 }
 ~~~
-{: .example_box}

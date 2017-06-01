@@ -52,4 +52,3 @@ struct process
     process_state_scheduled state() const;
 };
 ~~~
-{: .example_box}

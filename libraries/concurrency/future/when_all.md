@@ -1,4 +1,4 @@
----
+        ---
 layout: free-function
 title: stlab::when_all
 tags: [library]
@@ -57,11 +57,9 @@ int main() {
     while (!result.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 ~~~
-{: .example_box}
 
 ### Result ###
 
 ~~~
 The answer is 42
 ~~~
-{: .example_box}

@@ -76,11 +76,9 @@ int main() {
     while (!r.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 ~~~
-{: .example_box}
 
 ### Result ###
 
 ~~~
 The error "Vogons did arrive!" happened!
 ~~~
-{: .example_box}
