@@ -17,14 +17,17 @@ layout: default
           {% when 'collection' %}
             <h3>{{entity.name}}</h3>
             <p>{{ entity.description | markdownify }}</p>
-            <table class="t-dsc-begin">
+            <table class='definition-table'>
               {% for entry in entity.entities %}
-                <tr class="t-dsc">
-                    <td>
-                      <div class="t-dsc-member-div"><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
+                <tr>
+                    <td class='decl'>
+                      <div><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
                     </td>
-                    <td>
+                    <td class='defn'>
                         {{ entry.description | markdownify }}
+                        {% if entry.annotation %}
+                        <span class='annotation'>({{entry.annotation}})</span>
+                        {% endif %}
                     </td>
                 </tr>
               {% endfor %}

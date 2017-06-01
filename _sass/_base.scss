@@ -8,8 +8,6 @@ dl, dd, ol, ul, figure {
     padding: 0;
 }
 
-
-
 /**
  * Basic styling
  */
@@ -25,13 +23,15 @@ body {
     font-kerning: normal;
 }
 
-
+pre, code {
+    font: $base-font-weight #{$base-font-size}/#{$base-line-height} $mono-font-family;
+}
 
 /**
  * Set `margin-bottom` to maintain vertical rhythm
  */
-h1, h2, h3, h4, h5, h6, blockquote, pre,
-ul, ol, dl, figure,
+h1, h2, h3, h4, h5, h6, blockquote,
+ul, ol, dl, p, figure
 %vertical-rhythm {
     margin-bottom: $spacing-unit / 2;
 }
@@ -81,6 +81,7 @@ li {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
+    font-family: $serif-font-family;
     font-weight: $base-font-weight;
 }
 
@@ -122,23 +123,23 @@ blockquote {
 /**
  * Code formatting
  */
-pre,
-code {
-    font-size: 15px;
-    border: 1px solid $grey-color-light;
-    border-radius: 3px;
-    background-color: #ffffff;
+
+dt {
+	font-weight: bold;
+	margin-top: 8px;
 }
 
-code {
-    padding: 1px 5px;
+dd {
+	margin-left: 8px;
 }
 
 pre {
-    padding: 8px 12px;
+    padding: 8px 0px 8px 0px;
     overflow-x: auto;
+    margin: 0;
 
     > code {
+        line-height:0.8;
         border: 0;
         padding-right: 0;
         padding-left: 0;
@@ -168,6 +169,24 @@ pre {
 }
 
 
+/**
+ * Breadcrumbs
+ */
+.breadcrumb {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    > li {
+        display: inline;
+    }
+    > li.active {
+        font-style: oblique;
+    }
+    > li.crumb:before {
+        content: " | ";
+    }
+}
 
 /**
  * Clearfix

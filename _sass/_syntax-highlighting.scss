@@ -2,18 +2,13 @@
  * Syntax highlighting styles
  */
 .highlight {
-    /*@extend %vertical-rhythm;*/
-
     .highlighter-rouge & {
-      background: #eef;
-        border-top-width: 0px;
-        border-right-width: 0px;
-        border-bottom-width: 0px;
-        border-left-width: 0px;
-        padding: 0;
-        margin: 0;
-        background-color: #ffffff;
+        border-radius: 5px;
+        border: 1px solid silver;
+        margin: 1em 0;
         overflow: auto;
+        padding: 1em;
+        width: 100%;
     }
 
 

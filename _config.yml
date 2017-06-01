@@ -15,7 +15,7 @@ description: > # this means to ignore newlines until "baseurl:"
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://stlab.cc" # the base hostname & protocol for your site
 twitter_username: SeanParent
-github_username:  sean-parent
+github_username:  stlab
 
 exclude:
     - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)

@@ -3,10 +3,10 @@
 ---
 @charset "utf-8";
 
-
-
 // Our variables
-$base-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+$base-font-family: "Source Sans Pro",sans-serif;
+$serif-font-family: "Source Serif Pro",serif;
+$mono-font-family: "Source Code Pro",monospace;
 $base-font-size:   16px;
 $base-font-weight: 400;
 $small-font-size:  $base-font-size * 0.875;
@@ -21,15 +21,17 @@ $brand-color:      #2a7ae2;
 $grey-color:       #828282;
 $grey-color-light: lighten($grey-color, 40%);
 $grey-color-dark:  darken($grey-color, 25%);
+$stlab-purple:     #652f8e; // color pulled from the logo SVG
+$stlab-grey:       #949597; // color pulled from the logo SVG
 
 // Width of the content area
-$content-width:    800px;
+// $content-width:    800px;
+$content-width:    1000px;
 
 $on-palm:          600px;
 $on-laptop:        800px;
 
-$title-height:     56px;
-
+$title-height:     $base-font-size * 3;
 
 // Use media queries like this:
 // @include media-query($on-palm) {
@@ -43,8 +45,6 @@ $title-height:     56px;
         @content;
     }
 }
-
-
 
 // Import partials from `sass_dir` (defaults to `_sass`)
 @import

@@ -1,6 +1,6 @@
 ---
 layout: library
-title: libraries
+title: Libraries
 description: 
 ---
 

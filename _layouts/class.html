@@ -2,13 +2,11 @@
 layout: default
 ---
 <div class="post">
-
-  <header class="post-header">
-    <h1>{{ page.title }}</h1>
-  </header>
-
   <article class="post-content">
     {% for entity in page.entities %}
+        <header class="post-header">
+          <h1 class='code'>{{ entity.name }}</h1>
+        </header>
         {% case entity.kind %}
           {% when 'type-function' %}
             <h2>Type Function</h2>
@@ -30,72 +28,97 @@ layout: default
             {% endfor %}
           {% when 'free-functions' %}
             <h3>Non-member functions</h3>
-            <table class="t-dsc-begin">
+            <table class='definition-table'>
             {% for fun in entity.functions %}
-            <tr class="t-dsc">
-                <td>
-                    <div class="t-dsc-member-div"><a href="{{fun.pure-name}}">{{fun.name}}</a></div>
+            <tr>
+                <td class='decl'>
+                    <a href="{{fun.pure-name}}">{{fun.name}}</a>
                 </td>
-                <td>{{ fun.description  | markdownify }}</td>
+                <td class='defn'>{{ fun.description  | markdownify }}</td>
             </tr>
             {% endfor %}
             </table>
           {% when 'class' %}
-			<table class="t-dsc-begin">
             {% if entity.defined-in-header %}
-            <tr class="t-dsc-header">
-                <td>
-                    <div>Defined in header<a href="{{ entity.git-link }}"><code> &lt{{ entity.defined-in-header }}&gt</code></a></div>
-                </td>
-            </tr>
+            <div>Defined in header <a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
             {% endif %}
-            <tr class="t-dcl">
+
+            {% if entity.declaration %}
+            <table class='declaration-table'>
+            <tr class='declaration-row'>
                 <td>
-                    <div>{% highlight cpp %}{{ entity.declaration }}{% endhighlight %}</div>
+                    {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
                 </td>
             </tr>
-			<tr><td>{{entity.description | markdownify }}</td></tr>
-			</table>
+            </table>
+            {% endif %}
+
+            {% if entity.description %}
+			<div>{{entity.description | markdownify }}</div>
+            {% endif %}
+
             {% if entity.member-types %}
                 <h3>Member types</h3>
-                <table class="t-dsc-begin">
+                <table class='definition-table'>
+                    <tr class='headers'>
+                        <th>Member type</th>
+                        <th>Definition</th>
+                    </tr>
                     {% for type in entity.member-types %}
-                        <tr class="t-dsc">
-                            <td>{{ type.type }}</td>
-                            <td>{{ type.definition }}</td>
+                        <tr>
+                            <td><code>{{ type.type }}</code></td>
+                            <td><code>{{ type.definition }}</code></td>
                         </tr>
                     {% endfor %}
                 </table>
             {% endif %}
 			<h3>Member functions</h3>
-			<table class="t-dsc-begin">
+			<table class='definition-table'>
             <tbody>
-            {% if entity.tag and entity.tag != "no constructor and destructor" %}
-    			<tr class="t-dsc">
-    				<td> 
-                        <div class="t-dsc-member-div">
-                            <a href="{{entity.pure-name}}/{{entity.pure-name}}">(constructor)</a>
-                        </div>
-                    </td>
-    				<td>constructs the {{entity.pure-name}} object</td>
+    			<tr>
+                    {% if entity.no-ctor %}
+                        <td class='decl'>
+                            (constructor)
+                        </td>
+                        <td class='defn'>
+                            <i>Unavailable or deleted</i>
+                        </td>
+                    {% else %}
+                        <td class='decl'>
+                            <a href="{{entity.pure-name}}">(constructor)</a>
+                        </td>
+                        <td class='defn'>
+                            <p>constructs a <code>{{entity.pure-name}}</code></p>
+                        </td>
+                    {% endif %}
     			</tr>
-    			<tr class="t-dsc">
-    				<td>
-                        <div class="t-dsc-member-div">
-                            <a href="{{entity.pure-name}}/-{{entity.pure-name}}">(destructor)</a>
-                        </div>
-                    </td>
-    				<td>destructs the {{ entity.pure-name }} object</td>
+    			<tr>
+                    {% if entity.no-dtor %}
+                        <td class='decl'>
+                            (destructor)
+                        </td>
+                        <td class='defn'>
+                            <i>Unavailable or deleted</i>
+                        </td>
+                    {% else %}
+                        <td class='decl'>
+                            <a href="-{{entity.pure-name}}">(destructor)</a>
+                        </td>
+                        <td class='defn'>
+                            <p>destructs a <code>{{entity.pure-name}}</code></p>
+                        </td>
+                    {% endif %}
     			</tr>
-            {% endif %}
             {% for fun in entity.member-functions %}
-			<tr class="t-dsc">
+			<tr>
+                <td class='decl'>
                 {% if fun.link %}
-				<td><div class="t-dsc-member-div"><a href="{{entity.pure-name}}/{{fun.link}}">{{fun.name}}</a></div></td>
+                    <a href="{{fun.link}}">{{fun.name}}</a>
                 {% else %}
-                <td><div class="t-dsc-member-div"><a href="{{entity.pure-name}}/{{fun.name}}">{{fun.name}}</a></div></td>
+                    <a href="{{fun.name}}">{{fun.name}}</a>
                 {% endif %}
-				<td>{{ fun.description | markdownify }}</td>
+                </td>
+				<td class='defn'>{{ fun.description | markdownify }}</td>
 			</tr>
 			{% endfor %}
             </tbody>
