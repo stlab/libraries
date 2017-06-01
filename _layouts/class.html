@@ -41,27 +41,24 @@ layout: default
             {% endfor %}
             </table>
           {% when 'class' %}
-			<table>
             {% if entity.defined-in-header %}
-            <tr>
-                <td>
-                    Defined in header <a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a>
-                </td>
-            </tr>
+            <div>Defined in header <a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
             {% endif %}
+
             {% if entity.declaration %}
+            <table class='declaration-table'>
             <tr class='declaration-row'>
                 <td>
                     {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
                 </td>
             </tr>
+            </table>
             {% endif %}
+
             {% if entity.description %}
-			<tr>
-                <td>{{entity.description | markdownify }}</td>
-            </tr>
+			<div>{{entity.description | markdownify }}</div>
             {% endif %}
-			</table>
+
             {% if entity.member-types %}
                 <h3>Member types</h3>
                 <table class='definition-table'>

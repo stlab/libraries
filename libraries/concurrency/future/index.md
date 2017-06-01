@@ -48,7 +48,7 @@ entities:
       - name: make_exceptional_future
         defined-in-header: stlab/utility.hpp
         description: Creates a future that is already ready.
-        pure-name: make_ready_future
+        pure-name: make_exceptional_future
       - name: make_ready_future
         defined-in-header: stlab/utility.hpp
         description: Creates a future that is already ready.

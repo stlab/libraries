@@ -9,7 +9,8 @@ entities:
     defined-in-header: stlab/channel.hpp
     git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
     declaration: |
-        template <typename T> class future
+        template <typename T>
+        class sender
     description: This class implements the sending part of a CSP channel
     member-types:
       - type: value_type

@@ -3,7 +3,7 @@
     <li><a href="{{ site.baseurl }}/"><i class="fa fa-home"></i></a></li>
     {% capture page_url_without_index_html %}{{ page.url | remove: "/index.html" }}{% endcapture %}
     {% assign splitted_url_parts = page_url_without_index_html | split: '/' %}
-    {% capture forLoopMaxInt %}{{ splitted_url_parts.size | minus:1 }}{% endcapture %}
+    {% capture forLoopMaxInt %}{{ splitted_url_parts.size | minus:2 }}{% endcapture %}
     {% for i in (1..forLoopMaxInt) %}
         {% capture current_breadcrumb_url %}{{next_prepender}}/{{ splitted_url_parts[i] }}/index.html{% endcapture %}
         {% capture current_breadcrumb_md_url %}{{next_prepender}}/{{ splitted_url_parts[i] }}/{% endcapture %}
@@ -18,6 +18,10 @@
             {% endif %}
         {% endfor %}
     {% endfor %}
-    {% if page.pure-name %}<li class="crumb">{{page.pure-name}}</li>{% endif %}
+    {% if page.pure-name %}
+        <li class="crumb">{{page.pure-name}}</li>
+    {% else %}
+        <li class="crumb">{{page.title}}</li>
+    {% endif %}
     </ol>
 </div>

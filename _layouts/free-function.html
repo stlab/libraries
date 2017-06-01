@@ -12,14 +12,9 @@ layout: default
       {% case entity.kind %}
         {% when 'overloads' %}
           {% if entity.defined-in-header %}
-            <table>
-              <tr>
-                  <td>
-                      Defined in header<a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a>
-                  </td>
-              </tr>          
-            </table>
+          <div>Defined in header <a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
           {% endif %}
+
           <table class='declaration-table'>
           {% for item in entity.list %}
             <tr>
@@ -29,13 +24,13 @@ layout: default
               <td>({{ forloop.index }})</td>
             </tr>
           {% endfor %}
-        </table>
+          </table>
 
-        <ol>
-          {% for item in entity.list %}
-            <li>{{ item.description | markdownify }}</li>
-          {% endfor %}
-        </ol>
+          <ol>
+            {% for item in entity.list %}
+              <li>{{ item.description | markdownify }}</li>
+            {% endfor %}
+          </ol>
 
       {% when 'parameters'%}
         <h3>Parameters</h3>
