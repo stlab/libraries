@@ -1,4 +1,4 @@
-        ---
+---
 layout: free-function
 title: stlab::when_all
 tags: [library]
@@ -16,9 +16,9 @@ entities:
       - name: when_all
         pure-name: when_all
         declaration: |
-            template <typename E, typename F, typename I> 
+            template <typename E, typename F, typename I>
             auto when_all(E e, F f, const std::pair<I,I>& range)
-        description: This function create a joining future 
+        description: This function create a joining future
   - kind: parameters
     list:
       - name: e
