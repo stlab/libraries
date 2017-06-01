@@ -55,25 +55,32 @@ sections:
     description: Collection of executors
     entities:
       - kind: class
+        name: stlab::executor
+        pure-name: executor
+        defined-in-header: stlab/executor.hpp
+        declaration: executor
+        description: An executor to be piped to a `receiver<T>`
+        link: executor/executor
+      - kind: class
         name: stlab::default_executor
         pure-name: default_executor
         defined-in-header: stlab/default_executor.hpp
         declaration: default_executor
-        description: This class implements an executor that schedules the tasks on a thread pool
+        description: An executor that schedules tasks on a thread pool
         link: executor/default_executor
       - kind: class
         name: stlab::main_executor
         pure-name: main_executor
         defined-in-header: stlab/main_executor.hpp
         declaration: main_executor
-        description: This class implements an executor that schedules the tasks on the main loop
+        description: An executor that schedules tasks on the main loop
         link: executor/main_executor
       - kind: class
         name: stlab::immediate_executor
         pure-name: immediate_executor
         defined-in-header: stlab/immediate_executor.hpp
         declaration: immediate_executor
-        description: This class implements an executor that executes the task immediately
+        description: An executor that executes tasks immediately
         link: executor/immediate_executor
 ---
 
