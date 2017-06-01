@@ -4,7 +4,7 @@ layout: default
 <div class="post">
 
   <header class="post-header">
-    <h1>{{ page.full-name}}</h1>
+    <h1 class='code'>{{ page.full-name}}</h1>
   </header>
 
   <article class="post-content">
@@ -14,23 +14,23 @@ layout: default
         {% when 'methods' %}
           <table class='declaration-table'>
             {% for item in entity.list %}
-            <tr class='declaration-row'>
+            <tr>
               <td>
                 {% highlight c++ %}{{ item.declaration }}{% endhighlight %}
               </td>
               <td>({{ forloop.index }})</td>
             </tr>
             {% endfor %}
-            </table>
+          </table>
 
-            <h3>Description</h3>
-            {{ page.description | markdownify }}
+          {{ page.description | markdownify }}
 
+          <ol>
             {% for item in entity.list %}
-            <div class='declaration-row-defn'>
-              <span>({{ forloop.index }})</span>{{ item.description | markdownify }}
-            </div>
+              <li>{{ item.description | markdownify }}</li>
             {% endfor %}
+          </ol>
+
       {% when 'parameters'%}
         <h3>Parameters</h3>
         {% if entity.list %} 

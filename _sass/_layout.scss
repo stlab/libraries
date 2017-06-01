@@ -229,6 +229,10 @@
  */
 .post-header {
     margin-bottom: $spacing-unit / 2;
+
+    > .code {
+        font-family: $mono-font-family;
+    }
 }
 
 .post-title {
@@ -279,35 +283,41 @@ table {
     border-collapse: collapse;
 }
 
-.declaration-table {
+.definition-table {
+    margin-left: $spacing-unit / 2;
     margin-bottom: $spacing-unit / 2;
-    width: 100%;
-}
-
-.declaration-row {
     border-bottom: 1px solid $grey-color;
     border-top: 1px solid $grey-color;
+    width: 100%;
 
-    > td {
-        > figure {
-            > pre {
-                margin: 0;
+    > tbody {
+        > tr {
+            border-top: 1px solid $grey-color;
+
+            > th {
+                text-align: left;
+            }
+            > td {
+                > p {
+                    margin: 0;
+                    display: inline;
+                }
+                > span.annotation {
+                    color: green;
+                    font-style: oblique;
+                }
+            }
+            > td.decl {
+                font-family: $mono-font-family;
+            }
+            > td.defn {
+                padding-left: 1.5em;
             }
         }
     }
 }
 
-.declaration-row-defn {
-    > span {
-        padding-right: 1.5em;
-    }
-    > p {
-        display: inline;
-    }
-}
-
-.definition-table {
-    margin-left: $spacing-unit / 2;
+.declaration-table {
     margin-bottom: $spacing-unit / 2;
     border-bottom: 1px solid $grey-color;
     border-top: 1px solid $grey-color;

@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::make_ready_future
 tags: [library]
+pure-name: make_ready_future
 entities:
   - kind: overloads
     defined-in-header: stlab/future.hpp

@@ -4,52 +4,51 @@ layout: default
 <div class="post">
 
   <header class="post-header">
-    <h1>{{ page.title }}</h1>
+    <h1 class='code'>{{ page.title }}</h1>
   </header>
 
   <article class="post-content">
     {% for entity in page.entities %}
       {% case entity.kind %}
         {% when 'overloads' %}
-          <table class="t-dsc-begin">
-             <tr class="t-dsc-header">
-                <td>
-                    <div>Defined in header<a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
-                </td>
-            </tr>          
+          {% if entity.defined-in-header %}
+            <table>
+              <tr>
+                  <td>
+                      Defined in header<a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a>
+                  </td>
+              </tr>          
+            </table>
+          {% endif %}
+          <table class='declaration-table'>
           {% for item in entity.list %}
-            <tr class="t-dcl">
+            <tr>
               <td>
-                <div>{% highlight c++ %}{{ item.declaration }}{% endhighlight %}</div>
+                {% highlight c++ %}{{ item.declaration }}{% endhighlight %}
               </td>
               <td>({{ forloop.index }})</td>
             </tr>
           {% endfor %}
-          <tr class="t-dcl"><td></td><td></td></tr>
         </table>
-        <table>
-            {% for item in entity.list %}
-            <tr>
-              <td>{{ forloop.index }})</td>
-              <td>{{ item.description | markdownify }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+
+        <ol>
+          {% for item in entity.list %}
+            <li>{{ item.description | markdownify }}</li>
+          {% endfor %}
+        </ol>
 
       {% when 'parameters'%}
         <h3>Parameters</h3>
         {% if entity.list %} 
-          <table class="t-par-begin">
+          <table class='definition-table'>
           {% for item in entity.list %}
-              <tr class="t-par">
-                <td>{{ item.name }}</td>
-                <td> - </td>
-                <td>{{ item.description | markdownify }}</td>
+              <tr>
+                <td class='decl'>{{ item.name }}</td>
+                <td class='defn'>{{ item.description | markdownify }}</td>
               </tr>
           {% endfor %}
           </table>
         {% else %}
-          <p>(none)</p>
         {% endif %}
       {% when 'result'%}
         <h3>Return value</h3>
