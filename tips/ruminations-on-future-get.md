@@ -3,6 +3,7 @@ title: Ruminations on `future::get`
 layout: page
 tags: [tips]
 comments: true
+draft: true
 ---
 
 The library `<future>` was released as part of C++11. In some versions of my talk, [Better Code: Concurrency](https://www.youtube.com/watch?v=QIHy8pXbneI), I've stated incorrectly that there was a change between the C++11 and C++14 standards to allow `std::async()` to issue tasks on a thread pool. I've been unable to recall exactly what lead to this change in my talk but thanks to Nicolai Josuttis the error was caught.
@@ -65,10 +66,10 @@ However, if we destruct the future
 
 When dealing with futures there are three components. The task (or promise) that is executed to resolve the future, the executor (or launch policy) that invokes the task, and the future itself.
 
-Both the form of the task and guarantees provided by the executor impact the capabilities of the future. 
+Both the form of the task and guarantees provided by the executor impact the capabilities of the future.
 
 For `future::get` and `future::wait` this is particularly problematic because there are situations where calling either of these can result in a deadlock. Specifically, if the task is scheduled for execution on the calling thread, and the task cannot be promoted to immediate execution, then a deadlock is possible. This is true even if the task is scheduled in a thread pool which supports task stealing.
 
 Why would a task not be able to be promoted? There are two reasons: First, in order to be promoted a task has be _resolved_ into a nullary function. For example a `packaged_task<int(int)>` cannot be promoted for immediate execution because it requires an `int` argument. Second, if the task is required to be serialized with respect to other tasks, such as a serial queue executor, then promoting the task to immediate would potentially violate the task ordering.
 
-Currently, in C++, the only way to get a promotable `std::future` is to use `async()` with `launch::deferred`. However, we can leverage that to 
+Currently, in C++, the only way to get a promotable `std::future` is to use `async()` with `launch::deferred`. However, we can leverage that to

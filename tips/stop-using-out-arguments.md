@@ -3,6 +3,7 @@ title: Stop using _out_ arguments
 layout: page
 tags: [tips]
 comments: true
+draft: true
 ---
 ## The Problem with Out Arguments
 
@@ -68,7 +69,7 @@ This version of the code is better in every way:
   In the first case, we avoid an unnecessary copy: if the client is only reading from the value, no copy takes place. (If they do need a copy, then the code is no worse than it was before.)
 
   In the second example, the compiler will use Return Value Optimization, which works because the result of a function is actually in the caller scope. The third example uses Named Return Value Optimization (NRVO), which is a specific sub-case of RVO. So in both cases the string is constructed in place and no copy occurs.
-  
+
   RVO has been implemented in optimized builds for every compiler I've tested for over a decade. It will be required with C++17, so a compliant compiler must perform the optimization always. As of C++11, returning from a function is defined as a `move` operation, so even if the copy isn't elided, so long as the type has a move constructor, no copy occurs.
 
 3. ***Unambiguous:*** This code also avoids the ambiguity as to if the argument is in/out, both for the implementor and the caller. What is getting modified is clear, and we are constructing only one object.
@@ -115,7 +116,7 @@ my_class::my_class(string x) { swap(_member, x); }
 A common usage of out params is to allow for an error state on return.  For example:
 
 ```cpp
-bool getValue(std::string& out) { 
+bool getValue(std::string& out) {
     if(!canFetchValue) {
         return false;
     }
@@ -127,7 +128,7 @@ bool getValue(std::string& out) {
 With everything we have learned above we could simply treat the empty state of an object as our invalid case. Assuming fetchValue doesn't throw.
 
 ```cpp
-std::string getValue() { 
+std::string getValue() {
     if(!canFetchValue) {
         return "";
     }
@@ -141,7 +142,7 @@ If your type can't be constructed cheapily or has no obvious empty state, then y
 Let us assume that an empty string is expensive to create for the following example.
 
 ```cpp
-std::optional<std::string> getValue() { 
+std::optional<std::string> getValue() {
     if(!canFetchValue) {
         return {};
     }
@@ -156,7 +157,7 @@ For the default case:
 std::string value = getValue().value_or("not found");
 ```
 
-Tricky default values 
+Tricky default values
 
 ```cpp
 int getUserInt(std::string userInput) {
@@ -275,4 +276,4 @@ Without ever copying a string!
 
 ## Final thoughts
 
-As with all goals, if you find case where using an out argument is better than using the function result, please do (and start a discussion here on the topic) but in most use cases I find that out arguments lose by all measures compared to using function results. 
+As with all goals, if you find case where using an out argument is better than using the function result, please do (and start a discussion here on the topic) but in most use cases I find that out arguments lose by all measures compared to using function results.

@@ -22,7 +22,7 @@ This portion of the web site is place where users of the Adobe Source Libraries 
 ## Documentation, Design and Development
 
 * [Supplementary ASL Documentation](supplementary-asl-documentation)
-* [Current Design Rationale](current-design-rational)
+* [Current Design Rationale](current-design-rationale)
 * [Future Ideas and Designs](future-ideas-and-designs)
 * [Papers and Presentations](papers-and-presentations)
 * [Troubleshooting](troubleshooting)
