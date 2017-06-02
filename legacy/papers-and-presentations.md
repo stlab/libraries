@@ -15,7 +15,7 @@ comments: true
   An expanded version of the classes the work talk focusing on thread safety and covering locks and atomics.
 
 * [Classes that Work: Copy and Assignment](figures/2008_06_26_classes_that_work.pdf)\\
-  From an engineering boot camp at Adobe, June 26th, 2008. Shortened version of internal talk. Recording with Eric Berdahl presenting available [here](http://my.adobe.acrobat.com/p53888531/)
+  From an engineering boot camp at Adobe, June 26th, 2008. Shortened version of internal talk. Recording with Eric Berdahl presenting available [here](http://my.adobe.acrobat.com/p53888531/) [Recording no longer available].
 
 * [Adobe Source Libraries: Overview & Philosophy](figures/2008_04_03_accu.pdf)\\
   From [ACCU 2008, April 3, 2008](http://www.accu.com/).
@@ -24,12 +24,12 @@ comments: true
   Presentation from January, 18th, 2008 at Indiana University revised from a talk given at Texas A&M.
 
 * [A Possible Future of Software Development](figures/2008_07_25_google.pdf)\\
-  Revised for [Google Tech Talks, July 25, 2007](http://youtube.com/user/googletechtalks). [Recorded Presentation](http://youtube.com/watch?v=4moyKUHApq4).
+  Revised for [Google Tech Talks, July 25, 2007](https://www.youtube.com/user/googletechtalks). [Recorded Presentation](https://www.youtube.com/watch?v=4moyKUHApq4).
 
-* [A Possible Future of Software Development](figures/boostcon_possible_future.pdf)\\
+* [A Possible Future of Software Development](figures/Boostcon_possible_future.pdf)\\
   Revised for [http://www.boostcon.com/ BoostCon'07 Keynote, May 16, 2007].
 
-* [Concept-Based Runtime Polymorphism](figures/boost_poly.pdf)\\
+* [Concept-Based Runtime Polymorphism](figures/Boost_poly.pdf)\\
   From [BoostCon'07, May 17, 2007](http://www.boostcon.com/).
 
 * [A Possible Future of Software Development](figures/Possible_future.pdf)\\

@@ -4,7 +4,7 @@ layout: page
 tags: [legacy]
 comments: true
 ---
-The following two examples are from here <http://meta.wikimedia.org/wiki/Help:Displaying_a_formula>:
+The following two examples are from here <https://meta.wikimedia.org/wiki/Help:Displaying_a_formula>:
 
 (search for "Case distinctions" on the page to find this example)
 

@@ -241,7 +241,7 @@ We need to test as many optimizations as possible.  Priority should be given to 
 
 ## Language Extensions
 * [Boost](http://www.boost.org/)
-* [OpenMP](http://openmp.org/wp/)
+* [OpenMP](http://www.openmp.org/)
 
 
 

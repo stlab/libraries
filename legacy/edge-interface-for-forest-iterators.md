@@ -13,7 +13,7 @@ comments: true
 
 We can define the concept of the forest iterator in terms of a general graph using the terminology from Boost graph - this is useful because at some point we may wish to generalize these constructs to apply to other graph structures.
 
-A forest is (loosely) a [Bidirectional Graph](http://www.boost.org/libs/graph/doc/BidirectionalGraph.html).
+A forest is (loosely) a [Bidirectional Graph](http://www.boost.org/doc/libs/1_64_0/libs/graph/doc/BidirectionalGraph.html).
 
 A forest iterator consists of the following:
 
@@ -22,7 +22,7 @@ A forest iterator consists of the following:
 * <code>p</code>, a property (this is fixed to a single property of the <code>value_type</code> of the iterator).
 * <code>f</code>, a function to move from an <code>in_edge</code> to a corresponding <code>out_edge</code> (for a fullorder iterator on a forest this is the identity function).
 
-An edge is a directed link (with a <code>from()</code> and <code>to()</code> function) - and because it is bidirectional you can find the corresponding input link. 
+An edge is a directed link (with a <code>from()</code> and <code>to()</code> function) - and because it is bidirectional you can find the corresponding input link.
 
 The increment operation can be defined as follows in pseudo code (once I'm more fluent in Boost Graph this could be described more concretely):
 

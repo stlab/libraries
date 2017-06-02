@@ -114,6 +114,6 @@ disclosed. Currently no IU confidential information is planned to be
 disclosed.
 
 Adobe code which is available under an open source license (see
-<http://opensource.adobe.com/licenses.html>) will be
+<http://stlab.adobe.com/licenses.html>) will be
 used. Contributions to this project from IU will be released under the
 MIT open source license.

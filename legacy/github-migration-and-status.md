@@ -5,11 +5,11 @@ tags: [legacy]
 comments: true
 ---
 
-ASL is now available on GitHub at http://github.com/stlab/legacy.
+ASL is now available on GitHub at <https://github.com/stlab/>.
 
-The plan is to breakup ASL into separate libraries following the boost modular library structure: http://github/boost-lib and http://github/ryypl
+The plan is to breakup ASL into separate libraries following the boost modular library structure: https://github.com/boostorg
 
-We are following the gitflow model of development http://nvie.com/posts/a-successful-git-branching-model
+We are following the gitflow model of development http://nvie.com/posts/a-successful-git-branching-model/
 
 I'm (sean_parent) currently working only with XCode 4.5.2. The Begin test app project can currently be build with XCode.
 

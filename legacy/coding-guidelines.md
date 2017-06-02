@@ -13,11 +13,11 @@ _This section is for collecting our coding standards and style. This is primaril
 
 ## Introduction
 
-We could write an entire book on coding guidelines but luckily that has already been done. I'd recommend reading [_C++ Coding Standards: 101 Rules, Guidelines, and Best Practices_](http://safari.awprofessional.com/0321113586/pref01) by Herb Sutter, Andrei Alexandrescu.
+We could write an entire book on coding guidelines but luckily that has already been done. I'd recommend reading [_C++ Coding Standards: 101 Rules, Guidelines, and Best Practices_](http://my.safaribooksonline.com/0321113586/pref01?portal=awprofessional) by Herb Sutter, Andrei Alexandrescu.
 
-I would also recommend the online paper [_C++ Coding Guidelines_](http://f1.grp.yahoofs.com/v1/sGgLRd2UDdCa_xkWG4jo9TDHCTsvop18BTxBagwdw17E1Eut_oYTOV0L2s5xkOHpXq3eTmVoXpBTHAV2nDZ9D-LBSf8gQDd7TQ/coding_guidelines.html) by David Abrahams and Nathan Myers. This document follows a similar format and I will only attempt to document where our guidelines differ or are more refined.
+I would also recommend the online paper [_C++ Coding Guidelines_](https://xa.yimg.com/df/boost/coding_guidelines.html?token=SbOCPKyzP4V7_D7y8_ItT3nLFvitGq6jwev1XY6bgGQ4xjnBJy7Gi45swQXOscy_DsTtbwBQIhEBc4QCPNuWotlkHuAyUHqbGpJIh6NSy3hTZ01LgQ&type=download) by David Abrahams and Nathan Myers. This document follows a similar format and I will only attempt to document where our guidelines differ or are more refined.
 
-To understand the importance that naming plays in generic programming, I'd recommend working through [Notes on Programming](http://www.stepanovpapers.com/notes.pdf) by Alex Stepanov. In fact, before writing any code I'd recommend working through this document.
+To understand the importance that naming plays in generic programming, I'd recommend working through [Notes on Programming](http://stepanovpapers.com/notes.pdf) by Alex Stepanov. In fact, before writing any code I'd recommend working through this document.
 
 The style of ASL is a refinement of the style used in the standard library as well as in the Boost libraries. A good general rule is to defer to the highest authority.
 
@@ -72,7 +72,7 @@ Incorrect:
 </pre>
 
 ### Line Endings
- 
+
 All files in ASL should use a Unix line endings, a single LF character.
 
 ### Line Lengths

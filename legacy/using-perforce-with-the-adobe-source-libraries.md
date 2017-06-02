@@ -34,16 +34,16 @@ The Adobe Source Libraries' Perforce depot is at
 ## Downloading Perforce
 
 The Perforce client software is free and can be downloaded for
-[Windows](http://www.perforce.com/perforce/downloads/ntx86.html),
-[Mac OS X PPC](http://www.perforce.com/perforce/downloads/macosx104ppc.html),
-[Mac OS X x86](http://www.perforce.com/perforce/downloads/macosx104x86.html),
-[Cygwin](http://www.perforce.com/perforce/downloads/cygwinx86.html),
+[Windows](https://www.perforce.com/downloads),
+[Mac OS X PPC](https://www.perforce.com/downloads),
+[Mac OS X x86](https://www.perforce.com/downloads),
+[Cygwin](https://www.perforce.com/downloads),
 and a host of
-[other platforms](http://www.perforce.com/perforce/loadprog.html other platforms).
+[other platforms](https://www.perforce.com/downloads).
 
 Each operating system at a minimum has a command-line binary available.
 For some operating systems there are GUI front end applications
-available as well ([Mac OS X](http://www.roguesheep.com/p4cocoapage/index.html), [Windows](http://www.perforce.com/perforce/downloads/ntx86.html)). If you
+available as well ([Mac OS X](https://www.perforce.com/downloads), [Windows](https://www.perforce.com/downloads)). If you
 are following these instructions you will want to download the
 command-line client, and place the <code>p4</code> application in a
 directory that is in your computer's <code>PATH</code>.
@@ -153,4 +153,4 @@ Also note that in order to check in changes to ASL's Perforce depot, you
 will need to do so in the sandbox depot. This will require you to create
 a branchspec and integrate the sources from the submission depot into
 your sandbox. For more information on working with Perforce, the
-clientspec, and branchspecs, please see the [Perforce User Guide](http://www.perforce.com/perforce/doc.052/manuals/p4guide/index.html).
+clientspec, and branchspecs, please see the [Perforce User Guide](https://www.perforce.com/perforce/doc.052/manuals/p4guide/index.html).
