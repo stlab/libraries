@@ -363,7 +363,7 @@ _Given our definition for Generic Programming, we can define runtime-polymorphis
 
 #### Relationship To Object Oriented Programming
 
-{% include figure.md name='oodiag.png' caption='Class Colaboration Figure 1' %}
+{% include figure.md name='Oodiag.png' caption='Class Colaboration Figure 1' %}
 
 In Object Oriented Programming the notion of inheritance is used to model an "is-a" relationship. The base class(s) provides a syntactic template for modeling a concept where the derived classes must provide the implementation satisfying the semantic requirements for the interface. Normally, type variance is only allowed for a single type (the type which is derived) and not from any affiliated types. Likewise, operations may only be type variant on the first parameter.
 
@@ -387,7 +387,7 @@ pointers to objects.
 In many applications, the set of types stored in a container is known at
 compile-time. In these cases a _variant_ type that is the set-union of all
 potential data types suffices to implement the desired behavior. Hence, variant
-types, such as the [Boost.Variant](http://www.boost.org/doc/html/variant.html)
+types, such as the [Boost.Variant](http://www.boost.org/doc/libs/1_64_0/doc/html/variant.html)
 are similar to discriminated unions but overcome their limitation in regards to
 storing non POD types. A priori information of all involved types enables to
 determine the size of the variant at compile time, thus eliminating the need for
@@ -404,14 +404,14 @@ Since, the actual type of x differs from y, its element has to be destructed
 before the assignment can be carried out. However, when the copy construction
 fails x is left in an undefined state. A detailed discussion of this problem and
 its potential solutions is given by
-[Boost:"Never-Empty" Guarantee](http://www.boost.org/doc/html/variant/design.html#variant.design.never-empty)
+[Boost:"Never-Empty" Guarantee](http://www.boost.org/doc/libs/1_64_0/doc/html/variant/design.html#variant.design.never-empty.guarantee)
 
 #### Open
 
 Some application require to store also data-types, for example defined in DLLs,
 that are not statically known at compile- and link-time. Implementations, like
 the presented one, which do not impose such restrictions are called open.
-Other existing designs include [http://www.boost.org/doc/html/any.html Boost.Any]
+Other existing designs include [Boost.Any](http://www.boost.org/doc/libs/1_64_0/doc/html/any.html)
 and [Dig05]. The boost implementation is similar to ours insofar as it uses
 the virtual functions mechanism and EPP to achieve polymorphism. The operations supported
 include copy-construction, assignment, destruction, safe-, and unsafe cast
@@ -484,25 +484,26 @@ rewraps the polymorphic concept in the appropriate regular layer $$ P_r -> R_r $
 ## Acknowledgments
 ## Bibliography
 
-[DRJ05] Dos Reis, Gabriel; J&auml;rvi, Jaako: [What is Generic Programming?](http://lcsd05.cs.tamu.edu/papers/dos_reis_et_al.pdf) LCSD'05.
+[DRJ05] Dos Reis, Gabriel; J&auml;rvi, Jaako: [What is Generic Programming?](https://pdfs.semanticscholar.org/e730/3991015a041e50c7bdabbe4cb4678531e35b.pdf) LCSD'05.
 
-[GJS+06] Gregor, Douglas; J&auml;rvi, Jaako; Siek, Jeremy; Stroustrup, Bjarne; Dos Reis, Gabriel; Lumsdaine, Andrew: [Concepts: First-Class Language Support for Generic Programming in C++](http://www.cs.rice.edu/~jgs3847/pubs/pubs/2006/gregor06:_concepts.pdf). to appear OOPSLA'06.
+[GJS+06] Gregor, Douglas; J&auml;rvi, Jaako; Siek, Jeremy; Stroustrup, Bjarne; Dos Reis, Gabriel; Lumsdaine, Andrew: [Concepts: linguistic support for generic programming in C++
+](http://dl.acm.org/citation.cfm?id=1167499). OOPSLA'06.
 
-[MS88] Musser, David R.; Stepanov, Alexander A.: [Generic Programming.](http://www.stepanovpapers.com/genprog.pdf) ISSAC '88.
+[MS88] Musser, David R.; Stepanov, Alexander A.: [Generic Programming.](http://stepanovpapers.com/genprog.pdf) ISSAC '88.
 
-[Vel00] Veldhuizen, Todd: [Five compilation models for C++ templates.](http://osl.iu.edu/~tveldhui/papers/2000/tmpw00/index.html) TMPW '00.
+[Vel00] Veldhuizen, Todd: [Five compilation models for C++ templates](https://pdfs.semanticscholar.org/a75c/ca5af3bff0e7a5ecb7288649c1a6b99ad05b.pdf). TMPW '00.
 
-[Str03] Stroustrup, Bjarne: [Concept checking - a more abstract way to type checking](http://www.research.att.com/~bs/n1510-concept-checking.pdf). C++ Committee, Paper 1510, 2003.
+[Str03] Stroustrup, Bjarne: [Concept checking - a more abstract way to type checking](http://www.stroustrup.com/n1510-concept-checking.pdf). C++ Committee, Paper 1510, 2003.
 
 [CSH96] Cleeland, C.; Schmidt, D.; Harrison, T.: [External Polymorphism](http://www.cs.wustl.edu/~schmidt/PDF/External-Polymorphism.pdf) PLoPD '96.
 
-[DS98] James C. Dehnert and Alexander Stepanov. [Fundamentals of Generic Programming](http://www.stepanovpapers.com/DeSt98.pdf). In _Report of the Dagstuhl Seminar on Generic Programming_, volume 1766 of Lecture Notes in Computer Science, pages 1–11, Schloss Dagstuhl, Germany, April 1998.
+[DS98] James C. Dehnert and Alexander Stepanov. [Fundamentals of Generic Programming](http://stepanovpapers.com/DeSt98.pdf). In _Report of the Dagstuhl Seminar on Generic Programming_, volume 1766 of Lecture Notes in Computer Science, pages 1–11, Schloss Dagstuhl, Germany, April 1998.
 
-[IN06] Igarashi, Atsushi; Nagira, Hideshi: [Union Types for ObjectOriented Programming](http://www.sato.kuis.kyoto-u.ac.jp/~igarashi/papers/pdf/union-SAC06.pdf) SAC '06.
+[IN06] Igarashi, Atsushi; Nagira, Hideshi: [Union Types for ObjectOriented Programming](https://pdfs.semanticscholar.org/1794/b6f697751f2e962ec9afe023b934d25042a9.pdf) SAC '06.
 
-[KLS04] Kiselyov, Oleg; L&auml;mmel, Ralf; Schupke, Keean: [Strongly Typed Heterogeneous Collections](http://homepages.cwi.nl/~ralf/HList/paper.pdf), Haskell '04.
+[KLS04] Kiselyov, Oleg; L&auml;mmel, Ralf; Schupke, Keean: [Strongly Typed Heterogeneous Collections](http://dl.acm.org/citation.cfm?id=1017488), Haskell '04.
 
-[Dig05] Diggins, Christopher: [An Efficient Variant Type](http://www.ddj.com/dept/cpp/184402027?pgno=1). CUJ 2005.
+[Dig05] Diggins, Christopher: [An Efficient Variant Type](http://www.drdobbs.com/an-efficient-variant-type/184402027?pgno=1). CUJ 2005.
 
 ## Appendix
 ### The Proxy Dilemma

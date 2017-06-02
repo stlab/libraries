@@ -25,7 +25,7 @@ If you aren't seeing problems with ASL with an unpatched Boost than probably not
 
 ## Process for submitting a patch to Boost
 
-If you aren't sure of the issue, discuss it on the [developer list](mailto:adobe-source-devel@lists.sourceforge.net). Once you have isolated the problem, [report the bug to Boost](http://www.boost.org/more/bugs.htm) using the Boost [bug tracking facility](http://svn.boost.org/trac/boost/report).
+If you aren't sure of the issue, discuss it on the [developer list](mailto:adobe-source-devel@lists.sourceforge.net). Once you have isolated the problem, [report the bug to Boost](http://www.boost.org/development/bugs.html) using the Boost [bug tracking facility](http://svn.boost.org/trac/boost/report).
 
 Send an e-mail to the [mailto:adobe-source-devel@lists.sourceforge.net developer list] or directly to Sean Parent including:
 

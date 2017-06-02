@@ -86,6 +86,12 @@ dictionary
 : Stored as an adobe::dictionary_t. A collection of associated key-value pairs wrapped in brackets. The keys are always of type Identifier (adobe::name_t), though they are _not_ prepended with the '@' (it is implied).
 : e.g, { name: @value, name2: "second value" } or { spacing: 42, placement: place_overlay, name: "My Dictionary" }
 
+enumeration
+: [ no description ]
+
+regular
+: [ no description ]
+
 ### Other Types
 The type system for CEL is open. Values are stored in an adobe::any_regular_t which can hold any regular type. Client functions can be introduced that return values of types other than those listed and other functions may process those value.
 
@@ -122,7 +128,7 @@ edit_text(name: "Label:");
 
 ## Associated Structures
 
-These data structures are used by some of the widgets described below. They are available as utility structures to any widget that would like to use them. Note that a widget is not required to use all portions of a structure; it may use just what it requires. 
+These data structures are used by some of the widgets described below. They are available as utility structures to any widget that would like to use them. Note that a widget is not required to use all portions of a structure; it may use just what it requires.
 
 ### unit_t
 
@@ -216,7 +222,7 @@ format: { first: 0, last: 100, interval_count: 50 }
 
 The layout engine ("Eve") does not know the difference between a widget destined to be a container (e.g., a window or a panel) versus one that is a leaf node (e.g., a button or a label). To the layout engine everything is a "box" with various attributes. In theory, then, all of the general attributes below could pertain to all of the widgets. Of course, this is nonsensical in some cases (e.g., spacing for a label), but the layout engine does not care, because it does not know that a "label" is a leaf widget any more than it knows a "group" is not (though it actually may be if it has no children). From an implementation standpoint, _all_ nodes in the layout hierarchy have _all_ these attributes, even if some are never used (or make no sense).
 
-Default values in this section are suggestions of sorts. It is possible (and entirely likely) that the layout semantics of various widgets will require a different default for an attribute. For example, the default horizontal alignment of a container is align_default, but that value is changed to align_fill in the case of a panel widget. Overrides of this nature are explicitly iterated in the section on [Widget-Specific Layout Attributes](widget-specific-layout-attributes) under "Layout Attribute Defaults".
+Default values in this section are suggestions of sorts. It is possible (and entirely likely) that the layout semantics of various widgets will require a different default for an attribute. For example, the default horizontal alignment of a container is align_default, but that value is changed to align_fill in the case of a panel widget. Overrides of this nature are explicitly iterated in the section on [Widget-Specific Layout Attributes](#widget-specific-layout-attributes) under "Layout Attribute Defaults".
 
 * Code for the layout attributes can be found in <adobe/layout_attributes.hpp>.
 * Code for the extents can be found in <adobe/extents.hpp>.
@@ -252,7 +258,7 @@ placement
 
     place_overlay
     : Align the children in an overlay. An overlay will cause all children to have horizontal and vertical alignments of align_fill. Each child will share the same layout real estate with its siblings. The idea for an container placing its children using place_overlay is so that only one will be visible at a time.
-  
+
 : _question_ : What does place_leaf do?
 
 margin
@@ -267,7 +273,7 @@ horizontal
 
     align_forward
     : Forward alignment
-    
+
     align_reverse
     : Reverse alignment
 
@@ -307,7 +313,7 @@ horizontal
     align_right
     : same as align_reverse
 
-    align_top 
+    align_top
     : same as align_forward
 
     align_bottom
@@ -334,10 +340,10 @@ child_vertical
 : guides to suppress - current valid values are:
 
     guide_baseline
-    : 
-    
+    :
+
     guide_label
-    : 
+    :
 
 size
 : type: [enumeration](#enumeration)
