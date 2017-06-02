@@ -1,10 +1,11 @@
 ---
 layout: method
-title: process::await
+title: await
 tags: [library]
 full-name: process::await
 pure-name: await
 declaration: void await(T... val)
+brief: Called on an await-process whenever a new value was received from upstream
 description: This method is called on an await-process whenever a new value was received from upstream. The type `T` stands here for any semi regular or move-only type. The number of arguments depends on  the number of attached upstream sender. Potential state changes from awaitable to yieldable should happen while this method is invoked.
 entities:
   - kind: methods

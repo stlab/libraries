@@ -53,7 +53,10 @@ layout: default
         {% endif %}
         </table>
 
-    <h3>Member Functions</h3>
+    {% if methods.size > 0 %}
+        <h3>Member Functions</h3>
+    {% endif %}
+
     <table class='definition-table'>
         <tr>
             {% case page.ctor %}
@@ -103,7 +106,10 @@ layout: default
         {% endfor %}
     </table>
 
-    <h3>Nonmember Functions</h3>
+    {% if free_functions.size > 0 %}
+        <h3>Nonmember Functions</h3>
+    {% endif %}
+
     <table class='definition-table'>
     {% for function in free_functions %}
         <tr>
