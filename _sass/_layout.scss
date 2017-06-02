@@ -407,8 +407,15 @@ table {
 .icon-box {
     background: $stlab-purple;
     border-radius: 1em;
+    @include media-query($on-palm) {
+        border-radius: .3em;
+    }
+
     > .top {
         border-radius: 1em 1em 0 0;
+        @include media-query($on-palm) {
+            border-radius: .3em .3em 0 0;
+        }
         > .fa {
             display: inline-block;
             width: 2em;
@@ -416,6 +423,10 @@ table {
             line-height: 1.6em;
             font-size: 5em;
             vertical-align: middle;
+
+            @include media-query($on-palm) {
+                font-size: 2em;
+            }
         }
     }
     > .bottom {
@@ -428,6 +439,12 @@ table {
         text-align: center;
         padding-top: .7em;
         padding-bottom: .7em;
+
+        @include media-query($on-palm) {
+            padding-top: .2em;
+            padding-bottom: .2em;
+            border-radius: 0 0 .3em .3em;
+        }
     }
     &:hover {
         background: $stlab-grey;
