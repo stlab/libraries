@@ -48,7 +48,7 @@ layout preset_example
 
 This will generate the following dialog:
 
-{% include figure.md name='adam_tutorial_01.png' caption='Initial Dialog' %}
+{% include figure.md name='Adam_tutorial_01.png' caption='Initial Dialog' %}
 
 At this point our preset cell is not connected to our width and height cells. We know that when we set the preset popup we want the value to propagate to width and height. We could express this as:
 
@@ -64,11 +64,11 @@ sheet preset_example
 
 Here our edit_number fields in the view become disabled, this is because the value width and height are always being derived:
 
-{% include figure.md name='adam_tutorial_02.png' caption='Disabled Fields' %}
+{% include figure.md name='Adam_tutorial_02.png' caption='Disabled Fields' %}
 
 In spreadsheet terminology these are now equation cells and preset is our only value cell. We can draw the structure of this system as a DAG:
 
-{% include figure.md name='adam_tutorial_03.png' caption='DAG Structure' %}
+{% include figure.md name='Adam_tutorial_03.png' caption='DAG Structure' %}
 
 The notion of a expressing computations as a DAG is central to property models. A property model is conceptually a set or predicates and the DAG gives us a deterministic way to satisfy those predicates. Here the predicates are "width is equal to preset[0] and height is equal to preset[1]".
 
@@ -118,11 +118,11 @@ If you try this, the system will "break" - if you look in the console after typi
 
 It is instructive to look at the diagram for this system:
 
-{% include figure.md name='adam_tutorial_04.png' caption='Potential Cycle' %}
+{% include figure.md name='Adam_tutorial_04.png' caption='Potential Cycle' %}
 
 Here the circle represents the relationship and the lines without arrows are unresolved - they can flow one way or the other based on cell priority. What we've done is introduced a sort of cycle into the system. If we make preset a source, then the system resolves like so:
 
-{% include figure.md name='adam_tutorial_05.png' caption='No Cycle Here' %}
+{% include figure.md name='Adam_tutorial_05.png' caption='No Cycle Here' %}
 
 We use the double arrows to denote a resolved flow. However, if we try to make width be a source then the system will proceed as follows:
 
@@ -143,7 +143,7 @@ height <== preset[1];
 
 The cycle failure can be viewed like this:
 
-{% include figure.md name='adam_tutorial_05a.png' caption='Bad Cycle Here' %}
+{% include figure.md name='Adam_tutorial_05a.png' caption='Bad Cycle Here' %}
 
 Now, I had said that there were two possible answers for what to put into ????. To understand the second choice we need to understand a little bit about interface cells. To use spreadsheet terms, an interface cell can be either a value cell, or an equation cell depending on the state of the system (when it is attached to a relate clause). Normally, within a given state it cannot be used as both. This means that if I have a sequence of expressions like:
 
@@ -181,7 +181,7 @@ sheet preset_example
 
 This gives us the following nice structure:
 
-{% include figure.md name='adam_tutorial_06.png' caption='Almost Done' %}
+{% include figure.md name='Adam_tutorial_06.png' caption='Almost Done' %}
 
 Finally, we can apply the same logic to height:
 
@@ -206,6 +206,6 @@ sheet preset_example
 
 This system works as desired and the final structure is shown here:
 
-{% include figure.md name='adam_tutorial_07.png' caption='Complete System' %}
+{% include figure.md name='Adam_tutorial_07.png' caption='Complete System' %}
 
 This system has essentially 3 states, either everything is derived from width, or from height, or from preset. The "tricky" bit is that as values flow through preset they pick up additional state. I continue to search for a more straightforward solution to such a problem (this is one of those problems that is a bit simpler to describe imperatively) but the property model solution is informative and hints at the capabilities of even such a simple computation model. I will also point out that the solution is remarkably similar to the inequality example.
