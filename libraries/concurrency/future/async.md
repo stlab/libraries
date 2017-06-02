@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::async
 tags: [library]
+brief: Run a function on a specified executor
 entities:
   - kind: overloads
     name: stlab::async
