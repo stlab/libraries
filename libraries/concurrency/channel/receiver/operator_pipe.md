@@ -38,12 +38,12 @@ entities:
         defined-in-header: stlab/channel.hpp
         description: Encapsultes an executor to be used by a process
         pure-name: executor
-        link: stlab_executor
+        link: ../executor/index
       - name: buffer_size
         defined-in-header: stlab/channel.hpp
         description: Encapsulates the buffer size of a process
-        pure-name: buffer_size
-        link: stlab_buffer_size
+        pure-name: buffer_size/index
+        link: buffer_size
 ---
 
 
