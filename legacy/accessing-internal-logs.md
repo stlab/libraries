@@ -4,7 +4,7 @@ layout: page
 tags: [legacy]
 comments: true
 ---
-We have a tool called Log Viewer accessible via <http://web-tech.corp.adobe.com/logviewer/>
+We have a tool called Log Viewer accessible via web-tech.corp.adobe.com/logviewer
 
 1. For server, select "wiki-sjc1-1"
 1. For process, select "apache"

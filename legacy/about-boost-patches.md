@@ -51,4 +51,4 @@ We will assume that the Boost bugs have been fixed and will always start with a 
 
 ## Descriptions of Current Patches
 
-[Annotated List of Boost Patches](annotated-list-of-boost-patches)
+[Annotated List of Boost Patches](annotated-list-of-boost-patches.html)

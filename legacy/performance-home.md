@@ -9,8 +9,8 @@ See <https://stlab.adobe.com/performance/> for the suite main web site.
 
 
 
-* [Release notes](performance-releasenotes)
+* [Release notes](performance-releasenotes.html)
 
-* [Some example analyses of results](performance-analysis-examples)
+* [Some example analyses of results](performance-analysis-examples.html)
 
-* [What is tested and what needs to be tested?](performance-whattotest)
+* [What is tested and what needs to be tested?](performance-whattotest.html)

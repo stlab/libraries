@@ -77,7 +77,7 @@ perl $ADOBE_ROOT/adobe_source_libraries/tools/boost_codex.pl $BOOST_VERSION $BOO
 perl $ADOBE_ROOT/adobe_source_libraries/tools/post_boost_build.pl $BOOST_VERSION $LDAP_NAME $LDAP_PASSWD
 p4 submit
 </pre>
-Output should be two key/value pairs. Check the results at the [Boost Codex Page](http://matrix.corp.adobe.com/Codex/webcontent/index.jsp?action=build_history&product=Boost&product_version=1_34_1)
+Output should be two key/value pairs. Check the results at the Boost Codex Page (http://matrix.corp.adobe.com/Codex/webcontent/index.jsp?action=build_history&product=Boost&product_version=1_34_1)
 
 ## Rev codex for Intel Thread Building Blocks
 <pre>
@@ -97,7 +97,7 @@ perl $ADOBE_ROOT/adobe_source_libraries/tools/intel_tbb_codex.pl $INTEL_TBB_VERS
 perl $ADOBE_ROOT/adobe_source_libraries/tools/post_intel_tbb_build.pl $INTEL_TBB_VERSION $LDAP_NAME $LDAP_PASSWD
 p4 submit
 </pre>
-Output should be two key/value pairs. Check the results at the [Intel Thread Building Block Codex Page](http://matrix.corp.adobe.com/Codex/webcontent/index.jsp?action=build_history&product=Intel%20Thread%20Building%20Blocks&product_version=tbb20_014oss)
+Output should be two key/value pairs. Check the results at the Intel Thread Building Block Codex Page (http://matrix.corp.adobe.com/Codex/webcontent/index.jsp?action=build_history&product=Intel%20Thread%20Building%20Blocks&product_version=tbb20_014oss)
 
 ## Rev codex for ASL and APL
 

@@ -135,7 +135,7 @@ Relate clauses can cause cycles in the system - if all cells involved in a relat
 
 ### Other Subtopics
 
-* [Adam Grammar Changes](adam-grammar-changes)
+* [Adam Grammar Changes](adam-grammar-changes.html)
 
 ### Path Stability
 

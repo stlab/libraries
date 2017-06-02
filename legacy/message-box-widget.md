@@ -54,7 +54,7 @@ private:
 ### API Considerations
 
 * Do we want to have some kind of icon support, like 3 or 4 different types of icons one could attach to the message box as well as a piece of text?
-  * RalphThomas: Icon is a specialization of [Picture View](picture-view).
+  * RalphThomas: Icon is a specialization of [Picture View](picture-view.html).
 * How do we trigger a re-layout of the view? Should we have a callback set within message_box_t that is called whenever the visibility changes, or should the relayout be an issue handled by the same client that set the visibility? I'm guessing it'll be the latter.
 * How do we handle the fact that the metrics of the widget change at runtime? Eve doesn't call calculate upon relayout, does it?
   * RalphThomas: it does for evaluate, but not for adjust.

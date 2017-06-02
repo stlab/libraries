@@ -4,9 +4,9 @@ layout: page
 tags: [legacy]
 comments: true
 ---
-ASL is now available on GitHub at <http://github.com/stlab/legacy>.
+ASL is now available on GitHub at http://github.com/stlab/legacy.
 
-The plan is to breakup ASL into separate libraries following the boost modular library structure: <http://github/boost-lib> and <http://github/ryypl>
+The plan is to breakup ASL into separate libraries following the boost modular library structure: http://github.com/boost-lib and http://github.com/ryypl
 
 We are following the gitflow model of development <http://nvie.com/posts/a-successful-git-branching-model>
 

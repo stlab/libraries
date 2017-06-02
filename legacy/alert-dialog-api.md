@@ -11,7 +11,7 @@ comments: true
 
 ## Description
 
-This API is a refinement of the [Modal Dialog Integration Kit](modal-dialog-integration-kit) in that the model and layout definitions are already defined, and you need to provide a simple collection of parameters to complete the fleshing out of the layout.
+This API is a refinement of the [Modal Dialog Integration Kit](modal-dialog-integration-kit.html) in that the model and layout definitions are already defined, and you need to provide a simple collection of parameters to complete the fleshing out of the layout.
 
 ## Goals
 
