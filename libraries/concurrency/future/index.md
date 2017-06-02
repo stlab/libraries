@@ -45,6 +45,10 @@ entities:
         description: Returns a possibly stored exception
   - kind: free-functions
     functions:
+      - name: async
+        defined-in-header: stlab/future.hpp
+        description: runs a function asynchronously on a dedicated executor and returns a future that will hold the result
+        pure-name: async
       - name: make_exceptional_future
         defined-in-header: stlab/utility.hpp
         description: Creates a future that is already ready.
@@ -53,6 +57,10 @@ entities:
         defined-in-header: stlab/utility.hpp
         description: Creates a future that is already ready.
         pure-name: make_ready_future
+      - name: package
+        defined-in-header: stlab/future.hpp
+        description: packages a function to store its return value for asynchronous retrieval
+        pure-name: package
       - name: when_all
         defined-in-header: stlab/future.hpp
         description: Joins futures
