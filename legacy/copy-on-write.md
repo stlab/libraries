@@ -6,7 +6,7 @@ comments: true
 ---
 ### Reference Links
 
-* [Current ASL Documentation](http://stlab.adobe.com/classadobe_1_1copy__on__write.html)
+* [Current ASL Documentation](https://stlab.adobe.com/classadobe_1_1copy__on__write.html)
 * [Regular Type Documentation](https://stlab.adobe.com/group__concept__regular__type.html)
 
 ### Additional Documentation
