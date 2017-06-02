@@ -20,8 +20,8 @@ comments: true
 * [Tagged Overloading](tagged-overloading)
 * [Locale-savvy isspace](locale-savvy-isspace)
 * [Eve definitions in Lua](eve-definitions-in-lua)
-* [Datapumps](data-pumps)
-* [Visual Editor (Expresso2)](visual-editor)
+* [Datapumps](datapumps)
+* [Visual Editor (Expresso2)](visual-editor-\(expresso2\))
 
 ## Pushing Current Technology
 

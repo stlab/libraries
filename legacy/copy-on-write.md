@@ -6,8 +6,8 @@ comments: true
 ---
 ### Reference Links
 
-* [Current ASL Documentation](http://opensource.adobe.com/classadobe_1_1copy__on__write.html)
-* [Regular Type Documentation](http://opensource.adobe.com/group__concept__regular__type.html)
+* [Current ASL Documentation](http://stlab.adobe.com/classadobe_1_1copy__on__write.html)
+* [Regular Type Documentation](https://stlab.adobe.com/group__concept__regular__type.html)
 
 ### Additional Documentation
 
@@ -62,7 +62,7 @@ cow_vec_t vec3;
 
 vec3.write().push_back(42);
 
-assert(vec3.unique_instance());   // ... only one instance refers to the shared part 
+assert(vec3.unique_instance());   // ... only one instance refers to the shared part
 </pre>
 
 You can also check to see if two copy_on_write instances are pointing to the same shared reference:

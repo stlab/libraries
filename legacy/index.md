@@ -26,7 +26,7 @@ This portion of the web site is place where users of the Adobe Source Libraries 
 * [Future Ideas and Designs](future-ideas-and-designs)
 * [Papers and Presentations](papers-and-presentations)
 * [Troubleshooting](troubleshooting)
-    * [MSVC 8.0 "Secure" Library Issues](Troubleshooting)
+    * [MSVC 8.0 "Secure" Library Issues](troubleshooting)
 
 ## Internals
 
