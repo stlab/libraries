@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::future
+title: future
 tags: [library]
 full-name: stlab::future::future
 pure-name: future

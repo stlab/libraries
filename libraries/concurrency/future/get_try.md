@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::future
+title: get_try
 tags: [library]
 full-name: stlab::future::get_try
 pure-name: get_try

@@ -3,8 +3,8 @@ layout: method
 title: stlab::future
 tags: [library]
 full-name: stlab::future::~future
-pure-name: future
-defined-in-header: stlab/future.hpp 
+pure-name: ~future
+defined-in-header: stlab/future.hpp
 declaration: ~future()
 brief: Destructs the future
 description: Destructs the future object. A not started task will be canceled. An already running task will be abandoned and no potentially attached continuation will be triggered.

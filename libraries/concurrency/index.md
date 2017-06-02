@@ -19,7 +19,7 @@ sections:
         description: |
             This class implements a future
         annotation: template
-        link: future/index
+        link: future/
   - kind: collection
     name: Channels
     description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/policy_process). 

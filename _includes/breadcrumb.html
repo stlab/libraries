@@ -18,10 +18,6 @@
             {% endif %}
         {% endfor %}
     {% endfor %}
-    {% if page.pure-name %}
-        <li class="crumb">{{page.pure-name}}</li>
-    {% else %}
-        <li class="crumb">{{page.title}}</li>
-    {% endif %}
+    <li class="crumb">{{page.title}}</li>
     </ol>
 </div>

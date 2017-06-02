@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::future
+title: detach
 tags: [library]
 full-name: stlab::future::detach
 pure-name: detach

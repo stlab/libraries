@@ -1,0 +1,122 @@
+---
+layout: default
+---
+
+{% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
+{% assign methods = siblings | where_exp:"p","p.layout == 'method'" %}
+{% assign free_functions = siblings | where_exp:"p","p.layout == 'free-function'" %}
+{% assign dtor_name = page.pure-name | prepend: "~" %}
+
+<header class="post-header">
+    <h1 class='code'>{{ page.title }}</h1>
+</header>
+
+<div class="post">
+  <article class="post-content">
+        {% if page.defined-in-header %}
+            <div>
+                Defined in header
+                <a href="{{ page.git-link }}">
+                    <code>&lt;{{ page.defined-in-header }}&gt;</code>
+                </a>
+            </div>
+        {% endif %}
+
+        {% if page.declaration %}
+            <table class='declaration-table'>
+                <tr>
+                    <td>
+                        {% highlight cpp %}{{ page.declaration }}{% endhighlight %}
+                    </td>
+                </tr>
+            </table>
+        {% endif %}
+
+        {% if page.description %}
+            <div>{{page.description | markdownify }}</div>
+        {% endif %}
+
+        {% if page.member-types %}
+            <h3>Member types</h3>
+            <table class='definition-table'>
+                <tr class='headers'>
+                    <th>Member type</th>
+                    <th>Definition</th>
+                </tr>
+                {% for type in page.member-types %}
+                    <tr>
+                        <td><code>{{ type.type }}</code></td>
+                        <td><code>{{ type.definition }}</code></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        </table>
+
+    <h3>Member Functions</h3>
+    <table class='definition-table'>
+        <tr>
+            {% if page.no-ctor %}
+                <td class='decl'>(constructor)</td>
+                <td class='defn'><i>Unavailable or deleted</i></td>
+            {% else %}
+                <td class='decl'><a href='{{ page.pure-name }}'>(constructor)</a></td>
+                <td class='defn'>Constructs a {{ page.pure-name }}</td>
+            {% endif %}
+        </tr>
+        <tr>
+            {% if page.no-dtor %}
+                <td class='decl'>(destructor)</td>
+                <td class='defn'><i>Unavailable or deleted</i></td>
+            {% else %}
+                <td class='decl'><a href='-{{ page.pure-name }}'>(destructor)</a></td>
+                <td class='defn'>Destructs a {{ page.pure-name }}</td>
+            {% endif %}
+        </tr>
+        {% for method in methods %}
+            {% if method.pure-name == dtor_name or method.pure-name == page.pure-name %}
+                {% continue %}
+            {% endif %}
+            <tr>
+                <td class='decl'>
+                    {% assign cur_url = method.url | remove: page.url | remove: ".html" %}
+                    <a href="{{cur_url}}">{{cur_url}}</a>
+                </td>
+                <td class='defn'>
+                    {% if method.brief %}
+                        {{ method.brief | markdownify }}
+                    {% elsif method.description %}
+                        {{ method.description | markdownify }}
+                    {% else %}
+                        <i>No details provided</i>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Nonmember Functions</h3>
+    <table class='definition-table'>
+    {% for function in free_functions %}
+        <tr>
+            <td class='decl'>
+                {% assign cur_url = function.url | remove: page.url | remove: ".html" %}
+                <a href="{{cur_url}}">{{cur_url}}</a>
+            </td>
+            <td class='defn'>
+                {% if function.brief %}
+                    {{ function.brief | markdownify }}
+                {% elsif function.description %}
+                    {{ function.description | markdownify }}
+                {% else %}
+                    <i>No details provided</i>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </table>
+
+    {{ content }}
+  </article>
+</div>
+

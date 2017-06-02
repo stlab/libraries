@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::when_all
 tags: [library]
+description: Creates a joining future
 entities:
   - kind: overloads
     defined-in-header: stlab/future.hpp

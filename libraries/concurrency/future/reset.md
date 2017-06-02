@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::future
+title: reset
 tags: [library]
 full-name: stlab::future::reset
 pure-name: reset

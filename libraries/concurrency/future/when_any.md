@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::when_any
 tags: [library]
+description: Creates a future that continues on the first success of any futures passed
 entities:
   - kind: overloads
     defined-in-header: stlab/future.hpp
