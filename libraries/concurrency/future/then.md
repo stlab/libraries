@@ -1,10 +1,11 @@
 ---
 layout: method
-title: stlab::future
+title: then
 tags: [library]
 full-name: stlab::future::then
 pure-name: then
-defined-in-header: stlab/future.hpp 
+defined-in-header: stlab/future.hpp
+brief: Creates a continuation
 declaration: then()
 description: |
   Creates a new continuation on the current object. 

@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::future
+title: recover
 tags: [library]
 full-name: stlab::future::recover
 pure-name: recover

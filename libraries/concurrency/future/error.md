@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::future
+title: error
 tags: [library]
 full-name: stlab::future::error
 pure-name: error

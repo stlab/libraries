@@ -1,10 +1,11 @@
 ---
 layout: method
-title: process::state
+title: state
 tags: [library]
 full-name: process::state
 pure-name: state
 declaration: state
+brief: This method must return the current state of the await-process
 description: |
   This method must return the current state of the await-process. 
 

@@ -1,10 +1,11 @@
 ---
 layout: method
-title: process::yield
+title: yield
 tags: [library]
 full-name: process::yield
 pure-name: await
 declaration: T yield()
+brief: Called on an await-process when it should yield
 description: This method is called on an await-process whenever the `process_state_scheduled.first` is `process_state::yield` or a timeout was provided with the recent call to `state()` and that has elapsed.
 entities:
   - kind: methods

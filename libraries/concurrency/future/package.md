@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::package
 tags: [library]
+brief: Create a packaged_task/future pair
 entities:
   - kind: overloads
     name: stlab::package
