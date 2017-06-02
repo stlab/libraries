@@ -56,22 +56,30 @@ layout: default
     <h3>Member Functions</h3>
     <table class='definition-table'>
         <tr>
-            {% if page.no-ctor %}
+            {% case page.ctor %}
+            {% when 'delete' %}
                 <td class='decl'>(constructor)</td>
-                <td class='defn'><i>Unavailable or deleted</i></td>
+                <td class='defn'><i>deleted</i></td>
+            {% when 'default' %}
+                <td class='decl'>(constructor)</td>
+                <td class='defn'>Default-constructs a {{ page.pure-name }}</i></td>
             {% else %}
                 <td class='decl'><a href='{{ page.pure-name }}'>(constructor)</a></td>
                 <td class='defn'>Constructs a {{ page.pure-name }}</td>
-            {% endif %}
+            {% endcase %}
         </tr>
         <tr>
-            {% if page.no-dtor %}
+            {% case page.dtor %}
+            {% when 'delete' %}
                 <td class='decl'>(destructor)</td>
-                <td class='defn'><i>Unavailable or deleted</i></td>
+                <td class='defn'><i>deleted</i></td>
+            {% when 'default' %}
+                <td class='decl'>(destructor)</td>
+                <td class='defn'>Default-destructs a {{ page.pure-name }}</td>
             {% else %}
                 <td class='decl'><a href='-{{ page.pure-name }}'>(destructor)</a></td>
                 <td class='defn'>Destructs a {{ page.pure-name }}</td>
-            {% endif %}
+            {% endcase %}
         </tr>
         {% for method in methods %}
             {% if method.pure-name == dtor_name or method.pure-name == page.pure-name %}

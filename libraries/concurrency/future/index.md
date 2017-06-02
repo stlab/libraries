@@ -6,8 +6,8 @@ name: stlab::future
 pure-name: future
 defined-in-header: stlab/future.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
-// no-ctor: true
-// no-dtor: true
+ctor: default
+dtor: default
 declaration: |
   template <typename T>
   class future
