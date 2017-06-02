@@ -14,36 +14,36 @@ stlab.adobe.com is maintained by Sean Parent, Mat Marcus and Foster Brereton.
 
 This portion of the web site is place where users of the Adobe Source Libraries can collaborate on everything that pertains both to their development and to the development of technologies that leverage it.
 
-#### Contents
+## Contents
 {:.no_toc}
 1. contents
 {:toc}
 
 ## Documentation, Design and Development
 
-* [Supplementary ASL Documentation](supplementary-asl-documentation)
-* [Current Design Rationale](current-design-rationale)
-* [Future Ideas and Designs](future-ideas-and-designs)
-* [Papers and Presentations](papers-and-presentations)
-* [Troubleshooting](troubleshooting)
-    * [MSVC 8.0 "Secure" Library Issues](troubleshooting)
+* [Supplementary ASL Documentation](supplementary-asl-documentation.html)
+* [Current Design Rationale](current-design-rationale.html)
+* [Future Ideas and Designs](future-ideas-and-designs.html)
+* [Papers and Presentations](papers-and-presentations.html)
+* [Troubleshooting](troubleshooting.html)
+    * [MSVC 8.0 "Secure" Library Issues](troubleshooting.html)
 
 ## Internals
 
-* [GitHub Migration and Status](github-migration-and-status)
-* [Release Process](release-process)
-* [Adding an Adobe internal client](adding-an-adobe-internal-client)
-* [Configuring Perforce client for two servers](configure-perforce-client-for-two-servers)
-* [Updating the public website](updating-the-public-website)
-* [Adding a user to the ASL Wiki](adding-a-user-to-the-asl-wiki)
-* [Accessing Internal Logs](accessing-internal-logs)
-* [Build and Debug Tips](build-and-debug-tips)
+* [GitHub Migration and Status](github-migration-and-status.html)
+* [Release Process](release-process.html)
+* [Adding an Adobe internal client](adding-an-adobe-internal-client.html)
+* [Configuring Perforce client for two servers](configure-perforce-client-for-two-servers.html)
+* [Updating the public website](updating-the-public-website.html)
+* [Adding a user to the ASL Wiki](adding-a-user-to-the-asl-wiki.html)
+* [Accessing Internal Logs](accessing-internal-logs.html)
+* [Build and Debug Tips](build-and-debug-tips.html)
 
 ## Other
 
-* [Build Matrix](build-matrix)
-* [Perforce Open Source License](perforce-open-source-license)
-* [EMacs Questions](emacs-questions)
+* [Build Matrix](build-matrix.html)
+* [Perforce Open Source License](perforce-open-source-license.html)
+* [EMacs Questions](emacs-questions.html)
 
 ## Relate Your Success
 

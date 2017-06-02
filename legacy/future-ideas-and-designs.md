@@ -11,38 +11,38 @@ comments: true
 
 ## Plan
 
-* [To Do List](to-do-list)
+* [To Do List](to-do-list.html)
 
 ## Ideas For Consideration
 
-* [Segmented Iterators](segmented-iterators)
-* [Uniform Parameters](uniform-parameters)
-* [Tagged Overloading](tagged-overloading)
-* [Locale-savvy isspace](locale-savvy-isspace)
-* [Eve definitions in Lua](eve-definitions-in-lua)
-* [Datapumps](datapumps)
-* [Visual Editor (Expresso2)](visual-editor-(expresso2))
+* [Segmented Iterators](segmented-iterators.html)
+* [Uniform Parameters](uniform-parameters.html)
+* [Tagged Overloading](tagged-overloading.html)
+* [Locale-savvy isspace](locale-savvy-isspace.html)
+* [Eve definitions in Lua](eve-definitions-in-lua.html)
+* [Datapumps](datapumps.html)
+* [Visual Editor (Expresso2)](visual-editor-(expresso2).html)
 
 ## Pushing Current Technology
 
-* [Adam Evolution](adam-evolution)
+* [Adam Evolution](adam-evolution.html)
 
 ## APIs Under Development
 
-* [Modal Dialog Integration Kit](modal-dialog-integration-kit)
-* [Alert Dialog API](alert-dialog-api)
-* [GIL File Format Import/Export Factory](gil-file-format-import-export-factory)
-* [Deferred Procedure Call System](deferred-procedure-call-system)
+* [Modal Dialog Integration Kit](modal-dialog-integration-kit.html)
+* [Alert Dialog API](alert-dialog-api.html)
+* [GIL File Format Import/Export Factory](gil-file-format-import-export-factory.html)
+* [Deferred Procedure Call System](deferred-procedure-call-system.html)
 * Script Support for Preset Widget
 
 ## Widgets
 
-* [Preset Widget](preset-widget)
-* [Picture View](picture-view)
-* [Tooltips](tooltips)
-* [Message Box Widget](message-box-widget)
-* [Reveal Widget](reveal-widget)
-* [Guide Consumer](guide-consumer)
-* [Widget Style](widget-style)
-* [List/Tree Widget](list-tree-widget)
-* [Better edit_number Widget](better-edit-number-widget)
+* [Preset Widget](preset-widget.html)
+* [Picture View](picture-view.html)
+* [Tooltips](tooltips.html)
+* [Message Box Widget](message-box-widget.html)
+* [Reveal Widget](reveal-widget.html)
+* [Guide Consumer](guide-consumer.html)
+* [Widget Style](widget-style.html)
+* [List/Tree Widget](list-tree-widget.html)
+* [Better edit_number Widget](better-edit-number-widget.html)

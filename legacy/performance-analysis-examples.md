@@ -20,8 +20,8 @@ want to do some analysis, but not as useful if all you want to know is the winne
 
 ## Examples of analyzing benchmark results:
 
-[loop_unroll.cpp with gcc](performance-analysis-example1)
+[loop_unroll.cpp with gcc](performance-analysis-example1.html)
 
-[simple_types_loop_invariant.cpp with LLVM](performance-analysis-example2)
+[simple_types_loop_invariant.cpp with LLVM](performance-analysis-example2.html)
 
-[stepanov_abstraction.cpp with MSVC](performance-analysis-example3)
+[stepanov_abstraction.cpp with MSVC](performance-analysis-example3.html)

@@ -92,4 +92,4 @@ Checks for equality. Currently this is componentwise comparison of the struct me
 
 ## Related Work
 
-We have work on a [GIL File Format Import/Export Factory](gil-file-format-import-export-factory) in place (with budding documentation).
+We have work on a [GIL File Format Import/Export Factory](gil-file-format-import-export-factory.html) in place (with budding documentation).

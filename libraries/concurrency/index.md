@@ -22,7 +22,7 @@ sections:
         link: future/index
   - kind: collection
     name: Channels
-    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/process/index). 
+    description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/process/index.html). 
     entities:
       - kind: class
         name: stlab::sender
