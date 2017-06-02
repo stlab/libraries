@@ -646,7 +646,7 @@ comments: true
     </tr>
 </table>
 
-## Win32 bjam Issue {#win32-bjam-issue}
+## Win32 bjam Issues {#win32-bjam-issues}
 
 Due to the bjam hackery involved in getting the manifest files to copy to their destinations while building with bjam, the debug/release variants must each be built with separate commands. i.e., the command:
 <pre>
@@ -662,5 +662,5 @@ bjam msvc-7.1 release
 ## Mac OS bjam Issues {#mac-os-bjam-issues}
 The 'install' stage of the bjam build process is hackneyed due to lack of an engineer fluent in bjamese. In some cases the copying of one or more file(s) will fail, in which case the destination file is then deleted successfully. A subsequent execution of bjam will then copy the file successfully to its final destination.
 
-## stderr Issues {#stderr-issue}
+## stderr Issues {#stderr-issues}
 Errors reported to stderr will go to the console on MacOS X; access to stderr is not easy on win32. An alternative should be explored.

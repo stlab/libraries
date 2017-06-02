@@ -46,7 +46,7 @@ There is a supported way that models can be composited - the property model libr
 
 This structure allows you to keep all of the advantages of the property model library.
 
-A number of clients would like to use the property model library simply as a [bredboard](http://en.wikipedia.org/wiki/Breadboard). This would effectively remove the property model from the system except as a connection point:
+A number of clients would like to use the property model library simply as a [bredboard](https://en.wikipedia.org/wiki/Breadboard). This would effectively remove the property model from the system except as a connection point:
 
 {% include figure.md name='Composite_model_05.png' caption='_Breadboard Model_' %}
 

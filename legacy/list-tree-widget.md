@@ -21,11 +21,11 @@ We assume the sequences in a list are disjoint.
 
 ### Related Docs
 
-[Win32 Tree View Control Documentation](http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/commctls/treeview/treeview.asp?hidetoc=true)
+[Win32 Tree View Control Documentation](https://msdn.microsoft.com/en-us/library/windows/desktop/bb759988(v=vs.85).aspx)
 
-[Win32 List View Control Documentation](http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/commctls/listview/listview.asp?hidetoc=true)
+[Win32 List View Control Documentation](https://msdn.microsoft.com/en-us/library/windows/desktop/bb774737(v=vs.85).aspx)
 
-[Carbon Tree Control API Documentation (Data Browser)](http://developer.apple.com/documentation/Carbon/Reference/databrow_reference/index.html#//apple_ref/doc/uid/TP30000969)
+[Carbon Tree Control API Documentation (Data Browser)](http://mirror.informatimago.com/next/developer.apple.com/documentation/Carbon/Conceptual/display_databrowser/index.html)
 
 ## API
 

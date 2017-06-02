@@ -32,11 +32,11 @@ comments: true
 * [Concept-Based Runtime Polymorphism](figures/boost_poly.pdf)\\
   From [BoostCon'07, May 17, 2007](http://www.boostcon.com/).
 
-* [A Possible Future of Software Development](figures/Image:possible_future.pdf)\\
-  From [Library-Centric Software Design Workshop, OOPSLA, October 22, 2006](http://lcsd.cs.tamu.edu/2006/).
+* [A Possible Future of Software Development](figures/Possible_future.pdf)\\
+  From [Library-Centric Software Design Workshop, OOPSLA, October 22, 2006](https://web.archive.org/web/20150404055433/http://lcsd.cs.tamu.edu/2006/).
 
-* [Beyond Objects](figures/regular_object_presentation.pdf)\\
-  From [C++ Connections, November 2005](http://www.devconnections.com/shows/CPPFall2005/default.asp?s=67).
+* [Beyond Objects](figures/Regular_object_presentation.pdf)\\
+  From [C++ Connections, November 2005](https://web.archive.org/web/20061026110121/https://www.devconnections.com/shows/CPPFall2005/default.asp?c=2&s=67).
 
 ## Publications:
 
@@ -82,7 +82,7 @@ comments: true
 
 * [Simulating Partial Specialization](http://www.emarcus.org/#oopsla_2001)\\
   Mat Marcus, Adobe Systems, Inc.<br /> From: the OOPSLA Workshop On Generative Programming 2001. [Slides](http://www.emarcus.org/papers/PartialSpecSlides.pdf)\\
-  See also [The Boost Type Traits Library](http://www.boost.org/doc/html/boost_typetraits.html)\\
+  See also [The Boost Type Traits Library](http://www.boost.org/doc/libs/1_64_0/libs/type_traits/doc/html/index.html)\\
 
 * [How To Write A Simple Lexical Analyzer or Parser](how-to-write-a-simple-lexical-analyzer-or-parser)\\
   Sean Parent, Adobe Systems, Inc.
