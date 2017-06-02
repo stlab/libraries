@@ -53,10 +53,10 @@ A common model that is often completely overlooked is the model for function arg
     <http://smartfriends.com/U/Presenters/untangling_software.pdf> (Don't bother reading, this was an incomprehensible talk.)
 
 [^objc]:
-    <https://developer.apple.com/library/ios/#documentation/General/Conceptual/CocoaEncyclopedia/Model-View-Controller/Model-View-Controller.html>
+    <https://developer.apple.com/library/content/documentation/General/Conceptual/CocoaEncyclopedia/Model-View-Controller/Model-View-Controller.html>
 
 [^wiki]:
-    <http://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller>
+    <https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller>
 
 [^eop]:
     Stepanov, Alexander A., and Paul McJones. "1.3 Objects." Elements of Programming. Upper Saddle River, NJ: Addison-Wesley, 2009. N. pag. Print.
@@ -65,4 +65,4 @@ A common model that is often completely overlooked is the model for function arg
     <https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html>
 
 [^objui]:
-    <http://en.wikipedia.org/wiki/Object-oriented_user_interface>
+    <https://en.wikipedia.org/wiki/Object-oriented_user_interface>
