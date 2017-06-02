@@ -1,6 +1,11 @@
 ---
 layout: default
 ---
+
+{% assign my_pages = site.pages | where_exp:"p","p.url contains page.url" %}
+
+{% assign my_methods = my_pages | where_exp:"p","p.layout == 'method'" %}
+
 <div class="post">
   <article class="post-content">
     {% for entity in page.entities %}
@@ -126,6 +131,50 @@ layout: default
 			
         {% endcase %}
     {% endfor %}
+
+    <h3>Auto-Generated Member Functions:</h3>
+    <table class='definition-table'>
+    {% for fun in my_methods %}
+    <tr>
+        <td class='decl'>
+            {% assign cur_url = fun.url | remove: page.url | remove: ".html" %}
+            <a href="{{cur_url}}">{{cur_url}}</a>
+        </td>
+        <td class='defn'>
+            {% if fun.brief %}
+                {{ fun.brief | markdownify }}
+            {% elsif fun.description %}
+                {{ fun.description | markdownify }}
+            {% else %}
+                <i>No details provided</i>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </table>
+
+    {% assign my_free_functions = my_pages | where_exp:"p","p.layout == 'free-function'" %}
+
+    <h3>Auto-Generated Free Functions:</h3>
+    <table class='definition-table'>
+    {% for fun in my_free_functions %}
+    <tr>
+        <td class='decl'>
+            {% assign cur_url = fun.url | remove: page.url | remove: ".html" %}
+            <a href="{{cur_url}}">{{cur_url}}</a>
+        </td>
+        <td class='defn'>
+            {% if fun.brief %}
+                {{ fun.brief | markdownify }}
+            {% elsif fun.description %}
+                {{ fun.description | markdownify }}
+            {% else %}
+                <i>No details provided</i>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </table>
 
     {{ content }}
   </article>
