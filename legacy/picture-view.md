@@ -11,7 +11,7 @@ comments: true
 
 ## Basic Description
 
-The [Generic Image Library (GIL)](http://stlab.adobe.com/gil/) was added to ASL 1.0.12. <code>adobe::image_t</code> is essentially a placeholder for displaying a picture in a dialog.
+The [Generic Image Library (GIL)](https://stlab.adobe.com/gil/) was added to ASL 1.0.12. <code>adobe::image_t</code> is essentially a placeholder for displaying a picture in a dialog.
 
 ## Semantics / Rationale
 

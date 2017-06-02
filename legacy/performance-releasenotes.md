@@ -129,7 +129,7 @@ Make information for Windows.  "nmake -f makefile.nt report" (in a shell/command
 
 <dt>LICENSE_1_0_0.txt</dt>
 <dd>
-License details, a copy can also be found at <a href='http://stlab.adobe.com/licenses.html'>http://stlab.adobe.com/licenses.html</a>.
+License details, a copy can also be found at <a href='https://stlab.adobe.com/licenses.html'>https://stlab.adobe.com/licenses.html</a>.
 </dd>
 <dt>README.txt</dt>
 <dd>
