@@ -21,7 +21,7 @@ comments: true
 * [Locale-savvy isspace](locale-savvy-isspace)
 * [Eve definitions in Lua](eve-definitions-in-lua)
 * [Datapumps](datapumps)
-* [Visual Editor (Expresso2)](visual-editor-\(expresso2\))
+* [Visual Editor (Expresso2)](visual-editor-(expresso2))
 
 ## Pushing Current Technology
 

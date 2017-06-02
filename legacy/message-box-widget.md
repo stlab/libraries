@@ -63,7 +63,7 @@ private:
 
 RalphThomas thinks that this current proposal combines the optional panel, a dynamic_text and a way to bind to an invariant violation. Would the following be more useful?
 
-* some kind of [dynamic_text](http://www.missioncode.org/index.fcgi/wiki/WidgetDocumentation) widget.
+* some kind of [dynamic_text](https://web.archive.org/web/20100929073310/http://www.missioncode.org/#Widgets) widget.
 * allow binding to an invariant, flag it when it's violated (is this already possible?)
 * a way to determine which cell caused the violation if the invariant is complicated; or just have simple invariants like in the example below.
 
