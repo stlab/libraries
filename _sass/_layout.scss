@@ -402,6 +402,10 @@ table {
     margin: auto;
     border-collapse: separate;
     border-spacing: 3em 0;
+
+    @include media-query($on-palm) {
+        border-spacing: 1em 0;
+    }
 }
 
 .icon-box {
