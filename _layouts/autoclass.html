@@ -68,7 +68,7 @@ layout: default
                     <td class='decl'>(constructor)</td>
                     <td class='defn'>Default-constructs a {{ page.pure-name }}</i></td>
                 {% else %}
-                    <td class='decl'><a href='{{ page.pure-name }}'>(constructor)</a></td>
+                    <td class='decl'><a href='{{ page.pure-name }}.html'>(constructor)</a></td>
                     <td class='defn'>Constructs a {{ page.pure-name }}</td>
                 {% endcase %}
             </tr>
@@ -84,7 +84,7 @@ layout: default
                     <td class='decl'>(destructor)</td>
                     <td class='defn'>Default-destructs a {{ page.pure-name }}</td>
                 {% else %}
-                    <td class='decl'><a href='-{{ page.pure-name }}'>(destructor)</a></td>
+                    <td class='decl'><a href='-{{ page.pure-name }}.html'>(destructor)</a></td>
                     <td class='defn'>Destructs a {{ page.pure-name }}</td>
                 {% endcase %}
             </tr>
@@ -97,7 +97,7 @@ layout: default
             <tr>
                 <td class='decl'>
                     {% assign cur_url = method.url | remove: page.url | remove: ".html" %}
-                    <a href="{{cur_url}}">{{cur_url}}</a>
+                    <a href="{{cur_url}}.html">{{cur_url}}</a>
                 </td>
                 <td class='defn'>
                     {% if method.brief %}
@@ -121,7 +121,7 @@ layout: default
         <tr>
             <td class='decl'>
                 {% assign cur_url = function.url | remove: page.url | remove: ".html" %}
-                <a href="{{cur_url}}">{{cur_url}}</a>
+                <a href="{{cur_url}}.html">{{cur_url}}</a>
             </td>
             <td class='defn'>
                 {% if function.brief %}

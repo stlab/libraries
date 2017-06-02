@@ -32,7 +32,7 @@ layout: default
             {% for fun in entity.functions %}
             <tr>
                 <td class='decl'>
-                    <a href="{{fun.pure-name}}">{{fun.name}}</a>
+                    <a href="{{fun.pure-name}}.html">{{fun.name}}</a>
                 </td>
                 <td class='defn'>{{ fun.description  | markdownify }}</td>
             </tr>
@@ -85,7 +85,7 @@ layout: default
                         </td>
                     {% else %}
                         <td class='decl'>
-                            <a href="{{entity.pure-name}}">(constructor)</a>
+                            <a href="{{entity.pure-name}}.html">(constructor)</a>
                         </td>
                         <td class='defn'>
                             <p>constructs a <code>{{entity.pure-name}}</code></p>
@@ -102,7 +102,7 @@ layout: default
                         </td>
                     {% else %}
                         <td class='decl'>
-                            <a href="-{{entity.pure-name}}">(destructor)</a>
+                            <a href="-{{entity.pure-name}}.html">(destructor)</a>
                         </td>
                         <td class='defn'>
                             <p>destructs a <code>{{entity.pure-name}}</code></p>
@@ -113,9 +113,9 @@ layout: default
 			<tr>
                 <td class='decl'>
                 {% if fun.link %}
-                    <a href="{{fun.link}}">{{fun.name}}</a>
+                    <a href="{{fun.link}}.html">{{fun.name}}</a>
                 {% else %}
-                    <a href="{{fun.name}}">{{fun.name}}</a>
+                    <a href="{{fun.name}}.html">{{fun.name}}</a>
                 {% endif %}
                 </td>
 				<td class='defn'>{{ fun.description | markdownify }}</td>
