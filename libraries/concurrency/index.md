@@ -24,6 +24,15 @@ sections:
     name: Channels
     description: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors. It is possible to split, join, zip and merge channels. Each processing node is associated with a [process](channel/policy_process). 
     entities:
+      - kind: free-function
+        name: stlab::channel
+        pure-name: channel
+        defined-in-header: stlab/channel.hpp
+        declaration: channel
+        description: |
+            Creates a pair that consists of a sender and a receiver
+        link: channel/channel
+        annotation: template function
       - kind: class
         name: stlab::sender
         pure-name: sender
@@ -32,7 +41,7 @@ sections:
         description: |
             This class implements the sending part of a CSP channel
         link: channel/sender
-        annotation: template
+        annotation: template class
       - kind: class
         name: stlab::receiver
         pure-name: receiver
@@ -41,7 +50,7 @@ sections:
         description: |
             This class implements the receiving part of a CSP channel
         link: channel/receiver
-        annotation: template
+        annotation: template class
       - kind: class
         name: process
         pure-name: process
