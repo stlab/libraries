@@ -2,8 +2,8 @@
 layout: autoclass
 title: process
 tags: [library]
-ctor: default
-dtor: default
+ctor: unspecified
+dtor: unspecified
 kind: class
 name: process
 pure-name: process

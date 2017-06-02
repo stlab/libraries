@@ -58,32 +58,38 @@ layout: default
     {% endif %}
 
     <table class='definition-table'>
-        <tr>
-            {% case page.ctor %}
-            {% when 'delete' %}
-                <td class='decl'>(constructor)</td>
-                <td class='defn'><i>deleted</i></td>
-            {% when 'default' %}
-                <td class='decl'>(constructor)</td>
-                <td class='defn'>Default-constructs a {{ page.pure-name }}</i></td>
-            {% else %}
-                <td class='decl'><a href='{{ page.pure-name }}'>(constructor)</a></td>
-                <td class='defn'>Constructs a {{ page.pure-name }}</td>
-            {% endcase %}
-        </tr>
-        <tr>
-            {% case page.dtor %}
-            {% when 'delete' %}
-                <td class='decl'>(destructor)</td>
-                <td class='defn'><i>deleted</i></td>
-            {% when 'default' %}
-                <td class='decl'>(destructor)</td>
-                <td class='defn'>Default-destructs a {{ page.pure-name }}</td>
-            {% else %}
-                <td class='decl'><a href='-{{ page.pure-name }}'>(destructor)</a></td>
-                <td class='defn'>Destructs a {{ page.pure-name }}</td>
-            {% endcase %}
-        </tr>
+        {% unless page.ctor == 'unspecified' %}
+            <tr>
+                {% case page.ctor %}
+                {% when 'delete' %}
+                    <td class='decl'>(constructor)</td>
+                    <td class='defn'><i>deleted</i></td>
+                {% when 'default' %}
+                    <td class='decl'>(constructor)</td>
+                    <td class='defn'>Default-constructs a {{ page.pure-name }}</i></td>
+                {% else %}
+                    <td class='decl'><a href='{{ page.pure-name }}'>(constructor)</a></td>
+                    <td class='defn'>Constructs a {{ page.pure-name }}</td>
+                {% endcase %}
+            </tr>
+        {% endunless %}
+
+        {% unless page.dtor == 'unspecified' %}
+            <tr>
+                {% case page.dtor %}
+                {% when 'delete' %}
+                    <td class='decl'>(destructor)</td>
+                    <td class='defn'><i>deleted</i></td>
+                {% when 'default' %}
+                    <td class='decl'>(destructor)</td>
+                    <td class='defn'>Default-destructs a {{ page.pure-name }}</td>
+                {% else %}
+                    <td class='decl'><a href='-{{ page.pure-name }}'>(destructor)</a></td>
+                    <td class='defn'>Destructs a {{ page.pure-name }}</td>
+                {% endcase %}
+            </tr>
+        {% endunless %}
+
         {% for method in methods %}
             {% if method.pure-name == dtor_name or method.pure-name == page.pure-name %}
                 {% continue %}
