@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::make_exceptional_future
 tags: [library]
+pure-name: make_exceptional_future
+brief: Creates a future that is fulfilled as failed
 description: Creates a future that is fulfilled as failed
 entities:
   - kind: overloads

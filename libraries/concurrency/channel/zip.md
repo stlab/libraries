@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::zip
 tags: [library]
+pure-name: zip
+brief: Creates a future that zips all passed arguments
 entities:
   - kind: overloads
     defined-in-header: stlab/channel.hpp  

@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::merge
 tags: [library]
+pure-name: merge
+brief: Creates a future that merges all passed arguments
 entities:
   - kind: overloads
     defined-in-header: stlab/channel.hpp 

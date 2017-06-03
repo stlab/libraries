@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::when_all
 tags: [library]
+pure-name: when_all
+brief: Creates a joining future
 description: Creates a joining future
 entities:
   - kind: overloads

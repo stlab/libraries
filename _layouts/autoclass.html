@@ -3,6 +3,7 @@ layout: default
 ---
 
 {% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
+{% assign siblings = siblings | where_exp:"p","p.url != page.url" %}
 {% assign methods = siblings | where_exp:"p","p.layout == 'method'" %}
 {% assign free_functions = siblings | where_exp:"p","p.layout == 'free-function'" %}
 {% assign dtor_name = page.pure-name | prepend: "~" %}
@@ -33,7 +34,7 @@ layout: default
         {% endif %}
 
         {% if page.description %}
-            <div>{{page.description | markdownify }}</div>
+            {{page.description | markdownify }}
         {% endif %}
 
         {% if page.member-types %}
@@ -51,7 +52,6 @@ layout: default
                 {% endfor %}
             </table>
         {% endif %}
-        </table>
 
     {% if methods.size > 0 %}
         <h3>Member Functions</h3>
@@ -135,6 +135,8 @@ layout: default
         </tr>
     {% endfor %}
     </table>
+
+    {% include associated_classes.html %}
 
     {{ content }}
   </article>
