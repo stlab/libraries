@@ -1,18 +1,6 @@
-{% unless siblings %}
-    {% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
-    {% assign siblings = siblings | where_exp:"p","p.url != page.url" %}
-{% endunless %}
+{% include derive_family.html %}
 
-{% assign maybe_classes = siblings | where_exp:"p","p.layout contains 'class'" %}
-{% assign classes = '' | split: '' %}
-{% for p in maybe_classes %}
-    {% assign short_url = p.url | remove_first: page.url %}
-    {% assign split_url = short_url | split: '/' %}
-    {% if split_url.size != 1 %}
-        {% continue %}
-    {% endif %}
-    {% assign classes = classes | push: p %}
-{% endfor %}
+{% assign classes = siblings | where_exp:"p","p.layout == 'class'" %}
 
 {% if classes.size > 0 %}
 <h3>Associated Classes</h3>

@@ -1,21 +1,9 @@
-{% unless siblings %}
-    {% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
-    {% assign siblings = siblings | where_exp:"p","p.url != page.url" %}
-{% endunless %}
+{% include derive_family.html %}
 
-{% assign maybe_libraries = siblings | where_exp:"p","p.layout contains 'library'" %}
-{% assign libraries = '' | split: '' %}
-{% for p in maybe_libraries %}
-    {% assign short_url = p.url | remove_first: page.url %}
-    {% assign split_url = short_url | split: '/' %}
-    {% if split_url.size != 1 %}
-        {% continue %}
-    {% endif %}
-    {% assign libraries = libraries | push: p %}
-{% endfor %}
+{% assign libraries = siblings | where_exp:"p","p.layout == 'library'" %}
 
 {% if libraries.size > 0 %}
-<h3>Sublibraries</h3>
+<h3>Sub-libraries</h3>
 <table class='definition-table'>
   {% for p in libraries %}
     {% assign short_url = p.url | remove_first: page.url %}
