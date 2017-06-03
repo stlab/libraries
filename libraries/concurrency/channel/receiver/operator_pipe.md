@@ -6,6 +6,7 @@ full-name: stlab::receiver::operator|
 pure-name: operator|
 defined-in-header: stlab/channel.hpp 
 declaration: operator|()
+brief: Creates a new receiver with the given process attached downstream.
 description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached.
 entities:
   - kind: methods

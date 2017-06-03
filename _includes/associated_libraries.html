@@ -24,8 +24,13 @@
           <div><a href="{{short_url}}index.html">{{ p.title }}</a></div>
         </td>
         <td class='defn'>
-            {% assign defn = '' | split: '' | push: p.brief | push: p.description | push: '_No brief or description provided_' %}
-            {{ defn | first | markdownify }}
+            {% if p.brief %}
+                {{ p.brief | markdownify}}
+            {% elsif p.description %}
+                {{ p.description | markdownify}}
+            {% else %}
+                {{ '_No details given_' | markdownify}}
+            {% endif %}
             {% if p.annotation %}
                 <span class='annotation'>({{p.annotation}})</span>
             {% endif %}

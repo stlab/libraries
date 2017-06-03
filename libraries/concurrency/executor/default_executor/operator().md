@@ -6,7 +6,7 @@ full-name: stlab::default_executor::operator()
 pure-name: operator()
 defined-in-header: stlab/default_executor.hpp 
 declaration: operator()
-description: Executes the given function on this executor
+description: Executes the given function on the operating systems's thread pool.
 entities:
   - kind: methods
     list:

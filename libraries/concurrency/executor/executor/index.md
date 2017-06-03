@@ -2,15 +2,13 @@
 layout: class
 title: stlab::executor
 tags: [library]
-entities:
-  - kind: class
-    name: stlab::executor
-    pure-name: executor
-    defined-in-header: stlab/channel.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
-    declaration: struct executor
-    description: This class encapsulates an executor to be piped to a `receiver<T>`
-    member-functions:
+name: stlab::executor
+pure-name: executor
+defined-in-header: stlab/channel.hpp
+git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+declaration: struct executor
+description: This class encapsulates an executor to be piped to a `receiver<T>`
+dtor: default
 ---
 
 ### Example ###
