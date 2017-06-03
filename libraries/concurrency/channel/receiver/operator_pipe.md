@@ -33,18 +33,6 @@ entities:
         description: Futures that shall be joined
   - kind: result
     description: A receiver of type of the result of the passed function object
-  - kind: utilitys
-    classes:
-      - name: executor
-        defined-in-header: stlab/channel.hpp
-        description: Encapsultes an executor to be used by a process
-        pure-name: executor
-        link: ../executor/index
-      - name: buffer_size
-        defined-in-header: stlab/channel.hpp
-        description: Encapsulates the buffer size of a process
-        pure-name: buffer_size/index
-        link: buffer_size
 ---
 
 
