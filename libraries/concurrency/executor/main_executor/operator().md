@@ -5,8 +5,7 @@ tags: [library]
 full-name: stlab::main_executor::operator()
 pure-name: operator()
 defined-in-header: stlab/main_executor.hpp 
-declaration: operator()
-description: Executes the given function on this executor
+description: Executes the given function on the application's main loop.
 entities:
   - kind: methods
     list:

@@ -1,131 +1,84 @@
 ---
 layout: default
 ---
+
+{% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
+{% assign siblings = siblings | where_exp:"p","p.url != page.url" %}
+{% assign methods = siblings | where_exp:"p","p.layout == 'method'" %}
+{% assign free_functions = siblings | where_exp:"p","p.layout == 'free-function'" %}
+
+<header class="post-header">
+    <h1 class='code'>{{ page.title }}</h1>
+</header>
+
 <div class="post">
   <article class="post-content">
-    {% for entity in page.entities %}
-        <header class="post-header">
-          <h1 class='code'>{{ entity.name }}</h1>
-        </header>
-        {% case entity.kind %}
-          {% when 'type-function' %}
-            <h2>Type Function</h2>
-            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-            <h3>Parameters</h3>
-            {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
-                {% endcapture %}
-                {{ param | markdownify }}
-            {% endfor %}
-            <h3>Result</h3>
-            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description | markdownify }}
-            {% endcapture %}
-            {{ result | markdownify }}
-            <h3>See</h3>
-            {% for item in entity.see %}
-                {% capture link %}[`{{ item }}`](#{{ item | replace: '_', '-' }}){% endcapture %}
-                {{ link | markdownify }}
-            {% endfor %}
-          {% when 'free-functions' %}
-            <h3>Non-member functions</h3>
-            <table class='definition-table'>
-            {% for fun in entity.functions %}
-            <tr>
-                <td class='decl'>
-                    <a href="{{fun.pure-name}}.html">{{fun.name}}</a>
-                </td>
-                <td class='defn'>{{ fun.description  | markdownify }}</td>
-            </tr>
-            {% endfor %}
-            </table>
-          {% when 'class' %}
-            {% if entity.defined-in-header %}
-            <div>Defined in header <a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
-            {% endif %}
+        {% if page.defined-in-header %}
+            <div>
+                Defined in header
+                <a href="{{ page.git-link }}">
+                    <code>&lt;{{ page.defined-in-header }}&gt;</code>
+                </a>
+            </div>
+        {% endif %}
 
-            {% if entity.declaration %}
+        {% if page.declaration %}
             <table class='declaration-table'>
-            <tr class='declaration-row'>
-                <td>
-                    {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-                </td>
-            </tr>
+                <tr>
+                    <td>
+                        {% highlight cpp %}{{ page.declaration }}{% endhighlight %}
+                    </td>
+                </tr>
             </table>
-            {% endif %}
+        {% endif %}
 
-            {% if entity.description %}
-			<div>{{entity.description | markdownify }}</div>
-            {% endif %}
+        {% if page.description %}
+            {{page.description | markdownify }}
+        {% endif %}
 
-            {% if entity.member-types %}
-                <h3>Member types</h3>
-                <table class='definition-table'>
-                    <tr class='headers'>
-                        <th>Member type</th>
-                        <th>Definition</th>
+        {% if page.member-types %}
+            <h3>Member types</h3>
+            <table class='definition-table'>
+                <tr class='headers'>
+                    <th>Member type</th>
+                    <th>Definition</th>
+                </tr>
+                {% for type in page.member-types %}
+                    <tr>
+                        <td><code>{{ type.type }}</code></td>
+                        <td><code>{{ type.definition }}</code></td>
                     </tr>
-                    {% for type in entity.member-types %}
-                        <tr>
-                            <td><code>{{ type.type }}</code></td>
-                            <td><code>{{ type.definition }}</code></td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% endif %}
-			<h3>Member functions</h3>
-			<table class='definition-table'>
-            <tbody>
-    			<tr>
-                    {% if entity.no-ctor %}
-                        <td class='decl'>
-                            (constructor)
-                        </td>
-                        <td class='defn'>
-                            <i>Unavailable or deleted</i>
-                        </td>
-                    {% else %}
-                        <td class='decl'>
-                            <a href="{{entity.pure-name}}.html">(constructor)</a>
-                        </td>
-                        <td class='defn'>
-                            <p>constructs a <code>{{entity.pure-name}}</code></p>
-                        </td>
-                    {% endif %}
-    			</tr>
-    			<tr>
-                    {% if entity.no-dtor %}
-                        <td class='decl'>
-                            (destructor)
-                        </td>
-                        <td class='defn'>
-                            <i>Unavailable or deleted</i>
-                        </td>
-                    {% else %}
-                        <td class='decl'>
-                            <a href="-{{entity.pure-name}}.html">(destructor)</a>
-                        </td>
-                        <td class='defn'>
-                            <p>destructs a <code>{{entity.pure-name}}</code></p>
-                        </td>
-                    {% endif %}
-    			</tr>
-            {% for fun in entity.member-functions %}
-			<tr>
-                <td class='decl'>
-                {% if fun.link %}
-                    <a href="{{fun.link}}.html">{{fun.name}}</a>
+                {% endfor %}
+            </table>
+        {% endif %}
+
+    {% include associated_methods.html %}
+
+    {% if free_functions.size > 0 %}
+        <h3>Nonmember Functions</h3>
+    {% endif %}
+
+    <table class='definition-table'>
+    {% for function in free_functions %}
+        <tr>
+            <td class='decl'>
+                {% assign cur_url = function.url | remove: page.url | remove: ".html" %}
+                <a href="{{cur_url}}.html">{{cur_url}}</a>
+            </td>
+            <td class='defn'>
+                {% if function.brief %}
+                    {{ function.brief | markdownify }}
+                {% elsif function.description %}
+                    {{ function.description | markdownify }}
                 {% else %}
-                    <a href="{{fun.name}}.html">{{fun.name}}</a>
+                    <i>No details provided</i>
                 {% endif %}
-                </td>
-				<td class='defn'>{{ fun.description | markdownify }}</td>
-			</tr>
-			{% endfor %}
-            </tbody>
-			</table>
-			
-        {% endcase %}
+            </td>
+        </tr>
     {% endfor %}
+    </table>
+
+    {% include associated_classes.html %}
 
     {{ content }}
   </article>

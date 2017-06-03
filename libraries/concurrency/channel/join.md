@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::join
 tags: [library]
+pure-name: join
+brief: Creates a future that joins all passed arguments
 entities:
   - kind: overloads
     defined-in-header: stlab/channel.hpp

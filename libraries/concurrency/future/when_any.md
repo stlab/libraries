@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::when_any
 tags: [library]
+pure-name: when_any
+brief: Creates a future that continues on the first success of any futures passed
 description: Creates a future that continues on the first success of any futures passed
 entities:
   - kind: overloads

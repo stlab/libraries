@@ -1,0 +1,41 @@
+{% unless siblings %}
+    {% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
+    {% assign siblings = siblings | where_exp:"p","p.url != page.url" %}
+{% endunless %}
+
+{% assign maybe_libraries = siblings | where_exp:"p","p.layout contains 'library'" %}
+{% assign libraries = '' | split: '' %}
+{% for p in maybe_libraries %}
+    {% assign short_url = p.url | remove_first: page.url %}
+    {% assign split_url = short_url | split: '/' %}
+    {% if split_url.size != 1 %}
+        {% continue %}
+    {% endif %}
+    {% assign libraries = libraries | push: p %}
+{% endfor %}
+
+{% if libraries.size > 0 %}
+<h3>Sublibraries</h3>
+<table class='definition-table'>
+  {% for p in libraries %}
+    {% assign short_url = p.url | remove_first: page.url %}
+    <tr>
+        <td class='decl'>
+          <div><a href="{{short_url}}index.html">{{ p.title }}</a></div>
+        </td>
+        <td class='defn'>
+            {% if p.brief %}
+                {{ p.brief | markdownify}}
+            {% elsif p.description %}
+                {{ p.description | markdownify}}
+            {% else %}
+                {{ '_No details given_' | markdownify}}
+            {% endif %}
+            {% if p.annotation %}
+                <span class='annotation'>({{p.annotation}})</span>
+            {% endif %}
+        </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endif %}

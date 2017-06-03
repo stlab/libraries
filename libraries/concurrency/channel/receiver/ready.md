@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::receiver
+title: ready
 tags: [library]
 full-name: stlab::receiver::ready
 pure-name: ready

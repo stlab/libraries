@@ -1,11 +1,12 @@
 ---
 layout: method
-title: stlab::receiver
+title: operator|
 tags: [library]
 full-name: stlab::receiver::operator|
 pure-name: operator|
 defined-in-header: stlab/channel.hpp 
 declaration: operator|()
+brief: Creates a new receiver with the given process attached downstream.
 description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached.
 entities:
   - kind: methods
@@ -32,18 +33,6 @@ entities:
         description: Futures that shall be joined
   - kind: result
     description: A receiver of type of the result of the passed function object
-  - kind: utilitys
-    classes:
-      - name: executor
-        defined-in-header: stlab/channel.hpp
-        description: Encapsultes an executor to be used by a process
-        pure-name: executor
-        link: ../executor/index
-      - name: buffer_size
-        defined-in-header: stlab/channel.hpp
-        description: Encapsulates the buffer size of a process
-        pure-name: buffer_size/index
-        link: buffer_size
 ---
 
 

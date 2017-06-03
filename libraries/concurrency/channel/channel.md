@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::channel
 tags: [library]
+pure-name: channel
+brief: Creates a pair that consists of a sender and a receiver
 entities:
   - kind: overloads
     defined-in-header: stlab/channel.hpp

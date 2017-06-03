@@ -6,78 +6,17 @@ layout: default
   <header class="post-header">
     <h1>{{ page.title }}</h1>
   </header>
-
-  <div class="post-content">
-    {{ page.description }}
-  </div>
   
   <article class="post-content">
-    {% for entity in page.sections %}
-        {% case entity.kind %}
-          {% when 'collection' %}
-            <h3>{{entity.name}}</h3>
-            <p>{{ entity.description | markdownify }}</p>
-            <table class='definition-table'>
-              {% for entry in entity.entities %}
-                <tr>
-                    <td class='decl'>
-                      <div><a href="{{entry.link}}">{{ entry.pure-name }}</a></div>
-                    </td>
-                    <td class='defn'>
-                        {{ entry.description | markdownify }}
-                        {% if entry.annotation %}
-                        <span class='annotation'>({{entry.annotation}})</span>
-                        {% endif %}
-                    </td>
-                </tr>
-              {% endfor %}
-            </table>
-        {% endcase %}
-    {% endfor %}
-    {% for entity in page.entities %}
-        <a name="{{ entity.name | replace: '_', '-' }}">{{ entity.name }}</a>
-        {% case entity.kind %}
-          {% when 'type-function' %}
-            <h2>Type Function</h2>
-            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-            <h3>Parameters</h3>
-            {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
-                {% endcapture %}
-                {{ param | markdownify }}
-            {% endfor %}
-            <h3>Result</h3>
-            {% capture result %}`{{ entity.result.name }}`: {{ entity.result.description | markdownify }}
-            {% endcapture %}
-            {{ result | markdownify }}
-            <h3>See</h3>
-            {% for item in entity.see %}
-                {% capture link %}[`{{ item }}`](#{{ item | replace: '_', '-' }}){% endcapture %}
-                {{ link | markdownify }}
-            {% endfor %}
-          {% when 'function' %}
-            <h2>Function</h2>
-            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-            <h3>Parameters</h3>
-            {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description | markdownify }}
-                {% endcapture %}
-                {{ param | markdownify }}
-            {% endfor %}
-            <h3>Preconditions</h3>
-            {% for item in entity.preconditions %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Notes</h3>
-            {% for item in entity.notes %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Return</h3>
-            {{ entity.return | markdownify }}
-        {% endcase %}
-    {% endfor %}
+    {% if page.brief %}{{ page.brief | markdownify }}{% endif %}
+    {% if page.description %}{{ page.description | markdownify }}{% endif %}
+
+    {% include associated_classes.html %}
+
+    {% include associated_functions.html %}
+
+    {% include associated_libraries.html %}
 
     {{ content }}
   </article>
-
 </div>

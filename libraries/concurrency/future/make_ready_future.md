@@ -2,6 +2,8 @@
 layout: free-function
 title: stlab::make_ready_future
 tags: [library]
+pure-name: make_ready_future
+brief: Creates a future that is already fulfilled
 description: Creates a future that is already fulfilled
 entities:
   - kind: overloads
