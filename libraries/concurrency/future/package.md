@@ -14,7 +14,9 @@ entities:
         pure-name: package
         declaration: |
             template <typename Sig, typename E, typename F>
-            auto package(E executor, F f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>>
+            auto package(E executor, F f) ->
+                std::pair<detail::packaged_task_from_signature_t<Sig>,
+                          future<detail::result_of_t_<Sig>>>
         description: The template function package runs creates a pair of a packaged_task and a future.
   - kind: parameters
     list:

@@ -1,11 +1,13 @@
 ---
-layout: autoclass
+layout: class
 title: stlab::receiver
 tags: [library]
 name: stlab::receiver
 pure-name: receiver
 defined-in-header: stlab/channel.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+ctor: default
+dtor: default
 declaration: |
     template <typename T> 
     class receiver
@@ -22,17 +24,3 @@ member-types:
   - type: value_type
     definition: T
 ---
-
-# Gotta Fix this!
-~~~
-  - kind: class
-    name: stlab::buffer_size
-    pure-name: buffer_size
-    defined-in-header: stlab/channel.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
-    declaration: |
-        template <typename T> 
-        class buffer_size
-    description: |
-      Executor type
-~~~

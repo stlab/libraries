@@ -1,5 +1,5 @@
 ---
-layout: autoclass
+layout: class
 title: stlab::buffer_size
 tags: [library]
 pure-name: buffer_size

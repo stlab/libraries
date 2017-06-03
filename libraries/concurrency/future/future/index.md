@@ -1,5 +1,5 @@
 ---
-layout: autoclass
+layout: class
 title: stlab::future
 tags: [library]
 name: stlab::future

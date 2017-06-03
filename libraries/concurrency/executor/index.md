@@ -1,5 +1,5 @@
 ---
-layout: autolibrary
+layout: library
 title: Executors
 tags: [library]
 brief: Executors. They execute.

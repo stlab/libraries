@@ -1,5 +1,5 @@
 ---
-layout: autoclass
+layout: class
 title: stlab::sender
 tags: [library]
 ctor: default

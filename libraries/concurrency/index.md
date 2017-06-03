@@ -1,5 +1,5 @@
 ---
-layout: autolibrary
+layout: library
 title: Concurrency
 tags: [library]
 brief: This library provides high level constructs for implementing algorithms that eases the use of multiple CPU cores while minimizing the contention.

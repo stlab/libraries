@@ -1,6 +1,6 @@
 ---
 layout: method
-title: stlab::receiver
+title: operator|
 tags: [library]
 full-name: stlab::receiver::operator|
 pure-name: operator|

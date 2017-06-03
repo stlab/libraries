@@ -1,5 +1,5 @@
 ---
-layout: autolibrary
+layout: library
 title: Libraries
 description: The stlab libraries
 ---

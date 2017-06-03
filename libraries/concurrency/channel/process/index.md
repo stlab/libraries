@@ -1,5 +1,5 @@
 ---
-layout: autoclass
+layout: class
 title: process
 tags: [library]
 ctor: unspecified

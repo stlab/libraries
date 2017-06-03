@@ -1,5 +1,5 @@
 ---
-layout: autolibrary
+layout: library
 title: Channels
 tags: [library]
 brief: CSP channels that allow to greate processing graphs that execute the tasks on dedicated executors.
