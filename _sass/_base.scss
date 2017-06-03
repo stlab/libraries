@@ -24,7 +24,7 @@ body {
 }
 
 pre, code {
-    font: $base-font-weight #{$base-font-size}/#{$base-line-height} $mono-font-family;
+    font: $base-font-weight #{$base-font-size}/#{$base-line-height} $code-font-family;
 }
 
 /**
@@ -81,7 +81,7 @@ li {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
-    font-family: $serif-font-family;
+    font-family: $header-font-family;
     font-weight: $base-font-weight;
 }
 

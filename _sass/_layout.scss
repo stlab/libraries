@@ -230,7 +230,7 @@
     margin-bottom: $spacing-unit / 2;
 
     > .code {
-        font-family: $mono-font-family;
+        font-family: $code-font-family;
     }
 }
 
@@ -315,7 +315,7 @@ table {
                 }
             }
             > td.decl {
-                font-family: $mono-font-family;
+                font-family: $code-font-family;
             }
             > td.defn {
                 padding-left: 1.5em;
@@ -352,7 +352,7 @@ table {
                 }
             }
             > td.decl {
-                font-family: $mono-font-family;
+                font-family: $code-font-family;
             }
             > td.defn {
                 padding-left: 1.5em;
@@ -386,7 +386,7 @@ table {
                 }
             }
             > td.decl {
-                font-family: $mono-font-family;
+                font-family: $code-font-family;
             }
             > td.defn {
                 padding-left: 1.5em;
