@@ -20,7 +20,7 @@ entities:
       - name: e
         description: Executor which is used to schedule the resulting task
       - name: f
-        description: Callable object that implements the task. All results from the upstream process must be convertable to the only argument of the provided function object.
+        description: Callable object that implements the process. All results from the upstream process must be convertable to the only argument of the provided function object's function operator or the argument of process' await function.
       - name: upstream_receiver
         description: The upstream receiver(s). 
   - kind: result
