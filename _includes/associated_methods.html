@@ -1,20 +1,6 @@
-{% unless siblings %}
-    {% assign siblings = site.pages | where_exp:"p","p.url contains page.url" %}
-    {% assign siblings = siblings | where_exp:"p","p.url != page.url" %}
-{% endunless %}
+{% include derive_family.html %}
 
-{% assign dtor_name = page.pure-name | prepend: "~" %}
-
-{% assign maybe_methods = siblings | where_exp:"p","p.layout contains 'method'" %}
-{% assign methods = '' | split: '' %}
-{% for p in maybe_methods %}
-    {% assign short_url = p.url | remove_first: page.url %}
-    {% assign split_url = short_url | split: '/' %}
-    {% if split_url.size != 1 %}
-        {% continue %}
-    {% endif %}
-    {% assign methods = methods | push: p %}
-{% endfor %}
+{% assign methods = siblings | where_exp:"p","p.layout == 'method'" %}
 
 <h3>Member Functions</h3>
 <table class='definition-table'>
