@@ -17,6 +17,8 @@ description: |
     - a type that must have properties, that are described below. It is further here called an _await-process_.
 
   Since a function-process does not need further explication, the following concentrates on await-processes.
+
+  It is ensured with a static assert that the process implements a `state() const`method.
 ---
 
 ### Signature of an await-process ###
