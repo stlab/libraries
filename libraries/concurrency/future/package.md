@@ -9,7 +9,7 @@ entities:
   - kind: overloads
     name: stlab::package
     defined-in-header: stlab/future.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
     list:
       - name: package
         pure-name: package

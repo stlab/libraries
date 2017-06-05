@@ -21,7 +21,7 @@
     {% assign short_url = p.url | remove_first: page.url %}
     <tr>
         <td class='decl'>
-          <div><a href="{{short_url}}index.html">{{ p.pure-name }}</a></div>
+          <div><a href="{{short_url}}">{{ p.pure-name }}</a></div>
         </td>
         <td class='defn'>
             {% if p.brief %}
