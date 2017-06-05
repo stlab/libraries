@@ -7,7 +7,7 @@ layout: default
 </header>
 
 <div class="post">
-  <article class="post-content">
+    <article class="post-content">
         {% if page.defined-in-header %}
             <div>
                 Defined in header
@@ -18,13 +18,7 @@ layout: default
         {% endif %}
 
         {% if page.declaration %}
-            <table class='declaration-table'>
-                <tr>
-                    <td>
-                        {% highlight cpp %}{{ page.declaration }}{% endhighlight %}
-                    </td>
-                </tr>
-            </table>
+            {% highlight cpp %}{{ page.declaration }}{% endhighlight %}
         {% endif %}
 
         {{page.brief | markdownify }}
@@ -47,37 +41,13 @@ layout: default
             </table>
         {% endif %}
 
-    {% include associated_methods.html %}
+        {% include associated_methods.html %}
 
-    {% assign free_functions = siblings | where_exp:"p","p.layout == 'free-function'" %}
+        {% include associated_functions.html %}
 
-    {% if free_functions.size > 0 %}
-        <h3>Nonmember Functions</h3>
-    {% endif %}
+        {% include associated_classes.html %}
 
-    <table class='definition-table'>
-    {% for function in free_functions %}
-        <tr>
-            <td class='decl'>
-                {% assign cur_url = function.url | remove: page.url | remove: ".html" %}
-                <a href="{{cur_url}}.html">{{cur_url}}</a>
-            </td>
-            <td class='defn'>
-                {% if function.brief %}
-                    {{ function.brief | markdownify }}
-                {% elsif function.description %}
-                    {{ function.description | markdownify }}
-                {% else %}
-                    <i>No details provided</i>
-                {% endif %}
-            </td>
-        </tr>
-    {% endfor %}
-    </table>
-
-    {% include associated_classes.html %}
-
-    {{ content }}
-  </article>
+        {{ content }}
+    </article>
 </div>
 

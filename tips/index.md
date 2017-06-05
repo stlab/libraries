@@ -1,19 +1,15 @@
 ---
 title: Tips
 layout: page
+tab: Tips
 ---
 
-From time-to-time I've posted programming tips (often these have been internal emails), blog posts, or other short form writings. I'm gathering ones that might be of general interest here, updating them in the process.
+From time to time I've posted programming tips (often these have been internal emails), blog posts, or other short form writings. I'm gathering ones that might be of general interest here, updating them in the process.
 
-## Contents
-
-<dl class='posts'>
-{% for p in site.pages %}
-    {% if p.tags contains 'tips' and p.url != page.url %}
-        {% if p.draft %}{% else %}
-            <dt><a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title | markdownify }}</a></dt>
-        {% endif %}
-    {% endif %}
-{% endfor %}
-</dl>
+<ul class='definition-list'>
+    {% assign tips = site.pages | where_exp:"p","p.tags contains 'tips'" | where_exp:"p","p.draft == nil" | sort:"title"%}
+    {% for p in tips %}
+        <li><a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title | markdownify }}</a></li>
+    {% endfor %}
+</ul>
 
