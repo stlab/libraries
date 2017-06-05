@@ -18,7 +18,7 @@ description: |
 
   Since a function-process does not need further explication, the following concentrates on await-processes.
 
-  It is ensured with a static assert that the process implements a `state() const`method.
+  It is ensured with a static assert that the process implements a `state() const` method.
 ---
 
 ### Signature of an await-process ###

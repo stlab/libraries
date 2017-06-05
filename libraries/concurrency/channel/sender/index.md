@@ -12,7 +12,7 @@ declaration: |
     template <typename T>
     class sender
 brief: Implements the sending part of a CSP channel
-description: This class implements the sending part of a CSP channel
+description:
 member-types:
   - type: value_type
     definition: T

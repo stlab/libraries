@@ -8,8 +8,9 @@ layout: default
   </header>
   
   <article class="post-content">
-    {% if page.brief %}{{ page.brief | markdownify }}{% endif %}
-    {% if page.description %}{{ page.description | markdownify }}{% endif %}
+    {{ page.brief | markdownify }}
+
+    {{ page.description | markdownify }}
 
     {% include associated_classes.html %}
 

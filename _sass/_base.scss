@@ -184,7 +184,7 @@ pre {
         font-style: oblique;
     }
     > li.crumb:before {
-        content: " | ";
+        content: "\2009|\a0";
     }
 }
 
