@@ -4,11 +4,11 @@ This is the source code repository of the Software Technology Lab (stlab).
 
 ASL libraries will be migrated here in the stlab namespace, new libraries will be created here.
 
-#Content
+# Content
 
-## [Concurrency](http://www.stlab.cc/libraries/concurrency/
-This library provides the high level constructs futures and channels for implementing algorithms that eases the use of 
-multiple CPU cores while minimizing the contention.
+## [Concurrency](http://www.stlab.cc/libraries/concurrency/)
+This library provides futures and channels, high level constructs for implementing algorithms that eases the use of 
+multiple CPU cores while minimizing contention. This library solves several problems of the C++11 and C++17 TS futures.  
 
 # Documentation
 
