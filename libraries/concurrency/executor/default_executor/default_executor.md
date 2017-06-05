@@ -6,7 +6,7 @@ full-name: stlab::default_executor::default_executor
 pure-name: default_executor
 defined-in-header: stlab/default_executor.hpp 
 declaration: default_executor()
-description: Constructs a new default_executor object. All functions that are passed to an instance of this class are executed on the systems thread pool.
+description: Constructs a new default_executor object. All functions that are passed to an instance of this class are executed on the system's thread pool.
 entities:
   - kind: methods
     list:
