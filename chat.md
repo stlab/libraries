@@ -1,9 +1,8 @@
 ---
 layout: page
-title: "Chat"
-date: 2014-06-17 21:41
-sharing: true
-footer: true
+title: Chat
+tab: Chat
+permalink: /chat/
 ---
 
 For video chats use the Google Hangout below (requires a Google account).

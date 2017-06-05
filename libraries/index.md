@@ -1,6 +1,7 @@
 ---
 layout: library
 title: Libraries
+tab: Libraries
 description: The stlab libraries
 ---
 

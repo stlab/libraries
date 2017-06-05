@@ -11,11 +11,11 @@
             <code><a href="{{short_url}}index.html">{{ p.title }}</a></code>
             &mdash;
             {% if p.brief %}
-                {{ p.brief | markdownify}}
+                {{ p.brief | markdownify }}
             {% elsif p.description %}
-                {{ p.description | markdownify}}
+                {{ p.description | markdownify }}
             {% else %}
-                {{ '_No details given_' | markdownify}}
+                {{ '_No details given_' | markdownify }}
             {% endif %}
             {% if p.annotation %}
                 <span class='annotation'>({{p.annotation}})</span>

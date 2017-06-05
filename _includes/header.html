@@ -15,14 +15,9 @@
       </a>
 
       <div class="trigger">
-        {% for my_page in site.pages %}
-          {% if my_page.tags == nil and my_page.title  %}
-            {% if my_page.tab %}
-          <a class="page-link" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.tab }}</a>
-            {% else %}
-          <a class="page-link" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a>
-            {% endif %}
-          {% endif %}
+        {% assign tabbed = site.pages | where_exp:"p","p.tab" | sort:"tab"%}
+        {% for p in tabbed %}
+            <a class="page-link" href="{{ p.url | prepend: site.baseurl }}">{{ p.tab }}</a>
         {% endfor %}
       </div>
     </nav>
