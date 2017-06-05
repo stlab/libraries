@@ -6,7 +6,7 @@
 {% unless siblings %}
     {% assign siblings = '' | split: '' %}
     {% for p in family %}
-        {% assign short_url = p.url | remove_first: page.url %}
+        {% assign short_url = p.url | remove_first: page.url%}
         {% assign split_url = short_url | split: '/' %}
         {% if split_url.size != 1 %}
             {% continue %}

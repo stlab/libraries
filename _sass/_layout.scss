@@ -396,6 +396,16 @@ table {
 }
 
 /**
+ * Styling for some of the auto generated stuff
+ */
+
+.declaration-list {
+    > p {
+        display: inline;
+    }
+}
+
+/**
  * Front page iconography
  */
 .icon-table {

@@ -4,14 +4,12 @@
 
 {% if libraries.size > 0 %}
 <h3>Sub-libraries</h3>
-<table class='definition-table'>
-  {% for p in libraries %}
-    {% assign short_url = p.url | remove_first: page.url %}
-    <tr>
-        <td class='decl'>
-          <div><a href="{{short_url}}index.html">{{ p.title }}</a></div>
-        </td>
-        <td class='defn'>
+<ul>
+    {% for p in libraries %}
+        {% assign short_url = p.url | remove_first: page.url %}
+        <li class='declaration-list'>
+            <code><a href="{{short_url}}index.html">{{ p.title }}</a></code>
+            &mdash;
             {% if p.brief %}
                 {{ p.brief | markdownify}}
             {% elsif p.description %}
@@ -22,8 +20,7 @@
             {% if p.annotation %}
                 <span class='annotation'>({{p.annotation}})</span>
             {% endif %}
-        </td>
-    </tr>
-  {% endfor %}
-</table>
+        </li>
+    {% endfor %}
+</ul>
 {% endif %}
