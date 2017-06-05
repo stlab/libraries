@@ -80,6 +80,63 @@ constexpr process_state_scheduled yield_immediate {
     std::chrono::system_clock::time_point::min()
 };
 
+/**************************************************************************************************/
+
+enum class channel_error_codes {	// names for channel errors
+  broken_channel = 1,
+  process_already_running = 2,
+  no_state
+};
+
+/**************************************************************************************************/
+
+namespace detail 
+{
+
+inline char const *channel_error_map(channel_error_codes code) noexcept
+{	// convert to name of channel error
+  switch (code)
+  {	// switch on error code value
+  case channel_error_codes::broken_channel:
+    return "broken channel";
+
+  case channel_error_codes::process_already_running:
+    return "process already running";
+
+  case channel_error_codes::no_state:
+    return "no state";
+
+  default:
+    return nullptr;
+  }
+}
+
+/**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
+
+// channel exception
+
+class channel_error : public std::logic_error
+{
+public:
+  explicit channel_error(channel_error_codes code)
+    : logic_error(""), _code(code)
+  {}
+
+  const channel_error_codes& code() const noexcept {
+    return _code;
+  }
+
+  const char *what() const noexcept override {
+    return detail::channel_error_map(_code);
+  }
+
+private:
+  const channel_error_codes _code;
+};
 
 /**************************************************************************************************/
 
@@ -1321,8 +1378,13 @@ class receiver
 
     template <typename F>
     auto operator|(F&& f) const {
-        // TODO - report error if not constructed or _ready.
-        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, 
+        if (!_p)
+            throw channel_error(channel_error_codes::broken_channel);
+
+        if (_ready)
+            throw channel_error(channel_error_codes::process_already_running);
+
+        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>,
                                                          F, 
                                                          detail::yield_type<F, T>, 
                                                          T>>(_p->executor(), std::forward<F>(f), _p);
@@ -1332,8 +1394,13 @@ class receiver
 
     template <typename F>
     auto operator|(detail::annotated_process<F>&& ap) {
+        if (!_p)
+            throw channel_error(channel_error_codes::broken_channel);
+
+        if (_ready)
+            throw channel_error(channel_error_codes::process_already_running);
+
         auto executor = ap._annotations._executor.value_or(_p->executor());
-        // TODO - report error if not constructed or _ready.
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>,
                 F,
                 detail::yield_type<F, T>,

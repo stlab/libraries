@@ -10,7 +10,7 @@ MKDIR build_debug
 PUSHD build_debug
 
 ::conan install .. -o Boost:shared=False --build=missing
-conan install .. -s compiler="Visual Studio" -s compiler.version=14 -s build_type=Debug -s compiler.runtime=MDd
+conan install .. -s compiler="Visual Studio" -s compiler.version=14 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False
 
 cmake -G "Visual Studio 14 Win64" ..
 
