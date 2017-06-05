@@ -6,8 +6,8 @@ pure-name: zip
 brief: Creates a future that zips all passed arguments
 entities:
   - kind: overloads
-    defined-in-header: stlab/channel.hpp  
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+    defined-in-header: stlab/concurrency/channel.hpp  
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
     list:
       - name: zip
         pure-name: zip
@@ -34,8 +34,8 @@ entities:
 #include <iostream>
 #include <thread>
 
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 
 using namespace std;
 using namespace stlab;

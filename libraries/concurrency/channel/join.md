@@ -6,12 +6,12 @@ pure-name: join
 brief: Creates a future that joins all passed arguments
 entities:
   - kind: overloads
-    defined-in-header: stlab/channel.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+    defined-in-header: stlab/concurrency/channel.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
     list:
       - name: join
         pure-name: join
-        defined-in-header: stlab/channel.hpp
+        defined-in-header: stlab/concurrency/channel.hpp
         declaration: |
             template <typename E, typename F, typename...R>
             auto join(E e, F f, R&&... upstream_receiver)
@@ -35,8 +35,8 @@ entities:
 #include <iostream>
 #include <thread>
 
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 
 using namespace std;
 using namespace stlab;

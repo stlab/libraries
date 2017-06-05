@@ -3,7 +3,7 @@ layout: method
 title: error
 tags: [library]
 pure-name: error
-defined-in-header: stlab/future.hpp 
+defined-in-header: stlab/concurrency/future.hpp 
 declaration: error()
 description: Returns a potentially stored exception pointer
 entities:
@@ -11,7 +11,7 @@ entities:
     list:
       - name: stlab::future::error
         pure-name: error
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: boost::optional<std::exception_ptr> error() const
         description: In case an error occured, it returns the stored exception pointer.
   - kind: parameters

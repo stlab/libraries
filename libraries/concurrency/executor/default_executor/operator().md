@@ -3,7 +3,7 @@ layout: method
 title: stlab::default_executor
 tags: [library]
 pure-name: operator()
-defined-in-header: stlab/default_executor.hpp 
+defined-in-header: stlab/concurrency/default_executor.hpp 
 declaration: operator()
 description: Executes the given function on the operating systems's thread pool.
 entities:
@@ -11,7 +11,7 @@ entities:
     list:
       - name: stlab::default_executor::operator()
         pure-name: operator()
-        defined-in-header: stlab/default_executor.hpp 
+        defined-in-header: stlab/concurrency/default_executor.hpp 
         declaration: |
           template <typename F> 
           void operator()(F&& f) const

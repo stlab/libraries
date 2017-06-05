@@ -3,7 +3,7 @@ layout: method
 title: then
 tags: [library]
 pure-name: then
-defined-in-header: stlab/future.hpp
+defined-in-header: stlab/concurrency/future.hpp
 brief: Creates a continuation
 declaration: then()
 description: |
@@ -17,28 +17,28 @@ entities:
     list:
       - name: stlab::future::get_try
         pure-name: get_try
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename F> 
           auto then(F&& f) const&
         description: Constructs a continuation with the passed callable object using the same executor as this.
       - name: stlab::future::then
         pure-name: then
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename E, typename F> 
           auto then(E&& e, F&& f) const&
         description: Constructs a continuation with the passed callable object using the provided executor.
       - name: stlab::future::then
         pure-name: then
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename F>
           auto then(F&& f) &&
         description: Constructs a continuation on a r-value with the passed callable object using the same executor as this.
       - name: stlab::future::then
         pure-name: then
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename E, typename F>
           auto then(E&& e, F&& f) &&
@@ -60,8 +60,8 @@ entities:
 ~~~ c++
 #include <cstdio>
 #include <thread>
-#include <stlab/default_executor.hpp>
-#include <stlab/future.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 using namespace std;
 using namespace stlab;

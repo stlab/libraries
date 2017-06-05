@@ -3,7 +3,7 @@ layout: method
 title: recover
 tags: [library]
 pure-name: recover
-defined-in-header: stlab/future.hpp 
+defined-in-header: stlab/concurrency/future.hpp 
 declaration: recover()
 description: Creates a recoverable continuation on the current object.
 entities:
@@ -11,28 +11,28 @@ entities:
     list:
       - name: stlab::future::recover
         pure-name: recover
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename F> 
           auto recover(F&& f) const&
         description: Constructs a recoverable continuation that gets a `future<T>` passed. It uses the same executor as this.
       - name: stlab::future::recover
         pure-name: recover
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename E, typename F> 
           auto recover(E&& e, F&& f) const&
         description: Constructs a recoverable continuation that gets a `future<T>` passed. It uses the provided executor.
       - name: stlab::future::recover
         pure-name: recover
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename F>
           auto recover(F&& f) &&
         description: Constructs a recoverable continuation on an r-value future. It gets a `future<T>` passed. It uses the same executor as this.
       - name: stlab::future::recover
         pure-name: recover
-        defined-in-header: stlab/future.hpp 
+        defined-in-header: stlab/concurrency/future.hpp 
         declaration: |
           template <typename E, typename F>
           auto recover(E&& e, F&& f) &&
@@ -49,8 +49,8 @@ entities:
 #include <cstdio>
 #include <exception>
 #include <thread>
-#include <stlab/default_executor.hpp>
-#include <stlab/future.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 using namespace std;
 using namespace stlab;

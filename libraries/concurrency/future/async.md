@@ -7,8 +7,8 @@ brief: Run a function on a specified executor
 entities:
   - kind: overloads
     name: stlab::async
-    defined-in-header: stlab/future.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
+    defined-in-header: stlab/concurrency/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
     list:
       - name: async
         pure-name: async
@@ -34,8 +34,8 @@ entities:
 #include <cstdio>
 #include <string>
 #include <thread>
-#include <stlab/default_executor.hpp>
-#include <stlab/future.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 using namespace std;
 using namespace stlab;

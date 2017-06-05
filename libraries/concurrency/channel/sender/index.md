@@ -6,8 +6,8 @@ ctor: default
 dtor: default
 name: stlab::sender
 pure-name: sender
-defined-in-header: stlab/channel.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+defined-in-header: stlab/concurrency/channel.hpp
+git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
 declaration: |
     template <typename T>
     class sender
