@@ -8,6 +8,7 @@ defined-in-header: stlab/concurrency/future.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
 ctor: default
 dtor: default
+annotation: template class
 declaration: |
   template <typename T>
   class future

@@ -5,6 +5,7 @@ tags: [library]
 pure-name: when_all
 brief: Creates a joining future
 description: Creates a joining future
+annotation: template function
 entities:
   - kind: overloads
     defined-in-header: stlab/concurrency/future.hpp

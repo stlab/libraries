@@ -4,6 +4,7 @@ title: stlab::async
 tags: [library]
 pure-name: async
 brief: Run a function on a specified executor
+annotation: template function
 entities:
   - kind: overloads
     name: stlab::async

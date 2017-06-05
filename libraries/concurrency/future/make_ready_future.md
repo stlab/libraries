@@ -5,6 +5,7 @@ tags: [library]
 pure-name: make_ready_future
 brief: Creates a future that is already fulfilled
 description: Creates a future that is already fulfilled
+annotation: template function
 entities:
   - kind: overloads
     name: stlab::make_ready_future
