@@ -27,9 +27,9 @@ layout: default
             </table>
         {% endif %}
 
-        {% if page.description %}
-            {{page.description | markdownify }}
-        {% endif %}
+        {{page.brief | markdownify }}
+
+        {{page.description | markdownify }}
 
         {% if page.member-types %}
             <h3>Member types</h3>

@@ -198,10 +198,6 @@
     padding: $spacing-unit / 2 0;
 }
 
-.page-heading {
-    font-size: 20px;
-}
-
 .post-list {
     margin-left: 0;
     list-style: none;
@@ -462,5 +458,26 @@ table {
     }
     &:hover {
         background: $stlab-grey;
+    }
+}
+
+/**
+ * Dialogs, for lack of a better name
+ */
+
+.warning-box {
+    margin: 0;//1em;
+    margin-bottom: $spacing-unit / 2;
+    padding: 0.5em 1em;
+    border-radius: 0.5em;
+    border: 1px solid #f0f000;
+    /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#f9f977+0,fcfccf+100 */
+    background: #f9f977; /* Old browsers */
+    background: -moz-linear-gradient(top,  #f9f977 0%, #fcfccf 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top,  #f9f977 0%,#fcfccf 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom,  #f9f977 0%,#fcfccf 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9f977', endColorstr='#fcfccf',GradientType=0 ); /* IE6-9 */
+    &:before {
+        content: "Warning: ";
     }
 }

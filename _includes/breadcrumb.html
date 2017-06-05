@@ -18,6 +18,6 @@
             {% endif %}
         {% endfor %}
     {% endfor %}
-    <li class="crumb">{{page.title}}</li>
+    {% if page.title %}<li class="crumb">{{page.title}}</li>{% endif %}
     </ol>
 </div>
