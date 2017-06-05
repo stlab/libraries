@@ -7,8 +7,8 @@ brief: Creates a future that continues on the first success of any futures passe
 description: Creates a future that continues on the first success of any futures passed
 entities:
   - kind: overloads
-    defined-in-header: stlab/future.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp 
+    defined-in-header: stlab/concurrency/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp 
     list:
       - name: when_any
         pure-name: when_any

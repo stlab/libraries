@@ -3,14 +3,14 @@ layout: method
 title: stlab::main_executor
 tags: [library]
 pure-name: operator()
-defined-in-header: stlab/main_executor.hpp 
+defined-in-header: stlab/concurrency/main_executor.hpp 
 description: Executes the given function on the application's main loop.
 entities:
   - kind: methods
     list:
       - name: stlab::main_executor::operator()
         pure-name: operator()
-        defined-in-header: stlab/main_executor.hpp 
+        defined-in-header: stlab/concurrency/main_executor.hpp 
         declaration: |
           template <typename F> 
           void operator()(F&& f) const

@@ -3,7 +3,7 @@ layout: method
 title: stlab::sender
 tags: [library]
 pure-name: operator()
-defined-in-header: stlab/channel.hpp 
+defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator()
 description: Sends a new value into the channel
 entities:
@@ -11,7 +11,7 @@ entities:
     list:
       - name: stlab::sender::operator()
         pure-name: operator()
-        defined-in-header: stlab/channel.hpp 
+        defined-in-header: stlab/concurrency/channel.hpp 
         declaration: |
           template <typename... A> 
           void operator()(A&&... args) const
@@ -30,8 +30,8 @@ entities:
 #include <iostream>
 #include <thread>
 
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 
 using namespace std;
 using namespace stlab;

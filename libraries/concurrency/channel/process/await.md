@@ -25,8 +25,8 @@ entities:
 ~~~ c++
 #include <atomic>
 #include <thread>
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 
 struct sum_2 
 {

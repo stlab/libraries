@@ -4,8 +4,8 @@ title: stlab::receiver
 tags: [library]
 name: stlab::receiver
 pure-name: receiver
-defined-in-header: stlab/channel.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+defined-in-header: stlab/concurrency/channel.hpp
+git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
 ctor: default
 dtor: default
 declaration: |

@@ -3,7 +3,7 @@ layout: method
 title: stlab::sender
 tags: [library]
 pure-name: close
-defined-in-header: stlab/channel.hpp 
+defined-in-header: stlab/concurrency/channel.hpp 
 declaration: close()
 description: Close this side of the channel. No more values will be accepted. Already sent value will be processed
 entities:
@@ -11,7 +11,7 @@ entities:
     list:
       - name: stlab::sender::close
         pure-name: close
-        defined-in-header: stlab/channel.hpp 
+        defined-in-header: stlab/concurrency/channel.hpp 
         declaration: void close()
         description: Closes this side of the channel, so it is not possible to send new values into it. But it does not destructs the channel.
   - kind: parameters

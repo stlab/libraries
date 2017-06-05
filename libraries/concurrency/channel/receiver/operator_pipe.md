@@ -3,7 +3,7 @@ layout: method
 title: operator|
 tags: [library]
 pure-name: operator|
-defined-in-header: stlab/channel.hpp 
+defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator|()
 brief: Creates a new receiver with the given process attached downstream.
 description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached. In case that `T` of `receiver<T>` is a move only type, repeated calls of this operator overwrite the previous attached downstream channel.
@@ -12,14 +12,14 @@ entities:
     list:
       - name: stlab::receiver::operator|
         pure-name: operator|
-        defined-in-header: stlab/channel.hpp 
+        defined-in-header: stlab/concurrency/channel.hpp 
         declaration: |
           template <typename F> 
           auto operator|(F&& f)
         description: Attaches the given process to the receiver and returns a new receiver. It can either be a function object with a single parameter or a process that has an `await()` and a `yield()` method.
       - name: stlab::receiver::operator|
         pure-name: operator|
-        defined-in-header: stlab/channel.hpp 
+        defined-in-header: stlab/concurrency/channel.hpp 
         declaration: |
           template <typename F>
           auto operator|(detail::annotated_process<F>&& ap)
@@ -40,9 +40,9 @@ entities:
 ~~~ c++
 #include <atomic>
 #include <thread>
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
-#include <stlab/main_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/main_executor.hpp>
 
 int main() {
     sender<int> send;

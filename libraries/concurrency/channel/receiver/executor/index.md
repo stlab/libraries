@@ -4,8 +4,8 @@ title: stlab::executor
 tags: [library]
 name: stlab::executor
 pure-name: executor
-defined-in-header: stlab/channel.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
+defined-in-header: stlab/concurrency/channel.hpp
+git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
 declaration: struct executor
 description: This class has only one purpose, to encapsulate an executor to be piped to a `receiver<T>`
 dtor: default
@@ -16,9 +16,9 @@ dtor: default
 ~~~ c++
 #include <atomic>
 #include <thread>
-#include <stlab/channel.hpp>
-#include <stlab/immediate_executor.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 
 int main() {
     sender<int> send;

@@ -8,8 +8,8 @@ description: Creates a future that is already fulfilled
 entities:
   - kind: overloads
     name: stlab::make_ready_future
-    defined-in-header: stlab/future.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
+    defined-in-header: stlab/concurrency/future.hpp
+    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
     list:
       - name: make_ready_future
         pure-name: make_ready_future

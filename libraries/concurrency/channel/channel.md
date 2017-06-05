@@ -6,7 +6,7 @@ pure-name: channel
 brief: Creates a pair that consists of a sender and a receiver
 entities:
   - kind: overloads
-    defined-in-header: stlab/channel.hpp
+    defined-in-header: stlab/concurrency/channel.hpp
     list:
       - name: channel
         pure-name: channel
@@ -29,8 +29,8 @@ entities:
 #include <iostream>
 #include <thread>
 
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 
 using namespace std;
 using namespace stlab;
