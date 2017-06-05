@@ -22,9 +22,9 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
-#include <stlab/executor_base.hpp>
-#include <stlab/traits.hpp>
-#include <stlab/tuple_algorithm.hpp>
+#include "executor_base.hpp"
+#include "traits.hpp"
+#include "tuple_algorithm.hpp"
 
 
 #ifdef max
