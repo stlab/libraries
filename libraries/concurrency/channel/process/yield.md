@@ -2,7 +2,6 @@
 layout: method
 title: yield
 tags: [library]
-full-name: process::yield
 pure-name: yield
 declaration: T yield()
 brief: Called on an await-process when it should yield

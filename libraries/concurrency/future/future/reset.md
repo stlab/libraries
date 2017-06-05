@@ -2,7 +2,6 @@
 layout: method
 title: reset
 tags: [library]
-full-name: stlab::future::reset
 pure-name: reset
 defined-in-header: stlab/future.hpp 
 declaration: reset()

@@ -17,8 +17,8 @@ description: |
   
   Multiple calls with this operator on the same object realize a split. That means that the result of this process is copied into all attached downstream channels.
   
-  In case that `T` of `receiver<T>` is a move only type, repeated calls of this operator overwrite the previous attached downstream channel.
-  
+  The queue size of the attached process can be limited with a `buffer_size`.
+
   If an exception is thrown while calling the attached process, the exception pointer is passed to the attached process, if it has a `set_error()` method, otherwise this process is closed.
 member-types:
   - type: value_type

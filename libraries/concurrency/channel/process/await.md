@@ -2,7 +2,6 @@
 layout: method
 title: await
 tags: [library]
-full-name: process::await
 pure-name: await
 declaration: void await(T... val)
 brief: Called on an await-process whenever a new value was received from upstream.

@@ -9,7 +9,7 @@ defined-in-header: stlab/channel.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/channel.hpp
 declaration: struct buffer_size
 brief: Encapsulates the buffer size of a process
-description: This class encapsulates the buffer size of a process.
+description: The default size of an incomming queue of each process has no limitation, beside the limitation of available memory. In case that one wants to limit the queue size of a process, one can realize this by combining a `buffer_size` with a process by using an `operator&` before attaching it to a receiver.
 ---
 
 ### Example ###
@@ -33,6 +33,7 @@ int main() {
 
     // The order of the process and buffer_size is not relevant, so calling
     // times_two & buffer_size{ 2 } would be equivalent
+    
     auto result = receive 
         | buffer_size{ 2 } & times_two
         | [&v](int x) { v = x; };

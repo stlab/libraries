@@ -2,7 +2,6 @@
 layout: method
 title: close
 tags: [library]
-full-name: process::close
 pure-name: close
 declaration:
 brief: Called on an await-process whenever the process state is `await_forever` and the incoming queue went dry.

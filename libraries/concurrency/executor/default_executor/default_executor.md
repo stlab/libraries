@@ -2,7 +2,6 @@
 layout: method
 title: stlab::default_executor
 tags: [library]
-full-name: stlab::default_executor::default_executor
 pure-name: default_executor
 defined-in-header: stlab/default_executor.hpp 
 declaration: default_executor()

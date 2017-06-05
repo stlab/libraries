@@ -2,7 +2,6 @@
 layout: method
 title: stlab::immediate_executor
 tags: [library]
-full-name: stlab::immediate_executor::operator()
 pure-name: operator()
 defined-in-header: stlab/immediate_executor.hpp 
 declaration: operator()

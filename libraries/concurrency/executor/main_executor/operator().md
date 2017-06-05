@@ -2,7 +2,6 @@
 layout: method
 title: stlab::main_executor
 tags: [library]
-full-name: stlab::main_executor::operator()
 pure-name: operator()
 defined-in-header: stlab/main_executor.hpp 
 description: Executes the given function on the application's main loop.

@@ -2,7 +2,6 @@
 layout: method
 title: set_ready
 tags: [library]
-full-name: stlab::receiver::set_ready
 pure-name: set_ready
 defined-in-header: stlab/channel.hpp 
 declaration: set_ready

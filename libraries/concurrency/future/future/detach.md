@@ -2,7 +2,6 @@
 layout: method
 title: detach
 tags: [library]
-full-name: stlab::future::detach
 pure-name: detach
 defined-in-header: stlab/future.hpp 
 declaration: detach()
