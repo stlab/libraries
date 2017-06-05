@@ -4,13 +4,12 @@ rvm:
 
 install: gem install jekyll html-proofer github-pages
 
-script: bundle exec jekyll build # && htmlproofer ./_site
+script: bundle exec jekyll build && htmlproofer ./_site
 
 # branch whitelist, only for GitHub Pages
 branches:
   only:
   - master     # test the gh-pages branch
-  - fbrereto-forest # test the fbrereto-forest branch
   - /pages-(.*)/ # test every branch which starts with "pages-"
 
 notifications:
