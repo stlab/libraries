@@ -8,4 +8,4 @@
 
 #define BOOST_TEST_MODULE stlab_libraries_tests
 
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>

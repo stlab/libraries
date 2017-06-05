@@ -28,7 +28,7 @@ else()
         set(Boost_USE_STATIC_LIBS TRUE)
     endif()
 
-    find_package(Boost 1.60.0 COMPONENTS unit_test_framework)
+    find_package(Boost 1.60.0 COMPONENTS)
 
     if(UNIX)
         add_definitions("-DBOOST_TEST_DYN_LINK")

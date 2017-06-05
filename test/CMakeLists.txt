@@ -16,6 +16,7 @@ set(SOURCE
   future_when_any_arguments_tests.cpp
   future_when_any_range_tests.cpp
   test_helper.cpp
+  serial_queue_test.cpp
   tuple_algorithm_test.cpp
   main.cpp
 )
@@ -50,18 +51,3 @@ target_link_libraries(
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
-########## Serial queue ##########
-
-PROJECT(serial_queue_test)
-
-set(SOURCE
-    serial_queue_test.cpp
-)
-
-set(HEADERS
-)
-
-add_executable(serial_queue_test ${SOURCE} ${HEADERS})
-
-set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
-set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)

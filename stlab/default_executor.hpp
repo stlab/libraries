@@ -66,6 +66,8 @@ namespace detail {
 struct default_executor_type
 {
     using result_type = void;
+    static const bool is_serial = false;
+
     template <typename F>
     void operator()(F f) const {
         using f_t = decltype(f);
@@ -85,6 +87,7 @@ struct default_executor_type
 struct default_executor_type
 {
     using result_type = void;
+    static const bool is_serial = true;
 
     template <typename F>
     void operator()(F f) const {
@@ -104,6 +107,7 @@ struct default_executor_type
 struct default_executor_type
 {
     using result_type = void;
+    static const bool is_serial = false;
 
     template <typename F>
     void operator()(F f) const {
@@ -123,10 +127,13 @@ struct default_executor_type
 class default_executor_type
 {
 public:
+    using result_type = void;
+    static const bool is_serial = false;
+
     template <typename F>
-    void operator()(F&& f) const {
+    void operator()(F f) const {
         auto work = CreateThreadpoolWork(&callback_impl<F>,
-            new F(std::forward<F>(f)),
+            new F(std::move(f)),
             nullptr);
         if (work == nullptr) {
             throw std::bad_alloc();
@@ -272,6 +279,7 @@ public:
 
 struct default_executor_type {
     using result_type = void;
+    static const bool is_serial = false;
 
     template <typename F>
     void operator() (F&& f) const {
@@ -288,7 +296,8 @@ struct default_executor_type {
 
 /**************************************************************************************************/
 
-constexpr auto default_executor = detail::default_executor_type{};
+using default_executor_t = detail::default_executor_type;
+constexpr auto default_executor = default_executor_t{};
 
 /**************************************************************************************************/
 
