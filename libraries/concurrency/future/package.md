@@ -4,6 +4,7 @@ title: stlab::package
 tags: [library]
 pure-name: package
 brief: Create a packaged_task/future pair
+annotation: template function
 entities:
   - kind: overloads
     name: stlab::package

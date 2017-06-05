@@ -8,6 +8,7 @@ defined-in-header: stlab/future.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/future.hpp
 ctor: default
 dtor: default
+annotation: template class
 declaration: |
   template <typename T>
   class future

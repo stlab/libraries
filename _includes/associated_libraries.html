@@ -3,7 +3,6 @@
 {% assign libraries = siblings | where_exp:"p","p.layout == 'library'" %}
 
 {% if libraries.size > 0 %}
-<h3>Sub-libraries</h3>
 <ul>
     {% for p in libraries %}
         {% assign short_url = p.url | remove_first: page.url %}

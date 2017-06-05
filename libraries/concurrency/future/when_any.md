@@ -5,6 +5,7 @@ tags: [library]
 pure-name: when_any
 brief: Creates a future that continues on the first success of any futures passed
 description: Creates a future that continues on the first success of any futures passed
+annotation: template function
 entities:
   - kind: overloads
     defined-in-header: stlab/future.hpp
