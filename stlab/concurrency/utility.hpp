@@ -19,7 +19,7 @@
 
 #endif
 
-#include <stlab/default_executor.hpp>
+#include "default_executor.hpp"
 
 /**************************************************************************************************/
 

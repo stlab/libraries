@@ -9,12 +9,11 @@
 #ifndef _TEST_HELPER_HPP_
 #define _TEST_HELPER_HPP_
 
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 
 #include <atomic>
 #include <boost/test/unit_test.hpp>
 #include <exception>
-#include <stlab/future.hpp>
 #include <string>
 #include <thread>
 

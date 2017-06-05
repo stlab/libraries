@@ -8,8 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/channel.hpp>
-#include <stlab/future.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 
 #include <vector>
 

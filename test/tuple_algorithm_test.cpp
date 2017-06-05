@@ -8,7 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/tuple_algorithm.hpp>
+#include <stlab/concurrency/tuple_algorithm.hpp>
 
 using namespace stlab;
 

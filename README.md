@@ -19,7 +19,7 @@ Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the pla
 
 # Build Status: [![Build Status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
 
-## <stlab/future>
+## <stlab/concurrency/future>
 
 This is a proof of concept implementation of a packaged task and future to replace the standard components. This is a list of some of the differences from standard (as of C++17) and boost (as of boost 1.60.0):
 
