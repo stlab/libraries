@@ -2,7 +2,6 @@
 layout: method
 title: stlab::executor
 tags: [library]
-full-name: stlab::executor::executor
 pure-name: executor
 defined-in-header: stlab/channel.hpp 
 declaration: executor()

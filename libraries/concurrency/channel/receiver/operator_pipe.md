@@ -2,12 +2,11 @@
 layout: method
 title: operator|
 tags: [library]
-full-name: stlab::receiver::operator|
 pure-name: operator|
 defined-in-header: stlab/channel.hpp 
 declaration: operator|()
 brief: Creates a new receiver with the given process attached downstream.
-description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached.
+description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached. In case that `T` of `receiver<T>` is a move only type, repeated calls of this operator overwrite the previous attached downstream channel.
 entities:
   - kind: methods
     list:

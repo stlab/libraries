@@ -2,7 +2,6 @@
 layout: method
 title: error
 tags: [library]
-full-name: stlab::future::error
 pure-name: error
 defined-in-header: stlab/future.hpp 
 declaration: error()

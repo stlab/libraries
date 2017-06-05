@@ -2,7 +2,6 @@
 layout: method
 title: get_try
 tags: [library]
-full-name: stlab::future::get_try
 pure-name: get_try
 defined-in-header: stlab/future.hpp 
 declaration: get_try()

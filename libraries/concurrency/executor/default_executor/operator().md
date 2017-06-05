@@ -2,7 +2,6 @@
 layout: method
 title: stlab::default_executor
 tags: [library]
-full-name: stlab::default_executor::operator()
 pure-name: operator()
 defined-in-header: stlab/default_executor.hpp 
 declaration: operator()

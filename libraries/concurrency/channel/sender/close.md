@@ -2,7 +2,6 @@
 layout: method
 title: stlab::sender
 tags: [library]
-full-name: stlab::sender::close
 pure-name: close
 defined-in-header: stlab/channel.hpp 
 declaration: close()

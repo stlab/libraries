@@ -2,7 +2,6 @@
 layout: method
 title: stlab::sender
 tags: [library]
-full-name: stlab::sender::operator()
 pure-name: operator()
 defined-in-header: stlab/channel.hpp 
 declaration: operator()

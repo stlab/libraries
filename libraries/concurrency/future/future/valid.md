@@ -2,7 +2,6 @@
 layout: method
 title: valid
 tags: [library]
-full-name: stlab::future::valid
 pure-name: valid
 defined-in-header: stlab/future.hpp 
 declaration: valid()

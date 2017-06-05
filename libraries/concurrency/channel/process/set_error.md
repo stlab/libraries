@@ -2,7 +2,6 @@
 layout: method
 title: set_error
 tags: [library]
-full-name: process::set_error
 pure-name: set_error
 declaration: 
 brief: Called if either on calling `await` or `yield` an exception was thrown
