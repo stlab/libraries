@@ -68,8 +68,10 @@ layout: default
       {% else %}
       {% endcase %}
     {% endfor %}
+
+    {% include external_example.html name=page.example header="Example" %}
+
     {{ content }}
-    <!--/div-->
   </article>
 </div>
 
