@@ -8,17 +8,10 @@ layout: default
 
 <div class="post">
     <article class="post-content">
-        {% if page.defined-in-header %}
-            <div>
-                Defined in header
-                <a href="{{ page.git-link }}">
-                    <code>&lt;{{ page.defined-in-header }}&gt;</code>
-                </a>
-            </div>
-        {% endif %}
+        {% include defined_in_header.html %}
 
         {% if page.declaration %}
-            {% highlight cpp %}{{ page.declaration }}{% endhighlight %}
+            {% highlight c++ %}{{ page.declaration }}{% endhighlight %}
         {% endif %}
 
         {{page.brief | markdownify }}

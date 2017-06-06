@@ -1,6 +1,7 @@
 ---
 layout: default
 ---
+
 <div class="post">
   <article class="post-content">
     {% for entity in page.entities %}
@@ -9,9 +10,8 @@ layout: default
           <header class="post-header">
             <h1 class='code'>{{ entity.name }}</h1>
           </header>
-          {% if entity.defined-in-header %}
-          <div>Defined in header <a href="{{ entity.git-link }}"><code>&lt{{ entity.defined-in-header }}&gt</code></a></div>
-          {% endif %}
+
+          {% include defined_in_header.html %}
 
           <table class='declaration-table'>
           {% for item in entity.list %}
@@ -52,6 +52,9 @@ layout: default
       {% else %}
       {% endcase %}
     {% endfor %}
+
+    {% include external_example.html name=page.example header="Example" %}
+
     {{ content }}
   </article>
 </div>
