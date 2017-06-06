@@ -4,16 +4,16 @@ branches:
   only: master
 matrix: 
   include: 
-    - 
-      language: c++
-      os: osx
-      osx_image: xcode8.3
-      script: build.sh
-    - 
-      language: ruby
-      env: 
-        global: 
-          - NOKOGIRI_USE_SYSTEM_LIBRARIES=true
-      install: "gem install jekyll html-proofer github-pages"
-      rvm: "2.2.2"
-      sudo: false
+  - language: c++
+    os: osx
+    osx_image: xcode8.3
+    script: build.sh
+  - language: ruby
+    rvm:
+    - 2.2.2
+    install: gem install jekyll html-proofer github-pages
+    script: bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
+    env: 
+      global: 
+        - NOKOGIRI_USE_SYSTEM_LIBRARIES=true
+    sudo: false
