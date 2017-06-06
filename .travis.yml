@@ -7,7 +7,7 @@ matrix:
   - language: c++
     os: osx
     osx_image: xcode8.3
-    script: build.sh
+    script: ls -alF && ./stlab/stlab.github.io/build.sh
   - language: ruby
     rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
