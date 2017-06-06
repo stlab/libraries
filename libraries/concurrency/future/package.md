@@ -5,6 +5,7 @@ tags: [library]
 pure-name: package
 brief: Create a packaged_task/future pair
 annotation: template function
+example: package_example.cpp
 entities:
   - kind: overloads
     name: stlab::package
@@ -28,35 +29,3 @@ entities:
   - kind: result
     description: A std::pair of a packaged_task and the associated future.
 ---
-
-### Example ###
-
-~~~ c++
-#include <cstdio>
-#include <string>
-#include <thread>
-#include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/future.hpp>
-
-using namespace std;
-using namespace stlab;
-
-int main() {
-    auto p = package<int(int)>(default_executor, [](int x) { return x+x; });
-    auto packagedTask = p.first;
-    auto f = p.second;
-
-    packagedTask(21);
-
-    // Waiting just for illustrational purpose
-    while (!f.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
-
-    cout << "The answer is " << f.get_try().value() << "\n";
-}
-~~~
-
-### Result ###
-
-~~~
-The answer is 42
-~~~

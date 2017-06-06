@@ -1,0 +1,8 @@
+{% if page.defined-in-header %}
+    <div>
+        Defined in header
+        <a href="{{ page.git-link }}">
+            <code>&lt;{{ page.defined-in-header }}&gt;</code>
+        </a>
+    </div>
+{% endif %}

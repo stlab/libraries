@@ -6,6 +6,7 @@ pure-name: when_all
 brief: Creates a joining future
 description: Creates a joining future
 annotation: template function
+example: when_all_example.cpp
 entities:
   - kind: overloads
     defined-in-header: stlab/concurrency/future.hpp
@@ -36,34 +37,3 @@ entities:
   - kind: result
     description: a future that joins all passed arguments and passes them to the associated function object
 ---
-
-### Example ###
-
-~~~ c++
-#include <cstdio>
-#include <string>
-#include <thread>
-#include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/future.hpp>
-
-using namespace std;
-using namespace stlab;
-
-int main() {
-    auto argument1 = async(default_executor, [] { return 42; });
-    auto argument2 = async(default_executor, [] { return string("The answer is"); });
-
-    auto result = when_all(default_executor, [](int answer, std::string text) {
-        cout << text << " " << answer << '\n'
-    }, argument1, argument2);
-
-    // Waiting just for illustrational purpose
-    while (!result.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
-}
-~~~
-
-### Result ###
-
-~~~
-The answer is 42
-~~~
