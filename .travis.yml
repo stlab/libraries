@@ -9,8 +9,7 @@ matrix:
     osx_image: xcode8.3
     script: build.sh
   - language: ruby
-    rvm:
-    - 2.2.2
+    rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
     script: bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
     env: 
