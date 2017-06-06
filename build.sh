@@ -1,7 +1,5 @@
 #!/bin/bash
 
-bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
-
 if [ ! -d build ]; then
     mkdir build
 fi
