@@ -3,6 +3,12 @@
     everything has to be left-aligned.
 {% endcomment %}
 
+{% unless __example_count %}
+    {% assign __example_count = 0 %}
+{% endunless %}
+
+{% assign __example_count = __example_count | plus: 1 %}
+
 {% assign __example_lang = include.language | default: 'c++' %}
 
 {% if include.name %}
@@ -15,7 +21,7 @@
 
 {% if __example_mdown %}
     {% if include.header %}
-        <h3>{{include.header}}</h3>
+        <h3>{{include.header}} {{__example_count}}</h3>
     {% endif %}
     {{ __example_mdown | markdownify }}
 {% endif %}

@@ -53,7 +53,9 @@ layout: default
       {% endcase %}
     {% endfor %}
 
-    {% include external_example.html name=page.example header="Example" %}
+    {% for e in page.example %}
+        {% include external_example.html name=e header="Example" %}
+    {% endfor %}
 
     {{ content }}
   </article>
