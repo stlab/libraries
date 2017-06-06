@@ -1,10 +1,12 @@
-language: ruby
+os: osx
+osx_image: xcode8.3
+language: generic # c++ and ruby
 rvm:
 - 2.2.2
 
 install: gem install jekyll html-proofer github-pages
 
-script: bundle exec jekyll build && htmlproofer ./_site
+script: build.sh
 
 # branch whitelist, only for GitHub Pages
 branches:
