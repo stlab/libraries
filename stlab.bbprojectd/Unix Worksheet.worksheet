@@ -15,7 +15,7 @@ xcode-select --install
 # In Terminal
 open -a terminal ~/Projects/github.com/stlab/stlab.github.io
 bundle update
-bundle exec jekyll build --watch
+bundle exec jekyll build --watch --incremental
 
 # (old) cd ~/Projects/github.com/stlab/stlab.github.io
 # (old) bundle exec jekyll serve --port 4001
