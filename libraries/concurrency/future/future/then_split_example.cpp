@@ -1,7 +1,8 @@
 #include <cstdio>
 #include <thread>
-#include <stlab/default_executor.hpp>
-#include <stlab/future.hpp>
+
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 using namespace std;
 using namespace stlab;

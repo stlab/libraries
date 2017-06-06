@@ -1,5 +1,5 @@
-#include <cstdio>
-#include <exception>
+#include <iostream>
+#include <stdexcept>
 #include <thread>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
@@ -9,14 +9,14 @@ using namespace stlab;
 
 int main() {
     auto x = async(default_executor, [] { 
-      throw exception("Vogons did arrive!"); 
+      throw runtime_error("Vogons did arrive!"); 
       return 42; 
     });
 
     auto r = x.recover([](future<int> f) { 
         try {
           auto answer = f.get_try().value();
-          cout << "The answer is " answer << '\n';
+          cout << "The answer is " << answer << '\n';
         }
         catch (const exception& ex) {
           cout << "The error \"" << ex.what() << "\" happened!\n";

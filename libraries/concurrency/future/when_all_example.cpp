@@ -1,4 +1,4 @@
-#include <cstdio>
+#include <iostream>
 #include <string>
 #include <thread>
 #include <stlab/concurrency/default_executor.hpp>
@@ -12,7 +12,7 @@ int main() {
     auto argument2 = async(default_executor, [] { return string("The answer is"); });
 
     auto result = when_all(default_executor, [](int answer, std::string text) {
-        cout << text << " " << answer << '\n'
+        cout << text << " " << answer << '\n';
     }, argument1, argument2);
 
     // Waiting just for illustrational purpose
