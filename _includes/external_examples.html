@@ -1,0 +1,32 @@
+{% comment %}
+    Unfortunately indenting the liquid here affects the code captured, so
+    everything has to be left-aligned.
+{% endcomment %}
+
+{% unless __example_count %}
+    {% assign __example_count = 0 %}
+{% endunless %}
+
+{% assign __example_lang = include.language | default: 'c++' %}
+
+{% if include.name %}
+    {% for e in include.name %}
+        {% assign __example_count = __example_count | plus: 1 %}
+
+{% capture __example_mdown %}
+~~~ {{__example_lang}}
+{% include_relative {{e}} %}
+~~~
+{% endcapture %}
+
+        {% if __example_mdown %}
+            {% if include.header %}
+                <h3>{{include.header}} {{__example_count}}</h3>
+            {% endif %}
+            {{ __example_mdown | markdownify }}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% assign __example_mdown = nil %}
+{% assign __example_lang = nil %}
