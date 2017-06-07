@@ -69,12 +69,10 @@ void test0() {
 
 /**************************************************************************************************/
 
-inline std::size_t str_hash(const std::string& x) {
-    // static_assert(sizeof(std::size_t) == 8, "bad size");
+std::uint64_t str_hash(const std::string& x) {
+    std::uint64_t result(0xcbf29ce484222325);
 
-    std::size_t result(0xcbf29ce484222325);
-
-    for (char c : x)
+    for (unsigned char c : x)
         result = (result ^ c) * 0x100000001b3;
 
     return result;
@@ -82,23 +80,21 @@ inline std::size_t str_hash(const std::string& x) {
 
 /**************************************************************************************************/
 
-inline std::size_t hash_combine(std::size_t hash, const std::string& x) {
+inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
     return hash ^ (str_hash(x) << 1);
 };
 
 /**************************************************************************************************/
 
 void test1() {
-    serial_queue_t         aq(stlab::default_executor);
-    serial_queue_t         bq(stlab::default_executor);
-    serial_queue_t         cq(stlab::default_executor);
-    serial_queue_t         dq(stlab::default_executor);
-    std::hash<std::string> str_hash;
-
-    std::size_t ahash(str_hash("a"));
-    std::size_t bhash(str_hash("b"));
-    std::size_t chash(str_hash("c"));
-    std::size_t dhash(str_hash("d"));
+    serial_queue_t aq(stlab::default_executor);
+    serial_queue_t bq(stlab::default_executor);
+    serial_queue_t cq(stlab::default_executor);
+    serial_queue_t dq(stlab::default_executor);
+    std::uint64_t  ahash(str_hash("a"));
+    std::uint64_t  bhash(str_hash("b"));
+    std::uint64_t  chash(str_hash("c"));
+    std::uint64_t  dhash(str_hash("d"));
 
     aq([&ahash](){
         ahash = hash_combine(ahash, "1");
@@ -148,10 +144,10 @@ void test1() {
         dhash = hash_combine(dhash, "3");
     });
 
-    std::cout << "a hash " << (ahash == 0x7AE73CB5DC00E5ECUL ? "OK" : "BAD") << " (" << ahash << ")\n";
-    std::cout << "b hash " << (bhash == 0x1A6EF6277A2ADA1BUL ? "OK" : "BAD") << " (" << bhash << ")\n";
-    std::cout << "c hash " << (chash == 0xCB61477183BD3D36UL ? "OK" : "BAD") << " (" << chash << ")\n";
-    std::cout << "d hash " << (dhash == 0x4A64CCBC735B844FUL ? "OK" : "BAD") << " (" << dhash << ")\n";
+    std::cout << "a hash " << (ahash == 0xF1A486D58A02A59AUL ? "OK" : "BAD") << " (" << ahash << ")\n";
+    std::cout << "b hash " << (bhash == 0xF1A485D58A02B8B3UL ? "OK" : "BAD") << " (" << bhash << ")\n";
+    std::cout << "c hash " << (chash == 0xF1A484D58A02A6E4UL ? "OK" : "BAD") << " (" << chash << ")\n";
+    std::cout << "d hash " << (dhash == 0xF1A483D58A02AE65UL ? "OK" : "BAD") << " (" << dhash << ")\n";
 }
 
 /**************************************************************************************************/
