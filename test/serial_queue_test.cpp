@@ -4,7 +4,11 @@
 #include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 
+/**************************************************************************************************/
+
 using namespace stlab;
+
+/**************************************************************************************************/
 
 void test0() {
     serial_queue_t aq(stlab::default_executor);
@@ -63,6 +67,20 @@ void test0() {
     });
 }
 
+/**************************************************************************************************/
+
+inline std::size_t str_hash(const std::string& x) {
+    return std::hash<std::string>()(x);
+}
+
+/**************************************************************************************************/
+
+inline std::size_t hash_combine(std::size_t hash, const std::string& x) {
+    return hash ^ (str_hash(x) << 1);
+};
+
+/**************************************************************************************************/
+
 void test1() {
     serial_queue_t         aq(stlab::default_executor);
     serial_queue_t         bq(stlab::default_executor);
@@ -75,68 +93,70 @@ void test1() {
     std::size_t chash(str_hash("c"));
     std::size_t dhash(str_hash("d"));
 
-    auto hash_combine([str_hash](std::size_t hash, const std::string& x){
-        return hash ^ (str_hash(x) << 1);
-    });
-
-    aq([&](){
+    aq([&ahash](){
         ahash = hash_combine(ahash, "1");
     });
 
-    bq([&](){
+    bq([&bhash](){
         bhash = hash_combine(bhash, "1");
     });
 
-    dq([&](){
+    dq([&dhash](){
         dhash = hash_combine(dhash, "1");
     });
 
-    bq([&](){
+    bq([&bhash](){
         bhash = hash_combine(bhash, "2");
     });
 
-    cq([&](){
+    cq([&chash](){
         chash = hash_combine(chash, "1");
     });
 
-    cq([&](){
+    cq([&chash](){
         chash = hash_combine(chash, "2");
     });
 
-    dq([&](){
+    dq([&dhash](){
         dhash = hash_combine(dhash, "2");
     });
 
-    cq([&](){
+    cq([&chash](){
         chash = hash_combine(chash, "3");
     });
 
-    bq([&](){
+    bq([&bhash](){
         bhash = hash_combine(bhash, "3");
     });
 
-    aq([&](){
+    aq([&ahash](){
         ahash = hash_combine(ahash, "2");
     });
 
-    aq([&](){
+    aq([&ahash](){
         ahash = hash_combine(ahash, "3");
     });
 
-    dq([&](){
+    dq([&dhash](){
         dhash = hash_combine(dhash, "3");
     });
 
-    std::cout << "a: " << ahash << (ahash == std::size_t(14189587631650534178) ? " (OK)" : " (BAD) ") << '\n';
-    std::cout << "b: " << bhash << (bhash == std::size_t(11845100715899112661) ? " (OK)" : " (BAD) ") << '\n';
-    std::cout << "c: " << chash << (chash == std::size_t(8461684262208515064) ? " (OK)" : " (BAD) ") << '\n';
-    std::cout << "d: " << dhash << (dhash == std::size_t(17611461363091444353) ? " (OK)" : " (BAD) ") << '\n';
+    std::cout << "a hash " << (ahash == 0xC4EB8AC575CE7322UL ? "OK" : "BAD") << " (" << ahash << ")\n";
+    std::cout << "b hash " << (bhash == 0xA4624057D3E44CD5UL ? "OK" : "BAD") << " (" << bhash << ")\n";
+    std::cout << "c hash " << (chash == 0x756DF1012A73ABF8UL ? "OK" : "BAD") << " (" << chash << ")\n";
+    std::cout << "d hash " << (dhash == 0xF4687ACCDA951281UL ? "OK" : "BAD") << " (" << dhash << ")\n";
 }
+
+/**************************************************************************************************/
 
 int main(int argc, const char * argv[]) {
     test0();
+
+    std::cout << "-=-=-=-=-\n";
 
     test1();
 
     return 0;
 }
+
+/**************************************************************************************************/

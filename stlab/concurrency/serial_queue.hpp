@@ -38,43 +38,29 @@ using executor_t = std::function<void (task&&)>;
 
 /**************************************************************************************************/
 
-class serial_instance_t {
+class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
     executor_t       _executor;
     std::deque<task> _queue;
     std::mutex       _m;
     bool             _running{false};
 
-    struct set_bool_t {
-        set_bool_t(bool& b) noexcept : _b(b) { _b = true; }
-        ~set_bool_t() noexcept { _b = false; }
-        bool& _b;
-    };
+    void dequeue() {
+        std::unique_lock<std::mutex> lock(_m);
 
-    void dequeue(std::unique_lock<std::mutex>& lock) {
-        set_bool_t set_running(_running);
-        auto       f(std::move(_queue.front()));
+        if (_queue.empty()) {
+            _running = false;
+            return;
+        }
+
+        _running = true;
+
+        auto f(std::move(_queue.front()));
 
         _queue.pop_front();
 
         lock.unlock();
 
         f();
-    }
-
-    void loop() {
-        std::unique_lock<std::mutex> queue_lock(_m);
-
-        if (_running || _queue.empty()) {
-            return;
-        }
-
-        dequeue(queue_lock);
-
-        post_loop();
-    }
-
-    void post_loop() {
-        _executor([this](){loop();});
     }
 
 public:
@@ -85,33 +71,21 @@ public:
         auto pt = stlab::package<result_t()>(_executor, p);
 
         {
-        std::lock_guard<std::mutex> lock(_m);
+        std::unique_lock<std::mutex> lock(_m);
 
-        _queue.emplace_back(std::move(pt.first));
+        _queue.emplace_back([_f(std::move(pt.first)), _impl(shared_from_this())](){
+            _f();
+            _impl->dequeue();
+        });
         }
 
-        post_loop();
-
-        pt.second.detach();
+        if (!_running)
+            dequeue();
 
         return pt.second;
     }
 
     serial_instance_t(detail::executor_t&& executor) : _executor(std::move(executor)) {
-    }
-
-    ~serial_instance_t() {
-        while (true) {
-            std::unique_lock<std::mutex> queue_lock(_m);
-
-            if (_running)
-                continue;
-
-            if (_queue.empty())
-                break;
-
-            dequeue(queue_lock);
-        }
     }
 };
 
@@ -137,7 +111,7 @@ public:
 
     auto executor() const {
         return [_impl = _impl](auto&& f) {
-            _impl->enqueue(std::forward<decltype(f)>(f));
+            (*_impl)(std::forward<decltype(f)>(f)).detach();
         };
     }
 };
