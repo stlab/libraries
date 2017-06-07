@@ -46,29 +46,31 @@ class serial_instance_t {
         bool& _b;
     };
 
-    void dequeue() {
+    void dequeue(std::unique_lock<std::mutex>& lock) {
+        set_bool_t set_running(_running);
+        auto       f(std::move(_queue.front()));
+
+        _queue.pop_front();
+
+        lock.unlock();
+
+        f();
+    }
+
+    void loop() {
         std::unique_lock<std::mutex> queue_lock(_m);
 
         if (_running || _queue.empty()) {
             return;
         }
 
-        {
-            set_bool_t set_running(_running);
-            auto       f(std::move(_queue.front()));
+        run(queue_lock);
 
-            _queue.pop_front();
-
-            queue_lock.unlock();
-
-            f();
-        }
-
-        post_dequeue();
+        post_loop();
     }
 
-    void post_dequeue() {
-        _executor(std::bind(&serial_instance_t::dequeue, this));
+    void post_loop() {
+        _executor(std::bind(&serial_instance_t::loop, this));
     }
 
 public:
@@ -84,7 +86,7 @@ public:
         _queue.emplace_back(std::move(pt.first));
         }
 
-        post_dequeue();
+        post_loop();
 
         pt.second.detach();
 
@@ -95,9 +97,17 @@ public:
     }
 
     ~serial_instance_t() {
-        auto f = enqueue([](){});
+        while (true) {
+            std::unique_lock<std::mutex> queue_lock(_m);
 
-        while (!f.get_try()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+            if (_running)
+                continue;
+
+            if (_queue.empty())
+                break;
+
+            run(queue_lock);
+        }
     }
 };
 
