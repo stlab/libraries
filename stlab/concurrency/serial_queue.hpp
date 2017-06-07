@@ -15,6 +15,7 @@
 #include <deque>
 #include <utility>
 #include <mutex>
+#include <tuple>
 
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/task.hpp>
@@ -73,7 +74,7 @@ class serial_instance_t {
     }
 
     void post_loop() {
-        _executor(std::bind(&serial_instance_t::loop, this));
+        _executor([this](){loop();});
     }
 
 public:
