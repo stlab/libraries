@@ -63,5 +63,13 @@ set(HEADERS
 
 add_executable(serial_queue_test ${SOURCE} ${HEADERS})
 
+include_directories(${Boost_INCLUDE_DIRS})
+
+target_link_libraries(
+    serial_queue_test
+    ${Boost_LIBRARIES} 
+    ${CMAKE_THREAD_LIBS_INIT} 
+    ${CONAN_LIBS})
+
 set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)
