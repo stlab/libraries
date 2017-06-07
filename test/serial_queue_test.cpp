@@ -70,7 +70,14 @@ void test0() {
 /**************************************************************************************************/
 
 inline std::size_t str_hash(const std::string& x) {
-    return std::hash<std::string>()(x);
+    // static_assert(sizeof(std::size_t) == 8, "bad size");
+
+    std::size_t result(0xcbf29ce484222325);
+
+    for (char c : x)
+        result = (result ^ c) * 0x100000001b3;
+
+    return result;
 }
 
 /**************************************************************************************************/
@@ -141,10 +148,10 @@ void test1() {
         dhash = hash_combine(dhash, "3");
     });
 
-    std::cout << "a hash " << (ahash == 0xC4EB8AC575CE7322UL ? "OK" : "BAD") << " (" << ahash << ")\n";
-    std::cout << "b hash " << (bhash == 0xA4624057D3E44CD5UL ? "OK" : "BAD") << " (" << bhash << ")\n";
-    std::cout << "c hash " << (chash == 0x756DF1012A73ABF8UL ? "OK" : "BAD") << " (" << chash << ")\n";
-    std::cout << "d hash " << (dhash == 0xF4687ACCDA951281UL ? "OK" : "BAD") << " (" << dhash << ")\n";
+    std::cout << "a hash " << (ahash == 0x7AE73CB5DC00E5ECUL ? "OK" : "BAD") << " (" << ahash << ")\n";
+    std::cout << "b hash " << (bhash == 0x1A6EF6277A2ADA1BUL ? "OK" : "BAD") << " (" << bhash << ")\n";
+    std::cout << "c hash " << (chash == 0xCB61477183BD3D36UL ? "OK" : "BAD") << " (" << chash << ")\n";
+    std::cout << "d hash " << (dhash == 0x4A64CCBC735B844FUL ? "OK" : "BAD") << " (" << dhash << ")\n";
 }
 
 /**************************************************************************************************/
