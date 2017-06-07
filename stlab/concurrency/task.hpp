@@ -35,7 +35,7 @@ class task {
 
     template <class F>
     struct model : concept {
-        model(F&& f) : _f(std::move(f)) { }
+        model(F&& f) : _f(std::forward<F>(f)) { }
         void invoke() override { _f(); }
         const std::type_info& target_type() const override { return typeid(F); }
         void* pointer() override { return &_f; }
@@ -76,7 +76,6 @@ public:
     T* target() { return (target_type() == typeid(T)) ? _self->pointer() : nullptr; }
     template <class T>
     const T* target() const { return (target_type() == typeid(T)) ? _self->pointer() : nullptr; }
-
 
     void operator()() { _self->invoke(); }
 };
