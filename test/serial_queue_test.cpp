@@ -3,6 +3,7 @@
 
 #include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 
 /**************************************************************************************************/
 
@@ -41,7 +42,7 @@ void test0() {
 
     b([&](){
         strout("   b2                   ( 4)");
-    }).then([&](){
+    }).then(stlab::immediate_executor, [&](){
         strout("   b2.1                 ( 4.1)");
     }).detach();
 

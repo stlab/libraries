@@ -55,14 +55,13 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
         _queue.pop_front();
         }
 
-        f();
-    }
-
-    void execute_dequeue() {
-        _executor([_this = shared_from_this()](){ _this->dequeue(); });
+        _executor(std::move(f));
     }
 
     void try_dequeue() {
+        task f;
+
+        {
         std::lock_guard<std::mutex> lock(_m);
 
         if (_queue.empty()) {
@@ -70,7 +69,12 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
             return;
         }
 
-        execute_dequeue();
+        f = std::move(_queue.front());
+
+        _queue.pop_front();
+        }
+
+        _executor(std::move(f));
     }
 
 public:
@@ -93,7 +97,7 @@ public:
         }
 
         if (!running) {
-            execute_dequeue();
+            dequeue();
         }
     }
 
