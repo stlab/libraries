@@ -11,8 +11,8 @@ int main() {
     auto argument1 = async(default_executor, [] { return 42; });
     auto argument2 = async(default_executor, [] { return 815; });
 
-    auto result = when_all(default_executor, [](int x) {
-        cout << "The current result is " << x '\n';
+    auto result = when_any(default_executor, [](int x, std::size_t index) {
+        cout << "The current result is " << x << " " << index << '\n';
     }, argument1, argument2);
 
     // Waiting just for illustrational purpose
@@ -22,7 +22,7 @@ int main() {
 /*
     Result:
 
-        The current result is 42
+        The current result is 42 0
         or 
-        The current result is 815
+        The current result is 815 1
 */
