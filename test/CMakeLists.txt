@@ -26,7 +26,6 @@ set(HEADERS
   ../stlab/config.hpp
   ../stlab/default_executor.hpp
   ../stlab/executor_base.hpp
-  ../stlab/expected.hpp
   ../stlab/future.hpp
   ../stlab/immediate_executor.hpp
   ../stlab/main_executor.hpp
@@ -53,18 +52,3 @@ target_link_libraries(
 set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
-########## Serial queue ##########
-
-PROJECT(serial_queue_test)
-
-set(SOURCE
-    serial_queue_test.cpp
-)
-
-set(HEADERS
-)
-
-add_executable(serial_queue_test ${SOURCE} ${HEADERS})
-
-set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
-set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)

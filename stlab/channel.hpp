@@ -307,7 +307,6 @@ auto process_close(boost::optional<T>& x) -> std::enable_if_t<has_process_close_
 template <typename T>
 auto process_close(boost::optional<T>&) -> std::enable_if_t<!has_process_close_v<T>> { }
 
-
 /**************************************************************************************************/
 
 template <typename T>
@@ -1399,6 +1398,10 @@ class receiver
             p->set_buffer_size(ap._annotations._buffer_size.value());
 
         return receiver<detail::yield_type<F, T>>(std::move(p));
+    }
+
+    auto operator|(sender<T> send) const {
+        return operator|([send](auto&& x) { send(std::forward<decltype(x)>(x)); });
     }
 };
 
