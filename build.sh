@@ -15,7 +15,7 @@ fi
 $CC --version
 
 if [ ! -d stlab ]; then
-    git clone --depth=1 https://github.com/stlab/libraries.git stlab
+    git clone --branch develop --depth=1 https://github.com/stlab/libraries.git stlab
 fi
 
 if [ ! -d boost ]; then
