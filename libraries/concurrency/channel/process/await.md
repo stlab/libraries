@@ -45,7 +45,7 @@ struct sum_2
       auto result = _sum;
       _sum = 0;
       _counter = 0;
-      return _sum; 
+      return result; 
     }
 
     auto state() const { return _state; }
