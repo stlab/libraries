@@ -15,6 +15,7 @@
 #include "future.hpp"
 #include "immediate_executor.hpp"
 #include "main_executor.hpp"
+#include "serial_queue.hpp"
 #include "system_timer.hpp"
 #include "utility.hpp"
 

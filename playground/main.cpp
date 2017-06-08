@@ -506,11 +506,7 @@ int main(int argc, char **argv)
     recover_with_a_continuation();
     passivProgressExample();
     activeProgressExample();
-
-#endif // 0    
     annotatedProcesses();
-
-#if 0
 
     while (true) {
         channelExample();
@@ -521,6 +517,16 @@ int main(int argc, char **argv)
     }
 
 #endif // 0
+
+    auto p = stlab::package<int(int)>(default_executor, [](int x) { return x; });
+    auto pt = p.first;
+    auto f = p.second;
+
+    pt(42);
+
+    while (!f.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+
+    cout << "The answer is " << f.get_try().value() << "\n";
 
     int i;
     cin >> i;

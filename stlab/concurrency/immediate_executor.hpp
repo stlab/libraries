@@ -27,6 +27,9 @@ namespace detail {
 
 struct immediate_executor_type
 {
+    using result_type = void;
+    static const bool is_serial = true;
+
     template <typename F>
     void operator()(F&& f) {
         std::forward<F>(f)();

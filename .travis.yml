@@ -34,7 +34,6 @@ script:
   - cmake .. && make
   - cd bin # It'd be great if we could just run all the binaries we find in here...
   - ./future_test
-  - ./serial_queue_test
 notifications:
   recipients:
     - felix@petriconi.net
