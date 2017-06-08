@@ -11,13 +11,19 @@ using namespace stlab;
 
 /**************************************************************************************************/
 
-void test0() {
+inline void rest() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+/**************************************************************************************************/
+
+void test0(stlab::empty_mode mode) {
     std::vector<std::string> output;
     std::mutex               m;
-    serial_queue_t           a(stlab::default_executor);
-    serial_queue_t           b(stlab::default_executor);
-    serial_queue_t           c(stlab::default_executor);
-    serial_queue_t           d(stlab::default_executor);
+    serial_queue_t           a(stlab::default_executor, mode);
+    serial_queue_t           b(stlab::default_executor, mode);
+    serial_queue_t           c(stlab::default_executor, mode);
+    serial_queue_t           d(stlab::default_executor, mode);
     auto                     aq(a.executor());
     auto                     bq(b.executor());
     auto                     cq(c.executor());
@@ -109,12 +115,15 @@ inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
 /**************************************************************************************************/
 
 struct serial_hash {
-    serial_queue_t   _q{stlab::default_executor};
+    serial_queue_t   _q;
     std::atomic<int> _c{0};
     std::string      _name;
     std::uint64_t    _h;
 
-    explicit serial_hash(std::string s) : _name(std::move(s)), _h(str_hash(_name)) { }
+    explicit serial_hash(std::string s, stlab::empty_mode mode) :
+        _q{stlab::default_executor, mode},
+        _name(std::move(s)),
+        _h(str_hash(_name)) { }
 
     void operator()(const std::string& s) {
         _q.executor()([&](){
@@ -132,11 +141,11 @@ struct serial_hash {
 
 /**************************************************************************************************/
 
-void test1() {
-    serial_hash a("a");
-    serial_hash b("b");
-    serial_hash c("c");
-    serial_hash d("d");
+void test1(stlab::empty_mode mode) {
+    serial_hash a("a", mode);
+    serial_hash b("b", mode);
+    serial_hash c("c", mode);
+    serial_hash d("d", mode);
 
     a("1");
     b("1");
@@ -167,11 +176,19 @@ void test1() {
 /**************************************************************************************************/
 
 int main(int argc, const char * argv[]) {
-    test0();
+    test0(stlab::empty_mode::dequeue);
 
     std::cout << "-=-=-=-=-\n";
 
-    test1();
+    test0(stlab::empty_mode::drain);
+
+    std::cout << "-=-=-=-=-\n";
+
+    test1(stlab::empty_mode::dequeue);
+
+    std::cout << "-=-=-=-=-\n";
+
+    test1(stlab::empty_mode::drain);
 
     return 0;
 }

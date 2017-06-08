@@ -30,51 +30,94 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
+enum class empty_mode {
+    dequeue,
+    drain
+};
+
+/**************************************************************************************************/
+
 namespace detail {
 
 /**************************************************************************************************/
 
-using executor_t = std::function<void (task&&)>;
-
-/**************************************************************************************************/
-
 class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
-    executor_t       _executor;
-    std::deque<task> _queue;
+    using executor_t = std::function<void (task&&)>;
+    using queue_t = std::deque<task>;
+
     std::mutex       _m;
-    bool             _running{false};
+    bool             _running{false}; // mutex protects this
+    queue_t          _queue;          // mutex protects this
+    executor_t       _executor;
+    void (serial_instance_t::*_kickstart)();
+
+    static auto pop_front_unsafe(queue_t& q) {
+        auto f = std::move(q.front());
+        q.pop_front();
+        return f;
+    }
+
+    bool empty() {
+        bool empty;
+
+        {
+            std::lock_guard<std::mutex> lock(_m);
+            
+            empty = _queue.empty();
+
+            if (empty) {
+                _running = false;
+            }
+        }
+
+        return empty;
+    }
+
+    void drain() {
+        queue_t local_queue;
+
+        while (true) {
+            {
+                std::lock_guard<std::mutex> lock(_m);
+
+                std::swap(local_queue, _queue);
+            }
+
+            while (!local_queue.empty()) {
+                pop_front_unsafe(local_queue)();
+            }
+
+            if (empty())
+                return;
+        }
+    }
 
     void dequeue() {
         task f;
 
         {
-        std::lock_guard<std::mutex> lock(_m);
+            std::lock_guard<std::mutex> lock(_m);
 
-        std::swap(f, _queue.front());
-
-        _queue.pop_front();
+            f = pop_front_unsafe(_queue);
         }
 
-        _executor(std::move(f));
+        f();
+
+        if (empty())
+            return;
+
+        _executor([_this(shared_from_this())](){ _this->dequeue(); });
     }
 
-    void try_dequeue() {
-        task f;
+    void kickstart() {
+        (this->*_kickstart)();
+    }
 
-        {
-        std::lock_guard<std::mutex> lock(_m);
-
-        if (_queue.empty()) {
-            _running = false;
-            return;
+    static auto kickstarter(empty_mode mode) {
+        switch (mode) {
+            case empty_mode::dequeue: return &serial_instance_t::dequeue;
+            case empty_mode::drain:   return &serial_instance_t::drain;
         }
-
-        f = std::move(_queue.front());
-
-        _queue.pop_front();
-        }
-
-        _executor(std::move(f));
     }
 
 public:
@@ -85,10 +128,7 @@ public:
         {
             std::lock_guard<std::mutex> lock(_m);
 
-            _queue.emplace_back([_f = std::forward<F>(f), _impl(shared_from_this())](){
-                _f();
-                _impl->try_dequeue();
-            });
+            _queue.emplace_back(std::forward<F>(f));
 
             // A trick to get the value of _running within the lock scope, but then
             // use it outside the scope, after the lock has been released. It also
@@ -97,11 +137,13 @@ public:
         }
 
         if (!running) {
-            dequeue();
+            _executor([_this(shared_from_this())](){ _this->kickstart(); });
         }
     }
 
-    serial_instance_t(detail::executor_t&& executor) : _executor(std::move(executor)) {
+    serial_instance_t(executor_t&& executor, empty_mode mode) :
+        _executor(std::move(executor)),
+        _kickstart(kickstarter(mode)) {
     }
 };
 
@@ -116,9 +158,10 @@ class serial_queue_t {
 
 public:
     template <typename Executor>
-    serial_queue_t(Executor e) : _impl(std::make_shared<detail::serial_instance_t>([_e = e](auto&& f){
-        _e(std::move(f));
-    })) { }
+    explicit serial_queue_t(Executor e, empty_mode mode = empty_mode::dequeue) :
+        _impl(std::make_shared<detail::serial_instance_t>([_e = e](auto&& f){
+            _e(std::move(f));
+        }, mode)) { }
 
     auto executor() const {
         return [_impl = _impl](auto f) {
