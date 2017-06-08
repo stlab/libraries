@@ -41,10 +41,13 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
+namespace detail {
+
+/**************************************************************************************************/
+
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 
-
-struct main_executor
+struct main_executor_type
 {
     using result_type = void;
 
@@ -64,8 +67,7 @@ struct main_executor
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 
-using main_executor = default_executor;
-
+using main_executor_type = default_executor_type;
 
 #elif  (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
     || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL) \
@@ -76,7 +78,7 @@ using main_executor = default_executor;
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
 
-struct main_executor
+struct main_executor_type
 {
     using result_type = void;
 
@@ -95,12 +97,12 @@ struct main_executor
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-// TODO main_executor for Windows 8 / 10
+// TODO main_executor_type for Windows 8 / 10
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 // TODO (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
-struct main_executor
+struct main_executor_type
 {
     using result_type = void;
 
@@ -122,6 +124,14 @@ struct main_executor
 #endif // STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
 
 #endif // (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) || ...
+
+/**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
+
+constexpr auto main_executor = detail::main_executor_type{};
 
 /**************************************************************************************************/
 
