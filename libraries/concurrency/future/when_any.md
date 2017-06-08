@@ -6,6 +6,7 @@ pure-name: when_any
 brief: Creates a future that continues on the first success of any futures passed
 description: Creates a future that continues on the first success of any futures passed
 annotation: template function
+example: when_any_example.cpp
 entities:
   - kind: overloads
     defined-in-header: stlab/concurrency/future.hpp
@@ -35,6 +36,4 @@ entities:
         description: This describes the range of futures. If an empty range is provided then a stlab::future_exception with code stlab::future_errc::broken_promise is thrown.
   - kind: result
     description: a future that reduces a number of input futures to the first that successds and passes it to the associated function object
-  - kind: example
-    code: Fill in a code example
 ---

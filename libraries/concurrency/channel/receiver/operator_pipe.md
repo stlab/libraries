@@ -7,6 +7,7 @@ defined-in-header: stlab/concurrency/channel.hpp
 declaration: operator|()
 brief: Creates a new receiver with the given process attached downstream.
 description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached. In case that `T` of `receiver<T>` is a move only type, repeated calls of this operator overwrite the previous attached downstream channel.
+example: operator_pipe_example.cpp
 entities:
   - kind: methods
     list:
@@ -33,46 +34,3 @@ entities:
   - kind: result
     description: A receiver of type of the result of the passed function object
 ---
-
-
-### Example ###
-
-~~~ c++
-#include <atomic>
-#include <thread>
-#include <stlab/concurrency/channel.hpp>
-#include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/main_executor.hpp>
-
-int main() {
-    sender<int> send;
-    receiver<int> receive;
-
-    tie(send, receive) = channel<int>(default_executor);
-
-    std::atomic_int v{0};
-
-    // The code demonstrates how a process can be annotated
-    auto result = receive 
-        | buffer_size{ 3 } & [](int x) { return x * 2; }
-        | [](int x) { return x * 2; } & buffer_size{ 2 }
-        | buffer_size{ 3 } & executor{ default_executor } & [](int x) { return x * 2; } 
-
-        | executor{ default_executor } & [](int x) { return x + 1; }
-        | [](int x) { return x + 1; } & executor{ main_executor }
-        | executor{ default_executor } & buffer_size{ 3 } & [](int x) { return x * 2; }
-    
-        | [](int x) { return x + 1; } & executor{ default_executor } & buffer_size{ 3 }
-        | [](int x) { return x * 2; } & buffer_size{ 3 } & executor{ main_executor }
-        
-        | [&v](int x) { v = x; };
-        
-    receive.set_ready();
-
-    send(1);
-
-    while (v == 0) {
-        this_thread::sleep_for(chrono::milliseconds(1));
-    }
-}
-~~~

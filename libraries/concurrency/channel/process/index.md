@@ -4,6 +4,7 @@ title: process
 tags: [library]
 ctor: unspecified
 dtor: unspecified
+annotation: policy class
 kind: class
 name: process
 pure-name: process
