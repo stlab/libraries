@@ -135,7 +135,7 @@ struct serial_hash {
     bool processed(int c) const { return _c >= c; }
 
     void confirm(std::uint64_t expected) {
-        std::cout << _name << " hash " << (_h == expected ? "OK" : "BAD") << " (" << _h << ")\n";
+        std::cout << _name << " hash " << (_h == expected ? "OK" : "BAD") << " (0x" << std::hex << _h << std::dec << ")\n";
     }
 };
 
@@ -161,16 +161,16 @@ void test1(stlab::empty_mode mode) {
     d("3");
 
     while (!a.processed(3)) { }
-    a.confirm(0xF1A486D58A02A59AUL);
+    a.confirm(0xf1a486d58a02a59aul);
 
     while (!b.processed(3)) { }
-    b.confirm(0xF1A485D58A02B8B3UL);
+    b.confirm(0xf1a485d58a02b8b3ul);
 
     while (!c.processed(3)) { }
-    c.confirm(0xF1A484D58A02A6E4UL);
+    c.confirm(0xf1a484d58a02a6e4ul);
 
     while (!d.processed(3)) { }
-    d.confirm(0xF1A483D58A02AE65UL);
+    d.confirm(0xf1a483d58a02ae65ul);
 }
 
 /**************************************************************************************************/
