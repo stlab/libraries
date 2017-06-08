@@ -11,65 +11,86 @@ using namespace stlab;
 /**************************************************************************************************/
 
 void test0() {
-    serial_queue_t aq(stlab::default_executor);
-    serial_queue_t bq(stlab::default_executor);
-    serial_queue_t cq(stlab::default_executor);
-    serial_queue_t dq(stlab::default_executor);
+    std::vector<std::string> output;
+    std::mutex               m;
+    serial_queue_t           a(stlab::default_executor);
+    serial_queue_t           b(stlab::default_executor);
+    serial_queue_t           c(stlab::default_executor);
+    serial_queue_t           d(stlab::default_executor);
+    auto                     aq(a.executor());
+    auto                     bq(b.executor());
+    auto                     cq(c.executor());
+    auto                     dq(d.executor());
 
-    aq([](){
-        std::cout << "a1                      ( 1)\n";
+    auto strout([&](std::string str) {
+        std::lock_guard<std::mutex> l(m);
+        output.emplace_back(std::move(str));
     });
 
-    bq([](){
-        std::cout << "   b1                   ( 2)\n";
+    aq([&](){
+        strout("a1                      ( 1)");
     });
 
-    dq([](){
-        std::cout << "           d1           ( 3)\n";
+    bq([&](){
+        strout("   b1                   ( 2)");
     });
 
-    bq([](){
-        std::cout << "   b2                   ( 4)\n";
-    }).then([](){
-        std::cout << "   b2.1                 ( 4.1)\n";
+    dq([&](){
+        strout("           d1           ( 3)");
+    });
+
+    b([&](){
+        strout("   b2                   ( 4)");
+    }).then([&](){
+        strout("   b2.1                 ( 4.1)");
     }).detach();
 
-    cq([](){
-        std::cout << "        c1              ( 5)\n";
+    cq([&](){
+        strout("        c1              ( 5)");
     });
 
-    cq([](){
-        std::cout << "        c2              ( 6)\n";
+    cq([&](){
+        strout("        c2              ( 6)");
     });
 
-    dq([](){
-        std::cout << "           d2           ( 7)\n";
+    dq([&](){
+        strout("           d2           ( 7)");
     });
 
-    cq([](){
-        std::cout << "        c3              ( 8)\n";
+    cq([&](){
+        strout("        c3              ( 8)");
     });
 
-    bq([](){
-        std::cout << "   b3                   ( 9)\n";
+    bq([&](){
+        strout("   b3                   ( 9)");
     });
 
-    aq([](){
-        std::cout << "a2                      (10)\n";
+    aq([&](){
+        strout("a2                      (10)");
     });
 
-    aq([](){
-        std::cout << "a3                      (11)\n";
+    aq([&](){
+        strout("a3                      (11)");
     });
 
-    dq([](){
-        std::cout << "           d3           (12)\n";
+    dq([&](){
+        strout("           d3           (12)");
     });
+
+    while (true) {
+        std::lock_guard<std::mutex> l(m);
+
+        if (output.size() == 13)
+            break;
+    }
+
+    for (const auto& s : output)
+        std::cout << s << '\n';
 }
 
 /**************************************************************************************************/
 
-std::uint64_t str_hash(const std::string& x) {
+inline std::uint64_t str_hash(const std::string& x) {
     std::uint64_t result(0xcbf29ce484222325);
 
     for (unsigned char c : x)
@@ -86,68 +107,60 @@ inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
 
 /**************************************************************************************************/
 
+struct serial_hash {
+    serial_queue_t   _q{stlab::default_executor};
+    std::atomic<int> _c{0};
+    std::string      _name;
+    std::uint64_t    _h;
+
+    explicit serial_hash(std::string s) : _name(std::move(s)), _h(str_hash(_name)) { }
+
+    void operator()(const std::string& s) {
+        _q.executor()([&](){
+            _h = hash_combine(_h, s);
+            ++_c;
+        });
+    }
+
+    bool processed(int c) const { return _c >= c; }
+
+    void confirm(std::uint64_t expected) {
+        std::cout << _name << " hash " << (_h == expected ? "OK" : "BAD") << " (" << _h << ")\n";
+    }
+};
+
+/**************************************************************************************************/
+
 void test1() {
-    serial_queue_t aq(stlab::default_executor);
-    serial_queue_t bq(stlab::default_executor);
-    serial_queue_t cq(stlab::default_executor);
-    serial_queue_t dq(stlab::default_executor);
-    std::uint64_t  ahash(str_hash("a"));
-    std::uint64_t  bhash(str_hash("b"));
-    std::uint64_t  chash(str_hash("c"));
-    std::uint64_t  dhash(str_hash("d"));
+    serial_hash a("a");
+    serial_hash b("b");
+    serial_hash c("c");
+    serial_hash d("d");
 
-    aq([&ahash](){
-        ahash = hash_combine(ahash, "1");
-    });
+    a("1");
+    b("1");
+    d("1");
+    b("2");
+    c("1");
+    c("2");
+    d("2");
+    c("3");
+    b("3");
+    a("2");
+    a("3");
+    d("3");
 
-    bq([&bhash](){
-        bhash = hash_combine(bhash, "1");
-    });
+    while (!a.processed(3)) { }
+    a.confirm(0xF1A486D58A02A59AUL);
 
-    dq([&dhash](){
-        dhash = hash_combine(dhash, "1");
-    });
+    while (!b.processed(3)) { }
+    b.confirm(0xF1A485D58A02B8B3UL);
 
-    bq([&bhash](){
-        bhash = hash_combine(bhash, "2");
-    });
+    while (!c.processed(3)) { }
+    c.confirm(0xF1A484D58A02A6E4UL);
 
-    cq([&chash](){
-        chash = hash_combine(chash, "1");
-    });
-
-    cq([&chash](){
-        chash = hash_combine(chash, "2");
-    });
-
-    dq([&dhash](){
-        dhash = hash_combine(dhash, "2");
-    });
-
-    cq([&chash](){
-        chash = hash_combine(chash, "3");
-    });
-
-    bq([&bhash](){
-        bhash = hash_combine(bhash, "3");
-    });
-
-    aq([&ahash](){
-        ahash = hash_combine(ahash, "2");
-    });
-
-    aq([&ahash](){
-        ahash = hash_combine(ahash, "3");
-    });
-
-    dq([&dhash](){
-        dhash = hash_combine(dhash, "3");
-    });
-
-    std::cout << "a hash " << (ahash == 0xF1A486D58A02A59AUL ? "OK" : "BAD") << " (" << ahash << ")\n";
-    std::cout << "b hash " << (bhash == 0xF1A485D58A02B8B3UL ? "OK" : "BAD") << " (" << bhash << ")\n";
-    std::cout << "c hash " << (chash == 0xF1A484D58A02A6E4UL ? "OK" : "BAD") << " (" << chash << ")\n";
-    std::cout << "d hash " << (dhash == 0xF1A483D58A02AE65UL ? "OK" : "BAD") << " (" << dhash << ")\n";
+    while (!d.processed(3)) { }
+    d.confirm(0xF1A483D58A02AE65UL);
 }
 
 /**************************************************************************************************/

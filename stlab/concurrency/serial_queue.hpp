@@ -45,44 +45,56 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     bool             _running{false};
 
     void dequeue() {
-        std::unique_lock<std::mutex> lock(_m);
+        task f;
+
+        {
+        std::lock_guard<std::mutex> lock(_m);
+
+        std::swap(f, _queue.front());
+
+        _queue.pop_front();
+        }
+
+        f();
+    }
+
+    void execute_dequeue() {
+        _executor([_this = shared_from_this()](){ _this->dequeue(); });
+    }
+
+    void try_dequeue() {
+        std::lock_guard<std::mutex> lock(_m);
 
         if (_queue.empty()) {
             _running = false;
             return;
         }
 
-        _running = true;
-
-        auto f(std::move(_queue.front()));
-
-        _queue.pop_front();
-
-        lock.unlock();
-
-        f();
+        execute_dequeue();
     }
 
 public:
-    template <typename F, typename... Args>
-    auto enqueue(F&& f, Args&&... args) {
-        using result_t = decltype(std::declval<F>()(std::declval<Args>()...));
-        auto p = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-        auto pt = stlab::package<result_t()>(_executor, p);
+    template <typename F>
+    void enqueue(F&& f) {
+        bool running(true);
 
         {
-        std::unique_lock<std::mutex> lock(_m);
+            std::lock_guard<std::mutex> lock(_m);
 
-        _queue.emplace_back([_f(std::move(pt.first)), _impl(shared_from_this())](){
-            _f();
-            _impl->dequeue();
-        });
+            _queue.emplace_back([_f = std::forward<F>(f), _impl(shared_from_this())](){
+                _f();
+                _impl->try_dequeue();
+            });
+
+            // A trick to get the value of _running within the lock scope, but then
+            // use it outside the scope, after the lock has been released. It also
+            // sets running to true if it is not yet; two birds, one stone.
+            std::swap(running, _running);
         }
 
-        if (!_running)
-            dequeue();
-
-        return pt.second;
+        if (!running) {
+            execute_dequeue();
+        }
     }
 
     serial_instance_t(detail::executor_t&& executor) : _executor(std::move(executor)) {
@@ -104,15 +116,15 @@ public:
         _e(std::move(f));
     })) { }
 
-    template <typename F, typename... Args>
-    auto operator()(F&& f, Args&&... args) {
-        return _impl->enqueue(std::forward<F>(f), std::forward<Args>(args)...);
+    auto executor() const {
+        return [_impl = _impl](auto f) {
+            _impl->enqueue(std::move(f));
+        };
     }
 
-    auto executor() const {
-        return [_impl = _impl](auto&& f) {
-            (*_impl)(std::forward<decltype(f)>(f)).detach();
-        };
+    template <typename F, typename... Args>
+    auto operator()(F&& f, Args&&... args) {
+        return async(executor(), std::forward<F>(f), std::forward<Args>(args)...);
     }
 };
 
