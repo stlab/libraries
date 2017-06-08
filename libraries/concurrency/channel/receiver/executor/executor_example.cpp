@@ -19,7 +19,7 @@ int main() {
     // The order of the process and executor is not relevant so calling
     // times_two & executor{ immediate_executor } would be equivalent
     auto result = receive 
-        | executor{ immediate_executor{} } & [](int x) { return x * 2; }
+        | executor{ immediate_executor } & [](int x) { return x * 2; }
         | [&v](int x) { v = x; };
         
     receive.set_ready();

@@ -21,11 +21,11 @@ int main() {
         | buffer_size{ 3 } & executor{ default_executor } & [](int x) { return x * 2; } 
 
         | executor{ default_executor } & [](int x) { return x + 1; }
-        | [](int x) { return x + 1; } & executor{ immediate_executor{} }
+        | [](int x) { return x + 1; } & executor{ immediate_executor }
         | executor{ default_executor } & buffer_size{ 3 } & [](int x) { return x * 2; }
     
         | [](int x) { return x + 1; } & executor{ default_executor } & buffer_size{ 3 }
-        | [](int x) { return x * 2; } & buffer_size{ 3 } & executor{ immediate_executor{} }
+        | [](int x) { return x * 2; } & buffer_size{ 3 } & executor{ immediate_executor }
         
         | [&v](int x) { v = x; };
         
