@@ -4,6 +4,7 @@ title: stlab::sender
 tags: [library]
 ctor: default
 dtor: default
+annotation: template class
 name: stlab::sender
 pure-name: sender
 defined-in-header: stlab/concurrency/channel.hpp

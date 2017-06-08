@@ -8,6 +8,12 @@ fi
 
 cd build
 
+if [ ! $CC ]; then
+    export CC=clang++
+fi
+ 
+$CC --version
+
 if [ ! -d stlab ]; then
     git clone --depth=1 https://github.com/stlab/libraries.git stlab
 fi
@@ -29,7 +35,7 @@ do
 
   dst=`basename $src`.exe
 
-  clang++ -x c++ -std=c++14 -stdlib=libc++ $src -I./stlab -I./boost -o $dst
+  $CC -x c++ -std=c++14 -stdlib=libc++ $src -I./stlab -I./boost -o $dst
 
   if [ $? != 0 ]; then
     exit $?;

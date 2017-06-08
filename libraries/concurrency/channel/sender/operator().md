@@ -6,6 +6,7 @@ pure-name: operator()
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator()
 description: Sends a new value into the channel
+example: call_operator_example.cpp
 entities:
   - kind: methods
     list:
@@ -23,52 +24,3 @@ entities:
   - kind: result
 ---
 
-### Example ###
-
-~~~ c++
-#include <atomic>
-#include <iostream>
-#include <thread>
-
-#include <stlab/concurrency/channel.hpp>
-#include <stlab/concurrency/default_executor.hpp>
-
-using namespace std;
-using namespace stlab;
-
-int main() {
-    sender<int> send;
-    receiver<int> receive;
-
-    tie(send, receive) = channel<int>(default_executor);
-
-    std::atomic_bool done{ false };
-
-    auto hold = receive | [&_done = done](int x) {  
-        cout << x << '\n'; 
-        _done = true; 
-      };
-
-    // It is necessary to mark this side ready, when all connections are
-    // established
-    receive.set_ready();
-
-    // calling operator() on send
-    send(1);
-    send(2);
-    send(3);
-
-    // Waiting just for illustrational purpose
-    while (!done.load()) {
-        this_thread::sleep_for(chrono::milliseconds(1));
-    }
-}
-~~~
-
-### Output ###
-
-~~~
-1
-2
-3
-~~~
