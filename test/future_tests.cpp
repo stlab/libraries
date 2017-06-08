@@ -8,7 +8,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
-#include <stlab/future.hpp>
+
+#include <stlab/concurrency/concurrency.hpp>
 
 #include "test_helper.hpp"
 

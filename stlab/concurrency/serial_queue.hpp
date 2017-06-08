@@ -22,9 +22,9 @@ Distributed under the Boost Software License, Version 1.0.
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 //#include <Windows.h>
 //#include <memory>
-#include "default_executor_t.hpp"
+#include "default_executor.hpp"
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-#include "default_executor_t.hpp"
+#include "default_executor.hpp"
 #endif
 
 /**************************************************************************************************/

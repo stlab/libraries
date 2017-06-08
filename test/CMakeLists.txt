@@ -22,19 +22,19 @@ set(SOURCE
 )
 
 set(HEADERS
-  ../stlab/channel.hpp
-  ../stlab/config.hpp
-  ../stlab/default_executor.hpp
-  ../stlab/executor_base.hpp
-  ../stlab/future.hpp
-  ../stlab/immediate_executor.hpp
-  ../stlab/main_executor.hpp
-  ../stlab/progress.hpp
-  ../stlab/serial_queue.hpp
-  ../stlab/traits.hpp
-  ../stlab/tuple_algorithm.hpp
-  ../stlab/system_timer.hpp
-  ../stlab/utility.hpp
+  ../stlab/concurrency/channel.hpp
+  ../stlab/concurrency/config.hpp
+  ../stlab/concurrency/default_executor.hpp
+  ../stlab/concurrency/executor_base.hpp
+  ../stlab/concurrency/future.hpp
+  ../stlab/concurrency/immediate_executor.hpp
+  ../stlab/concurrency/main_executor.hpp
+  ../stlab/concurrency/progress.hpp
+  ../stlab/concurrency/serial_queue.hpp
+  ../stlab/concurrency/system_timer.hpp
+  ../stlab/concurrency/traits.hpp
+  ../stlab/concurrency/tuple_algorithm.hpp
+  ../stlab/concurrency/utility.hpp
   channel_test_helper.hpp
   test_helper.hpp
 )

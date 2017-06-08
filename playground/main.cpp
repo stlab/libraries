@@ -13,9 +13,7 @@ struct IUnknown;
 #include <sstream>
 #include <utility>
 
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
-#include <stlab/future.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 
 using namespace stlab;
 using namespace std;
@@ -239,8 +237,7 @@ void activeProgressExample()
 #include <tuple>
 #include <iostream>
 
-#include <stlab/future.hpp>
-#include <stlab/channel.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 
 using namespace stlab;
 using namespace std;

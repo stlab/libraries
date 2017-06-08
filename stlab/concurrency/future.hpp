@@ -17,9 +17,9 @@
 #include <vector>
 
 #include <boost/optional.hpp>
-#include <stlab/config.hpp>
-#include <stlab/executor_base.hpp>
-#include <stlab/traits.hpp>
+#include "config.hpp"
+#include "executor_base.hpp"
+#include "traits.hpp"
 
 /**************************************************************************************************/
 

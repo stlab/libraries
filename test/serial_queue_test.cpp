@@ -6,8 +6,7 @@
 
 /**************************************************************************************************/
 
-#include <stlab/default_executor.hpp>
-#include <stlab/serial_queue.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 #include <thread>
 
 #include <boost/test/unit_test.hpp>
@@ -94,16 +93,5 @@ BOOST_AUTO_TEST_CASE(SerialQueue_EnqueueManyTasksInDifferentQueues) {
         BOOST_REQUIRE_EQUAL(i, resultsA[i]);
         BOOST_REQUIRE_EQUAL(i+100, resultsB[i]);
     }
-}
-
-
-BOOST_AUTO_TEST_CASE(SerialQueue_CopyConstruction_EnsureCopyUsesSourceQueue) {
-
-    serial_queue sutA(test_help::no_executor{});
-    serial_queue sutB(sutA);
-
-    sutA.execute()([](){});
-
-    BOOST_REQUIRE_EQUAL(1, test_help::no_executor::tasks.size());
 }
 

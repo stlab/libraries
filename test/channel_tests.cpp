@@ -8,8 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/channel.hpp>
-#include <stlab/future.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 
 #include "channel_test_helper.hpp"
 
@@ -291,4 +290,38 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(report_channel_broken_when_no_process_is_attached) {
+    BOOST_TEST_MESSAGE("Expect broken channel exception when no process is attached");
+
+    stlab::receiver<int> receive;
+
+    BOOST_REQUIRE_EXCEPTION((receive | [](int x){return 1;}), stlab::channel_error,
+        ([](const auto& e) {
+            return std::string("broken channel") == e.what(); }) );
+
+    BOOST_REQUIRE_EXCEPTION((receive | stlab::buffer_size{2} & [](int x){return 1;}), stlab::channel_error,
+        ([](const auto& e) {
+            return std::string("broken channel") == e.what(); }) );
+}
+
+
+
+BOOST_AUTO_TEST_CASE(report_channel_broken_when_process_is_already_running) {
+    BOOST_TEST_MESSAGE("Expect \"process already running\" exception when process is already running");
+
+    stlab::sender<int> send;
+    stlab::receiver<int> receive;
+    std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
+
+    receive.set_ready();
+
+    BOOST_REQUIRE_EXCEPTION((receive | [](int x){return 1;}), stlab::channel_error,
+        ([](const auto& e) {
+            return std::string("process already running") == e.what(); }) );
+
+    BOOST_REQUIRE_EXCEPTION((receive | stlab::buffer_size{2} & [](int x){return 1;}), stlab::channel_error,
+        ([](const auto& e) {
+            return std::string("process already running") == e.what(); }) );
+}
 

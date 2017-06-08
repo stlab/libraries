@@ -9,8 +9,7 @@
 #ifndef _CHANNEL_TEST_HELPER_
 #define _CHANNEL_TEST_HELPER_
 
-#include <stlab/channel.hpp>
-#include <stlab/default_executor.hpp>
+#include <stlab/concurrency/concurrency.hpp>
 
 #include <queue>
 #include <thread>
