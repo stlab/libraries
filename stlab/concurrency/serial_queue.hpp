@@ -44,6 +44,7 @@ namespace detail {
 class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
     using executor_t = std::function<void (task&&)>;
     using queue_t = std::deque<task>;
+    using lock_t = std::lock_guard<std::mutex>;
 
     std::mutex       _m;
     bool             _running{false}; // mutex protects this
@@ -61,13 +62,13 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
         bool empty;
 
         {
-            std::lock_guard<std::mutex> lock(_m);
-            
-            empty = _queue.empty();
+        lock_t lock(_m);
+        
+        empty = _queue.empty();
 
-            if (empty) {
-                _running = false;
-            }
+        if (empty) {
+            _running = false;
+        }
         }
 
         return empty;
@@ -76,39 +77,37 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     void drain() {
         queue_t local_queue;
 
-        while (true) {
+        do {
             {
-                std::lock_guard<std::mutex> lock(_m);
+            lock_t lock(_m);
 
-                std::swap(local_queue, _queue);
+            std::swap(local_queue, _queue);
             }
 
             while (!local_queue.empty()) {
                 pop_front_unsafe(local_queue)();
             }
-
-            if (empty())
-                return;
-        }
+        } while (!empty());
     }
 
     void dequeue() {
         task f;
 
         {
-            std::lock_guard<std::mutex> lock(_m);
+        lock_t lock(_m);
 
-            f = pop_front_unsafe(_queue);
+        f = pop_front_unsafe(_queue);
         }
 
         f();
 
-        if (empty())
-            return;
-
-        _executor([_this(shared_from_this())](){ _this->dequeue(); });
+        if (!empty())
+            _executor([_this(shared_from_this())](){ _this->dequeue(); });
     }
 
+    // The kickstart allows us to grab a pointer to either the dequeue or drain
+    // routine at construction time. When it comes time to process the queue, we
+    // call either via the abstracted _kickstart.
     void kickstart() {
         (this->*_kickstart)();
     }
@@ -126,14 +125,14 @@ public:
         bool running(true);
 
         {
-            std::lock_guard<std::mutex> lock(_m);
+        lock_t lock(_m);
 
-            _queue.emplace_back(std::forward<F>(f));
+        _queue.emplace_back(std::forward<F>(f));
 
-            // A trick to get the value of _running within the lock scope, but then
-            // use it outside the scope, after the lock has been released. It also
-            // sets running to true if it is not yet; two birds, one stone.
-            std::swap(running, _running);
+        // A trick to get the value of _running within the lock scope, but then
+        // use it outside the scope, after the lock has been released. It also
+        // sets running to true if it is not yet; two birds, one stone.
+        std::swap(running, _running);
         }
 
         if (!running) {
@@ -178,6 +177,9 @@ public:
 /**************************************************************************************************/
 
 } // namespace v1
+
+/**************************************************************************************************/
+
 } // namespace stlab
 
 /**************************************************************************************************/
