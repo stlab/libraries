@@ -2,6 +2,7 @@
 layout: method
 title: valid
 tags: [library]
+scope: future
 pure-name: valid
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: valid()

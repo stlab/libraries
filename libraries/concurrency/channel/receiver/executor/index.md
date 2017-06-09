@@ -2,7 +2,8 @@
 layout: class
 title: stlab::executor
 tags: [library]
-name: stlab::executor
+scope: stlab
+name: executor
 pure-name: executor
 defined-in-header: stlab/concurrency/channel.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp

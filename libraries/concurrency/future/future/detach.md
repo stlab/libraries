@@ -2,6 +2,7 @@
 layout: method
 title: detach
 tags: [library]
+scope: future
 pure-name: detach
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: detach()

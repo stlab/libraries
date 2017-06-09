@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::when_any
 tags: [library]
+scope: stlab
 pure-name: when_any
 brief: Creates a future that continues on the first success of any futures passed
 description: Creates a future that continues on the first success of any futures passed. The results of all passed futures must be convertable to the first parameter of the continuing function. The function must accept the a second parameter of std::size_t. It will receive the index of the future that succeeded first.

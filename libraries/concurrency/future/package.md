@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::package
 tags: [library]
+scope: stlab
 pure-name: package
 brief: Create a packaged_task/future pair
 annotation: template function

@@ -2,6 +2,7 @@
 layout: method
 title: reset
 tags: [library]
+scope: future
 pure-name: reset
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: reset()
