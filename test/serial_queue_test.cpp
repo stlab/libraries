@@ -71,10 +71,13 @@ void test0(stlab::schedule_mode mode) {
 /**************************************************************************************************/
 
 inline std::uint64_t str_hash(const std::string& x) {
-    std::uint64_t result(0xcbf29ce484222325);
+    constexpr std::uint64_t base_k(0xcbf29ce484222325);
+    constexpr std::uint64_t prime_k(0x100000001b3);
 
-    for (unsigned char c : x)
-        result = (result ^ c) * 0x100000001b3;
+    std::uint64_t result(base_k);
+
+    for (auto c : x)
+        result = (result ^ static_cast<std::uint64_t>(c)) * prime_k;
 
     return result;
 }
@@ -87,66 +90,78 @@ inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
 
 /**************************************************************************************************/
 
+class test_hash_t {
+    std::string   _name;
+    std::uint64_t _h{0};
+
+    void confirm(std::uint64_t expected) {
+        if (_h == expected)
+            return;
+
+        static std::mutex m;
+        std::lock_guard<std::mutex> l(m);
+
+        std::cout << std::hex << _name
+                  << " need: " << "0x" << expected
+                  << " have: " << "0x" << _h
+                  << "\n" << std::dec;
+    }
+
+public:
+    test_hash_t(std::string name, std::uint64_t h) : _name(std::move(name)), _h(str_hash(_name)) {
+        confirm(h);
+    }
+
+    void operator()(const std::string& s, std::uint64_t e) {
+        _h = hash_combine(_h, s);
+
+        confirm(e);
+    }
+};
+
+/**************************************************************************************************/
+
 struct serial_hash {
     serial_queue_t _q;
     std::atomic<int> _c{0};
-    std::string _name;
-    std::uint64_t _h;
+    test_hash_t _h;
 
-    explicit serial_hash(std::string s, stlab::schedule_mode mode)
-        : _q{stlab::default_executor, mode}, _name(std::move(s)), _h(str_hash(_name)) {}
+    explicit serial_hash(std::string s, std::uint64_t e, stlab::schedule_mode mode)
+        : _q{stlab::default_executor, mode}, _h(std::move(s), e) {}
 
-    void operator()(const std::string& s) {
+    void operator()(const std::string& s, std::uint64_t e) {
         _q.executor()([&]() {
-            _h = hash_combine(_h, s);
+            _h(s, e);
             ++_c;
         });
-    }
-
-    bool processed(int c) const { return _c >= c; }
-
-    void confirm(std::uint64_t expected) {
-        std::cout << _name << " hash " << (_h == expected ? "OK" : "BAD") << " (0x" << std::hex
-                  << _h << std::dec << ")\n";
     }
 };
 
 /**************************************************************************************************/
 
 void test1(stlab::schedule_mode mode) {
-    serial_hash a("a", mode);
-    serial_hash b("b", mode);
-    serial_hash c("c", mode);
-    serial_hash d("d", mode);
+    serial_hash a("a", 0xaf63dc4c8601ec8c, mode);
+    // serial_hash b("b", 0xaf63df4c8601f1a5, mode);
+    // serial_hash c("c", 0xaf63de4c8601eff2, mode);
+    // serial_hash d("d", 0xaf63d94c8601e773, mode);
 
-    a("1");
-    b("1");
-    d("1");
-    b("2");
-    c("1");
-    c("2");
-    d("2");
-    c("3");
-    b("3");
-    a("2");
-    a("3");
-    d("3");
+    a("1", 0xf1a484d58a02d974);
+    // b("1", 0xf1a487d58a02c45d);
+    // d("1", 0xf1a481d58a02d28b);
+    // b("2", 0xaf63d94c86018477);
+    // c("1", 0xf1a486d58a02da0a);
+    // c("2", 0xaf63d84c86019a20);
+    // d("2", 0xaf63df4c860192a1);
+    // c("3", 0xf1a484d58a02a6e4);
+    // b("3", 0xf1a485d58a02b8b3);
+    a("2", 0xaf63da4c8601995e);
+    a("3", 0xf1a486d58a02a59a);
+    // d("3", 0xf1a483d58a02ae65);
 
-    while (!a.processed(3)) {
-    }
-    a.confirm(0xf1a486d58a02a59aul);
-
-    while (!b.processed(3)) {
-    }
-    b.confirm(0xf1a485d58a02b8b3ul);
-
-    while (!c.processed(3)) {
-    }
-    c.confirm(0xf1a484d58a02a6e4ul);
-
-    while (!d.processed(3)) {
-    }
-    d.confirm(0xf1a483d58a02ae65ul);
+    while (a._c != 3) ;
+    // while (b._c != 3) ;
+    // while (c._c != 3) ;
+    // while (d._c != 3) ;
 }
 
 /**************************************************************************************************/
