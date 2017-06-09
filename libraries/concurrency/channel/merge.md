@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::merge
 tags: [library]
+scope: stlab
 pure-name: merge
 brief: Creates a future that merges all passed arguments
 annotation: template function

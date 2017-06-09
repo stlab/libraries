@@ -2,6 +2,7 @@
 layout: method
 title: set_ready
 tags: [library]
+scope: receiver
 pure-name: set_ready
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: set_ready

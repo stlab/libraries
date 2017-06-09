@@ -2,6 +2,7 @@
 layout: method
 title: error
 tags: [library]
+scope: future
 pure-name: error
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: error()

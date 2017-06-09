@@ -2,6 +2,7 @@
 layout: method
 title: get_try
 tags: [library]
+scope: future
 pure-name: get_try
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: get_try()

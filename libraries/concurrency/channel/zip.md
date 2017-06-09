@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::zip
 tags: [library]
+scope: stlab
 pure-name: zip
 brief: Creates a future that zips all passed arguments
 annotation: template function

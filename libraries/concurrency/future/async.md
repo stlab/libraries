@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::async
 tags: [library]
+scope: stlab
 pure-name: async
 brief: Run a function on a specified executor
 annotation: template function

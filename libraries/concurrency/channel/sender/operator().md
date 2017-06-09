@@ -1,7 +1,8 @@
 ---
 layout: method
-title: stlab::sender
+title: stlab::sender::operator()
 tags: [library]
+scope: sender
 pure-name: operator()
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator()

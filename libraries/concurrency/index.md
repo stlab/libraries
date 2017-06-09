@@ -9,10 +9,12 @@ description: |
     Since one can create with futures only graphs for single use, this library provides as well channels. With these channels one can build graphs, that can be used for multiple invocations.
 ---
 
-### Requirements ###
+{% include example_table.html %}
+
+### Requirements
 
 * C++14 compliant compiler (clang 3.6, gcc 5.3, Visual Studio 2015 Update 3)
 * boost 1.60.0 (optional, variant and test for executing the UnitTests)
 
-### Authors ###
+### Authors
 Sean Parent, Felix Petriconi

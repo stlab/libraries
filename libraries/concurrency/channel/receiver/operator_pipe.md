@@ -2,6 +2,7 @@
 layout: method
 title: operator|
 tags: [library]
+scope: receiver
 pure-name: operator|
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator|()

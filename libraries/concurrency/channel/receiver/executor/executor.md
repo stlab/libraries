@@ -2,6 +2,7 @@
 layout: method
 title: stlab::executor
 tags: [library]
+scope: stlab
 pure-name: executor
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: executor()

@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::join
 tags: [library]
+scope: stlab
 pure-name: join
 brief: Creates a future that joins all passed arguments
 annotation: template function

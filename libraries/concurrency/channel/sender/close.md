@@ -1,7 +1,8 @@
 ---
 layout: method
-title: stlab::sender
+title: stlab::sender::close
 tags: [library]
+scope: sender
 pure-name: close
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: close()

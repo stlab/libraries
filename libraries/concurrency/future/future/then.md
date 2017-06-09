@@ -2,6 +2,7 @@
 layout: method
 title: then
 tags: [library]
+scope: future
 pure-name: then
 defined-in-header: stlab/concurrency/future.hpp
 brief: Creates a continuation

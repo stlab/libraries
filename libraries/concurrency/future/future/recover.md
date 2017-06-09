@@ -2,6 +2,7 @@
 layout: method
 title: recover
 tags: [library]
+scope: future
 pure-name: recover
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: recover()

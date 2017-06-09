@@ -2,6 +2,7 @@
 layout: free-function
 title: stlab::channel
 tags: [library]
+scope: stlab
 pure-name: channel
 brief: Creates a pair that consists of a sender and a receiver
 annotation: template function

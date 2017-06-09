@@ -392,6 +392,45 @@ table {
 }
 
 /**
+ * Example tables are indented on the left, and have horizontal lines between
+ * every row.
+ */
+.example-table {
+    margin-bottom: $spacing-unit / 2;
+    border-bottom: 1px solid $grey-color;
+    border-top: 1px solid $grey-color;
+    width: 100%;
+
+    > tbody {
+        > tr {
+            border-top: 1px solid $grey-color;
+
+            > th {
+                text-align: left;
+            }
+            > td {
+                vertical-align:top;
+
+                > p {
+                    margin: 0;
+                    display: inline;
+                }
+            }
+            > td.decl_func {
+                font-family: $code-font-family;
+            }
+            > td.decl_link {
+                font-family: $code-font-family;
+                padding-left: 1.5em;
+            }
+            > td.defn {
+                padding-left: 1.5em;
+            }
+        }
+    }
+}
+
+/**
  * Styling for some of the auto generated stuff
  */
 
