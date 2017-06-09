@@ -62,6 +62,8 @@ void test0(stlab::schedule_mode mode) {
         std::lock_guard<std::mutex> l(m);
 
         if (output.size() == 13) break;
+
+        rest();
     }
 
     for (const auto& s : output)
@@ -71,13 +73,10 @@ void test0(stlab::schedule_mode mode) {
 /**************************************************************************************************/
 
 inline std::uint64_t str_hash(const std::string& x) {
-    constexpr std::uint64_t base_k(0xcbf29ce484222325);
-    constexpr std::uint64_t prime_k(0x100000001b3);
-
-    std::uint64_t result(base_k);
+    std::uint64_t result(0xcbf29ce484222325);
 
     for (auto c : x)
-        result = (result ^ static_cast<std::uint64_t>(c)) * prime_k;
+        result = (result ^ static_cast<std::uint64_t>(c)) * 0x100000001b3;
 
     return result;
 }
@@ -141,27 +140,27 @@ struct serial_hash {
 
 void test1(stlab::schedule_mode mode) {
     serial_hash a("a", 0xaf63dc4c8601ec8c, mode);
-    // serial_hash b("b", 0xaf63df4c8601f1a5, mode);
-    // serial_hash c("c", 0xaf63de4c8601eff2, mode);
-    // serial_hash d("d", 0xaf63d94c8601e773, mode);
+    serial_hash b("b", 0xaf63df4c8601f1a5, mode);
+    serial_hash c("c", 0xaf63de4c8601eff2, mode);
+    serial_hash d("d", 0xaf63d94c8601e773, mode);
 
     a("1", 0xf1a484d58a02d974);
-    // b("1", 0xf1a487d58a02c45d);
-    // d("1", 0xf1a481d58a02d28b);
-    // b("2", 0xaf63d94c86018477);
-    // c("1", 0xf1a486d58a02da0a);
-    // c("2", 0xaf63d84c86019a20);
-    // d("2", 0xaf63df4c860192a1);
-    // c("3", 0xf1a484d58a02a6e4);
-    // b("3", 0xf1a485d58a02b8b3);
+    b("1", 0xf1a487d58a02c45d);
+    d("1", 0xf1a481d58a02d28b);
+    b("2", 0xaf63d94c86018477);
+    c("1", 0xf1a486d58a02da0a);
+    c("2", 0xaf63d84c86019a20);
+    d("2", 0xaf63df4c860192a1);
+    c("3", 0xf1a484d58a02a6e4);
+    b("3", 0xf1a485d58a02b8b3);
     a("2", 0xaf63da4c8601995e);
     a("3", 0xf1a486d58a02a59a);
-    // d("3", 0xf1a483d58a02ae65);
+    d("3", 0xf1a483d58a02ae65);
 
-    while (a._c != 3) ;
-    // while (b._c != 3) ;
-    // while (c._c != 3) ;
-    // while (d._c != 3) ;
+    while (a._c != 3) rest();
+    while (b._c != 3) rest();
+    while (c._c != 3) rest();
+    while (d._c != 3) rest();
 }
 
 /**************************************************************************************************/
