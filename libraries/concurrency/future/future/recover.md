@@ -6,7 +6,8 @@ scope: future
 pure-name: recover
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: recover()
-description: Creates a recoverable continuation on the current object.
+brief: Creates a recoverable future on the current object.
+description: Since the futures are value based, the recover method should be used to do the error handling.    
 example: recover_example.cpp
 entities:
   - kind: methods
@@ -45,4 +46,7 @@ entities:
         description: Executor which is used to schedule the resulting task
       - name: f
         description: Callable object that implements the `recover()` function. Its parameter must be of type of this `future<T>` instance.
+      - kind: result
+        description: It returns the recoverable future
+
 ---

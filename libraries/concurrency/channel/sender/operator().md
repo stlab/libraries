@@ -6,6 +6,7 @@ scope: sender
 pure-name: operator()
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator()
+brief: Sends a new value into the channel
 description: Sends a new value into the channel
 example: call_operator_example.cpp
 entities:
