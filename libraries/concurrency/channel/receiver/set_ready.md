@@ -6,7 +6,8 @@ scope: receiver
 pure-name: set_ready
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: set_ready
-description: Sets this receiver ready to receive values.
+brief: Sets the receiver ready to receive values.
+description: Sets the receiver ready to receive values.
 example: set_ready_example.cpp
 entities:
   - kind: methods

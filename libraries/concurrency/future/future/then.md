@@ -5,7 +5,7 @@ tags: [library]
 scope: future
 pure-name: then
 defined-in-header: stlab/concurrency/future.hpp
-brief: Creates a continuation
+brief: Creates a continuation on the current future.
 declaration: then()
 example: [then_continuation_example.cpp, then_split_example.cpp]
 description: |

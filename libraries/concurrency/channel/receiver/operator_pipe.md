@@ -6,7 +6,7 @@ scope: receiver
 pure-name: operator|
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: operator|()
-brief: Creates a new receiver with the given process attached downstream.
+brief: Attaches a new process to the channel.
 description: Creates a new receiver, attaches the given process as downstream to it and returns this new receiver. The new receiver inherits the executor from its upstream receiver if not an alternative executor is attached. In case that `T` of `receiver<T>` is a move only type, repeated calls of this operator overwrite the previous attached downstream channel.
 example: operator_pipe_example.cpp
 entities:
