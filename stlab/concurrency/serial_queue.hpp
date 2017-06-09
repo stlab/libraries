@@ -82,7 +82,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
             pop_front_unsafe(local_queue)();
         }
 
-        if (!empty()) _executor([_this(shared_from_this())]() { _this->single(); });
+        if (!empty()) _executor([_this(shared_from_this())]() { _this->all(); });
     }
 
     void single() {
