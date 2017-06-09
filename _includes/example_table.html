@@ -9,10 +9,10 @@
 
 <h3>Examples</h3>
 
-<table class='definition-table'>
+<table class='example-table'>
 {% for p in examples %}
   <tr>
-      <td>
+      <td class='decl_func'>
       {% if p.scope %}
         {% assign label = p.scope | append: "::" | append: p.pure-name %}
       {% elsif p.pure-name %}
@@ -23,7 +23,7 @@
 
       <a href='{{p.url}}'><code>{{label}}</code></a>
       </td>
-      <td>
+      <td class='decl_link'>
         {% for e in p.example %}
             {% assign lastchar = p.url | split: '' | last %}
             {% if lastchar == '/' %}
@@ -33,6 +33,9 @@
             {% endif %}
             <a href='{{url}}'><code>{{e}}</code></a><br/>
         {% endfor %}
+      </td>
+      <td class='defn'>
+        {{p.brief}}
       </td>
   </tr>
 {% endfor %}
