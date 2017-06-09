@@ -129,9 +129,9 @@ struct serial_hash {
     explicit serial_hash(std::string s, std::uint64_t e, stlab::schedule_mode mode)
         : _q{stlab::default_executor, mode}, _h(std::move(s), e) {}
 
-    void operator()(const std::string& s, std::uint64_t e) {
-        _q.executor()([&]() {
-            _h(s, e);
+    void operator()(std::string s, std::uint64_t e) {
+        _q.executor()([this, _e = e, _s = std::move(s)]() {
+            _h(_s, _e);
             ++_c;
         });
     }
