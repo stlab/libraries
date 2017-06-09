@@ -5,7 +5,7 @@ tags: [library]
 pure-name: detach
 defined-in-header: stlab/concurrency/future.hpp 
 declaration: detach()
-description: Detaches the associated tasks from this instance. So it will be executed even this instance get destructed.
+description: Detaches the associated tasks from this instance. So it will be executed even when this instance get destructed.
 entities:
   - kind: methods
     list:
