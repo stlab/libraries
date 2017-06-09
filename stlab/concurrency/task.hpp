@@ -27,7 +27,7 @@ inline namespace v1 {
 class task {
     struct concept {
         virtual ~concept() { }
-        virtual void invoke() = 0;
+        virtual void invoke() noexcept = 0;
         virtual const std::type_info& target_type() const = 0;
         virtual void* pointer() = 0;
         virtual const void* pointer() const = 0;
@@ -36,7 +36,7 @@ class task {
     template <class F>
     struct model : concept {
         model(F&& f) : _f(std::forward<F>(f)) { }
-        void invoke() override { _f(); }
+        void invoke() noexcept override { _f(); }
         const std::type_info& target_type() const override { return typeid(F); }
         void* pointer() override { return &_f; }
         const void* pointer() const override { return &_f; }
@@ -77,7 +77,7 @@ public:
     template <class T>
     const T* target() const { return (target_type() == typeid(T)) ? _self->pointer() : nullptr; }
 
-    void operator()() { _self->invoke(); }
+    void operator()() noexcept { _self->invoke(); }
 };
 
 inline void swap(task& x, task& y) { return x.swap(y); }

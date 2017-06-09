@@ -11,11 +11,10 @@
 
 /**************************************************************************************************/
 
-#include <atomic>
 #include <deque>
-#include <utility>
 #include <mutex>
 #include <tuple>
+#include <utility>
 
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/task.hpp>
@@ -27,13 +26,9 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
-enum class empty_mode {
-    dequeue,
-    drain
-};
+enum class schedule_mode { single, all };
 
 /**************************************************************************************************/
 
@@ -42,14 +37,14 @@ namespace detail {
 /**************************************************************************************************/
 
 class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
-    using executor_t = std::function<void (task&&)>;
+    using executor_t = std::function<void(task&&)>;
     using queue_t = std::deque<task>;
     using lock_t = std::lock_guard<std::mutex>;
 
-    std::mutex       _m;
-    bool             _running{false}; // mutex protects this
-    queue_t          _queue;          // mutex protects this
-    executor_t       _executor;
+    std::mutex _m;
+    bool _running{false}; // mutex protects this
+    queue_t _queue;       // mutex protects this
+    executor_t _executor;
     void (serial_instance_t::*_kickstart)();
 
     static auto pop_front_unsafe(queue_t& q) {
@@ -62,60 +57,59 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
         bool empty;
 
         {
-        lock_t lock(_m);
-        
-        empty = _queue.empty();
+            lock_t lock(_m);
 
-        if (empty) {
-            _running = false;
-        }
+            empty = _queue.empty();
+
+            if (empty) {
+                _running = false;
+            }
         }
 
         return empty;
     }
 
-    void drain() {
+    void all() {
         queue_t local_queue;
 
-        do {
-            {
+        {
             lock_t lock(_m);
 
             std::swap(local_queue, _queue);
-            }
+        }
 
-            while (!local_queue.empty()) {
-                pop_front_unsafe(local_queue)();
-            }
-        } while (!empty());
+        while (!local_queue.empty()) {
+            pop_front_unsafe(local_queue)();
+        }
+
+        if (!empty()) _executor([_this(shared_from_this())]() { _this->single(); });
     }
 
-    void dequeue() {
+    void single() {
         task f;
 
         {
-        lock_t lock(_m);
+            lock_t lock(_m);
 
-        f = pop_front_unsafe(_queue);
+            f = pop_front_unsafe(_queue);
         }
 
         f();
 
-        if (!empty())
-            _executor([_this(shared_from_this())](){ _this->dequeue(); });
+        if (!empty()) _executor([_this(shared_from_this())]() { _this->single(); });
     }
 
-    // The kickstart allows us to grab a pointer to either the dequeue or drain
+    // The kickstart allows us to grab a pointer to either the single or all
     // routine at construction time. When it comes time to process the queue, we
     // call either via the abstracted _kickstart.
-    void kickstart() {
-        (this->*_kickstart)();
-    }
+    void kickstart() { (this->*_kickstart)(); }
 
-    static auto kickstarter(empty_mode mode) {
+    static auto kickstarter(schedule_mode mode) {
         switch (mode) {
-            case empty_mode::dequeue: return &serial_instance_t::dequeue;
-            case empty_mode::drain:   return &serial_instance_t::drain;
+            case schedule_mode::single:
+                return &serial_instance_t::single;
+            case schedule_mode::all:
+                return &serial_instance_t::all;
         }
     }
 
@@ -125,25 +119,23 @@ public:
         bool running(true);
 
         {
-        lock_t lock(_m);
+            lock_t lock(_m);
 
-        _queue.emplace_back(std::forward<F>(f));
+            _queue.emplace_back(std::forward<F>(f));
 
-        // A trick to get the value of _running within the lock scope, but then
-        // use it outside the scope, after the lock has been released. It also
-        // sets running to true if it is not yet; two birds, one stone.
-        std::swap(running, _running);
+            // A trick to get the value of _running within the lock scope, but then
+            // use it outside the scope, after the lock has been released. It also
+            // sets running to true if it is not yet; two birds, one stone.
+            std::swap(running, _running);
         }
 
         if (!running) {
-            _executor([_this(shared_from_this())](){ _this->kickstart(); });
+            _executor([_this(shared_from_this())]() { _this->kickstart(); });
         }
     }
 
-    serial_instance_t(executor_t&& executor, empty_mode mode) :
-        _executor(std::move(executor)),
-        _kickstart(kickstarter(mode)) {
-    }
+    serial_instance_t(executor_t executor, schedule_mode mode)
+        : _executor(std::move(executor)), _kickstart(kickstarter(mode)) {}
 };
 
 /**************************************************************************************************/
@@ -157,20 +149,19 @@ class serial_queue_t {
 
 public:
     template <typename Executor>
-    explicit serial_queue_t(Executor e, empty_mode mode = empty_mode::dequeue) :
-        _impl(std::make_shared<detail::serial_instance_t>([_e = e](auto&& f){
-            _e(std::move(f));
-        }, mode)) { }
+    explicit serial_queue_t(Executor e, schedule_mode mode = schedule_mode::single)
+        : _impl(
+              std::make_shared<detail::serial_instance_t>([_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); },
+                                                          mode)) {}
 
     auto executor() const {
-        return [_impl = _impl](auto f) {
-            _impl->enqueue(std::move(f));
-        };
+        return [_impl = _impl](auto&& f) { _impl->enqueue(std::forward<decltype(f)>(f)); };
     }
 
     template <typename F, typename... Args>
     auto operator()(F&& f, Args&&... args) {
-        return async(executor(), std::forward<F>(f), std::forward<Args>(args)...);
+        return async([&_impl = _impl](auto&& f) { _impl->enqueue(std::forward<decltype(f)>(f)); },
+                     std::forward<F>(f), std::forward<Args>(args)...);
     }
 };
 
@@ -187,3 +178,4 @@ public:
 #endif
 
 /**************************************************************************************************/
+
