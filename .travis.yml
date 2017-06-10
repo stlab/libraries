@@ -4,6 +4,7 @@ branches:
   only:
   - master
   - develop
+  - serial-queue
 matrix: 
   include: 
   - language: c++
