@@ -9,6 +9,9 @@ matrix:
   - language: c++
     os: osx
     osx_image: xcode8.3
+    env: 
+      global: 
+        - CC=clang++
     script: ./build.sh
   - language: ruby
     rvm: ruby-head
