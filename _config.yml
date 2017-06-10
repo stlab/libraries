@@ -23,6 +23,7 @@ exclude:
     - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)
     - _source
     - stlab.bbprojectd/
+    - README.md
 
 # Build settings
 markdown: kramdown
