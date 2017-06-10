@@ -27,23 +27,16 @@ class scope {
     lock_type _l;
 
     template <typename Tuple, size_t...S>
-    explicit scope(Tuple&& t, std::index_sequence<S...>) : _l(std::get<S>(std::forward<Tuple>(t))...) {
-    }
+    scope(Tuple&& t, std::index_sequence<S...>) :
+        _l(std::get<S>(std::forward<Tuple>(t))...) {
+        std::get<std::tuple_size<Tuple>::value-1>(t)();
+        }
 
 public:
     template <typename... Args>
-    explicit scope(Args&&... args) : scope(std::forward_as_tuple(std::forward<Args>(args)...), std::make_index_sequence<sizeof...(args)-1>()) {
-        constexpr std::size_t sz{sizeof...(args)};
-
-        auto&& f = std::get<sz-1>(std::forward_as_tuple(std::forward<Args>(args)...));
-
-        f();
-    }
-
-    template <typename F>
-    void operator()(F&& f) {
-        std::forward<F>(f)();
-    }
+    explicit scope(Args&&... args) :
+        scope(std::forward_as_tuple(std::forward<Args>(args)...),
+              std::make_index_sequence<sizeof...(args)-1>()) { }
 };
 
 /**************************************************************************************************/
