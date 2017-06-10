@@ -14,6 +14,8 @@ fi
 
 $CC --version
 
+env | sort
+
 if [ -z "$TRAVIS_BRANCH" ]; then
     export TRAVIS_BRANCH=`git branch | grep \* | cut -d ' ' -f2`
 fi
@@ -62,7 +64,7 @@ find ./libraries -name "*.cpp" | while read -r src
 do
   dst=./build/bin/`basename $src`.exe
 
-  export CMD="$CC -x c++ -std=c++14 $src -I./build/stlab -I./build/boost -o $dst"
+  export CMD="$CC -Wall -Werror -x c++ -std=c++14 $src -I./build/stlab -I./build/boost -o $dst"
   echo $CMD
   $CMD
 
