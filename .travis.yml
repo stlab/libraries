@@ -1,13 +1,15 @@
 branches: 
   notifications: 
     slack: "stlab:P23OMUJ8T4Pa05OON0VDYwIf"
-  only: master
+  only:
+  - master
+  - develop
 matrix: 
   include: 
   - language: c++
     os: osx
     osx_image: xcode8.3
-    script: ls -alF && ./build.sh
+    script: ./build.sh
   - language: ruby
     rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
