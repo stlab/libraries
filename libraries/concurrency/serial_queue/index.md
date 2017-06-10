@@ -8,6 +8,7 @@ defined-in-header: stlab/concurrency/serial_queue.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/serial_queue.hpp
 dtor: default
 annotation: template class
+example: serial_queue_example.cpp
 declaration: |
   template <typename E>
   class serial_queue
