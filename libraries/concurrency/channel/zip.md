@@ -4,7 +4,7 @@ title: stlab::zip
 tags: [library]
 scope: stlab
 pure-name: zip
-brief: Creates a future that zips all passed arguments
+brief: It creates a process that zips all passed arguments and returns a receiver.
 annotation: template function
 example: zip_example.cpp
 entities:
