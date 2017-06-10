@@ -6,7 +6,8 @@ scope: stlab
 pure-name: executor
 defined-in-header: stlab/concurrency/channel.hpp 
 declaration: executor()
-description: Constructs a new executor object
+brief: Constructs a new executor wrapper object
+description: Constructs a new executor wrapper object
 entities:
   - kind: methods
     list:
