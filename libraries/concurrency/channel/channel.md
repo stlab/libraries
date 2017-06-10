@@ -7,9 +7,9 @@ pure-name: channel
 brief: Creates a pair that consists of a sender and a receiver
 annotation: template function
 example: channel_example.cpp
+defined-in-header: stlab/concurrency/channel.hpp
 entities:
   - kind: overloads
-    defined-in-header: stlab/concurrency/channel.hpp
     list:
       - name: channel
         pure-name: channel

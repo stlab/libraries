@@ -7,10 +7,10 @@ pure-name: scope
 brief: Explicitly scope the lifetime of an object
 annotation: template function
 example: scope_example.cpp
+defined-in-header: stlab/scope.hpp
+git-link: https://github.com/stlab/libraries/blob/develop/stlab/scope.hpp
 entities:
   - kind: overloads
-    defined-in-header: stlab/concurrency/scope.hpp
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/scope.hpp
     list:
       - name: scope
         pure-name: scope
