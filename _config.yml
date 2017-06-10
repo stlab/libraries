@@ -18,11 +18,12 @@ twitter_username: SeanParent
 github_username:  stlab
 
 exclude:
-    - build.sh
-    - build
-    - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)
     - _source
+    - build
+    - build.sh
+    - README.md
     - stlab.bbprojectd/
+    - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)
 
 # Build settings
 markdown: kramdown
