@@ -10,9 +10,9 @@
 #define STLAB_VERSION_HPP
 
 //
-//  Caution: this is the only Boost header that is guaranteed
-//  to change with every Boost release. Including this header
-//  will cause a recompile every time a new Boost version is
+//  Caution: this is the only stlab header that is guaranteed
+//  to change with every stlab release. Including this header
+//  will cause a recompile every time a new stlab version is
 //  used.
 //
 //  STLAB_VERSION % 100 is the patch level
