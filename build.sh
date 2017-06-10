@@ -54,17 +54,11 @@ else
     echo "Found boost..."
 fi
 
-if [ ! -d bin ]; then
-    mkdir bin
-fi
-
 cd ..
 
 find ./libraries -name "*.cpp" | while read -r src
 do
-  dst=./build/bin/`basename $src`.exe
-
-  export CMD="$CC -Wall -Werror -x c++ -std=c++14 $src -I./build/stlab -I./build/boost -o $dst"
+  export CMD="$CC -Wall -Werror -x c++ -std=c++14 -I./build/stlab -I./build/boost -o ./build/a.out $src"
   echo $CMD
   $CMD
 
@@ -73,9 +67,9 @@ do
     exit "$RETVAL"
   fi
 
-  echo "Running $dst..."
+  echo "Running..."
 
-  ./$dst > /dev/null
+  ./build/a.out > /dev/null
 
   export RETVAL=$?
   if [ "$RETVAL" != "0" ]; then
