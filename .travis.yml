@@ -9,10 +9,7 @@ matrix:
   - language: c++
     os: osx
     osx_image: xcode8.3
-    env: 
-      global: 
-        - CC=clang++
-    script: ./build.sh
+    script: CC=clang++ ./build.sh
   - language: ruby
     rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
