@@ -12,8 +12,6 @@ declaration: |
   template <typename E>
   class serial_queue
 brief: An executor wrapper that causes enqueued tasks to be run serially.
-description: |
-  Bananas. That's what it is.
 member-types:
   - type: executor_t
     definition: E

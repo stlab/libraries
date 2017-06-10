@@ -11,7 +11,5 @@ annotation: template class
 declaration: |
   template <typename F>
   class task
-brief: A nullary callable function wrapper that supports move-only types.
-description: |
-  Bananas. That's what it is.
+brief: A type-erased nullary wrapper that supports mutable functions.
 ---

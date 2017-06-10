@@ -17,11 +17,11 @@ entities:
         declaration: |
             template <typename T, typename... Args>
             inline void scope(Args&&... args)
-        description: Scopes the lifetime of an instance of `T` with parameters `args[0]...args[N-2]`, then executes `args[N-1]` which is assumed to be a callable nullary function.
+        description: Scopes the lifetime of an instance of `T`. The first `N-2` parameters are used to construct `T`, while the last parameter is assumed to be a nullary function, and is called. After the nullary function goes out of scope, `T` is destroyed.
   - kind: parameters
     list:
       - name: args[0] ... args[N-2]
-        description: Parameters forwarded to the instance of `T` constructor
+        description: Parameters forwarded to the constructor of `T`
       - name: args[N-1]
         description: A callable nullary function
 ---

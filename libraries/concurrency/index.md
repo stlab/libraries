@@ -13,7 +13,6 @@ description: |
 
 The source code is hosted on [github](https://github.com/stlab/libraries).
 
-
 {% include example_table.html %}
 
 ### Requirements

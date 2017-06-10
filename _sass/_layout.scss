@@ -358,6 +358,14 @@ table {
 }
 
 /**
+ * Annotations.
+ */
+span.annotation {
+    color: green;
+    font-style: oblique;
+}
+
+/**
  * Parameter tables are identical to definition tables, but without the
  * horizontal lines.
  */
@@ -372,13 +380,11 @@ table {
                 text-align: left;
             }
             > td {
+                vertical-align: top;
+
                 > p {
                     margin: 0;
                     display: inline;
-                }
-                > span.annotation {
-                    color: green;
-                    font-style: oblique;
                 }
             }
             > td.decl {
@@ -409,7 +415,7 @@ table {
                 text-align: left;
             }
             > td {
-                vertical-align:top;
+                vertical-align: top;
 
                 > p {
                     margin: 0;
