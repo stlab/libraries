@@ -62,13 +62,16 @@ find ./libraries -name "*.cpp" | while read -r src
 do
   dst=./build/bin/`basename $src`.exe
 
-  echo "$CC -x c++ -std=c++14 -stdlib=libc++ $src -I./build/stlab -I./build/boost -o $dst"
-  $CC -x c++ -std=c++14 -stdlib=libc++ $src -I./build/stlab -I./build/boost -o $dst
+  export CMD="$CC -x c++ -std=c++14 $src -I./build/stlab -I./build/boost -o $dst"
+  echo $CMD
+  $CMD
 
   export RETVAL=$?
   if [ "$RETVAL" != "0" ]; then
     exit "$RETVAL"
   fi
+
+  echo "Running $dst..."
 
   ./$dst > /dev/null
 
