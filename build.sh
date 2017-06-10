@@ -14,7 +14,7 @@ fi
 
 $CC --version
 
-env | sort
+# env | sort
 
 if [ -z "$TRAVIS_BRANCH" ]; then
     export TRAVIS_BRANCH=`git branch | grep \* | cut -d ' ' -f2`
