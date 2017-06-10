@@ -11,6 +11,11 @@
 
 /**************************************************************************************************/
 
+#include <tuple>
+#include <utility>
+
+/**************************************************************************************************/
+
 namespace stlab {
 
 /**************************************************************************************************/
@@ -19,25 +24,26 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
-template <typename Lock>
-class scope {
-    using mutex_type = typename Lock::mutex_type;
-    using lock_type = Lock;
+namespace detail {
 
-    lock_type _l;
+template <typename T, typename Tuple, size_t... S>
+void scope_call(Tuple&& t, std::index_sequence<S...>) {
+    T scoped(std::forward<std::tuple_element_t<S, Tuple>>(std::get<S>(t))...);
 
-    template <typename Tuple, size_t...S>
-    scope(Tuple&& t, std::index_sequence<S...>) :
-        _l(std::get<S>(std::forward<Tuple>(t))...) {
-        std::get<std::tuple_size<Tuple>::value-1>(t)();
-        }
+    // call the function
+    constexpr size_t last_index = std::tuple_size<Tuple>::value - 1;
+    std::forward<std::tuple_element_t<last_index, Tuple>>(std::get<last_index>(t))();
+}
 
-public:
-    template <typename... Args>
-    explicit scope(Args&&... args) :
-        scope(std::forward_as_tuple(std::forward<Args>(args)...),
-              std::make_index_sequence<sizeof...(args)-1>()) { }
-};
+} // namespace detail
+
+/**************************************************************************************************/
+
+template <typename T, typename... Args>
+inline void scope(Args&&... args) {
+    detail::scope_call<T>(std::forward_as_tuple(std::forward<Args>(args)...),
+                          std::make_index_sequence<sizeof...(args) - 1>());
+}
 
 /**************************************************************************************************/
 

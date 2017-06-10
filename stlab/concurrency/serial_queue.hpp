@@ -16,8 +16,9 @@
 #include <tuple>
 #include <utility>
 
+#include <stlab/scope.hpp>
+
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/scope.hpp>
 #include <stlab/concurrency/task.hpp>
 
 /**************************************************************************************************/
@@ -57,13 +58,13 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     bool empty() {
         bool empty;
 
-        scope<lock_t>{_m, [&]() {
+        scope<lock_t>(_m, [&]() {
             empty = _queue.empty();
 
             if (empty) {
                 _running = false;
             }
-        }};
+        });
 
         return empty;
     }
@@ -71,9 +72,9 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     void all() {
         queue_t local_queue;
 
-        scope<lock_t>{_m, [&]() {
+        scope<lock_t>(_m, [&]() {
             std::swap(local_queue, _queue);
-        }};
+        });
 
         while (!local_queue.empty()) {
             pop_front_unsafe(local_queue)();
@@ -85,9 +86,9 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     void single() {
         task f;
 
-        scope<lock_t>{_m, [&]() {
+        scope<lock_t>(_m, [&]() {
             f = pop_front_unsafe(_queue);
-        }};
+        });
 
         f();
 
@@ -113,14 +114,14 @@ public:
     void enqueue(F&& f) {
         bool running(true);
 
-        scope<lock_t>{_m, [&]() {
+        scope<lock_t>(_m, [&]() {
             _queue.emplace_back(std::forward<F>(f));
 
             // A trick to get the value of _running within the lock scope, but then
             // use it outside the scope, after the lock has been released. It also
             // sets running to true if it is not yet; two birds, one stone.
             std::swap(running, _running);
-        }};
+        });
 
         if (!running) {
             _executor([_this(shared_from_this())]() { _this->kickstart(); });
@@ -143,9 +144,8 @@ class serial_queue_t {
 public:
     template <typename Executor>
     explicit serial_queue_t(Executor e, schedule_mode mode = schedule_mode::single)
-        : _impl(
-              std::make_shared<detail::serial_instance_t>([_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); },
-                                                          mode)) {}
+        : _impl(std::make_shared<detail::serial_instance_t>(
+              [_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); }, mode)) {}
 
     auto executor() const {
         return [_impl = _impl](auto&& f) { _impl->enqueue(std::forward<decltype(f)>(f)); };
