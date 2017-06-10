@@ -1,4 +1,6 @@
+#include <atomic>
 #include <iostream>
+#include <thread>
 
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
@@ -35,17 +37,26 @@ struct adder
 
 int main() {
   sender<int> send;       
-  receiver<int> receiver; 
+  receiver<int> receiver;
   std::tie(send, receiver) = channel<int>(default_executor);
 
-  auto calculator = receiver | adder{} | 
-    [](int x) { std::cout << x << '\n'; };
+  std::atomic_bool done{false};
+
+  auto calculator = receiver | 
+    adder{} | 
+    [&_done = done](int x) { std::cout << x << '\n'; 
+      _done = true;
+    };
     
   receiver.set_ready();
 
-  while (true) {
-    int x;
-    std::cin >> x;
-    send(x);
-  }
+  send(1);
+  send(2);
+  send(3);
+  send(0);
+
+    // Waiting just for illustrational purpose
+    while (!done) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 }
