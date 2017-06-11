@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_UTILITY_HPP
-#define SLABFUTURE_UTILITY_HPP
+#ifndef STLAB_CONCURRENCY_UTILITY_HPP
+#define STLAB_CONCURRENCY_UTILITY_HPP
 
 #if 0
 
