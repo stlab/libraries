@@ -21,17 +21,15 @@ if [ -z "$TRAVIS_BRANCH" ]; then
 fi
 
 if [ ! -d stlab ]; then
-    echo "Cloning stlab branch $TRAVIS_BRANCH..."
+    echo "Cloning stlab/$TRAVIS_BRANCH..."
 
     git clone --branch $TRAVIS_BRANCH --depth=1 https://github.com/stlab/libraries.git stlab
 else
-    echo "Found stlab already."
-    echo "WARNING: "
-    echo "WARNING: The git branch may not be correct."
-    echo "WARNING: "
+    echo "Found stlab. Pulling $TRAVIS_BRANCH..."
 
     cd stlab
-    git pull
+    git co -b $TRAVIS_BRANCH
+    git pull origin $TRAVIS_BRANCH
     cd ..
 fi
 
@@ -62,9 +60,7 @@ cd ..
 
 find ./libraries -name "*.cpp" | while read -r src
 do
-  dst=./build/bin/`basename $src`.exe
-
-  export CMD="$CC -Wall -Werror -x c++ -std=c++14 $src -I./build/stlab -I./build/boost -o $dst"
+  export CMD="$CC -Wall -Werror -x c++ -std=c++14  -I./build/stlab -I./build/boost -o ./build/a.out $src"
   echo $CMD
   $CMD
 
@@ -73,12 +69,11 @@ do
     exit "$RETVAL"
   fi
 
-  echo "Running $dst..."
-
-  ./$dst > /dev/null
+  ./build/a.out > /dev/null
 
   export RETVAL=$?
   if [ "$RETVAL" != "0" ]; then
+    echo "Error: execution failure."
     exit "$RETVAL"
   fi
 done
