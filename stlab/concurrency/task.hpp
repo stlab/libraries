@@ -63,7 +63,8 @@ class task {
 
     template <class F>
     struct model<F, true> : concept {
-        model(F&& f) : _f(std::forward<F>(f)) {}
+        template <class F0> // for forwarding
+        model(F0&& f) : _f(std::forward<F0>(f)) {}
         void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
         void invoke() override { _f(); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
@@ -75,14 +76,15 @@ class task {
 
     template <class F>
     struct model<F, false> : concept {
-        model(F&& f) : _p(std::make_unique<model>(std::forward<F>(f))) {}
+        template <class F0> // for forwarding
+        model(F0&& f) : _p(std::make_unique<model>(std::forward<F0>(f))) {}
         model(model&&) noexcept = default;
 
         void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
         void invoke() override { *_p(); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return _p.get(); }
-        const void* pointer() const noexcept override { return &_p.get(); }
+        const void* pointer() const noexcept override { return _p.get(); }
 
         std::unique_ptr<concept> _p;
     };
