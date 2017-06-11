@@ -4,7 +4,7 @@ branches:
   only:
   - master
   - develop
-  - serial-queue
+  - develop-* # Any branch prefixed with `develop-` will be built.
 matrix: 
   include: 
   - language: c++
