@@ -28,8 +28,9 @@ else
     echo "Found stlab. Pulling $TRAVIS_BRANCH..."
 
     cd stlab
-    git co -b $TRAVIS_BRANCH
-    git pull origin $TRAVIS_BRANCH
+    git branch -u origin/$TRAVIS_BRANCH
+    git co $TRAVIS_BRANCH
+    git pull
     cd ..
 fi
 
