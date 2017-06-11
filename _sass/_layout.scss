@@ -437,6 +437,25 @@ span.annotation {
 }
 
 /**
+ * Contributors listed in the About page
+ */
+.contributors-table {
+    > tbody {
+        > tr {
+            > td {
+                padding-left: 1.5em;
+                padding-bottom: 1em;
+
+                > img {
+                    width: 5em;
+                    height: 5em;
+                }
+            }
+        }
+    }
+}
+
+/**
  * Styling for some of the auto generated stuff
  */
 
