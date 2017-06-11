@@ -23,7 +23,7 @@ fi
 if [ ! -d stlab ]; then
     echo "Cloning stlab/$TRAVIS_BRANCH..."
 
-    git clone --branch $TRAVIS_BRANCH --depth=1 https://github.com/stlab/libraries.git stlab
+    git clone --branch $TRAVIS_BRANCH --depth=1 git@github.com:stlab/libraries.git stlab
 else
     echo "Found stlab. Pulling $TRAVIS_BRANCH..."
 
