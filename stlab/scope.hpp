@@ -40,7 +40,7 @@ auto scope_call(Tuple&& t, std::index_sequence<S...>) {
 /**************************************************************************************************/
 
 template <typename T, typename... Args>
-inline void scope(Args&&... args) {
+inline auto scope(Args&&... args) {
     return detail::scope_call<T>(std::forward_as_tuple(std::forward<Args>(args)...),
                                  std::make_index_sequence<sizeof...(args) - 1>());
 }
