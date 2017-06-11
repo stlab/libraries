@@ -16,18 +16,15 @@ entities:
         declaration: |
             template <typename Executor>
             explicit serial_queue_t(Executor e, schedule_mode mode = schedule_mode::single)
-        description: Moves the passed function `f` into the serial_queue
+        description: Constructs the serial queue backed by the passed executor and using the supplied schedule mode.
   - kind: parameters
     list:
       - name: e
-        description: Executor to be invoked when the serial queue executes tasks.
+        description: The executor the serial queue will use to run tasks
       - name: mode
         description: |
-            Specify the mode by which the serial queue processes tasks:
+            Specify the mode by which the serial queue runs tasks:
 
-            - `schedule_mode::single` &mdash; Dequeue the tasks one at a time, yielding
-              to the executor after every invocation.
-            - `schedule_mode::all` &mdash; Will execute all tasks available at the start
-              of execution, finally yielding to the executor after they have all run.
-
+            - `schedule_mode::single` &mdash; Yield to the executor between runs of individual tasks. This mode is preferrable if you are expecting tasks to take a long amount of time.
+            - `schedule_mode::all` &mdash; Yield to the executor once all tasks available at the start of processing have been run. This mode is preferrable if you are expecting tasks to take a short amount of time.
 ---

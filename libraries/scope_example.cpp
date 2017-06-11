@@ -23,3 +23,10 @@ int main(int, char**) {
     t1.join();
     t2.join();
 }
+/*
+    Result:
+
+        Hello, world!
+        Hello, world!
+        Hello, world!
+*/
