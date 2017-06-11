@@ -8,11 +8,10 @@
 using namespace std;
 using namespace stlab;
 
-serial_queue_t io_q(default_executor);
-atomic<bool>   done{false};
+serial_queue_t ioq(default_executor);
 
 void say_hello(string to_whom) {
-    io_q.executor()([_whom = move(to_whom)](){
+    ioq.executor()([_whom = move(to_whom)](){
         cout << "Hello, " << _whom << "!\n";
     });
 }
@@ -22,11 +21,10 @@ int main(int, char**) {
     say_hello("chief");
     say_hello("pal");
     say_hello("world");
-    auto f = io_q([&_done = done](){
-        _done = true;
-    });
 
-    while (!f.get_try()) { }
+    auto done = ioq([]{});
+
+    while (!done.get_try()) { }
 }
 
 /*
