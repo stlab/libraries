@@ -12,4 +12,5 @@ declaration: |
   template <typename F>
   class task
 brief: A type-erased nullary wrapper that supports mutable functions.
+description: Tasks are movable, not copyable.
 ---

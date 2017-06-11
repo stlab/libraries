@@ -17,7 +17,7 @@ entities:
         declaration: |
             template <typename T, typename... Args>
             inline void scope(Args&&... args)
-        description: Scopes the lifetime of an instance of `T`. The first `N-2` parameters are used to construct `T`, while the last parameter is assumed to be a nullary function, and is called. After the nullary function goes out of scope, `T` is destroyed.
+        description: Scopes the lifetime of an instance of `T`. All but the last parameters are used to construct `T`, while the last parameter is assumed to be a nullary function, and is called. After the nullary function goes out of scope, `T` is destroyed.
   - kind: parameters
     list:
       - name: |
