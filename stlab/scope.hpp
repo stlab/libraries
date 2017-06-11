@@ -29,6 +29,7 @@ namespace detail {
 template <typename T, typename Tuple, size_t... S>
 auto scope_call(Tuple&& t, std::index_sequence<S...>) {
     T scoped(std::forward<std::tuple_element_t<S, Tuple>>(std::get<S>(t))...);
+    (void)scoped;
 
     // call the function
     constexpr size_t last_index = std::tuple_size<Tuple>::value - 1;
