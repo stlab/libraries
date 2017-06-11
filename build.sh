@@ -30,7 +30,7 @@ else
     cd stlab
     git branch -u origin/$TRAVIS_BRANCH
     git co $TRAVIS_BRANCH
-    git pull
+    git pull origin $TRAVIS_BRANCH
     cd ..
 fi
 
