@@ -27,12 +27,12 @@ inline namespace v1 {
 namespace detail {
 
 template <typename T, typename Tuple, size_t... S>
-void scope_call(Tuple&& t, std::index_sequence<S...>) {
+auto scope_call(Tuple&& t, std::index_sequence<S...>) {
     T scoped(std::forward<std::tuple_element_t<S, Tuple>>(std::get<S>(t))...);
 
     // call the function
     constexpr size_t last_index = std::tuple_size<Tuple>::value - 1;
-    std::forward<std::tuple_element_t<last_index, Tuple>>(std::get<last_index>(t))();
+    return std::forward<std::tuple_element_t<last_index, Tuple>>(std::get<last_index>(t))();
 }
 
 } // namespace detail
@@ -41,8 +41,8 @@ void scope_call(Tuple&& t, std::index_sequence<S...>) {
 
 template <typename T, typename... Args>
 inline void scope(Args&&... args) {
-    detail::scope_call<T>(std::forward_as_tuple(std::forward<Args>(args)...),
-                          std::make_index_sequence<sizeof...(args) - 1>());
+    return detail::scope_call<T>(std::forward_as_tuple(std::forward<Args>(args)...),
+                                 std::make_index_sequence<sizeof...(args) - 1>());
 }
 
 /**************************************************************************************************/
