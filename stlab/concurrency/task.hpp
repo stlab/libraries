@@ -13,6 +13,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 /**************************************************************************************************/
@@ -65,6 +66,7 @@ class task {
     struct model<F, true> : concept {
         template <class F0> // for forwarding
         model(F0&& f) : _f(std::forward<F0>(f)) {}
+        model(model&&) noexcept = delete;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
         void invoke() override { _f(); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
@@ -77,16 +79,15 @@ class task {
     template <class F>
     struct model<F, false> : concept {
         template <class F0> // for forwarding
-        model(F0&& f) : _p(std::make_unique<model>(std::forward<F0>(f))) {}
+        model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
         model(model&&) noexcept = default;
-
         void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
         void invoke() override { *_p(); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return _p.get(); }
         const void* pointer() const noexcept override { return _p.get(); }
 
-        std::unique_ptr<concept> _p;
+        std::unique_ptr<F> _p;
     };
 
     concept& self() { return reinterpret_cast<concept&>(_data); }
@@ -100,11 +101,13 @@ public:
     task() noexcept { new (&_data) empty(); }
     task(std::nullptr_t) : task() {}
     task(const task&) = delete;
+    task(task&) = delete;
     task(task&& x) noexcept { x.self().move_ctor(&_data); }
     template <class F>
     task(F&& f) {
+        using f_t = std::decay_t<F>;
         try {
-            new (&_data) model<F, sizeof(model<F, true>) <= small_object_size>(std::forward<F>(f));
+            new (&_data) model<f_t, sizeof(model<f_t, true>) <= small_object_size>(std::forward<F>(f));
         } catch (...) {
             new (&_data) empty();
             throw;
@@ -114,6 +117,8 @@ public:
     ~task() noexcept { self().~concept(); }
 
     task& operator=(const task&) = delete;
+    task& operator=(task&) = delete;
+
     task& operator=(task&& x) noexcept {
         self().~concept();
         x.self().move_ctor(&_data);
