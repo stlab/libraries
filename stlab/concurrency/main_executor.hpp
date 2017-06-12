@@ -99,6 +99,9 @@ struct main_executor_type
 
 // TODO main_executor_type for Windows 8 / 10
 
+struct main_executor_type {
+};
+
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 // TODO (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
