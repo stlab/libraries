@@ -11,7 +11,7 @@ dtor: default
 annotation: template class
 declaration: class annotate
 brief: A class used to illustrate compiler and object behavior
-example: annotate_example.cpp
+example: annotate_rvo_example.cpp
 description: |
     Annotate will write to `std::cout` when the following events happen to an instance:
 
