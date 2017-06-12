@@ -30,7 +30,7 @@ if [ ! -d stlab ]; then
     # The fingerprint is SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
     #
     # See: https://help.github.com/articles/github-s-ssh-key-fingerprints/
-    git git -c http.sslVerify=false clone --branch $TRAVIS_BRANCH git@github.com:stlab/libraries.git stlab
+    git -c http.sslVerify=false clone --branch $TRAVIS_BRANCH git@github.com:stlab/libraries.git stlab
 else
     echo "Found stlab. Pulling $TRAVIS_BRANCH..."
 
