@@ -23,7 +23,14 @@ fi
 if [ ! -d stlab ]; then
     echo "Cloning stlab/$TRAVIS_BRANCH..."
 
-    git clone --branch $TRAVIS_BRANCH --depth=1 git@github.com:stlab/libraries.git stlab
+    # `http.sslVerify=false` below disables git server fingerprint validation,
+    # which is generally seen as a Bad Idea. However, I cannot seem to easily
+    # validate the GitHub fingerprint on the Travis side.
+    #
+    # The fingerprint is SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
+    #
+    # See: https://help.github.com/articles/github-s-ssh-key-fingerprints/
+    git git -c http.sslVerify=false clone --branch $TRAVIS_BRANCH git@github.com:stlab/libraries.git stlab
 else
     echo "Found stlab. Pulling $TRAVIS_BRANCH..."
 
