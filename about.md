@@ -26,7 +26,7 @@ stlab is the ongoing work of what was Adobe's Software Technology Lab. The Adobe
 {% assign contributors = site.github.contributors | sort: 'login' %}
 {% for c in contributors %}
 <tr>
-    <td class='avatar'><img src='{{c.avatar_url}}'/></td>
+    <td class='avatar'><img alt='{{c.login}}' src='{{c.avatar_url}}'/></td>
     <td class='name'><code><a href='{{c.html_url}}'>{{c.login}}</a></code></td>
 </tr>
 {% endfor %}
