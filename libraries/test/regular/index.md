@@ -1,19 +1,18 @@
 ---
 layout: class
-title: stlab::annotate
+title: stlab::regular
 tags: [library]
-name: stlab::annotate
-pure-name: annotate
+name: stlab::regular
+pure-name: regular
 defined-in-header: stlab/test/model.hpp
 git-link: https://github.com/stlab/libraries/blob/develop/stlab/test/model.hpp
-ctor: default
 dtor: default
 annotation: template class
-declaration: class annotate
+declaration: class regular
 brief: A class used to illustrate compiler and object behavior
-example: annotate_rvo_example.cpp
+example: regular_example.cpp
 description: |
-    Annotate will write to `std::cout` when the following events happen to an instance:
+    regular will write to `std::cout` when the following events happen to an instance:
 
     - ctor
     - dtor
@@ -21,7 +20,6 @@ description: |
     - move-ctor
     - copy-assign
     - move-assign
+    - operator <
     - swap
-
-    In addition, `operator==` is always `true`, and `operator!=` is always `false`.
 ---
