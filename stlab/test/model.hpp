@@ -46,6 +46,49 @@ struct annotate {
 
 /**************************************************************************************************/
 
+struct regular {
+    int _x;
+
+    explicit regular(int x) : _x(x) { std::cout << _x << " ctor" << std::endl; }
+    ~regular() { std::cout << _x << " dtor" << std::endl; }
+
+    regular(const regular& rhs) : _x(rhs._x) {
+        std::cout << _x << " copy-ctor" << std::endl;
+    }
+    regular(regular&& rhs) noexcept : _x(std::move(rhs._x))  {
+        std::cout << _x << " move-ctor" << std::endl;
+        rhs._x = 0;
+    }
+
+    regular& operator=(const regular& rhs) {
+        std::cout << _x << " assign" << std::endl;
+        _x = rhs._x;
+        return *this;
+    }
+    regular& operator=(regular&& rhs) noexcept {
+        std::cout << _x << " move-assign" << std::endl;
+        _x = std::move(rhs._x);
+        rhs._x = 0;
+        return *this;
+    }
+
+    friend inline void swap(regular& lhs, regular& rhs) {
+        std::cout << lhs._x << "/" << rhs._x << " swap " << std::endl;
+        std::swap(lhs._x, rhs._x);
+    }
+
+    friend inline bool operator==(const regular& lhs, const regular& rhs) { return lhs._x == rhs._x; }
+    friend inline bool operator!=(const regular& lhs, const regular& rhs) { return !(lhs == rhs); }
+
+    friend inline bool operator<(const regular& lhs, const regular& rhs) {
+        bool result(lhs._x < rhs._x);
+        std::cout << lhs._x << " < " << rhs._x << ": " << std::boolalpha << result << std::endl;
+        return result;
+    }
+};
+
+/**************************************************************************************************/
+
 } // namespace v1
 
 /**************************************************************************************************/
