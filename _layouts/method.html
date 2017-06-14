@@ -24,9 +24,14 @@ layout: default
 
           {{ page.description | markdownify }}
 
-          <ol>
+          <ol class='description-list'>
             {% for item in entity.list %}
-              <li>{{ item.description | markdownify }}</li>
+              <li>
+              {{ item.description | markdownify }}
+              {% if item.annotation %}
+              <span class='annotation'>{{item.annotation}}</span>
+              {% endif %}
+              </li>
             {% endfor %}
           </ol>
 
@@ -37,7 +42,12 @@ layout: default
           {% for item in entity.list %}
               <tr>
                 <td class='decl'>{{ item.name }}</td>
-                <td class='defn'>{{ item.description | markdownify }}</td>
+                <td class='defn'>
+                    {{ item.description | markdownify }}
+                    {% if item.annotation %}
+                    <span class='annotation'>{{item.annotation}}</span>
+                    {% endif %}
+                </td>
               </tr>
           {% endfor %}
           </table>

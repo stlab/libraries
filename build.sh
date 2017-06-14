@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Run a command, and echo before doing so. Also checks the exit
+# status and quits if there was an error.
+echo_run ()
+{
+    echo "EXEC : $@"
+    "$@"
+    r=$?
+    if test $r -ne 0 ; then
+        exit $r
+    fi
+}
+
 cd `dirname $0`
 
 if [ ! -d build ]; then
@@ -17,7 +29,7 @@ $CC --version
 # env | sort
 
 if [ -z "$TRAVIS_BRANCH" ]; then
-    export TRAVIS_BRANCH=`git branch | grep \* | cut -d ' ' -f2`
+    export TRAVIS_BRANCH=`git rev-parse --abbrev-ref HEAD`
 fi
 
 if [ ! -d stlab ]; then
@@ -57,20 +69,7 @@ cd ..
 
 find ./libraries -name "*.cpp" | while read -r src
 do
-  export CMD="$CC -Wall -Werror -x c++ -std=c++14 -I./build/stlab -I./build/boost -o ./build/a.out $src"
-  echo $CMD
-  $CMD
+  echo_run "$CC -Wall -Werror -x c++ -std=c++14 -I./build/stlab -I./build/boost -o ./build/a.out $src"
 
-  export RETVAL=$?
-  if [ "$RETVAL" != "0" ]; then
-    exit "$RETVAL"
-  fi
-
-  ./build/a.out > /dev/null
-
-  export RETVAL=$?
-  if [ "$RETVAL" != "0" ]; then
-    echo "Error: execution failure."
-    exit "$RETVAL"
-  fi
+  echo_run ./build/a.out > /dev/null
 done
