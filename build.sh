@@ -4,7 +4,7 @@
 # status and quits if there was an error.
 echo_run ()
 {
-    echo "EXEC : $@"
+    echo "$@"
     "$@"
     r=$?
     if test $r -ne 0 ; then
@@ -69,7 +69,7 @@ cd ..
 
 find ./libraries -name "*.cpp" | while read -r src
 do
-  echo_run "$CC -Wall -Werror -x c++ -std=c++14 -I./build/stlab -I./build/boost -o ./build/a.out $src"
+  echo_run $CC -Wall -Werror -x c++ -std=c++14 -I./build/stlab -I./build/boost -o ./build/a.out $src
 
-  echo_run ./build/a.out > /dev/null
+  ./build/a.out > /dev/null
 done
