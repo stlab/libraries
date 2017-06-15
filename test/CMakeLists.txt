@@ -73,3 +73,28 @@ target_link_libraries(
 
 set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+########## Copy On Write ##########
+
+PROJECT(cow_test)
+
+set(SOURCE
+    cow_test.cpp
+    main.cpp
+)
+
+set(HEADERS
+)
+
+add_executable(cow_test ${SOURCE} ${HEADERS})
+
+include_directories(${Boost_INCLUDE_DIRS})
+
+target_link_libraries(
+    cow_test
+    ${Boost_LIBRARIES} 
+    ${CMAKE_THREAD_LIBS_INIT} 
+    ${CONAN_LIBS})
+
+set_property(TARGET cow_test PROPERTY CXX_STANDARD 14)
+set_property(TARGET cow_test PROPERTY CXX_STANDARD_REQUIRED ON)
