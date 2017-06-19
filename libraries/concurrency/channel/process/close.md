@@ -5,7 +5,13 @@ tags: [library]
 pure-name: close
 declaration:
 brief: Called on an await-process whenever the process state is `await_forever` and the incoming queue went dry.
-description: This optional method is called on an await-process whenever the process state is `await_forever` and the incoming queue went dry. As well it is called when an exception is thrown while calling `await` or `yield` and no `set_error()`is available. 
+description: |
+  This optional method is called on an await-process whenever the process state is `await_forever` and the incoming queue went dry. 
+
+  It is called when an exception is thrown while calling `await` or `yield` and no `set_error()`is available.
+
+  It is called when the upstream sender was closed. Then this process will continue to run so long as the `state()` function returns yield. When the state() goes to await, the process will be terminated.
+example: close_example.cpp  
 entities:
   - kind: methods
     list:
