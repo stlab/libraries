@@ -65,17 +65,30 @@ namespace detail {
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 
 struct default_executor_type {
+private:
+    struct group {
+        dispatch_group_t _group = dispatch_group_create();
+        ~group() {
+            dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+            dispatch_release(_group);
+        }
+    };
+
+public:
     using result_type = void;
     template <typename F>
     void operator()(F f) const {
         using f_t = decltype(f);
 
-        dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                         new f_t(std::move(f)), [](void* f_) {
-                             auto f = static_cast<f_t*>(f_);
-                             (*f)();
-                             delete f;
-                         });
+        static group g;
+
+        dispatch_group_async_f(g._group,
+                               dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                               new f_t(std::move(f)), [](void* f_) {
+                                   auto f = static_cast<f_t*>(f_);
+                                   (*f)();
+                                   delete f;
+                               });
     }
 };
 
