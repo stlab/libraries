@@ -16,6 +16,7 @@ matrix:
     osx_image: xcode8.3
     script: CC=clang++ ./build.sh
     after_success:
+      - brew install lcov
       - cd build
       - bash <(curl -s https://codecov.io/bash) -X fix
   - language: ruby

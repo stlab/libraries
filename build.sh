@@ -65,9 +65,17 @@ else
     echo "Found boost..."
 fi
 
+export CCFLAGS="--coverage -fno-inline -Ofast -Wall -Werror -x c++ -std=c++14"
+export CCINCLUDES="-I./stlab -I./boost"
+
 find ../libraries -name "*.cpp" | while read -r src
 do
-  echo_run $CC -coverage -Wall -Werror -x c++ -std=c++14 -I./stlab -I./boost -o ./a.out $src
+  export BASENAME=`basename $src`
 
-  ./a.out > /dev/null
+  echo_run $CC $CCFLAGS $CCINCLUDES $src
+  echo_run lcov -c -i -b .. -d . -o $BASENAME.baseline
+  echo_run ./a.out
+  echo_run lcov -c -d . -b .. -o $BASENAME.out
+  echo_run lcov -a $BASENAME.baseline -a $BASENAME.out -o $BASENAME.lcov
+  echo_run rm $BASENAME.baseline $BASENAME.out
 done
