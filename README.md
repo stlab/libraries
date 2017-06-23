@@ -1,12 +1,13 @@
-[![Build Status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
-
-[![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=develop)](https://codecov.io/github/stlab/libraries)
-
-# stlab/libraries
-
 This is the source code repository of the Software Technology Lab (stlab).
 
 ASL libraries will be migrated here in the stlab namespace, new libraries will be created here.
+
+# Branch states
+
+- **`master`:** [![Master status](https://travis-ci.org/stlab/libraries.svg?branch=master)](https://travis-ci.org/stlab/libraries) [![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=master)](https://codecov.io/gh/stlab/libraries/branch/master)
+
+- **`develop`:** [![Develop status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
+[![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=develop)](https://codecov.io/gh/stlab/libraries/branch/develop)
 
 # Content
 
