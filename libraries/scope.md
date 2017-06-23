@@ -16,7 +16,7 @@ entities:
         pure-name: scope
         declaration: |
             template <typename T, typename... Args>
-            inline void scope(Args&&... args)
+            inline auto scope(Args&&... args)
         description: Scopes the lifetime of an instance of `T`. All but the last parameters are used to construct `T`, while the last parameter is assumed to be a nullary function, and is called. After the nullary function goes out of scope, `T` is destroyed.
   - kind: parameters
     list:
@@ -42,14 +42,12 @@ void pop_and_run_task() {
 }
 ~~~
 
-The challenge is to discern the developer's implicit association between the free-standing scope and the `lock_guard` instance. `scope` allows construction of any object and binds its lifetime to the duration of a passed function. Using `scope`, the example above becomes:
+The challenge is discerning the developer's intent by adding the scope. `scope` allows construction of any object and binds its lifetime to the duration of a passed function. Using `scope`, the example above becomes:
 
 ~~~c++
 void pop_and_run_task() {
-    std::function<void()> task;
-
-    stlab::scope<std::lock_guard<std::mutex>>(m, [&](){
-        task = pop_front_unsafe(task_queue);
+    std::function<void()> task = stlab::scope<std::lock_guard<std::mutex>>(m, [&](){
+        return pop_front_unsafe(task_queue);
     });
 
     task();

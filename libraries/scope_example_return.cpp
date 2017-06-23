@@ -1,38 +1,50 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <deque>
 
 #include <stlab/scope.hpp>
+#include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 
 using namespace stlab;
 using namespace std;
 
+auto pop_fn() {
+    return []{
+        static deque<int> q{1, 2, 3, 4};
+        static mutex      m;
+        return scope<lock_guard<mutex>>(m, []{
+            auto v = move(q.front());
+            q.pop_front();
+            return v;
+        });
+    };
+}
+
 int main(int, char**) {
-    auto e = stlab::scope<int>(0, []{
-        serial_queue_t q(default_executor);
-        return q.executor();
-    });
+    executor_t           ioq(serial_queue_t(default_executor).executor());
+    vector<future<void>> futures;
+    auto                 popper(pop_fn());
 
-    atomic<int> c{0};
+    for (std::size_t i(0); i < 4; ++i)
+        futures.emplace_back(stlab::async(default_executor, popper)
+            .then(ioq, [](int x) {
+                cout << x << '\n';
+            }));
 
-    auto t0 = std::thread([&]{e([&]{ cout << "Hello" << ", " << "foo!" << '\n'; ++c; });});
-    auto t1 = std::thread([&]{e([&]{ cout << "Hello" << ", " << "bar!" << '\n'; ++c; });});
-    auto t2 = std::thread([&]{e([&]{ cout << "Hello" << ", " << "baz!" << '\n'; ++c; });});
+    auto done = when_all(default_executor,
+                         []{},
+                         std::make_pair(begin(futures), end(futures)));
 
-    t0.join();
-    t1.join();
-    t2.join();
-
-    while (c != 3);
+    while (!done.get_try()) ;
 }
 /*
     Result:
 
-        Hello, baz!
-        Hello, foo!
-        Hello, bar!
-
-    (The order will be arbitrary, but the output expressions will not be broken up.)
+        1
+        2
+        3
+        4
 */
