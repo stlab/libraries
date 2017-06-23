@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(stlab C CXX)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMakeModules)
 
+project(stlab C CXX)
 
 set(CMAKE_SKIP_RPATH OFF)
 
@@ -46,4 +47,7 @@ endif()
 include_directories(.)
 
 add_subdirectory(test)
-add_subdirectory(playground)
+
+# Please do not let this line go to Travis uncommented. playground
+# may have unintended consequences with the build system.
+# add_subdirectory(playground)

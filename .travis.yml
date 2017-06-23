@@ -13,7 +13,9 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      install: if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+      install:
+        - sudo apt-get install lcov
+        - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
     # - compiler: clang
     #   addons:
     #     apt:
@@ -28,14 +30,7 @@ branches:
 before_install:
   - pip install conan
 script:
-  - mkdir build
-  - cd build
-  - conan install ./.. --build=missing
-  - cmake .. && make
-  - cd bin # It'd be great if we could just run all the binaries we find in here...
-  - ./cow_test
-  - ./future_test
-  - ./serial_queue_test
+  - ./build.sh
 notifications:
   recipients:
     - felix@petriconi.net

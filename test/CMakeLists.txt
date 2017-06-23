@@ -1,5 +1,7 @@
 PROJECT(future_test)
 
+include (LCoverage)
+
 set(SOURCE
   channel_functor_tests.cpp
   channel_join_tests.cpp
@@ -73,6 +75,8 @@ target_link_libraries(
 
 set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+setup_target_for_coverage(NAME serial_queue_test_coverage EXECUTABLE serial_queue_test)
 
 ########## Copy On Write ##########
 
