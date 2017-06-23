@@ -80,7 +80,7 @@ function(SETUP_TARGET_FOR_COVERAGE)
         COMMAND ${LCOV_PATH} -c -d . -b .. -o Coverage.out
 
         # Clean report by removing baseline
-        COMMAND ${LCOV_PATH} -a Coverage.baseline -a Coverage.out -o $BASENAME.lcov
+        COMMAND ${LCOV_PATH} -a Coverage.baseline -a Coverage.out -o ${Coverage_NAME}.lcov
 
         # Remove the baseline report, leaving only the clean report
         COMMAND ${CMAKE_COMMAND} -E remove Coverage.baseline Coverage.out

@@ -22,20 +22,25 @@ pushd build > /dev/null
 
 conan install ./.. --build=missing
 
-echo_run cmake ..
+NPROC=`sysctl -n hw.ncpu`
+if [ "$NPROC" == "" ] ; then
+    NPROC=`nproc`
+fi
 
-make serial_queue_test_coverage
+echo "INFO : Found $NPROC processors."
 
-exit 0
+echo_run cmake .. && make -j$NPROC
 
-make
+pushd bin > /dev/null
 
-pushd bin > /dev/null # It'd be great if we could just run all the binaries we find in here...
-
+# run all the binaries we find in here...
 find . -type f -perm +111 | while read -r curbin
 do
     echo_run "$curbin"
 done
+
+# Run the coverage tests
+echo_run make -j$NPROC serial_queue_coverage
 
 popd > /dev/null # bin
 
