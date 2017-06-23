@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMakeModules)
-
 project(stlab C CXX)
 
 set(CMAKE_SKIP_RPATH OFF)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")  
+  # The addition of "--coverage -fno-inline" is for lcov
   #set(CMAKE_CXX_FLAGS "-g -Wall -O3 -std=c++14 -fsanitize=thread -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
-  set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++14 -fexceptions -ftemplate-backtrace-limit=0 -D_GLIBCXX_USE_CXX11_ABI=0")
+  set(CMAKE_CXX_FLAGS "-O3 -g -Wall --coverage -fno-inline -std=c++14 -fexceptions -ftemplate-backtrace-limit=0 -D_GLIBCXX_USE_CXX11_ABI=0")
   set(CMAKE_LINK_FLAGS "-pthread")
   SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS})
 endif()

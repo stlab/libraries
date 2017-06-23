@@ -31,6 +31,8 @@ echo "INFO : Found $NPROC processors."
 
 echo_run cmake .. && make -j$NPROC
 
+echo_run lcov -c -i -b .. -d . -o Coverage.baseline
+
 pushd bin > /dev/null
 
 # run all the binaries we find in here...
@@ -41,7 +43,8 @@ done
 
 popd > /dev/null # bin
 
-# Run the coverage tests
-echo_run make -j$NPROC serial_queue_coverage
+echo_run lcov -c -d . -b .. -o Coverage.out
+echo_run lcov -a Coverage.baseline -a Coverage.out -o Coverage.lcov
+echo_run rm Coverage.baseline Coverage.out
 
 popd > /dev/null # build
