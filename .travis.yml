@@ -16,7 +16,8 @@ matrix:
     osx_image: xcode8.3
     script: CC=clang++ ./build.sh
     after_success:
-      - bash <(curl -s https://codecov.io/bash)
+      - cd build
+      - bash <(curl -s https://codecov.io/bash) -X fix
   - language: ruby
     rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
