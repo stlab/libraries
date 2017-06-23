@@ -39,9 +39,9 @@ do
     echo_run "$curbin"
 done
 
+popd > /dev/null # bin
+
 # Run the coverage tests
 echo_run make -j$NPROC serial_queue_coverage
-
-popd > /dev/null # bin
 
 popd > /dev/null # build
