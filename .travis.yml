@@ -14,9 +14,10 @@ matrix:
   - language: c++
     os: osx
     osx_image: xcode8.3
-    script: CC=clang++ ./build.sh
-    after_success:
+    script:
       - brew install lcov
+      - CC=clang++ ./build.sh
+    after_success:
       - cd build
       - bash <(curl -s https://codecov.io/bash) -X fix
   - language: ruby
