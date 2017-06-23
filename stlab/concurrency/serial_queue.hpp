@@ -107,6 +107,9 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
             case schedule_mode::all:
                 return &serial_instance_t::all;
         }
+
+        // silence some compilers...
+        return &serial_instance_t::single;
     }
 
 public:
