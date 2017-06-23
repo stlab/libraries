@@ -65,11 +65,9 @@ else
     echo "Found boost..."
 fi
 
-cd ..
-
-find ./libraries -name "*.cpp" | while read -r src
+find ../libraries -name "*.cpp" | while read -r src
 do
-  echo_run $CC -Wall -Werror -x c++ -std=c++14 -I./build/stlab -I./build/boost -o ./build/a.out $src
+  echo_run $CC -coverage -Wall -Werror -x c++ -std=c++14 -I./stlab -I./boost -o ./a.out $src
 
-  ./build/a.out > /dev/null
+  ./a.out > /dev/null
 done
