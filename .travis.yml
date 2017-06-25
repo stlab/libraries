@@ -30,8 +30,8 @@ os:
 osx_image: xcode8
 
 env:
-  - build_type=debug 
-  - build_type=release 
+  - build_type=debug options="-D stlab_testing=ON"
+  - build_type=release options="-D stlab_testing=ON"
 
 matrix:
   include:
@@ -40,7 +40,7 @@ matrix:
       env:
         build_type=debug
         coverage=TRUE
-        options="-D coverage=ON"
+        options="-D stlab_testing=ON -D coverage=ON"
       packages:
         - lcov
         
@@ -49,18 +49,21 @@ matrix:
       env:
         build_type=debug
         flags="-fsanitize=address;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
         
     - os: linux
       compiler: clang
       env:
         build_type=debug
         flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
-
+        options="-D stlab_testing=ON"
+        
     - os: linux
       compiler: clang
       env:
         build_type=debug
-        flags="-fsanitize=threads;-fno-omit-frame-pointer;"
+        flags="-fsanitize=thread;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"   
 
   exclude:
     - os: osx

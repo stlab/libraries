@@ -30,7 +30,7 @@ fi
 cmake -D CMAKE_BUILD_TYPE=$build_type -D stlab_appended_flags=$flags $options ..
 if [ $? -ne 0 ]; then exit 1; fi
 
-make -j$NPROC
+make VERBOSE=1 -j$NPROC
 if [ $? -ne 0 ]; then exit 1; fi
 
 if $coverage; then lcov -c -i -b .. -d . -o Coverage.baseline; fi

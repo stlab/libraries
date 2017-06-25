@@ -44,7 +44,10 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp" )
 
-include( "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
+set( flags "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
+if( EXISTS flags )
+  include( flags )
+endif()
 target_compile_options( stlab INTERFACE ${stlab_interface_flags} )
               
 if ( stlab_testing )
