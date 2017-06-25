@@ -44,8 +44,11 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp" )
 
 set( flags "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
-if( EXISTS flags )
-  include( flags )
+if( EXISTS ${flags} )
+  include( ${flags} )
+else()
+  message( WARNING "No stlab-defined flags for ${CMAKE_CXX_COMPILER_ID} C++ compiler")
+  message( STATUS "Only CMake defaults will be used")
 endif()
 target_compile_options( stlab INTERFACE ${stlab_interface_flags} )
               
