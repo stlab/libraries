@@ -27,7 +27,9 @@ if [ "$NPROC" == "" ] ; then
   NPROC=`nproc`
 fi
 
-cmake -D CMAKE_BUILD_TYPE=$build_type -D stlab_appended_flags=$flags $options ..
+if [ -z "${flags}" ]; then extra_flags="-D stlab_appended_flags=$flags"; fi
+    
+cmake -D CMAKE_BUILD_TYPE=$build_type $options $extra_flags ..
 if [ $? -ne 0 ]; then exit 1; fi
 
 make VERBOSE=1 -j$NPROC
