@@ -19,6 +19,7 @@ fi
 if [ -z "${coverage+xxx}" ]; then export coverage=FALSE; fi
 
 mkdir build
+cd build
 conan install ./.. --build=missing
 
 NPROC=`sysctl -n hw.ncpu`
