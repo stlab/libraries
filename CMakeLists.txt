@@ -2,11 +2,10 @@ cmake_minimum_required( VERSION 3.2 )
 set( CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Supported configuration types" FORCE )
 
 project( stlab LANGUAGES C CXX )
-include( CMakeDependentOption REQUIRED )
 
 option( stlab_playground "Configure and build the stlab playground" )
 option( coverage "Enable binary instrumentation to collect test coverage information in the DEBUG configuration" )
-CMAKE_DEPENDENT_OPTION( stlab_testing "Compile the stlab tests and integrate with ctest" ON "BUILD_TESTING" OFF )
+option( stlab_testing "Compile the stlab tests and integrate with ctest" ${BUILD_TESTING} )
 
 set( Boost_MULTITHREADED ON ) 
 set( Boost_USE_STATIC_LIBS ON )
