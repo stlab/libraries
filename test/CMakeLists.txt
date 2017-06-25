@@ -25,8 +25,9 @@ target_link_libraries( stlab.test.future.test
 
 target_compile_options( stlab.test.future.test
                         PRIVATE $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                                $<$<CONFIG:RELEASE>:${stlab_release_flags}> )
-                     
+                                $<$<CONFIG:RELEASE>:${stlab_release_flags}> 
+                                ${stlab_appended_flags} )
+                              
 set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD_REQUIRED ON)
                      
@@ -41,8 +42,9 @@ target_link_libraries( stlab.test.serial_queue.test
 
 target_compile_options( stlab.test.serial_queue.test
                         PRIVATE $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                                $<$<CONFIG:RELEASE>:${stlab_release_flags}> )
-                      
+                                $<$<CONFIG:RELEASE>:${stlab_release_flags}> 
+                                ${stlab_appended_flags} )
+                              
 set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD_REQUIRED ON)
                      
@@ -58,7 +60,8 @@ target_link_libraries( stlab.test.cow.test
 
 target_compile_options( stlab.test.cow.test
                         PRIVATE $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                                $<$<CONFIG:RELEASE>:${stlab_release_flags}> )
+                                $<$<CONFIG:RELEASE>:${stlab_release_flags}>
+                                ${stlab_appended_flags} )
                      
 set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD_REQUIRED ON)

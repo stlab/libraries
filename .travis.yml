@@ -1,47 +1,92 @@
 sudo: required
 dist: trusty
 language: cpp
+
 cache:
   directories:
     - $HOME/.conan
+
+addons:
+  apt:
+    sources:
+      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
+        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+      - ubuntu-toolchain-r-test
+      - george-edison55-precise-backports
+    packages:
+      - g++-5
+      - clang-3.8
+      - cmake
+      - cmake-data
+
+compiler:
+  - gcc
+  - clang
+
+os:
+  - linux
+  - osx
+  
+osx_image: xcode8
+
+env:
+  - build_type=debug 
+  - build_type=release 
+
 matrix:
   include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      install:
-        - sudo apt-get install lcov
-        - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-    # - compiler: clang
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - llvm-toolchain-precise-3.8
-    #       packages:
-    #         - clang-3.8
-    #   install: if [ "$CXX" = "g++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
+    - os: linux
+      compiler: gcc
+      env:
+        build_type=debug
+        coverage=TRUE
+        options="-D coverage=ON"
+      packages:
+        - lcov
+        
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=address;-fno-omit-frame-pointer;"
+        
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
+
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=threads;-fno-omit-frame-pointer;"
+
+  exclude:
+    - os: osx
+      compiler: gcc
+
 branches:
   except: /pr\/.*/
+  
 before_install:
   - pip install conan
+  
 script:
-  - ./build.sh
+  - .travis/build.sh
+  
 after_success:
   - cd build
   - bash <(curl -s https://codecov.io/bash) -X fix
-notifications:
-  recipients:
-    - felix@petriconi.net
-  email:
-    on_success: change
-    on_failure: always
-  slack:
-    on_success: change
-    on_failure: always
-    rooms:
-      secure: D2Q2H8/89cCSDjJXc6AmIAOEKIkoUBQZBH5sYIkc/FgB7+cLqeSQFNpe7N96t22SmvyIUsqPzxiEccEMTiLeRdo0S4BXAAkd3abB8wd2KFXe/mlpUpNNSYTowYA6I6EfY83Hb5QxVkIi5SiD6fwUo9VFXGpBQM5wmgU9CXE4Xk64RWziSKowGSOzIPytSduksG2p+wKQE6tK0o4NNPvOI0uzbzJuWUwHjaLU/tH12L/O/DmeLj+WO1939v1Xmm48p86JKr7uJzNNiTTVCGuAMLY3CLdTRYHpgvnfAxy93x0v0arvYiRrtABlfUP1RjthUPlmY0oESIx1EbgSUMXx1Bh0tvfJoRUq2H2qu9V1mMhIrMj7JzWcLb+9X3+vWg7UPgz8Y2kX8PZbzxCclIqesWsgBbaqsErbS6o5Fh2hvTMzIjRXm8oXc38wbC3jM11H0CD7tCEvpUHyPHfVGYgf0/qFNSoFU3qhfuWRdhi3Pa+En9/VcFmDrbh2P9ba2kDqVnXzz2q+xRZ1rfmzBiKOe05TVTm4535JbcRPCa4bgE+gT6PvVIlb4WSJk6pZleAlo/lh8Ugqc4fCRiShhxd0lKK+3+B1ImipuVeaNaTGUgfhtj4hhMzXEp9Xi+M3UyScnXvQhLc7pA3eYO6paXuVjBUIzAWOXzsPVwCVPFoObhY=
+  
+#notifications:
+#  recipients:
+#    - felix@petriconi.net
+#  email:
+#    on_success: change
+#    on_failure: always
+#  slack:
+#    on_success: change
+#    on_failure: always
+#    rooms:
+#      secure: D2Q2H8/89cCSDjJXc6AmIAOEKIkoUBQZBH5sYIkc/FgB7+cLqeSQFNpe7N96t22SmvyIUsqPzxiEccEMTiLeRdo0S4BXAAkd3abB8wd2KFXe/mlpUpNNSYTowYA6I6EfY83Hb5QxVkIi5SiD6fwUo9VFXGpBQM5wmgU9CXE4Xk64RWziSKowGSOzIPytSduksG2p+wKQE6tK0o4NNPvOI0uzbzJuWUwHjaLU/tH12L/O/DmeLj+WO1939v1Xmm48p86JKr7uJzNNiTTVCGuAMLY3CLdTRYHpgvnfAxy93x0v0arvYiRrtABlfUP1RjthUPlmY0oESIx1EbgSUMXx1Bh0tvfJoRUq2H2qu9V1mMhIrMj7JzWcLb+9X3+vWg7UPgz8Y2kX8PZbzxCclIqesWsgBbaqsErbS6o5Fh2hvTMzIjRXm8oXc38wbC3jM11H0CD7tCEvpUHyPHfVGYgf0/qFNSoFU3qhfuWRdhi3Pa+En9/VcFmDrbh2P9ba2kDqVnXzz2q+xRZ1rfmzBiKOe05TVTm4535JbcRPCa4bgE+gT6PvVIlb4WSJk6pZleAlo/lh8Ugqc4fCRiShhxd0lKK+3+B1ImipuVeaNaTGUgfhtj4hhMzXEp9Xi+M3UyScnXvQhLc7pA3eYO6paXuVjBUIzAWOXzsPVwCVPFoObhY=
