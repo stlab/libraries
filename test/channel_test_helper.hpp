@@ -16,23 +16,39 @@
 
 class manual_scheduler
 {
+    static std::mutex                        _mutex;
     static std::queue<std::function<void()>> _tasks;
 
 public:
-    static void clear() { while (!_tasks.empty()) _tasks.pop(); }
+    static void clear() {
+        std::unique_lock<std::mutex> guard(_mutex);
+        while (!_tasks.empty()) _tasks.pop();
+    }
 
     template <typename F>
     void operator()(F&& f) {
+        std::unique_lock<std::mutex> guard(_mutex);
         _tasks.push(std::forward<F>(f));
     }
 
     static void wait_until_queue_size_of(std::size_t n){
-        while (_tasks.size() < n) {
+        std::size_t queueSize = 0;
+        {
+            std::unique_lock<std::mutex> guard(_mutex);
+            queueSize = _tasks.size();
+        }
+
+        while (queueSize < n) {
+            {
+                std::unique_lock<std::mutex> guard(_mutex);
+                queueSize = _tasks.size();
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
     static void run_next_task() {
+        std::unique_lock<std::mutex> guard(_mutex);
         if (_tasks.empty()) {
             printf("Function lost\n");
             return;
