@@ -14,7 +14,7 @@ declaration: |
     class receiver
 brief: Implements the receiving part of a CSP channel
 description: |
-  Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must of a type that implements an `await()` and `yield()` method.
+  Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must be of a type that implements an `await()` and `yield()` method.
   
   Multiple calls with this operator on the same object realize a split. That means that the result of this process is copied into all attached downstream channels.
   
