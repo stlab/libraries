@@ -1,100 +1,126 @@
-PROJECT(future_test)
+add_executable( stlab.test.future.test
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_functor_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_join_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_process_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_zip_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_recover_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_then_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_arguments_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_range_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_arguments_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_range_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm_test.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.hpp" )
 
-set(SOURCE
-  channel_functor_tests.cpp
-  channel_join_tests.cpp
-  channel_merge_tests.cpp
-  channel_process_tests.cpp
-  channel_tests.cpp
-  channel_test_helper.cpp
-  channel_zip_tests.cpp
-  future_recover_tests.cpp
-  future_tests.cpp
-  future_then_tests.cpp
-  future_when_all_arguments_tests.cpp
-  future_when_all_range_tests.cpp
-  future_when_any_arguments_tests.cpp
-  future_when_any_range_tests.cpp
-  test_helper.cpp
-  tuple_algorithm_test.cpp
-  main.cpp
-)
+# This syntax is a CMake generator expression.
+#
+# Here we defer the compiler flags decision-making to generation time
+# (for tools which support distinct configuration and generation steps)
+# based on a generation time configuration.
+#
+# Here, we provide support for a DEBUG and RELEASE configurations, line 32
+# providing the former and line 33 providing the latter.
+target_compile_options( stlab.test.future.test
+                        PUBLIC ${stlab_base_flags}
+                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
+                               $<$<CONFIG:RELEASE>:${stlab_release_flags}> 
+                               ${stlab_appended_flags} )
 
-set(HEADERS
-  ../stlab/concurrency/channel.hpp
-  ../stlab/concurrency/config.hpp
-  ../stlab/concurrency/default_executor.hpp
-  ../stlab/concurrency/executor_base.hpp
-  ../stlab/concurrency/future.hpp
-  ../stlab/concurrency/immediate_executor.hpp
-  ../stlab/concurrency/main_executor.hpp
-  ../stlab/concurrency/progress.hpp
-  ../stlab/concurrency/system_timer.hpp
-  ../stlab/concurrency/traits.hpp
-  ../stlab/concurrency/tuple_algorithm.hpp
-  ../stlab/concurrency/utility.hpp
-  channel_test_helper.hpp
-  test_helper.hpp
-)
+target_link_libraries( stlab.test.future.test
+                       PUBLIC ${Boost_LIBRARIES} 
+                       PUBLIC stlab )
+                     
+target_link_libraries( stlab.test.future.test PUBLIC
+                       "${stlab_base_flags}" )
 
-add_executable(future_test ${SOURCE} ${HEADERS})
+target_link_libraries( stlab.test.future.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
 
-include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries( stlab.test.future.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
 
-target_link_libraries(
-    future_test
-    ${Boost_LIBRARIES} 
-    ${CMAKE_THREAD_LIBS_INIT} 
-    ${CONAN_LIBS})
+target_link_libraries( stlab.test.future.test PUBLIC
+                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
+                             
+target_link_libraries( stlab.test.future.test PUBLIC
+                       "${stlab_appended_flags}" )
 
-set_property(TARGET future_test PROPERTY CXX_STANDARD 14)
-set_property(TARGET future_test PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD 14)
+set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD_REQUIRED ON)
+                     
+add_test( NAME stlab.test.future COMMAND stlab.test.future.test )
 
-########## Serial queue ##########
+add_executable( stlab.test.serial_queue.test
+                "${CMAKE_CURRENT_SOURCE_DIR}/serial_queue_test.cpp" )
 
-PROJECT(serial_queue_test)
+target_compile_options( stlab.test.serial_queue.test
+                        PUBLIC "${stlab_base_flags}"
+                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
+                               $<$<CONFIG:RELEASE>:${stlab_release_flags}> 
+                               ${stlab_appended_flags} )
 
-set(SOURCE
-    serial_queue_test.cpp
-)
+target_link_libraries( stlab.test.serial_queue.test
+                       PUBLIC ${Boost_LIBRARIES} 
+                       PUBLIC stlab )
+                             
+target_link_libraries( stlab.test.serial_queue.test PUBLIC
+                       "${stlab_base_flags}" )
 
-set(HEADERS
-)
+target_link_libraries( stlab.test.serial_queue.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
 
-add_executable(serial_queue_test ${SOURCE} ${HEADERS})
+target_link_libraries( stlab.test.serial_queue.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
 
-include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries( stlab.test.serial_queue.test PUBLIC
+                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
+                             
+target_link_libraries( stlab.test.serial_queue.test PUBLIC
+                       "${stlab_appended_flags}" )
+                             
+set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD 14)
+set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD_REQUIRED ON)
+                     
+add_test( NAME stlab.test.serial_queue COMMAND stlab.test.serial_queue.test )
 
-target_link_libraries(
-    serial_queue_test
-    ${Boost_LIBRARIES} 
-    ${CMAKE_THREAD_LIBS_INIT} 
-    ${CONAN_LIBS})
+add_executable( stlab.test.cow.test 
+                "${CMAKE_CURRENT_SOURCE_DIR}/cow_test.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
 
-set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD 14)
-set_property(TARGET serial_queue_test PROPERTY CXX_STANDARD_REQUIRED ON)
+target_compile_options( stlab.test.cow.test
+                        PUBLIC "${stlab_base_flags}"
+                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
+                               $<$<CONFIG:RELEASE>:${stlab_release_flags}>
+                               ${stlab_appended_flags} )
 
-########## Copy On Write ##########
+target_link_libraries( stlab.test.cow.test 
+                       PUBLIC ${Boost_LIBRARIES} 
+                       PUBLIC stlab )
+                             
+target_link_libraries( stlab.test.cow.test PUBLIC
+                       "${stlab_base_flags}" )
 
-PROJECT(cow_test)
+target_link_libraries( stlab.test.cow.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
 
-set(SOURCE
-    cow_test.cpp
-    main.cpp
-)
+target_link_libraries( stlab.test.cow.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
 
-set(HEADERS
-)
+target_link_libraries( stlab.test.cow.test PUBLIC
+                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
+                             
+target_link_libraries( stlab.test.cow.test PUBLIC
+                       "${stlab_appended_flags}" )
+                             
+set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD 14)
+set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD_REQUIRED ON)
 
-add_executable(cow_test ${SOURCE} ${HEADERS})
+add_test( NAME stlab.test.cow COMMAND stlab.test.cow.test )
 
-include_directories(${Boost_INCLUDE_DIRS})
-
-target_link_libraries(
-    cow_test
-    ${Boost_LIBRARIES} 
-    ${CMAKE_THREAD_LIBS_INIT} 
-    ${CONAN_LIBS})
-
-set_property(TARGET cow_test PROPERTY CXX_STANDARD 14)
-set_property(TARGET cow_test PROPERTY CXX_STANDARD_REQUIRED ON)

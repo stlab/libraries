@@ -1,39 +1,87 @@
 sudo: required
 dist: trusty
 language: cpp
+
 cache:
   directories:
     - $HOME/.conan
+
+addons:
+  apt:
+    sources:
+      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
+        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+      - ubuntu-toolchain-r-test
+      - george-edison55-precise-backports
+    packages:
+      - g++-5
+      - clang-3.8
+      - cmake
+      - cmake-data
+
+compiler:
+  - gcc
+  - clang
+
+os:
+  - linux
+  - osx
+  
+osx_image: xcode8
+
+env:
+  - build_type=debug options="-D stlab_testing=ON"
+  - build_type=release options="-D stlab_testing=ON"
+
 matrix:
   include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      install:
-        - sudo apt-get install lcov
-        - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-    # - compiler: clang
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - llvm-toolchain-precise-3.8
-    #       packages:
-    #         - clang-3.8
-    #   install: if [ "$CXX" = "g++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
+    - os: linux
+      compiler: gcc
+      env:
+        build_type=debug
+        coverage=TRUE
+        options="-D stlab_testing=ON -D coverage=ON"
+      packages:
+        - lcov
+        
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=address;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+        
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+        
+    # - os: linux
+    #   compiler: clang
+    #   env:
+    #     build_type=debug
+    #     flags="-fsanitize=thread;-fno-omit-frame-pointer;"
+    #     options="-D stlab_testing=ON"   
+
+  exclude:
+    - os: osx
+      compiler: gcc
+
 branches:
   except: /pr\/.*/
+  
 before_install:
   - pip install conan
+  
 script:
-  - ./build.sh
+  - .travis/build.sh
+  
 after_success:
   - cd build
   - bash <(curl -s https://codecov.io/bash) -X fix
+  
 notifications:
   recipients:
     - felix@petriconi.net
