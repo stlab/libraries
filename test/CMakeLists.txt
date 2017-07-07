@@ -19,6 +19,14 @@ add_executable( stlab.test.future.test
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.hpp" )
 
+# This syntax is a CMake generator expression.
+#
+# Here we defer the compiler flags decision-making to generation time
+# (for tools which support distinct configuration and generation steps)
+# based on a generation time configuration.
+#
+# Here, we provide support for a DEBUG and RELEASE configurations, line 32
+# providing the former and line 33 providing the latter.
 target_compile_options( stlab.test.future.test
                         PUBLIC ${stlab_base_flags}
                                $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
