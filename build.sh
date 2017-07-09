@@ -1,16 +1,5 @@
 #!/bin/bash
-
-# Run a command, and echo before doing so. Also checks the exit
-# status and quits if there was an error.
-echo_run ()
-{
-    echo "$@"
-    "$@"
-    r=$?
-    if test $r -ne 0 ; then
-        exit $r
-    fi
-}
+set -x
 
 cd `dirname $0`
 
@@ -35,21 +24,30 @@ fi
 if [ ! -d stlab ]; then
     echo "Cloning stlab/$TRAVIS_BRANCH..."
 
-    echo_run git clone --branch $TRAVIS_BRANCH https://github.com/stlab/libraries.git stlab
+    git clone --branch $TRAVIS_BRANCH https://github.com/stlab/libraries.git stlab
+    if [ $? -ne 0 ]; then exit 1; fi
 else
     echo "Found stlab. Pulling $TRAVIS_BRANCH..."
 
-    echo_run cd stlab
-    echo_run git branch -u origin/$TRAVIS_BRANCH
-    echo_run git co $TRAVIS_BRANCH
-    echo_run git pull origin $TRAVIS_BRANCH
-    echo_run cd ..
+    cd stlab
+
+    git branch -u origin/$TRAVIS_BRANCH
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    git co $TRAVIS_BRANCH
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    git pull origin $TRAVIS_BRANCH
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    cd ..
 fi
 
 if [ ! -d boost ]; then
     if [ ! -f boost.tgz ]; then
         echo "Downloading boost..."
-        echo_run curl -L https://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz -o boost.tgz
+        curl -L https://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz -o boost.tgz
+        if [ $? -ne 0 ]; then exit 1; fi
     fi
 
     if [ ! -d boost ]; then
@@ -57,10 +55,12 @@ if [ ! -d boost ]; then
     fi
 
     echo "Unpacking boost headers..."
-    echo_run tar -C boost -xzf boost.tgz --strip-components 1 boost_1_60_0/boost/
+    tar -C boost -xzf boost.tgz --strip-components 1 boost_1_60_0/boost/
+    if [ $? -ne 0 ]; then exit 1; fi
 
     echo "Unpacking boost sources..."
-    echo_run tar -C boost -xzf boost.tgz --strip-components 1 boost_1_60_0/libs/
+    tar -C boost -xzf boost.tgz --strip-components 1 boost_1_60_0/libs/
+    if [ $? -ne 0 ]; then exit 1; fi
 else
     echo "Found boost..."
 fi
@@ -70,12 +70,22 @@ export CCINCLUDES="-I./stlab -I./boost"
 
 find ../libraries -name "*.cpp" | while read -r src
 do
-  export BASENAME=`basename $src`
+    export BASENAME=`basename $src`
 
-  echo_run $CC $CCFLAGS $CCINCLUDES $src
-  echo_run lcov -c -i -b .. -d . -o $BASENAME.baseline
-  echo_run ./a.out
-  echo_run lcov -c -d . -b .. -o $BASENAME.out
-  echo_run lcov -a $BASENAME.baseline -a $BASENAME.out -o $BASENAME.lcov
-  echo_run rm $BASENAME.baseline $BASENAME.out
+    $CC $CCFLAGS $CCINCLUDES $src
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    lcov -c -i -b .. -d . -o $BASENAME.baseline
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    ./a.out
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    lcov -c -d . -b .. -o $BASENAME.out
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    lcov -a $BASENAME.baseline -a $BASENAME.out -o $BASENAME.lcov
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    rm $BASENAME.baseline $BASENAME.out
 done
