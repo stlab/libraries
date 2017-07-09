@@ -10,20 +10,25 @@ stlab is the ongoing work of what was Adobe's Software Technology Lab. The Adobe
 <h2>Releases</h2>
 
 <table class='definition-table'>
-    <tr>
-        <td class='decl'>
-            stlab/libraries <a href='https://github.com/stlab/libraries/releases/tag/v1.0'>v1.0</a>
-        </td>
-        <td class='defn'>
-            Added the concurrency library, including futures, executors, and channels.
-        </td>
-    </tr>
+<tr class='headers'>
+    <th>Tag</th>
+    <th>Description</th>
+    <th>Download Source</th>
+</tr>
+{% assign releases = site.data.releases | sort: 'published_at' %}
+{% for r in releases %}
+<tr>
+    <td><code><a href='{{r.html_url}}'>{{r.tag_name}}</a></code></td>
+    <td>{{r.body}}</td>
+    <td><a href='{{r.zipball_url}}'>zip</a> | <a href='{{r.tarball_url}}'>tar</a></td>
+</tr>
+{% endfor %}
 </table>
 
 <h2>Contributors</h2>
 
 <table class='contributors-table'>
-{% assign contributors = site.github.contributors | sort: 'login' %}
+{% assign contributors = site.data.contributors | sort: 'login' %}
 {% for c in contributors %}
 <tr>
     <td class='avatar'><img alt='{{c.login}}' src='{{c.avatar_url}}'/></td>

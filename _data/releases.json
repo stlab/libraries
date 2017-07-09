@@ -1,0 +1,41 @@
+[
+  {
+    "url": "https://api.github.com/repos/stlab/libraries/releases/6672551",
+    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/6672551/assets",
+    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/6672551/assets{?name,label}",
+    "html_url": "https://github.com/stlab/libraries/releases/tag/v1.0",
+    "id": 6672551,
+    "tag_name": "v1.0",
+    "target_commitish": "1b106fe89318c855fef3dc56d81f98e0c26c2cff",
+    "name": "1.0",
+    "draft": false,
+    "author": {
+      "login": "fosterbrereton",
+      "id": 1664117,
+      "avatar_url": "https://avatars2.githubusercontent.com/u/1664117?v=3",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/fosterbrereton",
+      "html_url": "https://github.com/fosterbrereton",
+      "followers_url": "https://api.github.com/users/fosterbrereton/followers",
+      "following_url": "https://api.github.com/users/fosterbrereton/following{/other_user}",
+      "gists_url": "https://api.github.com/users/fosterbrereton/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/fosterbrereton/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/fosterbrereton/subscriptions",
+      "organizations_url": "https://api.github.com/users/fosterbrereton/orgs",
+      "repos_url": "https://api.github.com/users/fosterbrereton/repos",
+      "events_url": "https://api.github.com/users/fosterbrereton/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/fosterbrereton/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "prerelease": false,
+    "created_at": "2017-06-10T19:29:56Z",
+    "published_at": "2017-06-11T04:04:39Z",
+    "assets": [
+
+    ],
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.0",
+    "body": "Added the concurrency library, including futures, executors, and channels."
+  }
+]
