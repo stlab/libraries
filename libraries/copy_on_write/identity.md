@@ -5,7 +5,6 @@ tags: [library]
 scope: copy_on_write
 pure-name: identity
 defined-in-header: stlab/copy_on_write.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/copy_on_write.hpp
 brief: Used to see if two copy_on_write items refer to the same instance.
 entities:
   - kind: methods

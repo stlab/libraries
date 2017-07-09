@@ -5,7 +5,6 @@ tags: [library]
 scope: task
 pure-name: operator bool
 defined-in-header: stlab/concurrency/task.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/task.hpp
 brief: Check if the task can be invoked
 entities:
   - kind: methods

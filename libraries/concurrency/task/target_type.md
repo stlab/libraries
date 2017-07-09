@@ -5,7 +5,6 @@ tags: [library]
 scope: task
 pure-name: target_type
 defined-in-header: stlab/concurrency/task.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/task.hpp
 brief: Get type information about the underlying function
 entities:
   - kind: methods

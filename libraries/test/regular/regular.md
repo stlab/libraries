@@ -5,7 +5,6 @@ tags: [library]
 scope: regular
 pure-name: regular
 defined-in-header: stlab/concurrency/regular.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/test/model.hpp
 brief: Constructs a regular
 entities:
   - kind: methods

@@ -5,7 +5,6 @@ tags: [library]
 name: stlab::annotate
 pure-name: annotate
 defined-in-header: stlab/test/model.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/test/model.hpp
 ctor: default
 dtor: default
 annotation: template class

@@ -58,24 +58,3 @@ layout: default
     {% include external_examples.html name=page.example header="Example" %}
   </article>
 </div>
-
-
-<!--
-            {% highlight cpp %}{{ entity.declaration }}{% endhighlight %}
-            <h3>Parameters</h3>
-            {% for parameter in entity.parameters %}
-                {% capture param %}`{{ parameter.name }}`: {{ parameter.description }}
-                {% endcapture %}
-                {{ param | markdownify }}
-            {% endfor %}
-            <h3>Preconditions</h3>
-            {% for item in entity.preconditions %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Notes</h3>
-            {% for item in entity.notes %}
-                {{ item | markdownify }}
-            {% endfor %}
-            <h3>Return</h3>
-            {{ entity.return | markdownify }}
--->

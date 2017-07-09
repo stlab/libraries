@@ -5,7 +5,6 @@ tags: [library]
 name: stlab::regular
 pure-name: regular
 defined-in-header: stlab/test/model.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/test/model.hpp
 dtor: default
 annotation: template class
 declaration: class regular

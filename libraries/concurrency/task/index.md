@@ -5,7 +5,6 @@ tags: [library]
 scope: stlab
 pure-name: task
 defined-in-header: stlab/concurrency/task.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/task.hpp
 dtor: default
 annotation: template class
 declaration: |

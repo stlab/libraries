@@ -8,7 +8,6 @@ brief: Creates a future that joins all passed arguments
 annotation: template function
 example: join_example.cpp
 defined-in-header: stlab/concurrency/channel.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
 entities:
   - kind: overloads
     list:

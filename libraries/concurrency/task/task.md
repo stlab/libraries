@@ -5,7 +5,6 @@ tags: [library]
 scope: task
 pure-name: task
 defined-in-header: stlab/concurrency/task.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/task.hpp
 brief: Constructs a task
 entities:
   - kind: methods

@@ -5,7 +5,6 @@ tags: [library]
 scope: serial_queue
 pure-name: operator()
 defined-in-header: stlab/concurrency/serial_queue.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/serial_queue.hpp
 brief: Passes the task to the serial_queue for scheduling and execution
 entities:
   - kind: methods

@@ -8,7 +8,6 @@ brief: Create a packaged_task/future pair
 annotation: template function
 example: package_example.cpp
 defined-in-header: stlab/future.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
 entities:
   - kind: overloads
     name: stlab::package

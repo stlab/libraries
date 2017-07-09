@@ -5,7 +5,6 @@ tags: [library]
 name: stlab::copy_on_write
 pure-name: copy_on_write
 defined-in-header: stlab/copy_on_write.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/copy_on_write.hpp
 dtor: default
 annotation: template class
 declaration: |

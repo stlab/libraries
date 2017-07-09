@@ -5,7 +5,6 @@ tags: [library]
 scope: copy_on_write
 pure-name: operator=
 defined-in-header: stlab/copy_on_write.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/copy_on_write.hpp
 brief: Assigns a copy_on_write
 description: |
     As with copy construction, assignment is a non-throwing operation which releases the old value and increments the reference count of the item being assigned to.

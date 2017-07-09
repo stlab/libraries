@@ -9,7 +9,6 @@ description: Creates a future that continues on the first success of any futures
 annotation: template function
 example: when_any_example.cpp
 defined-in-header: stlab/concurrency/future.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp 
 entities:
   - kind: overloads
     list:

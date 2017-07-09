@@ -8,7 +8,6 @@ brief: It creates a process that zips all passed arguments and returns a receive
 annotation: template function
 example: zip_example.cpp
 defined-in-header: stlab/concurrency/channel.hpp  
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
 entities:
   - kind: overloads
     list:

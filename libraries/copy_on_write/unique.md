@@ -5,7 +5,6 @@ tags: [library]
 scope: copy_on_write
 pure-name: unique
 defined-in-header: stlab/copy_on_write.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/copy_on_write.hpp
 brief: Returns if the object instance reference count is one
 entities:
   - kind: methods

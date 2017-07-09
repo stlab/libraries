@@ -7,7 +7,6 @@ brief: Creates a future that is already fulfilled
 description: Creates a future that is already fulfilled
 annotation: template function
 defined-in-header: stlab/concurrency/future.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
 entities:
   - kind: overloads
     name: stlab::make_ready_future

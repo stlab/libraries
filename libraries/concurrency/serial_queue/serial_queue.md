@@ -5,7 +5,6 @@ tags: [library]
 scope: serial_queue
 pure-name: serial_queue
 defined-in-header: stlab/concurrency/serial_queue.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/serial_queue.hpp
 brief: Constructs a serial_queue
 entities:
   - kind: methods

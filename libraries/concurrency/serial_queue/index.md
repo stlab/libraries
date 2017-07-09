@@ -5,7 +5,6 @@ tags: [library]
 scope: stlab
 pure-name: serial_queue
 defined-in-header: stlab/concurrency/serial_queue.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/serial_queue.hpp
 dtor: default
 annotation: template class
 example: serial_queue_example.cpp

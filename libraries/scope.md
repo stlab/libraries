@@ -8,7 +8,6 @@ brief: Explicitly scope the lifetime of an object
 annotation: template function
 example: [ scope_example.cpp, scope_example_return.cpp ]
 defined-in-header: stlab/scope.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/scope.hpp
 entities:
   - kind: overloads
     list:

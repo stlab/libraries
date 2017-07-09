@@ -5,7 +5,6 @@ tags: [library]
 scope: copy_on_write
 pure-name: operator const element_type&
 defined-in-header: stlab/copy_on_write.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/copy_on_write.hpp
 brief: Obtain a const reference to the underlying object.
 entities:
   - kind: methods

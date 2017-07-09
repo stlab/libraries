@@ -5,7 +5,6 @@ tags: [library]
 scope: copy_on_write
 pure-name: operator*
 defined-in-header: stlab/copy_on_write.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/copy_on_write.hpp
 brief: Obtain a const reference to the underlying object.
 description: |
     This is provided because you cannot override `operator.()`. It allows `copy_on_write` to be used with common transformation techniques, such as boost's `indirect_iterator` and `transform_iterator`.

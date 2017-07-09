@@ -5,7 +5,6 @@ tags: [library]
 scope: task
 pure-name: operator()
 defined-in-header: stlab/concurrency/task.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/task.hpp
 brief: Invoke the task
 entities:
   - kind: methods

@@ -8,7 +8,6 @@ brief: Run a function on a specified executor
 annotation: template function
 example: async_example.cpp
 defined-in-header: stlab/concurrency/future.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
 entities:
   - kind: overloads
     name: stlab::async

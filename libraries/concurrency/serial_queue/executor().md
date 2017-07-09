@@ -5,7 +5,6 @@ tags: [library]
 scope: serial_queue
 pure-name: executor
 defined-in-header: stlab/concurrency/serial_queue.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/serial_queue.hpp
 brief: Constructs an executor from the serial queue
 entities:
   - kind: methods
