@@ -15,8 +15,4 @@ entities:
         defined-in-header: stlab/concurrency/future.hpp 
         declaration: void detach() const
         description: Lets the current task run and detaches it from this instance.
-  - kind: parameters
-  - kind: result
-  - kind: example
-    code: NoCode
 ---
