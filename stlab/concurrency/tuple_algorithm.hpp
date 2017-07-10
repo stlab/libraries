@@ -7,8 +7,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_TUPLE_ALGORITHM_HPP
-#define STLAB_TUPLE_ALGORITHM_HPP
+#ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
+#define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
 #include <tuple>
 

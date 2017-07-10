@@ -9,7 +9,7 @@
 #ifndef STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
-#include "config.hpp"
+#include <stlab/concurrency/config.hpp>
 
 #include <chrono>
 #include <functional>

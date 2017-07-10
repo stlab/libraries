@@ -6,10 +6,12 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_SYSTEM_TIMER_HPP
-#define SLABFUTURE_SYSTEM_TIMER_HPP
+#ifndef STLAB_CONCURRENCY_SYSTEM_TIMER_HPP
+#define STLAB_CONCURRENCY_SYSTEM_TIMER_HPP
 
-#include "config.hpp"
+/**************************************************************************************************/
+
+#include <stlab/concurrency/config.hpp>
 
 #include <chrono>
 #include <functional>
@@ -228,4 +230,6 @@ constexpr auto system_timer = detail::system_timer_type{};
 
 /**************************************************************************************************/
 
-#endif //SLABFUTURE_SYSTEM_TIMER_HPP
+#endif
+
+/**************************************************************************************************/

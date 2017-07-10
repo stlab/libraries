@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_SERIAL_QUEUE_HPP
-#define STLAB_SERIAL_QUEUE_HPP
+#ifndef STLAB_CONCURRENCY_SERIAL_QUEUE_HPP
+#define STLAB_CONCURRENCY_SERIAL_QUEUE_HPP
 
 /**************************************************************************************************/
 

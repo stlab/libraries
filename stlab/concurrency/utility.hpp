@@ -19,7 +19,7 @@
 
 #endif
 
-#include "default_executor.hpp"
+#include <stlab/concurrency/default_executor.hpp>
 
 /**************************************************************************************************/
 

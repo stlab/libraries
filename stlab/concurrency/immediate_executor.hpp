@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_IMMEDIATE_EXECUTOR_HPP
-#define SLABFUTURE_IMMEDIATE_EXECUTOR_HPP
+#ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
+#define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 
 #include <chrono>
 
@@ -56,4 +56,6 @@ constexpr auto immediate_executor = detail::immediate_executor_type{};
 
 /**************************************************************************************************/
 
-#endif //SLABFUTURE_IMMEDIATE_EXECUTOR_HPP
+#endif
+
+/**************************************************************************************************/
