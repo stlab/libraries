@@ -38,7 +38,9 @@ env: build_type=debug options="-D stlab_testing=ON"
 branches:
   only: coverity
 
-script: .travis/build.sh
+script:
+  - .travis/build.sh
+  - cat ./cov-int/build-log.txt
 
 notifications:
   email:
