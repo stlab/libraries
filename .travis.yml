@@ -36,11 +36,11 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 env:
   - global:
-    - secure: "oIVYGAAYk2xz2JTsYFMwPhkzZ6s1Uf0lu7xByr/FuaTunoY3PfxCk65gpgpVHiG/AT4zMjErehWihxEeL87nLOvgvVaBc1DuL6SLrWM/mFPgs+3gzwb9wWjEGXwbMq53KHyuDikcRnSH8aiGts1a3DvE7uLSlq585SlV9x++PwlXOnsnMosrq+vG7MLxy4ZeSyuEy/eo90xitVuXs8It+zYDVMOAoUaOMifd5mv5cEzCPMJBnzy/4Eiu2tkhi9F8Mc5H12nHN5IBGDfgJoInMNVmHTtXoFMdH28JqoL92ZZPuIkj2adxK+N19fcUoS2zqgZXMIz3Xi1iJSAR98yaNyLyoOQi7RHOYaW5FU3vFxAXHP0cfLXZyn8hJ2HruY8FSntlLs6polIv9npgZqv/bywVU5MrHbpmqPhlnzmtby0plCxUDYNK65hyR0KzUdcUW8J6UkDiC43tCfzcepmA5rulm86fXofUTKZT/13Ek6SSxOKnshBbggXU1m+UVEIM4A/Ln4VPUXdLYcbyMSF5Cu2SLgVq56kn7e8sF3EK1CBlN/3Lryat9cqtzHG7iSativSiORMROvkaHB1aQF+67VtwLOi4qdAMpBvphy3lGsxUUvdiAvu3L7eONcvEhAHMqIecMeKrS7rvvAukX4zydh46/wgQpDeKUotZNi3Tlmc="
-  - build_type=debug
-  - coverity=TRUE
-  - flags="-fno-omit-frame-pointer;"
-  - options="-D stlab_testing=ON"
+      secure: "oIVYGAAYk2xz2JTsYFMwPhkzZ6s1Uf0lu7xByr/FuaTunoY3PfxCk65gpgpVHiG/AT4zMjErehWihxEeL87nLOvgvVaBc1DuL6SLrWM/mFPgs+3gzwb9wWjEGXwbMq53KHyuDikcRnSH8aiGts1a3DvE7uLSlq585SlV9x++PwlXOnsnMosrq+vG7MLxy4ZeSyuEy/eo90xitVuXs8It+zYDVMOAoUaOMifd5mv5cEzCPMJBnzy/4Eiu2tkhi9F8Mc5H12nHN5IBGDfgJoInMNVmHTtXoFMdH28JqoL92ZZPuIkj2adxK+N19fcUoS2zqgZXMIz3Xi1iJSAR98yaNyLyoOQi7RHOYaW5FU3vFxAXHP0cfLXZyn8hJ2HruY8FSntlLs6polIv9npgZqv/bywVU5MrHbpmqPhlnzmtby0plCxUDYNK65hyR0KzUdcUW8J6UkDiC43tCfzcepmA5rulm86fXofUTKZT/13Ek6SSxOKnshBbggXU1m+UVEIM4A/Ln4VPUXdLYcbyMSF5Cu2SLgVq56kn7e8sF3EK1CBlN/3Lryat9cqtzHG7iSativSiORMROvkaHB1aQF+67VtwLOi4qdAMpBvphy3lGsxUUvdiAvu3L7eONcvEhAHMqIecMeKrS7rvvAukX4zydh46/wgQpDeKUotZNi3Tlmc="
+    build_type: debug
+    coverity: TRUE
+    flags: "-fno-omit-frame-pointer;"
+    options: "-D stlab_testing=ON"
 
 branches:
   only: coverity
