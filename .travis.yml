@@ -18,7 +18,7 @@ addons:
         - clang-3.8
         - cmake
         - cmake-data
-    coverity_scan:
+  - coverity_scan:
       project:
         name: "stlab/libraries"
         description: "Build submitted via Travis CI"
