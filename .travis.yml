@@ -7,25 +7,25 @@ cache:
     - $HOME/.conan
 
 addons:
-  apt:
-    sources:
-      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
-      - ubuntu-toolchain-r-test
-      - george-edison55-precise-backports
-    packages:
-      - g++-5
-      - clang-3.8
-      - cmake
-      - cmake-data
-  coverity_scan:
-    project:
-      name: "stlab/libraries"
-      description: "Build submitted via Travis CI"
-    notification_email: fosterb@gmail.com
-    build_command_prepend: ""
-    build_command: ".travis/build.sh"
-    branch_pattern: coverity
+  - apt:
+      sources:
+        - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
+          key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+        - ubuntu-toolchain-r-test
+        - george-edison55-precise-backports
+      packages:
+        - g++-5
+        - clang-3.8
+        - cmake
+        - cmake-data
+    coverity_scan:
+      project:
+        name: "stlab/libraries"
+        description: "Build submitted via Travis CI"
+      notification_email: fosterb@gmail.com
+      build_command_prepend: ""
+      build_command: ".travis/build.sh"
+      branch_pattern: coverity
 
 compiler: clang
 
@@ -42,8 +42,7 @@ env:
 branches:
   only: coverity
 
-script:
-  - .travis/build.sh
+script: .travis/build.sh
 
 notifications:
   email:
