@@ -33,15 +33,12 @@ os: linux
 before_install:
   - pip install conan
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-env:
-  - build_type: debug
-    options: "-D stlab_testing=ON"
+env: build_type=debug options="-D stlab_testing=ON"
 
 branches:
   only: coverity
 
-script:
-  - .travis/build.sh
+script: .travis/build.sh
 
 notifications:
   email:
