@@ -20,6 +20,11 @@ addons:
         key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
       - ubuntu-toolchain-r-test
       - george-edison55-precise-backports
+    packages:
+      - clang-3.8
+      - llvm-dev
+      - cmake
+      - cmake-data
 
 matrix: 
   include: 
@@ -32,24 +37,11 @@ matrix:
   - language: c++
     os: linux
     compiler: clang
-    addons:
-      apt:
-        packages:
-          - clang-3.8
-          - llvm-dev
-          - cmake
-          - cmake-data
     script: ./build.sh
 
   - language: c++
     os: linux
     compiler: gcc
-    addons:
-      apt:
-        packages:
-          - g++-5
-          - cmake
-          - cmake-data
     script: ./build.sh
     
   - language: ruby
