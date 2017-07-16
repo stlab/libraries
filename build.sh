@@ -58,6 +58,6 @@ fi
 mkdir -p build
 cd build
 
-cmake -D CMAKE_BUILD_TYPE=Debug -D BOOST_ROOT=../boost ..
+cmake -D CMAKE_BUILD_TYPE=Debug -D BOOST_ROOT=../boost $@ ..
 make -j$NPROC
 ctest -j$NPROC

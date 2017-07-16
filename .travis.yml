@@ -12,6 +12,7 @@ branches:
   only:
   - master
   - develop
+  - /^develop-.*/
 
 addons:
   apt:
@@ -29,13 +30,7 @@ addons:
       - cmake-data
 
 matrix: 
-  include: 
-  - language: c++
-    os: osx
-    osx_image: xcode8.3
-    compiler: clang
-    script: ./build.sh
-    
+  include:       
   - language: c++
     os: linux
     compiler: clang
@@ -44,8 +39,20 @@ matrix:
   - language: c++
     os: linux
     compiler: gcc
-    script: ./build.sh
-    
+    script: ./build.sh 
+
+  - language: c++
+    os: osx
+    osx_image: xcode8.3
+    compiler: clang
+    script:
+      - brew update
+      - brew install lcov
+      - ./build.sh -D coverage=ON
+    after_success:
+      - cd build
+      - bash <(curl -s https://codecov.io/bash) -X fix
+
   - language: ruby
     rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
