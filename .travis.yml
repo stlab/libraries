@@ -1,3 +1,6 @@
+sudo: required
+dist: trusty
+
 notifications:
   slack:
     on_success: change
@@ -29,20 +32,24 @@ matrix:
   - language: c++
     os: linux
     compiler: clang
-    packages:
-      - clang-3.8
-      - llvm-dev
-      - cmake
-      - cmake-data
+    addons:
+      apt:
+        packages:
+          - clang-3.8
+          - llvm-dev
+          - cmake
+          - cmake-data
     script: ./build.sh
 
   - language: c++
     os: linux
     compiler: gcc
-    packages:
-      - g++-6
-      - cmake
-      - cmake-data
+    addons:
+      apt:
+        packages:
+          - g++-5
+          - cmake
+          - cmake-data
     script: ./build.sh
     
   - language: ruby

@@ -61,4 +61,3 @@ cd build
 cmake -D CMAKE_BUILD_TYPE=Debug -D BOOST_ROOT=../boost ..
 make -j$NPROC
 ctest -j$NPROC
->>>>>>> 57173e8... cmake-ify
