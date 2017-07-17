@@ -31,10 +31,11 @@ auto cancelable_task(F&& f) {
     using shared_t = std::packaged_task<Sig>;
 
     auto p = std::make_shared<shared_t>(std::forward<F>(f));
+    auto w = std::weak_ptr<shared_t>(p);
     auto r = p->get_future();
 
-    return std::make_pair([_p = std::weak_ptr<shared_t>(p)] (auto&&... args) {
-        if (auto p = _p.lock()) (*p)(std::forward<decltype(args)>(args)...);
+    return std::make_pair([_w = std::move(w)] (auto&&... args) {
+        if (auto p = _w.lock()) (*p)(std::forward<decltype(args)>(args)...);
     },
     std::async(std::launch::deferred, [_p = std::move(p), _r = std::move(r)] () mutable {
         return _r.get();
