@@ -33,3 +33,6 @@ comments :
   provider : disqus
   disqus :
     short_name : stlab-cc
+
+gems:
+  - jekyll-redirect-from
