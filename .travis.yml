@@ -1,25 +1,58 @@
+sudo: required
+dist: trusty
+
 notifications:
   slack:
     on_success: change
     on_failure: always
     rooms:
       secure: CNpekncc7932A18BHB1i10HU+G8WuYKKiC6Zi/V5dDQ/+QgOOJcHkOjk0WevdVX813V/ZvmHWdZy338JMM6DnCQHC5goASEqxRTm+YypOyL+wfAg/6RSgh0bGpKer5mrLEZGzI6rooTDx45BVuREo0IfDV1R0Z8FUl2e3gbdS5XgIQWPY127thFCbkxN1+gXWPH+wYlmwyl4jZXKstD+myKmmnN3mgg8SpS3rbIAEVz0QHClyPwFzYGN03G7DuwF5OSfurqifaQclHLv1NMK6H7verY8RmvEBziMWX0Bi2HTRRpN2f2iV1IdCq+yy0UmQfWwa+v7w/QXCZgwoM1gyQFuHXzT8ESuX3KMjvD8w5VuKZX1zR3aU4EI0DCC3C11OeC1EGNku1A6Ev+0axVOQwqksIGhMpPHQXpu7oYjUm9duboHEwwsQ7dDCUP0yjOu9cEx6WLDR1zvjSDcFdlrs9Q/5v1ViBKx5oUef/4QEunDzNBT3BecGhTHdJC/I1G3I3BFkPlkEgx5rCyoROQu/A0VbVdpx83Y5AyKZAYhQUBmFUixaPfT5OEKHZI4fElY/m4a1zls2PcxHqQqjr8lbWtgXabXgqFUZbEs2uUmX2eMHnF+0GwpvrJCPHHa87Mi3TKPMgp+ankIq36jeyW4P0EsVVeHlCbOg2UOp9FbYwo=
+
 branches:
   only:
   - master
   - develop
-  - develop-*
-matrix:
-  include:
+  - /^develop-.*/
+
+addons:
+  apt:
+    sources:
+      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
+        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+      - ubuntu-toolchain-r-test
+      - george-edison55-precise-backports
+    packages:
+      - gcc-6
+      - g++-6
+      - clang-3.8
+      - llvm-dev
+      - cmake
+      - cmake-data
+
+matrix: 
+  include:       
+  - language: c++
+    os: linux
+    compiler: clang
+    script: ./build.sh
+
+  - language: c++
+    os: linux
+    compiler: gcc
+    script: ./build.sh 
+
   - language: c++
     os: osx
     osx_image: xcode8.3
+    compiler: clang
     script:
+      - brew update
       - brew install lcov
-      - CC=clang++ ./build.sh
+      - ./build.sh -D coverage=ON
     after_success:
       - cd build
       - bash <(curl -s https://codecov.io/bash) -X fix
+
   - language: ruby
     rvm: ruby-head
     install: gem install jekyll html-proofer github-pages
