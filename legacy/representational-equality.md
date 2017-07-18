@@ -3,6 +3,7 @@ title: Representational Equality
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Representational_Equality
 ---
 
 [_This page is being used to collaborate on a paper. You are welcome to read and comment on it, but consider it a work in progress, not a final product._]

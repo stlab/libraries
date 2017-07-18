@@ -3,6 +3,7 @@ title: Adding an Adobe internal client
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Adding_an_Adobe_internal_client
 ---
 This is the steps I use to add an Adobe client to ASL. These are executed on a Mac with bash.
 

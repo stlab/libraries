@@ -3,6 +3,7 @@ title: On-Disk File Monitor
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/On-Disk_File_Monitor
 ---
 #### Contents
 {:.no_toc}

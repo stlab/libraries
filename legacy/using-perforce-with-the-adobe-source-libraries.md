@@ -3,6 +3,7 @@ title: Using Perforce with the Adobe Source Libraries
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Using_Perforce_with_the_Adobe_Source_Libraries
 ---
 
 The Adobe Source Libraries have migrated away from the SourceForge

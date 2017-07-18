@@ -3,6 +3,7 @@ title: Tagged Overloading
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Tagged_Overloading
 ---
 
 The problem of being able to refine algorithms and how the techniques for doing so interact with namespaces is an ongoing problem for us with C++. Within ASL (and Boost) there are several techniques which are used, all with various drawbacks.

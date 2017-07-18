@@ -3,6 +3,7 @@ title: Layout Terminology
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Layout_Terminology
 ---
 This is the layout behavior specifications for the default set of ASL widgets.
 

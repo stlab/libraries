@@ -3,6 +3,7 @@ title: Performance/ReleaseNotes
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Performance/ReleaseNotes
 ---
 #### Contents
 {:.no_toc}

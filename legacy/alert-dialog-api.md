@@ -3,6 +3,7 @@ title: Alert Dialog API
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Alert_Dialog_API
 ---
 #### Contents
 {:.no_toc}

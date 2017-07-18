@@ -3,6 +3,7 @@ title: Eve definitions in Lua
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Eve_definitions_in_Lua
 ---
 Often many dialogs in an application have very similar Eve definitions. For example, all of the "Properties" dialogs on Windows contain a tab group and "OK/Cancel/Apply" buttons. It would be nice to be able to define functions that return commonly used combinations of widgets.
 

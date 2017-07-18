@@ -3,6 +3,7 @@ title: Edge Interface For Forward Iterators
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Edge_Interface_For_Forest_Iterators
 ---
 #### Contents
 {:.no_toc}

@@ -3,6 +3,7 @@ title: Performance/Analysis/Examples
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Performance/Analysis/Examples
 ---
 
 ## What do all those numbers mean?

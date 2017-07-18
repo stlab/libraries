@@ -3,6 +3,7 @@ title: Debugging `any_regular_t` and short names
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Debugging_any_regular_t_and_short_names
 ---
 
 Debugging the any_regular_t type can be problematic if you don't know what the data type of the value stored in it is. To make it simpler for to view an any_regular_t in the debugger, release 1.0.41 contains a four character short name for the type which is stored at the top of the vtable.

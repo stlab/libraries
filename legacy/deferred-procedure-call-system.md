@@ -3,6 +3,7 @@ title: Deferred Procedure Call System
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Deferred_Procedure_Call_System
 ---
 
 #### Contents
@@ -83,7 +84,7 @@ std::size_t size(behavior_token_t behavior);
 
 * <code>empty</code> returns to the client whether or not the behavior is empty.
 * <code>size</code> returns the number of singleton verbs, verb queues, and subbehaviors that have been inserted into this behavior.
-   
+
 <pre>
 void execute(behavior_token_t behavior);
 </pre>
@@ -103,7 +104,7 @@ std::size_t size(verb_q_token_t verb_q);
 
 * <code>empty</code> returns to the client whether or not the verb queue is empty.
 * <code>size</code> returns the number of singleton verbs that have been inserted into this verb queue.
-   
+
 <pre>
 void execute(verb_q_token_t verb_q);
 </pre>

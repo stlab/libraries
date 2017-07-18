@@ -3,6 +3,7 @@ title: No virtual method "any" example
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/No_virtual_method_%22any%22_example
 ---
 ```cpp
 struct concept_t;

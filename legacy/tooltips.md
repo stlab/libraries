@@ -3,6 +3,7 @@ title: Tooltips
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Tooltips
 ---
 #### Contents
 {:.no_toc}

@@ -3,6 +3,7 @@ title: How To Write A Simple Lexical Analyzer or Parser
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/How_To_Write_A_Simple_Lexical_Analyzer_or_Parser
 ---
 ## Introduction
 

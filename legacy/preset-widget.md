@@ -3,6 +3,7 @@ title: Preset Widget
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Preset_Widget
 ---
 #### Contents
 {:.no_toc}

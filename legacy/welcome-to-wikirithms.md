@@ -3,6 +3,7 @@ title: Welcome to Wikirithms
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Welcome_to_Wikirithms
 ---
 _[This page is an experiment. Feel free to read it and comment but consider it a work in progress.]_
 

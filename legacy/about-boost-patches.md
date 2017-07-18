@@ -3,6 +3,7 @@ title: About Boost Patches
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/About_Boost_Patches
 ---
 #### Contents
 {:.no_toc}

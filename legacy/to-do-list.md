@@ -3,6 +3,7 @@ title: To Do List
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/To_Do_List
 ---
 #### Contents
 {:.no_toc}

@@ -3,6 +3,7 @@ title: Message Box Widget
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Message_Box_Widget
 ---
 #### Contents
 {:.no_toc}

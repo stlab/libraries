@@ -3,6 +3,7 @@ title: Better Edit Number Widget
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Better_edit_number_Widget
 ---
 #### Contents
 {:.no_toc}

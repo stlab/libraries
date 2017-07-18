@@ -3,6 +3,7 @@ title: Performance/Analysis/Example3
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Performance/Analysis/Example3
 ---
 #### Contents
 {:.no_toc}

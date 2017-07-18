@@ -3,6 +3,7 @@ title: Troubleshooting
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Troubleshooting
 ---
 #### Contents
 {:.no_toc}

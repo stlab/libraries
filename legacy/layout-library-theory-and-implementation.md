@@ -3,6 +3,7 @@ title: Layout Library Theory and Implementation
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Layout_Library_Theory_and_Implementation
 ---
 #### Contents
 {:.no_toc}

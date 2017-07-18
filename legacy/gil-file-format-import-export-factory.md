@@ -3,6 +3,7 @@ title: GIL File Format Import/Export Factory
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/GIL_File_Format_Import/Export_Factory
 ---
 #### Contents
 {:.no_toc}

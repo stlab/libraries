@@ -3,6 +3,7 @@ title: Handling of Limits in Property Model Library
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Handling_of_Limits_in_Property_Model_Library
 ---
 One of our current problems with the New Document dialog is the handling of value limits. Enforcing limits is not a function of the UI but a function of the model.
 

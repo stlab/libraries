@@ -3,6 +3,7 @@ title: New Build Documentation
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/New_Build_Documentation
 ---
 
 _This documentation last updated during the ASL 1.0.25 distribution._

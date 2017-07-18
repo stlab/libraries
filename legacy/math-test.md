@@ -3,6 +3,7 @@ title: Math Test
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Math_Test
 ---
 The following two examples are from here <https://meta.wikimedia.org/wiki/Help:Displaying_a_formula>:
 

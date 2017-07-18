@@ -3,6 +3,7 @@ title: Annotated List of Boost Patches
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Annotated_List_of_Boost_Patches
 ---
 #### Contents
 {:.no_toc}
@@ -31,7 +32,7 @@ diff -ruN boost_1_34_1/boost/range/detail/implementation_help.hpp boost/range/de
 +        /*
 +        	END ADOBE
 +        */
-          
+
          template< class T, std::size_t sz >
          inline std::size_t array_size( T BOOST_RANGE_ARRAY_REF()[sz], int )
          {
@@ -44,7 +45,7 @@ diff -ruN boost_1_34_1/boost/range/detail/implementation_help.hpp boost/range/de
 +        */
              return sz;
          }
-        
+
          template< class T, std::size_t sz >
          inline std::size_t array_size( const T BOOST_RANGE_ARRAY_REF()[sz], int )
          {
@@ -57,7 +58,7 @@ diff -ruN boost_1_34_1/boost/range/detail/implementation_help.hpp boost/range/de
 +        */
              return sz;
          }
- 
+
          template< class T, std::size_t sz >
          inline std::size_t array_size( T BOOST_RANGE_ARRAY_REF()[sz], char_or_wchar_t_array_tag )
          {
@@ -70,7 +71,7 @@ diff -ruN boost_1_34_1/boost/range/detail/implementation_help.hpp boost/range/de
 +        */
              return sz - 1;
          }
-                  
+
          template< class T, std::size_t sz >
          inline std::size_t array_size( const T BOOST_RANGE_ARRAY_REF()[sz], char_or_wchar_t_array_tag )
          {
@@ -97,7 +98,7 @@ diff -ruN boost_1_33_1/boost/cast.hpp boost/boost/cast.hpp
  # include <boost/limits.hpp>
  # include <boost/detail/select_type.hpp>
 +# include <boost/detail/workaround.hpp>
- 
+
  //  It has been demonstrated numerous times that MSVC 6.0 fails silently at link
  //  time if you use a template function which has template parameters that don't
 @@ -92,7 +93,11 @@
@@ -120,12 +121,12 @@ diff -ruN boost_1_33_1/boost/date_time/time_resolution_traits.hpp boost/boost/da
 --- boost_1_33_1/boost/date_time/time_resolution_traits.hpp	2003-12-02 19:01:05.000000000 -0800
 +++ boost/boost/date_time/time_resolution_traits.hpp	2006-05-26 15:22:28.000000000 -0700
 @@ -120,11 +120,17 @@
-                    + (fractional_seconds_type(minutes)*60) 
+                    + (fractional_seconds_type(minutes)*60)
                     + seconds)*res_adjust()) + fs) * -1);
        }
 -      else{
--        return (((fractional_seconds_type(hours)*3600) 
--                 + (fractional_seconds_type(minutes)*60) 
+-        return (((fractional_seconds_type(hours)*3600)
+-                 + (fractional_seconds_type(minutes)*60)
 -                 + seconds)*res_adjust()) + fs;
 -      }
 +
@@ -136,11 +137,11 @@ diff -ruN boost_1_33_1/boost/date_time/time_resolution_traits.hpp boost/boost/da
 +								block wrapper fixed the bug.
 +		*/
 +
-+		return (((fractional_seconds_type(hours)*3600) 
-+				 + (fractional_seconds_type(minutes)*60) 
++		return (((fractional_seconds_type(hours)*3600)
++				 + (fractional_seconds_type(minutes)*60)
 +				 + seconds)*res_adjust()) + fs;
      }
-     
+
    };
 ```
 There is a compiler bug in Darwin GCC doing a release build that says it is possible to reach the end of this function block without returning anything. Eliminating the else block wrapper fixed the bug.
@@ -182,13 +183,13 @@ diff -ruN boost_1_33_1/boost/type_traits/detail/bool_trait_def.hpp boost/boost/t
 +++ boost/boost/type_traits/detail/bool_trait_def.hpp	2006-05-26 15:23:04.000000000 -0700
 @@ -41,6 +41,10 @@
  #   define BOOST_TT_AUX_BOOL_C_BASE(C) : ::boost::integral_constant<bool,C>
- #endif 
- 
+ #endif
+
 +/* ADOBE (sparent@adobe.com) : Added undef to avoid multiple define warning in GCC */
 +#ifdef BOOST_TT_AUX_BOOL_TRAIT_DEF1
 +#undef BOOST_TT_AUX_BOOL_TRAIT_DEF1
 +#endif
- 
+
  #define BOOST_TT_AUX_BOOL_TRAIT_DEF1(trait,T,C) \
  template< typename T > struct trait \
 ```
@@ -200,10 +201,10 @@ diff -ruN boost_1_33_1/boost/type_traits/is_base_and_derived.hpp boost/boost/typ
 @@ -37,7 +37,7 @@
  This version detects ambiguous base classes and private base classes
  correctly, and was devised by Rani Sharoni.
- 
+
 -Explanation by Terje Sletteb� and Rani Sharoni.
 +Explanation by Terje Sletteb and Rani Sharoni.
- 
+
  Let's take the multiple base class below as an example, and the following
  will also show why there's not a problem with private or ambiguous base
 ```
@@ -214,7 +215,7 @@ diff -ruN boost_1_33_1/libs/thread/src/recursive_mutex.cpp boost/libs/thread/src
 --- boost_1_33_1/libs/thread/src/recursive_mutex.cpp	2005-03-16 17:55:44.000000000 -0800
 +++ boost/libs/thread/src/recursive_mutex.cpp	2006-05-26 15:25:07.000000000 -0700
 @@ -296,7 +296,13 @@
- 
+
      res = pthread_mutex_init(&m_mutex, &attr);
      {
 -        int res = pthread_mutexattr_destroy(&attr);
@@ -229,7 +230,7 @@ diff -ruN boost_1_33_1/libs/thread/src/recursive_mutex.cpp boost/libs/thread/src
      }
      if (res != 0)
 @@ -452,8 +458,14 @@
- 
+
      res = pthread_mutex_init(&m_mutex, &attr);
      {
 -        int res = pthread_mutexattr_destroy(&attr);
@@ -256,7 +257,7 @@ diff -ruN ~/development/projects/submission/third_party/boost_tp/boost/boost/arc
 --- /Users/sparent/development/projects/submission/third_party/boost_tp/boost/boost/archive/detail/oserializer.hpp	2006-10-04 12:11:21.000000000 -0700
 +++ /Users/sparent/development/projects/sandbox/sparent/third_party/boost_tp/boost/boost/archive/detail/oserializer.hpp	2006-10-10 12:01:41.000000000 -0700
 @@ -115,7 +115,8 @@
-         return boost::serialization::implementation_level<T>::value 
+         return boost::serialization::implementation_level<T>::value
              >= boost::serialization::object_class_info;
      }
 -    virtual bool tracking(const unsigned int flags) const {
@@ -274,9 +275,9 @@ diff -ruN boost_1_33_1/tools/build/v2/tools/darwin.jam boost/tools/build/v2/tool
 --- boost_1_33_1/tools/build/v2/tools/darwin.jam	2005-07-15 06:31:13.000000000 -0700
 +++ boost/tools/build/v2/tools/darwin.jam	2006-06-30 14:54:40.000000000 -0700
 @@ -41,8 +41,35 @@
- 
+
  feature framework : : free ;
- 
+
 +# ADOBE : Adding architecture variant to build i386, ppc, or universal binaries;
 +#         also adding static c++ lib settings and dead stripping on release
 +
@@ -307,11 +308,11 @@ diff -ruN boost_1_33_1/tools/build/v2/tools/darwin.jam boost/tools/build/v2/tool
  flags darwin.compile OPTIONS <link>shared : -dynamic ;
 -flags darwin.compile OPTIONS : -Wno-long-double -no-cpp-precomp  ;
 +flags darwin.compile OPTIONS : -Wno-long-double -no-cpp-precomp -gdwarf-2 ;
- 
+
  flags darwin.link FRAMEWORK <framework> ;
- 
+
 @@ -64,6 +91,10 @@
- 
+
  actions piecemeal archive
  {
 -    ar -c -r -s $(ARFLAGS) "$(<:T)" "$(>:T)"
@@ -335,7 +336,7 @@ These patches add several new features available to bjam when building under dar
   : Builds against the 10.4 Universal SDK (for Universal Binary support)
   * 10.3.9
   : Builds against the most up-to-date version of the 10.3 SDK.
-  * 10.2.8 
+  * 10.2.8
   : Builds against the most up-to-date version of the 10.2 SDK.
 * arch
 : Allows the client to specify the target architecture for the binary artifact generated. Options are:
@@ -366,14 +367,14 @@ diff -ruN boost_1_33_1/tools/build/v2/tools/gcc.jam boost/tools/build/v2/tools/g
          {
          # we can't pass -s to ld unless we also pass -static
          # so we removed -s completly from OPTIONS and add it
--        # to ST_OPTIONS            
--        flags $(toolset).link ST_OPTIONS $(condition)/<debug-symbols>off : -s 
--           : unchecked ;  
+-        # to ST_OPTIONS
+-        flags $(toolset).link ST_OPTIONS $(condition)/<debug-symbols>off : -s
+-           : unchecked ;
 +        # to ST_OPTIONS
 +
 +        # ADOBE :	XCode 2.2 does not strip properly; removing this setting
 +        #			until Apple figures out what the problem is
-+        #flags $(toolset).link ST_OPTIONS $(condition)/<debug-symbols>off : -s 
++        #flags $(toolset).link ST_OPTIONS $(condition)/<debug-symbols>off : -s
 +        #   : unchecked ;
 +        # ADOBE end changes
 +

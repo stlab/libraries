@@ -3,6 +3,7 @@ title: Conceptual C
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Conceptual_C
 ---
 
 #### Contents

@@ -3,6 +3,7 @@ title: Picture View
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Picture_View
 ---
 #### Contents
 {:.no_toc}

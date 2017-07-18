@@ -3,6 +3,7 @@ title: Updating the public website
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Updating_the_public_website
 ---
 #### Contents
 {:.no_toc}

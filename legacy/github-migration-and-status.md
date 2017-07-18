@@ -3,6 +3,7 @@ title: GitHub Migration and Status
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/GitHub_Migration_and_Status
 ---
 
 ASL is now available on GitHub at <https://github.com/stlab/>.

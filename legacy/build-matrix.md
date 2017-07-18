@@ -3,6 +3,7 @@ title: Build Matrix
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Build_Matrix
 ---
 #### Contents
 {:.no_toc}

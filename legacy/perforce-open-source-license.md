@@ -3,6 +3,7 @@ title: Perforce Open Source License
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Perforce_Open_Source_License
 ---
 PERFORCE End User License Agreement for Open Source Software Development
 
