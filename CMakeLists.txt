@@ -14,7 +14,7 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
     set( CONAN_SYSTEM_INCLUDES ON )
     conan_basic_setup()
 else()
-    find_package( Boost 1.60.0 )
+    find_package( Boost 1.60.0 COMPONENTS unit_test_framework)
 endif()
 
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )

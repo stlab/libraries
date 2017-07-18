@@ -55,6 +55,7 @@ matrix:
       compiler: clang
       env:
         build_type=debug
+        TSAN_OPTIONS="suppressions=${TRAVIS_BUILD_DIR}/test/sanitizer_suppressions"
         flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
         options="-D stlab_testing=ON"
         
