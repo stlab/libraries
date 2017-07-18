@@ -164,15 +164,17 @@ inline stlab::process_state_scheduled await_soon() {
 
 struct timed_sum
 {
-    int _limit;
+    const int _limit;
+    static std::mutex _mutex;
     int _number_additions{ 0 };
-    static std::atomic_int _x;
+    static int _x;
 
     timed_sum(int limit = 0) : _limit(limit) { _x = 0; }
 
     stlab::process_state_scheduled _state{ await_soon() };
 
     void await(int x) {
+        std::unique_lock<std::mutex> guard(_mutex);
         _x += x;
         ++_number_additions;
         if (_limit && _number_additions == _limit)
@@ -182,16 +184,26 @@ struct timed_sum
     }
 
     int yield() {
-        auto result = _x.load();
-        _state = stlab::await_forever;
-        _number_additions = 0;
-        _x = 0;
+        int result = 0;
+        {
+            std::unique_lock<std::mutex> guard(_mutex);
+            result = _x;
+            _state = stlab::await_forever;
+            _number_additions = 0;
+            _x = 0;
+        }
         return result;
     }
 
-    static int current_sum() { return _x.load(); }
+    static int current_sum() {
+        std::unique_lock<std::mutex> guard(_mutex);
+        return _x;
+    }
 
-    auto state() const { return _state; }
+    auto state() const {
+        std::unique_lock<std::mutex> guard(_mutex);
+        return _state;
+    }
 };
 
 

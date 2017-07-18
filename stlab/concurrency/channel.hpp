@@ -583,7 +583,7 @@ struct shared_process_sender_indexed : public shared_process_sender<Arg>
         {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
             _shared_process._queue.template append<I>(std::forward<U>(u)); // TODO (sparent) : overwrite here.
-            do_run = !_shared_process._receiver_count && (!_shared_process._process_running || _shared_process._process_timeout_function);
+            do_run = !_shared_process._receiver_count && (!_shared_process._process_running || _shared_process._process_timeout_control);
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
         if (do_run) _shared_process.run();
@@ -692,7 +692,7 @@ struct shared_process : shared_process_receiver<R>,
     bool                     _process_close_queue = false;
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
-    std::shared_ptr<std::function<void()>> _process_timeout_function;
+    std::atomic_size_t       _process_timeout_control{0};
     std::atomic_size_t       _sender_count{0};
     std::atomic_size_t       _receiver_count;
 
@@ -854,20 +854,15 @@ struct shared_process : shared_process_receiver<R>,
 
     template <typename U>
     auto step() -> std::enable_if_t<has_process_yield_v<U>> {
-        bool do_run{ false };
-        {
-            // in case that the timeout function is just been executed then we have to re-schedule 
-            // the current run
-            std::unique_lock<std::mutex> lock(_process_mutex);
-            if (_process_timeout_function && !_process_timeout_function.unique())
-                do_run = true;
-            else // If a new value is received then cancel pending timeout.
-                _process_timeout_function.reset();
-        }
-        if (do_run) {
+        // in case that the timeout function is just been executed then we have to re-schedule
+        // the current run
+        if (_process_timeout_control > 1) {
             run();
             return;
         }
+        else // If a new value is received then cancel pending timeout.
+            _process_timeout_control = 0;
+
         /*
             While we are waiting we will flush the queue. The assumption here is that work
             is done on yield()
@@ -888,7 +883,12 @@ struct shared_process : shared_process_receiver<R>,
             */
             if (state == process_state::yield) {
                 if (when <= now) broadcast((*_process).yield());
-                else execute_at(when, _executor)( [_this = this->shared_from_this()]{ _this->try_broadcast(); });
+                else execute_at(when, _executor)( [_weak_this = make_weak_ptr(this->shared_from_this())]{
+                        auto _this = _weak_this.lock();
+                        if (!_this)
+                            return;
+                        _this->try_broadcast();
+                    });
             }
 
             /*
@@ -906,24 +906,23 @@ struct shared_process : shared_process_receiver<R>,
             }
             else {
                 /* Schedule a timeout. */
-                _process_timeout_function = std::make_shared<std::function<void()>>([_weak_this = make_weak_ptr(this->shared_from_this())]{
+                _process_timeout_control = 1;
+                execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
                     auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
-                    if (!_this) return;
-                    if (get_process_state(_this->_process).first != process_state::yield)
-                    {
-                        _this->try_broadcast();
+                    if (_this && ++_this->_process_timeout_control == 2) {
+                        bool do_broadcast = false;
+                        {
+                            std::unique_lock<std::mutex> lock(_this->_process_mutex);
+                            if (get_process_state(_this->_process).first != process_state::yield) {
+                                do_broadcast = true;
+                            }
+                        }
+                        if (do_broadcast) {
+                            _this->try_broadcast();
+                            _this->_process_timeout_control = 0;
+                        }
                     }
-                    // now we release the current timeout function
-                    std::unique_lock<std::mutex> lock(_this->_process_mutex);
-                    _this->_process_timeout_function.reset();
-                });
 
-                execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this()),
-                                  _weak_process_timeout = make_weak_ptr(_process_timeout_function)] {
-                    auto _this = _weak_this.lock(); // It may be that the complete channel is gone in the meanwhile
-                    if (!_this) return;
-                    auto timeout_function = _weak_process_timeout.lock();
-                    if (timeout_function) (*timeout_function)();
                 });
             }
         }
