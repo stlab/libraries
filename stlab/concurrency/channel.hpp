@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CHANNEL_HPP
-#define STLAB_CHANNEL_HPP
+#ifndef STLAB_CONCURRENCY_CHANNEL_HPP
+#define STLAB_CONCURRENCY_CHANNEL_HPP
 
 #include <algorithm>
 #include <array>
@@ -22,10 +22,9 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
-#include "executor_base.hpp"
-#include "traits.hpp"
-#include "tuple_algorithm.hpp"
-
+#include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/traits.hpp>
+#include <stlab/concurrency/tuple_algorithm.hpp>
 
 #ifdef max
 #undef max

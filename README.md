@@ -1,8 +1,13 @@
-# stlab/libraries
-
 This is the source code repository of the Software Technology Lab (stlab).
 
 ASL libraries will be migrated here in the stlab namespace, new libraries will be created here.
+
+# Branch states
+
+- **`master`:** [![Master status](https://travis-ci.org/stlab/libraries.svg?branch=master)](https://travis-ci.org/stlab/libraries) [![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=master)](https://codecov.io/gh/stlab/libraries/branch/master)
+
+- **`develop`:** [![Develop status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
+[![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=develop)](https://codecov.io/gh/stlab/libraries/branch/develop)
 
 # Content
 
@@ -26,6 +31,3 @@ First, you will need the following tools:
 `conan` and `cmake` are available on the Mac via [Homebrew](http://brew.sh). `cmake` is available on Windows via [`scoop`](http://scoop.sh/).
 
 Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the platform of your choice. It will setup all necessary library dependencies and create the platform-specific project file in the `./build/` directory.
-
-# Build Status: [![Build Status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
-

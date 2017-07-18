@@ -6,13 +6,13 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONCURRENCY_EXECUTOR_BASE_HPP
-#define STLAB_CONCURRENCY_EXECUTOR_BASE_HPP
+#ifndef STLAB_SCOPE_HPP
+#define STLAB_SCOPE_HPP
 
-#include <chrono>
-#include <functional>
+/**************************************************************************************************/
 
-#include <stlab/concurrency/system_timer.hpp>
+#include <tuple>
+#include <utility>
 
 /**************************************************************************************************/
 
@@ -24,33 +24,26 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
-using executor_t = std::function<void(std::function<void()>)>;
+namespace detail {
 
-/*
- * returns an executor that will schedule any passed task to it to execute
- * at the given time point on the executor provided
- */
+template <typename T, typename Tuple, size_t... S>
+auto scope_call(Tuple&& t, std::index_sequence<S...>) {
+    T scoped(std::forward<std::tuple_element_t<S, Tuple>>(std::get<S>(t))...);
+    (void)scoped;
 
-inline executor_t execute_at(std::chrono::system_clock::time_point when, executor_t executor)
-{
-    return [=](auto f) {
-        if ( (when != std::chrono::system_clock::time_point()) && (when > std::chrono::system_clock::now()) )
-            system_timer(when, [=]{
-                executor(f);
-        });
-        else 
-            executor(f);
-    };
+    // call the function
+    constexpr size_t last_index = std::tuple_size<Tuple>::value - 1;
+    return std::forward<std::tuple_element_t<last_index, Tuple>>(std::get<last_index>(t))();
 }
 
-/*
- * returns an executor that will schedule the task to execute on the provided
- * executor duration after it is invoked
- */
+} // namespace detail
 
-template<typename E>
-auto execute_delayed(std::chrono::system_clock::duration duration, E executor) {
-    return execute_at(std::chrono::system_clock::now() + duration, std::move(executor));
+/**************************************************************************************************/
+
+template <typename T, typename... Args>
+inline auto scope(Args&&... args) {
+    return detail::scope_call<T>(std::forward_as_tuple(std::forward<Args>(args)...),
+                                 std::make_index_sequence<sizeof...(args) - 1>());
 }
 
 /**************************************************************************************************/
@@ -66,3 +59,4 @@ auto execute_delayed(std::chrono::system_clock::duration duration, E executor) {
 #endif
 
 /**************************************************************************************************/
+

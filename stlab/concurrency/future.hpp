@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_FUTURE_HPP
-#define STLAB_FUTURE_HPP
+#ifndef STLAB_CONCURRENCY_FUTURE_HPP
+#define STLAB_CONCURRENCY_FUTURE_HPP
 
 #include <atomic>
 #include <initializer_list>
@@ -17,9 +17,10 @@
 #include <vector>
 
 #include <boost/optional.hpp>
-#include "config.hpp"
-#include "executor_base.hpp"
-#include "traits.hpp"
+
+#include <stlab/concurrency/config.hpp>
+#include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/traits.hpp>
 
 /**************************************************************************************************/
 

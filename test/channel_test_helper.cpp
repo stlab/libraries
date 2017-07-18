@@ -10,5 +10,6 @@
 
 std::queue<std::function<void()>> manual_scheduler::_tasks;
 std::mutex                        manual_scheduler::_mutex;
+
 int                               timed_sum::_x{0};
 std::mutex                        timed_sum::_mutex;

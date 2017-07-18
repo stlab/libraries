@@ -10,9 +10,12 @@
 #define _CHANNEL_TEST_HELPER_
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/scope.hpp>
 
 #include <queue>
 #include <thread>
+
+using lock_t = std::unique_lock<std::mutex>;
 
 class manual_scheduler
 {
@@ -21,40 +24,31 @@ class manual_scheduler
 
 public:
     static void clear() {
-        std::unique_lock<std::mutex> guard(_mutex);
+        lock_t lock(_mutex);
         while (!_tasks.empty()) _tasks.pop();
     }
 
     template <typename F>
     void operator()(F&& f) {
-        std::unique_lock<std::mutex> guard(_mutex);
+        lock_t lock(_mutex);
         _tasks.push(std::forward<F>(f));
     }
 
     static void wait_until_queue_size_of(std::size_t n){
-        std::size_t queueSize = 0;
-        {
-            std::unique_lock<std::mutex> guard(_mutex);
-            queueSize = _tasks.size();
-        }
-
-        while (queueSize < n) {
-            {
-                std::unique_lock<std::mutex> guard(_mutex);
-                queueSize = _tasks.size();
-            }
+        while (stlab::scope<lock_t>(_mutex, [&]{ return _tasks.size(); }) < n) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
     static void run_next_task() {
-        std::unique_lock<std::mutex> guard(_mutex);
+        lock_t lock(_mutex);
         if (_tasks.empty()) {
             printf("Function lost\n");
             return;
         }
         auto t = std::move(_tasks.front());
         _tasks.pop();
+        lock.unlock();
 		stlab::default_executor(std::move(t));
     }
 };
@@ -174,7 +168,7 @@ struct timed_sum
     stlab::process_state_scheduled _state{ await_soon() };
 
     void await(int x) {
-        std::unique_lock<std::mutex> guard(_mutex);
+        lock_t guard(_mutex);
         _x += x;
         ++_number_additions;
         if (_limit && _number_additions == _limit)
@@ -186,7 +180,7 @@ struct timed_sum
     int yield() {
         int result = 0;
         {
-            std::unique_lock<std::mutex> guard(_mutex);
+            lock_t guard(_mutex);
             result = _x;
             _state = stlab::await_forever;
             _number_additions = 0;
@@ -196,12 +190,12 @@ struct timed_sum
     }
 
     static int current_sum() {
-        std::unique_lock<std::mutex> guard(_mutex);
+        lock_t guard(_mutex);
         return _x;
     }
 
     auto state() const {
-        std::unique_lock<std::mutex> guard(_mutex);
+        lock_t guard(_mutex);
         return _state;
     }
 };

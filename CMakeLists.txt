@@ -1,49 +1,58 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required( VERSION 3.2 )
+set( CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Supported configuration types" FORCE )
 
-project(stlab C CXX)
+project( stlab LANGUAGES C CXX )
 
+option( coverage "Enable binary instrumentation to collect test coverage information in the DEBUG configuration" )
+option( stlab_testing "Compile the stlab tests and integrate with ctest" ${BUILD_TESTING} )
 
-set(CMAKE_SKIP_RPATH OFF)
+set( Boost_MULTITHREADED ON ) 
+set( Boost_USE_STATIC_LIBS ON )
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "-g -Wall -O3 -std=c++1z -fsanitize=thread -fexceptions -D_GLIBCXX_USE_CXX11_ABI=0")
-  #set(CMAKE_CXX_FLAGS "-O3 -g -Wall -std=c++1z -fexceptions -ftemplate-backtrace-limit=0 -D_GLIBCXX_USE_CXX11_ABI=0")
-  set(CMAKE_LINK_FLAGS "-pthreads")
-  SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS})
-endif()
-
-set (Boost_MULTITHREADED ON) 
-
-if(WIN32)
-  add_definitions(-D_WIN32_WINNT=0x0601)
-  set(Boost_USE_STATIC_LIBS ON)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-else()
-  set (Boost_USE_STATIC_LIBS ON)
-endif(WIN32)
-
-if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    set(CONAN_SYSTEM_INCLUDES ON)
+if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+    include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+    set( CONAN_SYSTEM_INCLUDES ON )
     conan_basic_setup()
 else()
-    find_package(Boost 1.60.0 COMPONENTS unit_test_framework)
-    
-    include_directories(SYSTEM ${Boost_INCLUDE_DIR})
-    link_directories(${Boost_LIBRARY_DIR})
+    find_package( Boost 1.60.0 )
 endif()
 
-set (Boost_MULTITHREADED ON) 
-
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-
+set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
 find_package( Threads )
 
-if(CMAKE_USE_PTHREADS_INIT)
-    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-pthread")
+add_library( stlab INTERFACE )
+
+target_include_directories( stlab INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}"
+                                  INTERFACE "${Boost_INCLUDE_DIRS}" )
+
+target_link_libraries( stlab INTERFACE ${CMAKE_THREAD_LIBS_INIT}
+                             INTERFACE ${CONAN_LIBS} )
+                           
+target_sources( stlab INTERFACE
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/channel.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/config.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/default_executor.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/executor_base.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/future.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/immediate_executor.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/main_executor.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/progress.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/system_timer.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/traits.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp" )
+
+set( flags "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
+if( EXISTS ${flags} )
+  include( ${flags} )
+else()
+  message( WARNING "No stlab-defined flags for ${CMAKE_CXX_COMPILER_ID} C++ compiler")
+  message( STATUS "Only CMake defaults will be used")
+endif()
+target_compile_options( stlab INTERFACE ${stlab_interface_flags} )
+              
+if ( stlab_testing )
+  enable_testing()
+  add_subdirectory( test )
 endif()
 
-include_directories(.)
-
-add_subdirectory(test)
-add_subdirectory(playground)
