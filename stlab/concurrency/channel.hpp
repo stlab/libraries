@@ -691,7 +691,9 @@ struct shared_process : shared_process_receiver<R>,
     bool                     _process_close_queue = false;
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                     _process_final = false;
-    std::atomic_size_t       _process_timeout_control{0};
+    std::atomic_size_t       _process_timeout_control{0}; // 0 means no timeout function set, 
+                                                          // 1 means timeout function set, 
+                                                          // 2 means timeout function currently running
     std::atomic_size_t       _sender_count{0};
     std::atomic_size_t       _receiver_count;
 
