@@ -97,6 +97,7 @@ struct main_executor_type
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
+// TODO main_executor_type for Windows 8 / 10
 struct main_executor_type
 {};
 
