@@ -51,6 +51,8 @@ public:
     copy_on_write() {
         static model default_s;
         _self = &default_s;
+
+        // coverity[useless_call]
         ++_self->_count;
     }
 
@@ -64,6 +66,7 @@ public:
     copy_on_write(const copy_on_write& x) noexcept : _self(x._self) {
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");
 
+        // coverity[useless_call]
         ++_self->_count;
     }
     copy_on_write(copy_on_write&& x) noexcept : _self(x._self) {
