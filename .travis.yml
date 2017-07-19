@@ -3,7 +3,8 @@ dist: trusty
 language: cpp
 
 cache:
-  directories: $HOME/.conan
+  directories:
+    - $HOME/.conan
 
 addons:
   apt:
@@ -17,32 +18,101 @@ addons:
       - clang-3.8
       - cmake
       - cmake-data
-  coverity_scan:
-    project:
-      name: "stlab/libraries"
-      description: "Build submitted via Travis CI"
-    notification_email: fosterb@gmail.com
-    build_command_prepend: ""
-    build_command: ".travis/build.sh"
-    branch_pattern: coverity
 
-compiler: clang
+compiler:
+  - gcc
+  - clang
 
-os: linux
+os:
+  - linux
+  - osx
+  
+osx_image: xcode8
 
-before_install:
-  - pip install conan
-  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-env: build_type=debug options="-D stlab_testing=ON"
+env:
+  - build_type=debug options="-D stlab_testing=ON"
+  - build_type=release options="-D stlab_testing=ON"
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env:
+        build_type=debug
+        coverage=TRUE
+        options="-D stlab_testing=ON -D coverage=ON"
+      packages:
+        - lcov
+      after_success:
+        - cd build
+        - bash <(curl -s https://codecov.io/bash) -X fix
+
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=address;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+        
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+        
+    # - os: linux
+    #   compiler: clang
+    #   env:
+    #     build_type=debug
+    #     flags="-fsanitize=thread;-fno-omit-frame-pointer;"
+    #     options="-D stlab_testing=ON"   
+
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        options="-D stlab_testing=ON"
+      before_install:
+        - pip install conan
+        - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+      addons:
+        apt:
+          sources:
+            - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
+              key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
+            - g++-5
+            - clang-3.8
+            - cmake
+            - cmake-data
+        coverity_scan:
+          project:
+            name: "stlab/libraries"
+            description: "Build submitted via Travis CI"
+          notification_email: fosterb@gmail.com
+          build_command_prepend: ""
+          build_command: ".travis/build.sh"
+          branch_pattern: coverity
+
+  exclude:
+    - os: osx
+      compiler: gcc
 
 branches:
-  only: coverity
-
+  except: /pr\/.*/
+  
+before_install:
+  - pip install conan
+  
 script:
   - .travis/build.sh
-  - cat ./cov-int/build-log.txt
-
+  
 notifications:
+  recipients:
+    - felix@petriconi.net
   email:
     on_success: change
     on_failure: always
