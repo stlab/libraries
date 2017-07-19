@@ -46,6 +46,14 @@ inline auto scope(Args&&... args) {
                                  std::make_index_sequence<sizeof...(args) - 1>());
 }
 
+/* Workaround until VS2017 bug is fixed */
+template <typename T, typename F>
+inline auto scope(std::mutex& m, F&& f) {
+    T scoped(m);
+    return std::forward<F>(f)();
+}
+
+
 /**************************************************************************************************/
 
 } // namespace v1
