@@ -1045,7 +1045,8 @@ struct context_result
     F                                     _f;
 
     context_result(F f, size_t s)
-        : _f(std::move(f))
+        : _index(0)
+        , _f(std::move(f))
     {
         init(_results, s);
     }
