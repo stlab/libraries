@@ -26,13 +26,18 @@ install:
   - cd C:\projects\deps
 
   ############################################################################
-  # Install Ninja
+  # Install Python
   ############################################################################
-  - set NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.6.0/ninja-win.zip"
-  - appveyor DownloadFile %NINJA_URL% -FileName ninja.zip
-  - 7z x ninja.zip -oC:\projects\deps\ninja > nul
-  - set PATH=C:\projects\deps\ninja;%PATH%
-  - ninja --version
+  - set PYTHON_URL="https://www.python.org/ftp/python/3.6.2/python-3.6.2-embed-amd64.zip"
+  - appveyor DownloadFile %PYTHON_URL% -FileName python.zip
+  - 7z x python.zip -oC:\projects\deps\python > nul
+  - set PATH=C:\projects\deps\python;%PATH%
+  - python --version
+
+  ############################################################################
+  # Install Python
+  ############################################################################
+  - pip install conan
 
   ############################################################################
   # Install a recent CMake
@@ -45,13 +50,16 @@ install:
   - cmake --version
 
 
+
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
   - cd C:\projects\libraries
 
 
 build_script:
-  - mkdir build
-  - cd build
-  - cmake .. -GNinja -DCMAKE_CXX_COMPILER=cl
-  - cmake --build . --target stlab.test.future.test
+  - setup_msvc_debug.bat
+  - cd build_debug
+  - cmake --build .
+  - stlab.test.future.test
+  - stlab.test.serial_queue.test
+  
