@@ -35,7 +35,7 @@ install:
   - python --version
 
   ############################################################################
-  # Install Python
+  # Install conan
   ############################################################################
   - pip install conan
 
@@ -49,8 +49,6 @@ install:
   - set PATH=C:\projects\deps\cmake\bin;%PATH%
   - cmake --version
 
-
-
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
   - cd C:\projects\libraries
@@ -60,6 +58,5 @@ build_script:
   - setup_msvc_debug.bat
   - cd build_debug
   - cmake --build .
-  - stlab.test.future.test
-  - stlab.test.serial_queue.test
-  
+  - test\Debug\stlab.test.future.test
+  - test\Debug\stlab.test.serial_queue.test
