@@ -10,7 +10,6 @@
 
 #include <stlab/concurrency/concurrency.hpp>
 
-#include "test_helper.hpp"
 #include "channel_test_helper.hpp"
 
 BOOST_AUTO_TEST_CASE(int_sender) {
