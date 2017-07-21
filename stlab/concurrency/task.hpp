@@ -29,7 +29,8 @@ inline namespace v1 {
     tasks are functions with a mutable call operator to support moving items through for single
     invocations.
 */
-template <class> class task;
+template <class>
+class task;
 
 template <class R, class... Args>
 class task<R(Args...)> {
@@ -113,7 +114,8 @@ public:
     task(F&& f) {
         using f_t = std::decay_t<F>;
         try {
-            new (&_data) model<f_t, sizeof(model<f_t, true>) <= small_object_size>(std::forward<F>(f));
+            new (&_data)
+                model<f_t, sizeof(model<f_t, true>) <= small_object_size>(std::forward<F>(f));
         } catch (...) {
             new (&_data) empty();
             throw;
@@ -157,7 +159,9 @@ public:
     }
 
     template <class... UArgs>
-    R operator()(UArgs&&... args) { return self().invoke(std::forward<UArgs>(args)...); }
+    R operator()(UArgs&&... args) {
+        return self().invoke(std::forward<UArgs>(args)...);
+    }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
