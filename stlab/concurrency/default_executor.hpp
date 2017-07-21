@@ -56,6 +56,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 namespace detail {
@@ -135,11 +136,43 @@ struct default_executor_type {
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-class default_executor_type {
+class task_system {
+    PTP_POOL            _pool = nullptr;
+    TP_CALLBACK_ENVIRON _callBackEnvironment;
+    PTP_CLEANUP_GROUP   _cleanupgroup = nullptr;
+
 public:
+    task_system() {
+        InitializeThreadpoolEnvironment(&_callBackEnvironment);
+        _pool = CreateThreadpool(nullptr);
+        if (_pool == nullptr)
+            throw std::bad_alloc();
+
+        _cleanupgroup = CreateThreadpoolCleanupGroup();
+        if (_pool == nullptr)
+            throw std::bad_alloc();
+
+        SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
+        SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment,
+                                          _cleanupgroup,
+                                          nullptr);
+    }
+
+    ~task_system() {
+        CloseThreadpoolCleanupGroupMembers(_cleanupgroup,
+                                            FALSE,
+                                            nullptr);
+        CloseThreadpoolCleanupGroup(_cleanupgroup);
+        CloseThreadpool(_pool);
+    }
+
+
     template <typename F>
-    void operator()(F&& f) const {
-        auto work = CreateThreadpoolWork(&callback_impl<F>, new F(std::forward<F>(f)), nullptr);
+    void operator()(F&& f) {
+        auto work = CreateThreadpoolWork(&callback_impl<F>,
+            new F(std::forward<F>(f)),
+            &_callBackEnvironment);
+
         if (work == nullptr) {
             throw std::bad_alloc();
         }
@@ -154,28 +187,8 @@ private:
         std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
     }
-
-    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) const {
-        FILETIME ft = {0, 0};
-        SYSTEMTIME st = {0};
-        time_t t = std::chrono::system_clock::to_time_t(when);
-        tm utc_tm;
-        if (!gmtime_s(&utc_tm, &t)) {
-            st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
-            st.wMinute = static_cast<WORD>(utc_tm.tm_min);
-            st.wHour = static_cast<WORD>(utc_tm.tm_hour);
-            st.wDay = static_cast<WORD>(utc_tm.tm_mday);
-            st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
-            st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
-            st.wMilliseconds =
-                std::chrono::duration_cast<std::chrono::milliseconds>(when.time_since_epoch())
-                    .count() %
-                1000;
-            SystemTimeToFileTime(&st, &ft);
-        }
-        return ft;
-    }
 };
+
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
@@ -284,6 +297,11 @@ public:
     }
 };
 
+#endif
+
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+
 struct default_executor_type {
     using result_type = void;
 
@@ -295,7 +313,6 @@ struct default_executor_type {
 };
 
 #endif
-
 /**************************************************************************************************/
 
 } // namespace detail
