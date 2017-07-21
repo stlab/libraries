@@ -10,6 +10,7 @@
 #define _CHANNEL_TEST_HELPER_
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/concurrency/task.hpp>
 #include <stlab/scope.hpp>
 
 #include <queue>
@@ -17,8 +18,8 @@
 
 class manual_scheduler
 {
-    static std::queue<std::function<void()>> _tasks;
-    static std::mutex                        _mutex;
+    static std::queue<stlab::task<void()>>  _tasks;
+    static std::mutex                       _mutex;
 
     using lock_t = std::unique_lock<std::mutex>;
 
