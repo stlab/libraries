@@ -30,8 +30,10 @@
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 #include <algorithm>
 #include <condition_variable>
-#include <deque>
+#include <vector>
 #include <thread>
+
+#include <stlab/concurrency/task.hpp>
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
 #include <dispatch/dispatch.h>
@@ -136,7 +138,7 @@ private:
 class system_timer_portable
 {
     using element_t = std::pair<std::chrono::system_clock::time_point, task<void()>>;
-    using queue_t = std::deque<element_t>;
+    using queue_t = std::vector<element_t>;
     using lock_t = std::unique_lock<std::mutex>;
 
     queue_t                 _timed_queue;
