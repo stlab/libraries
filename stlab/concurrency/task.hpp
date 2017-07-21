@@ -25,8 +25,14 @@ namespace stlab {
 inline namespace v1 {
 /**************************************************************************************************/
 
-// Task are fully captured functions with a mutable call operator to support moving items through.
-class task {
+/*
+    tasks are functions with a mutable call operator to support moving items through for single
+    invocations.
+*/
+template <class> class task;
+
+template <class R, class... Args>
+class task<R(Args...)> {
     /*
         REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
         Desire is to have something large enough to hold the vast majority of lamda expressions.
@@ -44,7 +50,7 @@ class task {
     struct concept {
         virtual ~concept() {}
         virtual void move_ctor(void*) noexcept = 0;
-        virtual void invoke() = 0;
+        virtual R invoke(Args...) = 0;
         virtual const std::type_info& target_type() const noexcept = 0;
         virtual void* pointer() noexcept = 0;
         virtual const void* pointer() const noexcept = 0;
@@ -53,7 +59,7 @@ class task {
     struct empty : concept {
         constexpr empty() noexcept = default;
         void move_ctor(void* p) noexcept override { new (p) empty(); }
-        void invoke() override { throw std::bad_function_call(); }
+        R invoke(Args...) override { throw std::bad_function_call(); }
         const std::type_info& target_type() const noexcept override { return typeid(void); }
         void* pointer() noexcept override { return nullptr; }
         const void* pointer() const noexcept override { return nullptr; }
@@ -68,7 +74,7 @@ class task {
         model(F0&& f) : _f(std::forward<F0>(f)) {}
         model(model&&) noexcept = delete;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
-        void invoke() override { _f(); }
+        R invoke(Args... args) override { return _f(std::move(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return &_f; }
         const void* pointer() const noexcept override { return &_f; }
@@ -82,7 +88,7 @@ class task {
         model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
         model(model&&) noexcept = default;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
-        void invoke() override { *_p(); }
+        R invoke(Args... args) override { return (*_p)(std::move(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return _p.get(); }
         const void* pointer() const noexcept override { return _p.get(); }
@@ -150,14 +156,15 @@ public:
         return (target_type() == typeid(T)) ? self().pointer() : nullptr;
     }
 
-    void operator()() noexcept { self().invoke(); }
-};
+    template <class... UArgs>
+    R operator()(UArgs&&... args) noexcept { return self().invoke(std::forward<UArgs>(args)...); }
 
-inline void swap(task& x, task& y) { return x.swap(y); }
-inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
-inline bool operator==(std::nullptr_t, const task& x) { return !static_cast<bool>(x); }
-inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
-inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
+    friend inline void swap(task& x, task& y) { return x.swap(y); }
+    friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
+    friend inline bool operator==(std::nullptr_t, const task& x) { return !static_cast<bool>(x); }
+    friend inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
+    friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
+};
 
 /**************************************************************************************************/
 
