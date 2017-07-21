@@ -39,8 +39,8 @@ namespace detail {
 /**************************************************************************************************/
 
 class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
-    using executor_t = std::function<void(task&&)>;
-    using queue_t = std::deque<task>;
+    using executor_t = std::function<void(task<void()>&&)>;
+    using queue_t = std::deque<task<void()>>;
     using lock_t = std::lock_guard<std::mutex>;
 
     std::mutex _m;
@@ -84,7 +84,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     }
 
     void single() {
-        task f;
+        task<void()> f;
 
         scope<lock_t>(_m, [&]() {
             f = pop_front_unsafe(_queue);
