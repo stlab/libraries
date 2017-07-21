@@ -1,6 +1,7 @@
 PROJECT(future_test)
 
 set(SOURCE
+  test_helper.cpp
   channel_functor_tests.cpp
   channel_join_tests.cpp
   channel_merge_tests.cpp
@@ -15,7 +16,7 @@ set(SOURCE
   future_when_all_range_tests.cpp
   future_when_any_arguments_tests.cpp
   future_when_any_range_tests.cpp
-  test_helper.cpp
+  future_test_helper.cpp
   tuple_algorithm_test.cpp
   main.cpp
 )
@@ -33,8 +34,9 @@ set(HEADERS
   ../stlab/concurrency/traits.hpp
   ../stlab/concurrency/tuple_algorithm.hpp
   ../stlab/concurrency/utility.hpp
-  channel_test_helper.hpp
   test_helper.hpp
+  channel_test_helper.hpp
+  future_test_helper.hpp
 )
 
 add_executable(future_test ${SOURCE} ${HEADERS})

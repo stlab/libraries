@@ -10,6 +10,7 @@
 
 #include <stlab/concurrency/concurrency.hpp>
 
+#include "test_helper.hpp"
 #include "channel_test_helper.hpp"
 
 BOOST_AUTO_TEST_CASE(int_sender) {
@@ -196,6 +197,24 @@ BOOST_FIXTURE_TEST_SUITE(int_channel, channel_test_fixture_int_1)
         wait_until_done([&] { return result == 42; });
 
         BOOST_REQUIRE_EQUAL(42, result);
+    }
+
+    BOOST_AUTO_TEST_CASE(move_only_type_channel) {
+        BOOST_TEST_MESSAGE("channels work with move only types");
+    
+        test_helper::move_only_t result{ 0 };
+        stlab::sender<test_helper::move_only_t> A;
+        stlab::receiver<test_helper::move_only_t> B;
+        std::tie(A, B) = stlab::channel<test_helper::move_only_t>(stlab::default_executor);
+        
+        auto check = B | [&](test_helper::move_only_t x) { result = std::move(x); };
+        B.set_ready();
+        
+        A(test_helper::move_only_t{42});
+        
+        wait_until_done([&] { return result.member() == 42; });
+        
+        BOOST_REQUIRE_EQUAL(42, result.member());
     }
 
     BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
