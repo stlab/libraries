@@ -30,8 +30,10 @@
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 #include <algorithm>
 #include <condition_variable>
-#include <thread>
 #include <vector>
+#include <thread>
+
+#include <stlab/concurrency/task.hpp>
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
 #include <dispatch/dispatch.h>
@@ -166,7 +168,7 @@ private:
 
 class system_timer
 {
-    using element_t = std::pair<std::chrono::system_clock::time_point, std::function<void()>>;
+    using element_t = std::pair<std::chrono::system_clock::time_point, task<void()>>;
     using queue_t = std::vector<element_t>;
     using lock_t = std::unique_lock<std::mutex>;
 
@@ -189,7 +191,7 @@ class system_timer
 
     void timed_queue_run() {
         while (true) {
-            std::function<void()> task;
+            task<void()> task;
             {
                 lock_t lock(_timed_queue_mutex);
 

@@ -20,6 +20,7 @@
 
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 
 /**************************************************************************************************/
@@ -202,7 +203,7 @@ struct shared_task {
 
 template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, task<void()>>>;
 
     executor_t                          _executor;
     boost::optional<T>                  _result;
@@ -289,11 +290,11 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             _ready = true;
         }
         // propagate exception without scheduling
-        for (const auto& e : then) { e.second(); }
+        for (auto& e : then) { e.second(); }
     }
 
     template <typename F, typename... Args>
-    void set_value(const F& f, Args&&... args);
+    void set_value(F& f, Args&&... args);
 
     auto get_try() -> boost::optional<T> {
         bool ready = false;
@@ -328,7 +329,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
 template <typename T>
 struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::pair<executor_t, std::function<void()>>;
+    using then_t = std::pair<executor_t, task<void()>>;
 
     executor_t                          _executor;
     boost::optional<T>                  _result;
@@ -344,7 +345,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
-        return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
+        return recover_r(unique, std::move(s), [_f = std::move(f)](auto x) mutable {
             return _f(std::move(x).get_try().value());
         });
     }
@@ -356,7 +357,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     auto recover_r(bool, S s, F f) {
         // rvalue case unique is assumed.
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
-            [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
+            [_f = std::move(f), _p = future<T>(this->shared_from_this())] () mutable {
                 return _f(std::move(_p));
             });
 
@@ -386,7 +387,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         if (then.second) then.second();
     }
     template <typename F, typename... Args>
-    void set_value(const F& f, Args&&... args);
+    void set_value(F& f, Args&&... args);
 
     auto get_try() -> boost::optional<T> {
         return get_try_r(true);
@@ -410,7 +411,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
 template <>
 struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
-    using then_t = std::vector<std::pair<executor_t, std::function<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, task<void()>>>;
 
     executor_t                          _executor;
     boost::optional<std::exception_ptr> _error;
@@ -425,7 +426,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 
     template <typename S, typename F>
     auto then(S s, F f) {
-        return recover(std::move(s), [_f = std::move(f)](auto x){
+        return recover(std::move(s), [_f = std::move(f)](auto x) mutable {
             x.get_try(); // throw if error
             return _f();
         });
@@ -458,7 +459,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             _ready = true;
         }
         // propagate exception without scheduling 
-        for (const auto& e : then) { e.second(); }
+        for (auto& e : then) { e.second(); }
     }
 
     auto get_try() -> bool {
@@ -477,13 +478,13 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     auto get_try_r(bool) { return get_try(); }
 
     template <typename F, typename... Args>
-    void set_value(const F& f, Args&&... args);
+    void set_value(F& f, Args&&... args);
 };
 
 template <typename R, typename... Args>
 struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
 {
-    using function_t = std::function<R (Args...)>;
+    using function_t = task<R (Args...)>;
 
     std::atomic_size_t _promise_count;
     function_t _f;
@@ -900,18 +901,18 @@ inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
 }
 
 template <typename F, typename Args, typename P, std::size_t... I>
-auto apply_when_all_args_(const F& f, Args& args, P& p, std::index_sequence<I...>) {
+auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
     (void)std::initializer_list<int>{(rethrow_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
     return f(std::move(std::get<I>(args).get())...);
 }
 
 template <typename F, typename P>
-auto apply_when_all_args(const F& f, P& p) {
+auto apply_when_all_args(F& f, P& p) {
     return apply_when_all_args_(f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
 }
 
 template <typename F, typename P>
-auto apply_when_any_arg(const F& f, P& p) {
+auto apply_when_any_arg(F& f, P& p) {
     if (p->_error) {
         std::rethrow_exception(p->_error.get());
     }
@@ -1274,7 +1275,7 @@ auto async(E executor, F&& f, Args&&... args)
         -> future<std::result_of_t<F (Args...)>>
 {
     auto p = package<std::result_of_t<F(Args...)>()>(executor,
-        std::bind([_f = std::forward<F>(f)](Args&... args) {
+        std::bind([_f = std::forward<F>(f)](Args&... args) mutable {
             return _f(std::move(args)...);
         }, std::forward<Args>(args)...));
 
@@ -1290,7 +1291,7 @@ namespace detail {
 /**************************************************************************************************/
 
 template <typename F, typename... Args>
-void shared_base<void>::set_value(const F& f, Args&&... args) {
+void shared_base<void>::set_value(F& f, Args&&... args) {
     f(std::forward<Args>(args)...);
     then_t then;
     {
@@ -1298,8 +1299,7 @@ void shared_base<void>::set_value(const F& f, Args&&... args) {
         _ready = true;
         then = std::move(_then);
     }
-    for (const auto& e : then)
-        e.first(e.second);
+    for (auto& e : then) e.first(std::move(e.second));
 }
 
 
@@ -1307,7 +1307,7 @@ template <typename S, typename F>
 auto shared_base<void>::recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>
  {
     auto p = package<std::result_of_t<F(future<void>)>()>(s,
-        [_f = std::move(f), _p = future<void>(this->shared_from_this())] {
+        [_f = std::move(f), _p = future<void>(this->shared_from_this())] () mutable {
             return _f(_p);
         });
 
@@ -1326,7 +1326,7 @@ auto shared_base<void>::recover(S s, F f) -> future<std::result_of_t<F(future<vo
 
 template <typename T>
 template <typename F, typename... Args>
-void shared_base<T, enable_if_copyable<T>>::set_value(const F& f, Args&&... args) {
+void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
     _result = f(std::forward<Args>(args)...);
     then_t then;
     {
@@ -1334,12 +1334,12 @@ void shared_base<T, enable_if_copyable<T>>::set_value(const F& f, Args&&... args
         _ready = true;
         then = std::move(_then);
     }
-    for (const auto& e : then) e.first(e.second);
+    for (auto& e : then) e.first(std::move(e.second));
 }
 
 template <typename T>
 template <typename F, typename... Args>
-void shared_base<T, enable_if_not_copyable<T>>::set_value(const F& f, Args&&... args) {
+void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) {
     _result = f(std::forward<Args>(args)...);
     then_t then;
     {
@@ -1347,7 +1347,7 @@ void shared_base<T, enable_if_not_copyable<T>>::set_value(const F& f, Args&&... 
         _ready = true;
         then = std::move(_then);
     }
-    if (then.first) then.first(then.second);
+    if (then.first) then.first(std::move(then.second));
 }
 
 #if 0
@@ -1358,7 +1358,7 @@ void shared_base<T, enable_if_not_copyable<T>>::set_value(const F& f, Args&&... 
 
 template <>
 template <typename F, typename... Args>
-void shared_base<future<void>>::set_value(const F& f, Args&&... args) {
+void shared_base<future<void>>::set_value(F& f, Args&&... args) {
     _result = f(std::forward<Args>(args)...).then([_p = this->shared_from_this()]() {
         auto& self = *_p;
         then_t then;
