@@ -183,13 +183,13 @@ private:
 
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
-    std::deque<task> _q;
+    std::deque<task<void()>> _q;
     bool _done{false};
     std::mutex _mutex;
     std::condition_variable _ready;
 
 public:
-    bool try_pop(task& x) {
+    bool try_pop(task<void()>& x) {
         lock_t lock{_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return false;
         x = std::move(_q.front());
@@ -216,7 +216,7 @@ public:
         _ready.notify_all();
     }
 
-    bool pop(task& x) {
+    bool pop(task<void()>& x) {
         lock_t lock{_mutex};
         while (_q.empty() && !_done)
             _ready.wait(lock);
@@ -246,7 +246,7 @@ class task_system {
 
     void run(unsigned i) {
         while (true) {
-            task f;
+            task<void()> f;
 
             for (unsigned n = 0; n != _count * 32; ++n) {
                 if (_q[(i + n) % _count].try_pop(f)) break;
