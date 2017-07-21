@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONFIG_HPP
-#define STLAB_CONFIG_HPP
+#ifndef STLAB_CONCURRENCY_CONFIG_HPP
+#define STLAB_CONCURRENCY_CONFIG_HPP
 
 /**************************************************************************************************/
 

@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_MAIN_EXECUTOR_HPP
-#define SLABFUTURE_MAIN_EXECUTOR_HPP
+#ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
+#define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
 #include "config.hpp"
 
@@ -17,7 +17,7 @@
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
-#include "default_executor.hpp"
+#include <stlab/concurrency/default_executor.hpp>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
 #include <ppapi/cpp/module.h>
 #include <ppapi/cpp/core.h>
@@ -98,6 +98,8 @@ struct main_executor_type
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
 // TODO main_executor_type for Windows 8 / 10
+struct main_executor_type
+{};
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
@@ -143,5 +145,6 @@ constexpr auto main_executor = detail::main_executor_type{};
 
 /**************************************************************************************************/
 
-#endif // SLABFUTURE_MAIN_EXECUTOR_HPP
+#endif
 
+/**************************************************************************************************/

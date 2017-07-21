@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
+        auto check = receive | (stlab::buffer_size(bs) & [&](int x) { result += x; });
 
         receive.set_ready();
         send(1);
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
+        auto check = receive | (stlab::buffer_size(bs) & [&](int x) { result += x; });
 
         receive.set_ready();
         send(1);
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
         std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
         std::atomic_int result{ 0 };
 
-        auto check = receive | stlab::buffer_size(bs) & [&](int x) { result += x; };
+        auto check = receive | (stlab::buffer_size(bs) & [&](int x) { result += x; });
 
         receive.set_ready();
         for (auto i = 0; i < 10;++i) send(1);
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(report_channel_broken_when_no_process_is_attached) {
         ([](const auto& e) {
             return std::string("broken channel") == e.what(); }) );
 
-    BOOST_REQUIRE_EXCEPTION((receive | stlab::buffer_size{2} & [](int x){return 1;}), stlab::channel_error,
+    BOOST_REQUIRE_EXCEPTION((receive | (stlab::buffer_size{2} & [](int x){return 1;})), stlab::channel_error,
         ([](const auto& e) {
             return std::string("broken channel") == e.what(); }) );
 }
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(report_channel_broken_when_process_is_already_running) {
         ([](const auto& e) {
             return std::string("process already running") == e.what(); }) );
 
-    BOOST_REQUIRE_EXCEPTION((receive | stlab::buffer_size{2} & [](int x){return 1;}), stlab::channel_error,
+    BOOST_REQUIRE_EXCEPTION((receive | (stlab::buffer_size{2} & [](int x){return 1;})), stlab::channel_error,
         ([](const auto& e) {
             return std::string("process already running") == e.what(); }) );
 }
