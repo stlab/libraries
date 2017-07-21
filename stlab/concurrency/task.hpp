@@ -157,7 +157,7 @@ public:
     }
 
     template <class... UArgs>
-    R operator()(UArgs&&... args) noexcept { return self().invoke(std::forward<UArgs>(args)...); }
+    R operator()(UArgs&&... args) { return self().invoke(std::forward<UArgs>(args)...); }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
