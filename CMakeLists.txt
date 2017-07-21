@@ -3,7 +3,6 @@ set( CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Supported configura
 
 project( stlab LANGUAGES C CXX )
 
-option( stlab_playground "Configure and build the stlab playground" )
 option( coverage "Enable binary instrumentation to collect test coverage information in the DEBUG configuration" )
 option( stlab_testing "Compile the stlab tests and integrate with ctest" ${BUILD_TESTING} )
 
@@ -15,7 +14,7 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
     set( CONAN_SYSTEM_INCLUDES ON )
     conan_basic_setup()
 else()
-    find_package( Boost 1.60.0 COMPONENTS unit_test_framework )
+    find_package( Boost 1.60.0 COMPONENTS unit_test_framework)
 endif()
 
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
@@ -57,6 +56,3 @@ if ( stlab_testing )
   add_subdirectory( test )
 endif()
 
-if ( build_playground )
-  add_subdirectory( playground )
-endif()

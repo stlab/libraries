@@ -15,12 +15,12 @@
 #include <queue>
 #include <thread>
 
+using lock_t = std::unique_lock<std::mutex>;
+
 class manual_scheduler
 {
-    static std::queue<std::function<void()>> _tasks;
     static std::mutex                        _mutex;
-
-    using lock_t = std::unique_lock<std::mutex>;
+    static std::queue<std::function<void()>> _tasks;
 
 public:
     static void clear() {
@@ -30,9 +30,8 @@ public:
 
     template <typename F>
     void operator()(F&& f) {
-        stlab::scope<lock_t>(_mutex, [&]{
-            _tasks.push(std::forward<F>(f));
-        });
+        lock_t lock(_mutex);
+        _tasks.push(std::forward<F>(f));
     }
 
     static void wait_until_queue_size_of(std::size_t n){
@@ -159,15 +158,17 @@ inline stlab::process_state_scheduled await_soon() {
 
 struct timed_sum
 {
-    int _limit;
+    const int _limit;
+    static std::mutex _mutex;
     int _number_additions{ 0 };
-    static std::atomic_int _x;
+    static int _x;
 
     timed_sum(int limit = 0) : _limit(limit) { _x = 0; }
 
     stlab::process_state_scheduled _state{ await_soon() };
 
     void await(int x) {
+        lock_t guard(_mutex);
         _x += x;
         ++_number_additions;
         if (_limit && _number_additions == _limit)
@@ -177,16 +178,26 @@ struct timed_sum
     }
 
     int yield() {
-        auto result = _x.load();
-        _state = stlab::await_forever;
-        _number_additions = 0;
-        _x = 0;
+        int result = 0;
+        {
+            lock_t guard(_mutex);
+            result = _x;
+            _state = stlab::await_forever;
+            _number_additions = 0;
+            _x = 0;
+        }
         return result;
     }
 
-    static int current_sum() { return _x.load(); }
+    static int current_sum() {
+        lock_t guard(_mutex);
+        return _x;
+    }
 
-    auto state() const { return _state; }
+    auto state() const {
+        lock_t guard(_mutex);
+        return _state;
+    }
 };
 
 
