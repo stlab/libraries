@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_UTILITY_HPP
-#define SLABFUTURE_UTILITY_HPP
+#ifndef STLAB_CONCURRENCY_UTILITY_HPP
+#define STLAB_CONCURRENCY_UTILITY_HPP
 
 #if 0
 
@@ -19,7 +19,7 @@
 
 #endif
 
-#include "default_executor.hpp"
+#include <stlab/concurrency/default_executor.hpp>
 
 /**************************************************************************************************/
 

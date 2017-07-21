@@ -10,6 +10,7 @@
 #define _CHANNEL_TEST_HELPER_
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/scope.hpp>
 
 #include <queue>
 #include <thread>
@@ -17,28 +18,38 @@
 class manual_scheduler
 {
     static std::queue<std::function<void()>> _tasks;
+    static std::mutex                        _mutex;
+
+    using lock_t = std::unique_lock<std::mutex>;
 
 public:
-    static void clear() { while (!_tasks.empty()) _tasks.pop(); }
+    static void clear() {
+        lock_t lock(_mutex);
+        while (!_tasks.empty()) _tasks.pop();
+    }
 
     template <typename F>
     void operator()(F&& f) {
-        _tasks.push(std::forward<F>(f));
+        stlab::scope<lock_t>(_mutex, [&]{
+            _tasks.push(std::forward<F>(f));
+        });
     }
 
     static void wait_until_queue_size_of(std::size_t n){
-        while (_tasks.size() < n) {
+        while (stlab::scope<lock_t>(_mutex, [&]{ return _tasks.size(); }) < n) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
     static void run_next_task() {
+        lock_t lock(_mutex);
         if (_tasks.empty()) {
             printf("Function lost\n");
             return;
         }
         auto t = std::move(_tasks.front());
         _tasks.pop();
+        lock.unlock();
 		stlab::default_executor(std::move(t));
     }
 };

@@ -4,12 +4,15 @@
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
-#ifndef SLABFUTURE_EXECUTOR_BASE_HPP
-#define SLABFUTURE_EXECUTOR_BASE_HPP
+/**************************************************************************************************/
+
+#ifndef STLAB_CONCURRENCY_EXECUTOR_BASE_HPP
+#define STLAB_CONCURRENCY_EXECUTOR_BASE_HPP
 
 #include <chrono>
 #include <functional>
-#include "system_timer.hpp"
+
+#include <stlab/concurrency/system_timer.hpp>
 
 /**************************************************************************************************/
 
@@ -60,4 +63,6 @@ auto execute_delayed(std::chrono::system_clock::duration duration, E executor) {
 
 /**************************************************************************************************/
 
-#endif // SLABFUTURE_EXECUTOR_BASE_HPP
+#endif
+
+/**************************************************************************************************/

@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_EXPECTED_HPP
-#define STLAB_EXPECTED_HPP
+#ifndef STLAB_CONCURRENCY_PROGRESS_HPP
+#define STLAB_CONCURRENCY_PROGRESS_HPP
 
 #include <memory>
 #include <functional>  

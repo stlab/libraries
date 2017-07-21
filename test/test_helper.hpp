@@ -150,7 +150,7 @@ namespace test_helper
         template <typename E, typename F>
         void wait_until_this_future_fails(F& f) {
             try {
-                while (!f.error()) {
+                while (!f.get_try()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             }
