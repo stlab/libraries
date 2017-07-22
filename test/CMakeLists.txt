@@ -14,12 +14,10 @@ add_executable( stlab.test.future.test
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_range_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_arguments_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_range_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm_test.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.hpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_test_helper.hpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.hpp" )
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_test_helper.hpp" )
 
 # This syntax is a CMake generator expression.
 #

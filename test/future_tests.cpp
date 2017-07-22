@@ -10,8 +10,8 @@
 #include <boost/mpl/list.hpp>
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/test/model.hpp>
 
-#include "test_helper.hpp"
 #include "future_test_helper.hpp"
 
 using namespace stlab;
@@ -67,8 +67,8 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
     
     test_setup setup;
     {
-        auto sut = async(custom_scheduler<0>(), []()->test_helper::move_only_t {
-            return test_helper::move_only_t{ 42 };
+        auto sut = async(custom_scheduler<0>(), []()->v1::move_only {
+            return v1::move_only{ 42 };
         });
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(sut.error().is_initialized() == false);
