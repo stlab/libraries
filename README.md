@@ -4,10 +4,15 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 # Branch states
 
-- **`master`:** [![Master status](https://travis-ci.org/stlab/libraries.svg?branch=master)](https://travis-ci.org/stlab/libraries) [![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=master)](https://codecov.io/gh/stlab/libraries/branch/master)
+- **`master`:**
+[![Master status](https://travis-ci.org/stlab/libraries.svg?branch=master)](https://travis-ci.org/stlab/libraries)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/aaf2uibkql1625dl/branch/master?svg=true)](https://ci.appveyor.com/project/fosterbrereton/libraries/branch/master)
+[![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=master)](https://codecov.io/gh/stlab/libraries/branch/master)
 
-- **`develop`:** [![Travis status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
-[![AppVeyor status](https://ci.appveyor.com/api/projects/status/github/FelixPetriconi/libraries)][![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=develop)](https://codecov.io/gh/stlab/libraries/branch/develop)
+- **`develop`:**
+[![Travis status](https://travis-ci.org/stlab/libraries.svg?branch=develop)](https://travis-ci.org/stlab/libraries)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/aaf2uibkql1625dl/branch/develop?svg=true)](https://ci.appveyor.com/project/fosterbrereton/libraries)
+[![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=develop)](https://codecov.io/gh/stlab/libraries/branch/develop)
 
 
 # Content
