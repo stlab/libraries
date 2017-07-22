@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef _TEST_HELPER_HPP_
-#define _TEST_HELPER_HPP_
+#ifndef TEST_HELPER_HPP_
+#define TEST_HELPER_HPP_
 
 #include <stlab/concurrency/concurrency.hpp>
 
