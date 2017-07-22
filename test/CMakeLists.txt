@@ -3,21 +3,21 @@ add_executable( stlab.test.future.test
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_join_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_process_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/channel_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/channel_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_zip_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_recover_tests.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_test_helper.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_then_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_arguments_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_range_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_arguments_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_range_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm_test.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.hpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/test_helper.hpp" )
+                "${CMAKE_CURRENT_SOURCE_DIR}/future_test_helper.hpp" )
 
 # This syntax is a CMake generator expression.
 #
@@ -123,4 +123,3 @@ set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 add_test( NAME stlab.test.cow COMMAND stlab.test.cow.test )
-

@@ -89,6 +89,22 @@ struct regular {
 
 /**************************************************************************************************/
 
+class move_only {
+private:
+    int _member;
+public:
+    move_only(int member) : _member(member) {}
+    move_only(const move_only&) = delete;
+    move_only& operator=(const move_only&) = delete;
+    move_only(move_only&&) = default;
+    move_only& operator=(move_only&&) = default;
+    virtual ~move_only() = default;
+    
+    int member() { return _member; }
+};
+
+/**************************************************************************************************/
+
 } // namespace v1
 
 /**************************************************************************************************/

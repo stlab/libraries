@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef TEST_HELPER_HPP_
-#define TEST_HELPER_HPP_
+#ifndef FUTURE_TEST_HELPER_HPP_
+#define FUTURE_TEST_HELPER_HPP_
 
 #include <stlab/concurrency/concurrency.hpp>
 
@@ -20,7 +20,7 @@
 
 using lock_t = std::unique_lock<std::mutex>;
 
-namespace test_helper
+namespace future_test_helper
 {
     template <std::size_t no>
     struct custom_scheduler {
@@ -259,7 +259,6 @@ namespace test_helper
     auto make_failing_functor(F&& f, std::atomic_int& task_counter) {
         return test_functor_base<F, failing_policy>(std::forward<F>(f), task_counter);
     }
-
 }
 
 #endif

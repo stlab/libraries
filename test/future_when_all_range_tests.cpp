@@ -10,10 +10,10 @@
 
 #include <stlab/concurrency/concurrency.hpp>
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
 using namespace stlab;
-using namespace test_helper;
+using namespace future_test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_when_all_void_void_empty_range) {
