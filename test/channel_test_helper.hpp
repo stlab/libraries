@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef _CHANNEL_TEST_HELPER_
-#define _CHANNEL_TEST_HELPER_
+#ifndef CHANNEL_TEST_HELPER_
+#define CHANNEL_TEST_HELPER_
 
 #include <stlab/concurrency/concurrency.hpp>
 #include <stlab/concurrency/task.hpp>

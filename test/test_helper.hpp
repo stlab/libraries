@@ -6,11 +6,11 @@
 
 /**************************************************************************************************/
 
-#ifndef _TEST_HELPER_HPP_
-#define _TEST_HELPER_HPP_
+#ifndef TEST_HELPER_HPP_
+#define TEST_HELPER_HPP_
 
-namespace test_helper
-{
+namespace test_helper {
+    
     class move_only_t {
     private:
         int _member;
