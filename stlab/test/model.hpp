@@ -101,6 +101,7 @@ public:
     virtual ~move_only() = default;
     
     int member() { return _member; }
+    int member() const { return _member; }
 };
 
 /**************************************************************************************************/
