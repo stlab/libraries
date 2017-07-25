@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(task_type_tests) {
         BOOST_CHECK(t);
         BOOST_CHECK_EQUAL(t(), 42);
         std::cout << t.target_type().name() << '\n';
-        BOOST_CHECK(t.target<typeof(small_model)>() != nullptr);
+        BOOST_CHECK(t.target<decltype(small_model)>() != nullptr);
 
         // null assignment
         t = nullptr;
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(task_type_tests) {
         BOOST_CHECK(t);
         BOOST_CHECK_EQUAL(t(), 42);
         std::cout << t.target_type().name() << '\n';
-        BOOST_CHECK(t.target<typeof(large_model)>() != nullptr);
+        BOOST_CHECK(t.target<decltype(large_model)>() != nullptr);
     }
 }
 
