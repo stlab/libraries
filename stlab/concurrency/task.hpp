@@ -151,11 +151,11 @@ public:
 
     template <class T>
     T* target() {
-        return (target_type() == typeid(T)) ? self().pointer() : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<T*>(self().pointer()) : nullptr;
     }
     template <class T>
     const T* target() const {
-        return (target_type() == typeid(T)) ? self().pointer() : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<const T*>(self().pointer()) : nullptr;
     }
 
     R operator()(Args... args) {
