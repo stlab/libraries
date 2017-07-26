@@ -180,7 +180,7 @@ target_compile_options( stlab.test.future_copy.test
 
 target_link_libraries( stlab.test.future_copy.test
         PUBLIC ${Boost_LIBRARIES}
-        PUBLIC stlab )
+        PUBLIC stlab stlab_model )
 
 target_link_libraries( stlab.test.future_copy.test PUBLIC
         "${stlab_base_flags}" )

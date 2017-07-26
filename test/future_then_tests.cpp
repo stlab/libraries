@@ -417,6 +417,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
         sut = async(custom_scheduler<0>(), [] { return 42; });
         
         auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
+        (void)test_result_1;
         wait_until_future_completed(sut);
         auto test_result_2 = std::move(sut).get_try();
 

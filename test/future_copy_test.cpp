@@ -1,88 +1,40 @@
+/*
+    Copyright 2017 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+*/
+/**************************************************************************************************/
+
+// stdc++
 #include <iostream>
+
+// boost
+#include <boost/test/unit_test.hpp>
+
+// stlab
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/test/model.hpp>
 
 using namespace stlab;
 using namespace std;
-
-struct annotate
-{
-    enum operations
-    {
-        ctor,
-        copy_ctor,
-        move_ctor,
-        assign,
-        move_assign,
-        swap_,
-        dtor,
-        last_entry
-    };
-
-    annotate() {
-        ++ops[ctor];
-        cout << "annotate ctor" << endl;
-    }
-
-    annotate(const annotate &) {
-        ++ops[copy_ctor];
-        cout << "annotate copy-ctor" << endl;
-    }
-
-    annotate(annotate &&) noexcept {
-        ++ops[move_ctor];
-        cout << "annotate move-ctor" << endl;
-    }
-
-    annotate &operator=(const annotate &) {
-        ++ops[assign];
-        cout << "annotate assign" << endl;
-        return *this;
-    }
-
-    annotate &operator=(annotate &&) noexcept {
-        ++ops[move_assign];
-        cout << "annotate move-assign" << endl;
-        return *this;
-    }
-
-    ~annotate() {
-        ++ops[dtor];
-        cout << "annotate dtor" << endl;
-    }
-
-    friend inline void swap(annotate &, annotate &) {
-        ++ops[swap_];
-        cout << "annotate swap" << endl;
-    }
-
-    friend inline bool operator==(const annotate &, const annotate &) { return true; }
-
-    friend inline bool operator!=(const annotate &, const annotate &) { return false; }
-
-    static std::atomic_int ops[operations::last_entry];
-
-    static void reset_ops_counter() { for (auto &op : annotate::ops) { op = 0; }}
-};
-
-std::atomic_int annotate::ops[annotate::operations::last_entry];
 
 template<class T>
 inline auto promise_future() {
     return package<T(T)>(immediate_executor, [](auto &&x) -> decltype(x) { return std::forward<decltype(x)>(x); });
 }
 
+BOOST_AUTO_TEST_CASE(future_operations_test) {
+    annotate_counted::reset_operations_counter();
+    const int expected_operations[enum_to_size_t(operations::last_entry)] = {1, 0, 4, 0, 0, 0, 5};
 
-int main() {
-    const int expected_ops[annotate::last_entry] = {1, 0, 4, 0, 0, 0, 5};
-    annotate::reset_ops_counter();
     {
-        auto pack = promise_future<annotate>();
-        pack.first(annotate());
-        pack.second.then([](const annotate &) {});
+        auto pack = promise_future<annotate_counted>();
+        pack.first(annotate_counted());
+        pack.second.then([](const annotate_counted &) {});
     }
-    for (auto i = 0; i < annotate::last_entry; ++i) {
-        if (expected_ops[i] != annotate::ops[i])
-            return -1;
+
+    for (auto i = 0; i < enum_to_size_t(operations::last_entry); ++i) {
+        BOOST_CHECK_EQUAL(expected_operations[i], annotate_counted::operations_counter[i]);
     }
 }
