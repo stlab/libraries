@@ -207,10 +207,12 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     executor_t                          _executor;
     boost::optional<T>                  _result;
+    boost::none_t                       _no_result = boost::none;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
     then_t                              _then;
+
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
@@ -296,7 +298,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
-    auto get_try() -> boost::optional<T> {
+    auto get_try() -> boost::optional<const T&> {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -304,12 +306,12 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         }
         if (ready) {
             if (_error) std::rethrow_exception(_error.get());
-            return _result;
+            return _result.value();
         }
-        return boost::none;
+        return _no_result;
     }
 
-    auto get_try_r(bool unique) -> boost::optional<T> {
+    auto get_try_r(bool unique) -> boost::optional<const T&> {
         if (!unique) return get_try();
 
         bool ready = false;
@@ -319,9 +321,9 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         }
         if (ready) {
             if (_error) std::rethrow_exception(_error.get());
-            return std::move(_result);
+            return _result.value();
         }
-        return boost::none;
+        return _no_result;
     }
 };
 
