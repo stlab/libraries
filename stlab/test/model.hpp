@@ -25,7 +25,7 @@ inline namespace v1 {
 /**************************************************************************************************/
 
 template <typename T>
-constexpr auto enum_to_size_t(T t) { return static_cast<std::size_t>(t); }
+constexpr std::size_t enum_to_size_t(T t) { return static_cast<std::size_t>(t); }
 
 enum class annotate_switch {
     no_operations_counter,
