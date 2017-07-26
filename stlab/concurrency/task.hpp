@@ -51,7 +51,7 @@ class task<R(Args...)> {
     struct concept {
         virtual ~concept() {}
         virtual void move_ctor(void*) noexcept = 0;
-        virtual R invoke(Args...) = 0;
+        virtual R invoke(Args&&...) = 0;
         virtual const std::type_info& target_type() const noexcept = 0;
         virtual void* pointer() noexcept = 0;
         virtual const void* pointer() const noexcept = 0;
@@ -60,7 +60,7 @@ class task<R(Args...)> {
     struct empty : concept {
         constexpr empty() noexcept = default;
         void move_ctor(void* p) noexcept override { new (p) empty(); }
-        R invoke(Args...) override { throw std::bad_function_call(); }
+        R invoke(Args&&...) override { throw std::bad_function_call(); }
         const std::type_info& target_type() const noexcept override { return typeid(void); }
         void* pointer() noexcept override { return nullptr; }
         const void* pointer() const noexcept override { return nullptr; }
@@ -75,7 +75,7 @@ class task<R(Args...)> {
         model(F0&& f) : _f(std::forward<F0>(f)) {}
         model(model&&) noexcept = delete;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
-        R invoke(Args... args) override { return _f(std::move(args)...); }
+        R invoke(Args&&... args) override { return _f(std::forward<Args>(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return &_f; }
         const void* pointer() const noexcept override { return &_f; }
@@ -89,7 +89,7 @@ class task<R(Args...)> {
         model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
         model(model&&) noexcept = default;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
-        R invoke(Args... args) override { return (*_p)(std::move(args)...); }
+        R invoke(Args&&... args) override { return (*_p)(std::forward<Args>(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return _p.get(); }
         const void* pointer() const noexcept override { return _p.get(); }
@@ -151,16 +151,15 @@ public:
 
     template <class T>
     T* target() {
-        return (target_type() == typeid(T)) ? self().pointer() : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<T*>(self().pointer()) : nullptr;
     }
     template <class T>
     const T* target() const {
-        return (target_type() == typeid(T)) ? self().pointer() : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<const T*>(self().pointer()) : nullptr;
     }
 
-    template <class... UArgs>
-    R operator()(UArgs&&... args) {
-        return self().invoke(std::forward<UArgs>(args)...);
+    R operator()(Args... args) {
+        return self().invoke(std::forward<Args>(args)...);
     }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }

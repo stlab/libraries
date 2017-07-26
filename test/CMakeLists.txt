@@ -1,3 +1,5 @@
+####################################################################################################
+
 add_executable( stlab.test.future.test
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_functor_tests.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/channel_join_tests.cpp"
@@ -57,6 +59,8 @@ set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD_REQUIRED ON)
                      
 add_test( NAME stlab.test.future COMMAND stlab.test.future.test )
 
+####################################################################################################
+
 add_executable( stlab.test.serial_queue.test
                 "${CMAKE_CURRENT_SOURCE_DIR}/serial_queue_test.cpp" )
 
@@ -89,6 +93,8 @@ set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD_REQUIRED ON)
                      
 add_test( NAME stlab.test.serial_queue COMMAND stlab.test.serial_queue.test )
+
+####################################################################################################
 
 add_executable( stlab.test.cow.test 
                 "${CMAKE_CURRENT_SOURCE_DIR}/cow_test.cpp"
@@ -124,10 +130,47 @@ set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 add_test( NAME stlab.test.cow COMMAND stlab.test.cow.test )
 
+####################################################################################################
 
+add_executable( stlab.test.task.test 
+                "${CMAKE_CURRENT_SOURCE_DIR}/task_test.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
+
+target_compile_options( stlab.test.task.test
+                        PUBLIC "${stlab_base_flags}"
+                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
+                               $<$<CONFIG:RELEASE>:${stlab_release_flags}>
+                               ${stlab_appended_flags} )
+
+target_link_libraries( stlab.test.task.test 
+                       PUBLIC ${Boost_LIBRARIES} 
+                       PUBLIC stlab )
+                             
+target_link_libraries( stlab.test.task.test PUBLIC
+                       "${stlab_base_flags}" )
+
+target_link_libraries( stlab.test.task.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
+
+target_link_libraries( stlab.test.task.test PUBLIC
+                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
+
+target_link_libraries( stlab.test.task.test PUBLIC
+                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
+                             
+target_link_libraries( stlab.test.task.test PUBLIC
+                       "${stlab_appended_flags}" )
+                             
+set_property(TARGET stlab.test.task.test PROPERTY CXX_STANDARD 14)
+set_property(TARGET stlab.test.task.test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+add_test( NAME stlab.test.task COMMAND stlab.test.task.test )
+
+####################################################################################################
 
 add_executable( stlab.test.future_copy.test
-        "${CMAKE_CURRENT_SOURCE_DIR}/future_copy_test.cpp" )
+        "${CMAKE_CURRENT_SOURCE_DIR}/future_copy_test.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
 
 target_compile_options( stlab.test.future_copy.test
         PUBLIC "${stlab_base_flags}"
