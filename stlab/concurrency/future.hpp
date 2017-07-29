@@ -207,7 +207,6 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     executor_t                          _executor;
     boost::optional<T>                  _result;
-    boost::none_t                       _no_result = boost::none;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     bool                                _ready = false;
@@ -308,7 +307,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_error) std::rethrow_exception(_error.get());
             return _result.value();
         }
-        return _no_result;
+        return boost::none;
     }
 
     auto get_try_r(bool unique) -> boost::optional<const T&> {
@@ -323,7 +322,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_error) std::rethrow_exception(_error.get());
             return _result.value();
         }
-        return _no_result;
+        return boost::none;
     }
 };
 
