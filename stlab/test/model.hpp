@@ -49,7 +49,8 @@ enum class operations
 template <annotate_switch S = annotate_switch::no_operations_counter>
 struct annotate_t
 {
-    using operations_counter_t = std::array<std::atomic_int, enum_to_size_t(operations::last_entry)>;
+    // enum_to_size_t cannot be used here because of VS 2015
+    using operations_counter_t = std::array<std::atomic_int, static_cast<std::size_t>(operations::last_entry)>;
 
     annotate_t() {
         if (S == annotate_switch::with_operations_counter) {
