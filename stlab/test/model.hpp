@@ -11,8 +11,10 @@
 
 /**************************************************************************************************/
 
+#include <array>
 #include <atomic>
 #include <iostream>
+#include <memory>
 
 /**************************************************************************************************/
 
@@ -47,47 +49,66 @@ enum class operations
 template <annotate_switch S = annotate_switch::no_operations_counter>
 struct annotate_t
 {
+    using operations_counter_t = std::array<std::atomic_int, enum_to_size_t(operations::last_entry)>;
+
     annotate_t() {
-        if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::ctor)];
+        if (S == annotate_switch::with_operations_counter) {
+            if (!operations_counter) {
+                operations_counter = std::make_shared<operations_counter_t>();
+                for (auto &op : *operations_counter) { op = 0; }
+            }
+            ++(*operations_counter)[enum_to_size_t(operations::ctor)];
+        }
         std::cout << "annotate ctor" << std::endl;
     }
 
-    annotate_t(const annotate_t &) {
-        if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::copy_ctor)];
+    annotate_t(const annotate_t &x) {
+        if (S == annotate_switch::with_operations_counter) {
+            operations_counter = x.operations_counter;
+            ++(*operations_counter)[enum_to_size_t(operations::copy_ctor)];
+        }
+
         std::cout << "annotate copy-ctor" << std::endl;
     }
 
-    annotate_t(annotate_t &&) noexcept {
-        if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::move_ctor)];
+    annotate_t(annotate_t&& x) noexcept {
+        if (S == annotate_switch::with_operations_counter) {
+            operations_counter = x.operations_counter; // no move here!
+            ++(*operations_counter)[enum_to_size_t(operations::move_ctor)];
+        }
         std::cout << "annotate move-ctor" << std::endl;
     }
 
-    annotate_t &operator=(const annotate_t &) {
-        if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::assign)];
+    annotate_t &operator=(const annotate_t& x) {
+        if (S == annotate_switch::with_operations_counter) {
+            operations_counter = x.operations_counter;
+            ++(*operations_counter)[enum_to_size_t(operations::assign)];
+        }
         std::cout << "annotate assign" << std::endl;
         return *this;
     }
 
-    annotate_t &operator=(annotate_t &&) noexcept {
-        if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::move_assign)];
+    annotate_t &operator=(annotate_t&& x) noexcept {
+        if (S == annotate_switch::with_operations_counter) {
+            operations_counter = x.operations_counter;
+            ++(*operations_counter)[enum_to_size_t(operations::move_assign)];
+        }
         std::cout << "annotate move-assign" << std::endl;
         return *this;
     }
 
     ~annotate_t() {
         if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::dtor)];
+            ++(*operations_counter)[enum_to_size_t(operations::dtor)];
         std::cout << "annotate dtor" << std::endl;
     }
 
-    friend inline void swap(annotate_t &, annotate_t &) {
-        if (S == annotate_switch::with_operations_counter)
-            ++operations_counter[enum_to_size_t(operations::swap_)];
+    friend inline void swap(annotate_t &x, annotate_t &y) {
+        if (S == annotate_switch::with_operations_counter) {
+            std::swap(x.operations_counter, y.operations_counter);
+            if (x.operations_counter) ++(*x.operations_counter)[enum_to_size_t(operations::swap_)];
+            if (y.operations_counter) ++(*y.operations_counter)[enum_to_size_t(operations::swap_)];
+        }
         std::cout << "annotate swap" << std::endl;
     }
 
@@ -95,15 +116,8 @@ struct annotate_t
 
     friend inline bool operator!=(const annotate_t &, const annotate_t &) { return false; }
 
-    static std::atomic_int operations_counter[enum_to_size_t(operations::last_entry)];
-
-    static void reset_operations_counter() {
-        for (auto &op : annotate_t::operations_counter) { op = 0; }
-    }
+    std::shared_ptr<operations_counter_t> operations_counter;
 };
-
-template <annotate_switch S>
-std::atomic_int annotate_t<S>::operations_counter[enum_to_size_t(operations::last_entry)];
 
 using annotate = annotate_t<annotate_switch::no_operations_counter>;
 using annotate_counted = annotate_t<annotate_switch::with_operations_counter>;
