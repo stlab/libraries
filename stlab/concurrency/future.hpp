@@ -221,7 +221,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then(S s, F f) {
         return recover(std::move(s), [_f = std::move(f)](const auto& x){
-            return _f(x.get_unsafe());
+            return _f(x.get_try().value());
         });
     }
 
@@ -254,7 +254,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
-            return _f(std::move(std::move(x).get_unsafe_r()));
+            return _f(std::move(std::move(x).get_try().get()));
         });
     }
 
@@ -350,7 +350,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x) mutable {
-            return _f(std::move(std::move(x).get_unsafe_r()));
+            return _f(std::move(std::move(x).get_try().get()));
         });
     }
 
@@ -399,6 +399,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     }
 
     auto get_try_r(bool) -> boost::optional<T> {
+        boost::optional<T> result;
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -406,9 +407,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         }
         if (ready) {
             if (_error) std::rethrow_exception(_error.get());
-            return std::move(_result);
+            result = std::move(_result);
         }
-        return boost::none;
+        return result;
     }
 };
 
@@ -463,7 +464,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling 
+        // propagate exception without scheduling
         for (auto& e : then) { e.second(); }
     }
 
@@ -591,14 +592,6 @@ class future<T, enable_if_copyable<T>> {
         future<detail::result_of_t_<Signature>>>;
 
     friend struct detail::shared_base<T>;
-
-    auto get_unsafe() const {
-        return _p->_result.get();
-    }
-	
-	auto get_unsafe_r() {
-        return std::move(_p->_result.get());
-    }
 
   public:
     using result_type = T;
@@ -780,10 +773,6 @@ class future<T, enable_if_not_copyable<T>> {
         future<detail::result_of_t_<Signature>>>;
 
     friend struct detail::shared_base<T>;
-
-    auto get_unsafe_r() && {
-        return std::move(_p->_result.get());
-    }
 
   public:
     using result_type = T;

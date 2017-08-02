@@ -16,7 +16,11 @@
 #include <type_traits>
 #include <utility>
 
-/**************************************************************************************************/
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#pragma warning( push )
+#pragma warning( disable : 4521 ) // disable warning multiple copy c'tor
+#pragma warning( disable : 4522 ) // disable warning multiple assignment op
+#endif
 
 namespace stlab {
 
@@ -178,6 +182,10 @@ public:
 } // namespace stlab
 
 /**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#pragma warning( pop )
+#endif
 
 #endif
 

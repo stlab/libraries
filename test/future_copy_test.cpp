@@ -25,7 +25,15 @@ inline auto promise_future() {
 }
 
 BOOST_AUTO_TEST_CASE(future_operations_single_continuation_test) {
-    const int expected_operations[enum_to_size_t(operations::last_entry)] = {1, 1, 4, 0, 0, 0, 6};
+    const int expected_operations[enum_to_size_t(operations::last_entry)] = {
+        1, // ctor
+        0, // copy c'tor
+        4, // move c'tor
+        0, // assign
+        0, // move_assign
+        0, // swap
+        5  // d'tor
+        };
 
     std::shared_ptr<annotate_counted::operations_counter_t> ac;
     {
@@ -43,7 +51,15 @@ BOOST_AUTO_TEST_CASE(future_operations_single_continuation_test) {
 
 BOOST_AUTO_TEST_CASE(future_operations_two_continuations_test) {
 
-    const int expected_operations[enum_to_size_t(operations::last_entry)] = {1, 2, 4, 0, 0, 0, 7};
+    const int expected_operations[enum_to_size_t(operations::last_entry)] = {
+        1, // ctor
+        0, // copy c'tor
+        4, // move c'tor
+        0, // assign
+        0, // move_assign
+        0, // swap
+        5  // d'tor
+        };
 
     std::shared_ptr<annotate_counted::operations_counter_t> ac;
     {
