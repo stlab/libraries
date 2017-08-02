@@ -212,6 +212,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     bool                                _ready = false;
     then_t                              _then;
 
+
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
 
     template <typename F>
@@ -253,7 +254,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x){
-            return _f(std::move(x).get_try().get());
+            return _f(std::move(std::move(x).get_try().get()));
         });
     }
 
@@ -296,7 +297,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
-    auto get_try() -> boost::optional<T> {
+    auto get_try() -> boost::optional<const T&> {
+        boost::optional<const T&> result{ boost::none };
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -304,13 +306,15 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         }
         if (ready) {
             if (_error) std::rethrow_exception(_error.get());
-            return _result;
+            result = _result.get();
         }
-        return boost::none;
+        return result;
     }
 
     auto get_try_r(bool unique) -> boost::optional<T> {
-        if (!unique) return get_try();
+        // TODO Fp I think that is not needed, because an r-value
+        // can just have one continuation, or am I wrong
+        //if (!unique) return std::move(get_try());
 
         bool ready = false;
         {
@@ -319,7 +323,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         }
         if (ready) {
             if (_error) std::rethrow_exception(_error.get());
-            return std::move(_result);
+            return std::move(_result.get());
         }
         return boost::none;
     }
@@ -346,7 +350,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename S, typename F>
     auto then_r(bool unique, S s, F f) {
         return recover_r(unique, std::move(s), [_f = std::move(f)](auto x) mutable {
-            return _f(std::move(x).get_try().value());
+            return _f(std::move(std::move(x).get_try().get()));
         });
     }
 
@@ -386,6 +390,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         // propagate exception without scheduling
         if (then.second) then.second();
     }
+
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
@@ -394,6 +399,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     }
 
     auto get_try_r(bool) -> boost::optional<T> {
+        boost::optional<T> result;
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -401,9 +407,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         }
         if (ready) {
             if (_error) std::rethrow_exception(_error.get());
-            return std::move(_result);
+            result = std::move(_result);
         }
-        return boost::none;
+        return result;
     }
 };
 
@@ -458,7 +464,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling 
+        // propagate exception without scheduling
         for (auto& e : then) { e.second(); }
     }
 

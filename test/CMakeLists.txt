@@ -165,3 +165,39 @@ set_property(TARGET stlab.test.task.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.task.test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 add_test( NAME stlab.test.task COMMAND stlab.test.task.test )
+
+####################################################################################################
+
+add_executable( stlab.test.future_copy.test
+        "${CMAKE_CURRENT_SOURCE_DIR}/future_copy_test.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
+
+target_compile_options( stlab.test.future_copy.test
+        PUBLIC "${stlab_base_flags}"
+        $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
+        $<$<CONFIG:RELEASE>:${stlab_release_flags}>
+        ${stlab_appended_flags} )
+
+target_link_libraries( stlab.test.future_copy.test
+        PUBLIC ${Boost_LIBRARIES}
+        PUBLIC stlab stlab_model )
+
+target_link_libraries( stlab.test.future_copy.test PUBLIC
+        "${stlab_base_flags}" )
+
+target_link_libraries( stlab.test.future_copy.test PUBLIC
+        "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
+
+target_link_libraries( stlab.test.future_copy.test PUBLIC
+        "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
+
+target_link_libraries( stlab.test.future_copy.test PUBLIC
+        "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" )
+
+target_link_libraries( stlab.test.future_copy.test PUBLIC
+        "${stlab_appended_flags}" )
+
+set_property(TARGET stlab.test.future_copy.test PROPERTY CXX_STANDARD 14)
+set_property(TARGET stlab.test.future_copy.test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+add_test( NAME stlab.test.future_copy COMMAND stlab.test.future_copy.test )

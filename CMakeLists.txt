@@ -20,6 +20,8 @@ endif()
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
 find_package( Threads )
 
+####################################################################################################
+
 add_library( stlab INTERFACE )
 
 target_include_directories( stlab INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -38,9 +40,23 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/main_executor.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/progress.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/system_timer.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/task.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/traits.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp" )
+
+####################################################################################################
+
+add_library( stlab_model INTERFACE )
+
+target_include_directories( stlab_model INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}"
+        INTERFACE "${Boost_INCLUDE_DIRS}" )
+
+target_link_libraries( stlab_model INTERFACE ${CMAKE_THREAD_LIBS_INIT}
+        INTERFACE ${CONAN_LIBS} )
+
+target_sources( stlab_model INTERFACE
+        "${CMAKE_CURRENT_SOURCE_DIR}/stlab/test/model.hpp" )
 
 set( flags "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
 if( EXISTS ${flags} )
