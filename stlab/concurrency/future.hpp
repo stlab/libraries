@@ -23,6 +23,9 @@
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 
+#include <stlab/functional.hpp>
+#include <stlab/utility.hpp>
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -1245,39 +1248,42 @@ auto when_all(E executor, F f, const std::pair<I, I>& range) {
 
 /**************************************************************************************************/
 
-template <typename E, // models task executor
-          typename F, // models functional object
-          typename I> // models ForwardIterator that reference to a range of futures of the same type
+template <
+    typename E, // models task executor
+    typename F, // models functional object
+    typename I> // models ForwardIterator that reference to a range of futures of the same type
 auto when_any(E executor, F f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
-    using context_t = detail::common_context<detail::context_result<F, true, context_result_t>,
-                                             F,
-                                             detail::single_trigger,
-                                             detail::all_trigger>;
+    using context_t = detail::common_context<detail::context_result<F, true, context_result_t>, F,
+                                             detail::single_trigger, detail::all_trigger>;
 
     if (range.first == range.second) {
-        auto p = package_with_broken_promise<result_t()>(std::move(executor),
-                                                         detail::context_result<F, true, context_result_t>(std::move(f), 0));
+        auto p = package_with_broken_promise<result_t()>(
+            std::move(executor),
+            detail::context_result<F, true, context_result_t>(std::move(f), 0));
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t, context_t>::do_it(std::move(executor),
-                                                                       std::move(f),
-                                                                       range.first, range.second);
+    return detail::create_range_of_futures<result_t, context_t>::do_it(
+        std::move(executor), std::move(f), range.first, range.second);
 }
 
 /**************************************************************************************************/
 
-template <typename E, typename F, typename ...Args>
+template <typename E, typename F, typename... Args>
 auto async(E executor, F&& f, Args&&... args)
-        -> future<std::result_of_t<F (Args...)>>
-{
-    auto p = package<std::result_of_t<F(Args...)>()>(executor,
-        std::bind([_f = std::forward<F>(f)](Args&... args) mutable {
-            return _f(std::move(args)...);
-        }, std::forward<Args>(args)...));
+    -> future<std::result_of_t<std::decay_t<F>(std::decay_t<Args>...)>> {
+    using result_type = std::result_of_t<std::decay_t<F>(std::decay_t<Args>...)>;
+
+    auto p = package<result_type()>(
+        executor, std::bind<result_type>(
+                      [_f = std::forward<F>(f)](unwrap_reference_t<std::decay_t<Args>> &
+                                                ... args) mutable->result_type {
+                          return _f(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
+                      },
+                      std::forward<Args>(args)...));
 
     executor(std::move(p.first));
 
