@@ -11,7 +11,10 @@
 
 /**************************************************************************************************/
 
+#include <atomic>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
 
 /**************************************************************************************************/
 
@@ -23,25 +26,80 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
+struct annotate_counters {
+    std::atomic_size_t _dtor{0};
+    std::atomic_size_t _copy_ctor{0};
+    std::atomic_size_t _move_ctor{0};
+    std::atomic_size_t _copy_assign_lhs{0};
+    std::atomic_size_t _copy_assign_rhs{0};
+    std::atomic_size_t _move_assign_lhs{0};
+    std::atomic_size_t _move_assign_rhs{0};
+    std::atomic_size_t _swap{0};
+    std::atomic_size_t _equality{0};
+    std::mutex _mutex;
+    std::condition_variable _condition;
+
+    std::size_t remaining() const {
+        return _copy_ctor + _move_ctor - _dtor + 1;
+    }
+
+    void wait(std::size_t count) {
+        std::unique_lock<std::mutex> lock(_mutex);
+        while (count != remaining())
+            _condition.wait(lock);
+    }
+
+    friend inline std::ostream& operator<<(std::ostream& out, const annotate_counters& x) {
+        out << "           dtor: " << x._dtor << "\n";
+        out << "      copy_ctor: " << x._copy_ctor << "\n";
+        out << "      move_ctor: " << x._move_ctor << "\n";
+        out << "copy_assign_lhs: " << x._copy_assign_lhs << "\n";
+        out << "copy_assign_rhs: " << x._copy_assign_rhs << "\n";
+        out << "move_assign_lhs: " << x._move_assign_lhs << "\n";
+        out << "move_assign_rhs: " << x._move_assign_rhs << "\n";
+        out << "           swap: " << x._swap << "\n";
+        out << "       equality: " << x._equality << "\n";
+
+        return out;
+    }
+};
+
 struct annotate {
-    annotate() { std::cout << "annotate ctor" << std::endl; }
-    ~annotate() { std::cout << "annotate dtor" << std::endl; }
+    annotate_counters* _counters;
+    explicit annotate(annotate_counters& counters) : _counters(&counters) {}
 
-    annotate(const annotate&) { std::cout << "annotate copy-ctor" << std::endl; }
-    annotate(annotate&&) noexcept { std::cout << "annotate move-ctor" << std::endl; }
-
-    annotate& operator=(const annotate&) {
-        std::cout << "annotate assign" << std::endl;
-        return *this;
-    }
-    annotate& operator=(annotate&&) noexcept {
-        std::cout << "annotate move-assign" << std::endl;
-        return *this;
+    ~annotate() {
+        {
+            ++_counters->_dtor;
+            _counters->_condition.notify_one();
+        }
     }
 
-    friend inline void swap(annotate&, annotate&) { std::cout << "annotate swap" << std::endl; }
-    friend inline bool operator==(const annotate&, const annotate&) { return true; }
-    friend inline bool operator!=(const annotate&, const annotate&) { return false; }
+    annotate(const annotate& x) : _counters(x._counters) { ++_counters->_copy_ctor; }
+    annotate(annotate&& x) noexcept : _counters(x._counters) { ++_counters->_move_ctor; }
+
+    annotate& operator=(const annotate& x) {
+        ++x._counters->_copy_assign_rhs;
+        ++_counters->_copy_assign_lhs;
+        return *this;
+    }
+    annotate& operator=(annotate&& x) noexcept {
+        ++x._counters->_move_assign_rhs;
+        ++_counters->_move_assign_lhs;
+        return *this;
+    }
+
+    friend inline void swap(annotate& x, annotate& y) {
+        ++x._counters->_swap;
+        ++y._counters->_swap;
+    }
+
+    friend inline bool operator==(const annotate& x, const annotate& y) {
+        ++x._counters->_equality;
+        ++y._counters->_equality;
+        return true;
+    }
+    friend inline bool operator!=(const annotate& x, const annotate& y) { return !(x == y); }
 };
 
 /**************************************************************************************************/
