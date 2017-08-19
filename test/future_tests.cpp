@@ -20,6 +20,24 @@ using namespace future_test_helper;
 
 /**************************************************************************************************/
 
+template <class T>
+inline auto promise_future() {
+    return package<T(T)>(immediate_executor, [](auto&& x) -> decltype(x) { return std::forward<decltype(x)>(x); });
+}
+
+
+BOOST_AUTO_TEST_CASE(rvalue_through_continuation) {
+    BOOST_TEST_MESSAGE("running passing rvalue to continuation");
+
+    annotate_counters counters;
+
+    auto pf = promise_future<annotate>();
+    pf.first(annotate(counters));
+    pf.second.then([](const annotate&){ }); // copy happens here!
+
+    std::cout << counters;
+}
+
 BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
     {
     BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
