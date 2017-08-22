@@ -20,6 +20,9 @@ github_username:  stlab
 exclude:
     - _source
     - build
+    - stlab # from building examples
+    - boost # from building examples
+    - boost.tgz # from building examples
     - "*.sh"
     - README.md
     - stlab.bbprojectd/

@@ -2,8 +2,10 @@
 
 using namespace stlab;
 
+annotate_counters counters;
+
 auto make_annotate() {
-    return annotate();
+    return annotate(counters);
 }
 
 int main(int, char**) {

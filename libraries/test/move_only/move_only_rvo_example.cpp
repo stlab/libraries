@@ -3,7 +3,7 @@
 using namespace stlab;
 
 auto make_move_only() {
-    return move_only();
+    return move_only(42);
 }
 
 int main(int, char**) {
