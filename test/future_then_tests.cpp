@@ -692,3 +692,37 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
     }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(reduction_future_void) {
+    std::atomic_bool first{false};
+    std::atomic_bool second{false};
+
+    future<void> a = async(default_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
+        return async(default_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; });
+    });
+
+    while (!a.get_try()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    BOOST_REQUIRE(first);
+    BOOST_REQUIRE(second);
+}
+
+
+BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
+  std::atomic_bool first{ false };
+  std::atomic_bool second{ false };
+
+  future<int> a = async(default_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
+    return async(default_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; return 42; });
+  });
+
+  while (!a.get_try()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  BOOST_REQUIRE(first);
+  BOOST_REQUIRE(second);
+  BOOST_REQUIRE_EQUAL(42, a.get_try().value());
+}

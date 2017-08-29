@@ -23,7 +23,15 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#pragma warning( push )
+#pragma warning( disable : 4521 ) // disable warning multiple copy c'tor
+#pragma warning( disable : 4522 ) // disable warning multiple assignment op
+#endif
+
 
 /*
     tasks are functions with a mutable call operator to support moving items through for single
@@ -170,6 +178,10 @@ public:
 };
 
 /**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#pragma warning( pop )
+#endif
 
 } // namespace v1
 
