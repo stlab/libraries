@@ -13,10 +13,10 @@
 
 #include <array>
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
 using namespace stlab;
-using namespace test_helper;
+using namespace future_test_helper;
 
 using lock_t = std::unique_lock<std::mutex>;
 

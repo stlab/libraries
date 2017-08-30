@@ -9,11 +9,12 @@
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/test/model.hpp>
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
 using namespace stlab;
-using namespace test_helper;
+using namespace future_test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
 
@@ -178,6 +179,24 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
     }
 
+    BOOST_AUTO_TEST_CASE(future_non_copyable_capture) {
+        BOOST_TEST_MESSAGE("running future non copyable capture");
+        
+        stlab::v1::move_only m{ 42 };
+        
+        sut = async(custom_scheduler<0>(), [&_m = m] {
+            auto r = std::make_unique<int>();
+            *r = _m.member();
+            return r;
+        });
+        
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
     BOOST_AUTO_TEST_CASE(future_copyable_with_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
         BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with same scheduler, then on r-value");
 
@@ -292,6 +311,91 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_FIXTURE_TEST_SUITE(future_then_move_only, test_fixture<stlab::v1::move_only>)
+
+    BOOST_AUTO_TEST_CASE(future_async_move_only_move_captured_to_result) {
+        BOOST_TEST_MESSAGE("running future move only move to result");
+                
+        sut = async(custom_scheduler<0>(), [] {
+            return move_only{ 42 };
+        }).then([](auto x){ return std::move(x); });
+        
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_async_moving_move_only_capture_to_result) {
+        BOOST_TEST_MESSAGE("moving move_only capture to result");
+        
+        stlab::v1::move_only m{ 42 };
+        
+        sut = async(custom_scheduler<0>(), [&_m = m] {
+            return std::move(_m);
+        });
+        
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_async_mutable_move_move_only_capture_to_result) {
+        BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
+        
+        stlab::v1::move_only m{ 42 };
+        
+        sut = async(custom_scheduler<0>(), [&_m = m] () mutable {
+            return std::move(_m);
+        });
+        
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
+        BOOST_TEST_MESSAGE("moving move_only capture to result");
+        
+        stlab::v1::move_only m{ 42 };
+        
+        sut = async(custom_scheduler<0>(), [] {
+            return stlab::v1::move_only{ 10 };
+        }).then([&_m = m] (auto x) mutable {
+            return std::move(_m);
+        });
+        
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+    BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to_result) {
+        BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
+        
+        stlab::v1::move_only m{ 42 };
+        
+        sut = async(custom_scheduler<0>(), [&_m = m] () mutable {
+            return stlab::v1::move_only{ 10 };
+        }).then([&_m = m] (auto x) mutable {
+            return std::move(_m);
+        });
+        
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+        
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
@@ -588,3 +692,59 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
     }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(reduction_future_void) {
+    BOOST_TEST_MESSAGE("running future reduction void to void");
+
+    std::atomic_bool first{false};
+    std::atomic_bool second{false};
+
+    future<void> a = async(default_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
+        return async(default_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; });
+    });
+
+    while (!a.get_try()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    BOOST_REQUIRE(first);
+    BOOST_REQUIRE(second);
+}
+
+
+BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
+  BOOST_TEST_MESSAGE("running future reduction void to int");
+  std::atomic_bool first{ false };
+  std::atomic_bool second{ false };
+
+  future<int> a = async(default_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
+    return async(default_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; return 42; });
+  });
+
+  while (!a.get_try()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  BOOST_REQUIRE(first);
+  BOOST_REQUIRE(second);
+  BOOST_REQUIRE_EQUAL(42, a.get_try().value());
+}
+
+BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
+  BOOST_TEST_MESSAGE("running future reduction int to int");
+    std::atomic_bool first{ false };
+    std::atomic_bool second{ false };
+
+    future<int> a = async(default_executor, [&_flag = first] {
+        _flag = true; std::cout << 1 << std::endl; return 42; }).then([&_flag = second] (auto x) {
+            return async(default_executor, [&_flag] (auto x) { _flag = true; std::cout << 2 << std::endl; return x + 42; }, x);
+    });
+
+    while (!a.get_try()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    BOOST_REQUIRE(first);
+    BOOST_REQUIRE(second);
+    BOOST_REQUIRE_EQUAL(84, a.get_try().value());
+}

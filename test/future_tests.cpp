@@ -10,11 +10,184 @@
 #include <boost/mpl/list.hpp>
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/test/model.hpp>
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
 using namespace stlab;
-using namespace test_helper;
+using namespace future_test_helper;
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
+
+    annotate_counters counters;
+    async(immediate_executor, [](annotate x){ }, annotate(counters));
+    BOOST_REQUIRE(counters.remaining() == 0);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> value");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate x){ }, x);
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> value");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate x){ }, std::ref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type cref -> value");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate x){ }, std::cref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+//-------
+#if 0
+    {
+    // EXPECTED WILL NOT COMPILE
+    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &");
+
+    annotate_counters counters;
+    async(immediate_executor, [](annotate& x){ }, annotate(counters));
+    BOOST_REQUIRE(counters.remaining() == 0);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> &");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate& x){ }, x);
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+#endif
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> &");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate& x){ }, std::ref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+#if 0
+    // EXPECTED WILL NOT COMPILE
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type cref -> &");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate& x){ }, std::cref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+#endif
+//-------
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> const&");
+
+    annotate_counters counters;
+    async(immediate_executor, [](const annotate& x){ }, annotate(counters));
+    BOOST_REQUIRE(counters.remaining() == 0);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> const&");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](const annotate& x){ }, x);
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> const&");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](const annotate& x){ }, std::ref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type cref -> const&");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](const annotate& x){ }, std::cref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+//-------
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &&");
+
+    annotate_counters counters;
+    async(immediate_executor, [](annotate&& x){ }, annotate(counters));
+    BOOST_REQUIRE(counters.remaining() == 0);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> &&");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate&& x){ }, x);
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 1);
+    }
+
+#if 0
+    // EXPECTED WILL NOT COMPILE
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> &&");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate&& x){ }, std::ref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+
+    {
+    BOOST_TEST_MESSAGE("running async lambda argument of type cref -> &&");
+
+    annotate_counters counters;
+    annotate x(counters);
+    async(immediate_executor, [](annotate&& x){ }, std::cref(x));
+    BOOST_REQUIRE(counters.remaining() == 1);
+    BOOST_REQUIRE(counters._copy_ctor == 0);
+    }
+#endif
+}
+
+/**************************************************************************************************/
 
 using all_test_types = boost::mpl::list<void, int, std::unique_ptr<int>>;
 
@@ -29,7 +202,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_default_constructed, T, all_test_types)
 using copyable_test_types = boost::mpl::list<int, double>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_types) {
-    BOOST_TEST_MESSAGE("running future with mininmal copyable type " << typeid(T).name());
+    BOOST_TEST_MESSAGE("running future with minimal copyable type " << typeid(T).name());
 
     test_setup setup;
     {
@@ -44,7 +217,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, copyable_test_types) {
-    BOOST_TEST_MESSAGE("running future with mininmal copyable type and passed parameter " << typeid(T).name());
+    BOOST_TEST_MESSAGE("running future with minimal copyable type and passed parameter " << typeid(T).name());
 
     test_setup setup;
     {
@@ -61,22 +234,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, 
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
 
-#if 0
 BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
-    auto sut = async(default_executor, []()->std::unique_ptr<int> { 
-        auto r = std::make_unique<int>(); 
-        *r = 42; 
-        return std::move(r); 
-    });
-    BOOST_REQUIRE(sut.valid() == true);
-    BOOST_REQUIRE(sut.error().is_initialized() == false);
-
-    while (!sut.get_try()) {}
-    auto result = sut.get_try();
+    BOOST_TEST_MESSAGE("running future with move only type");
     
-    BOOST_REQUIRE(**result == 42);
-    BOOST_REQUIRE(sut.cancel_try() == false);
-    BOOST_REQUIRE(sut.valid() == true);
+    test_setup setup;
+    {
+        auto sut = async(custom_scheduler<0>(), []()->v1::move_only {
+            return v1::move_only{ 42 };
+        });
+        BOOST_REQUIRE(sut.valid() == true);
+        BOOST_REQUIRE(sut.error().is_initialized() == false);
+        
+        while (!sut.get_try()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        
+        BOOST_REQUIRE_EQUAL(42, sut.get_try().get().member());
+    }
+    BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
-
-#endif

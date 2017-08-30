@@ -12,6 +12,6 @@ PUSHD build_debug
 ::conan install .. -o Boost:shared=False --build=missing
 conan install .. -s compiler="Visual Studio" -s compiler.version=14 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False
 
-cmake -G "Visual Studio 14 Win64" ..
+cmake -G "Visual Studio 14 Win64" -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
 
 POPD

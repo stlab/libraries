@@ -10,10 +10,10 @@
 
 #include <stlab/concurrency/concurrency.hpp>
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
 using namespace stlab;
-using namespace test_helper;
+using namespace future_test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue) {
@@ -26,7 +26,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
                 throw test_exception("failure"); })
             .recover([](auto failedFuture) {
                 if (failedFuture.error())
-                    check_failure<test_helper::test_exception>(failedFuture, "failure");
+                    check_failure<test_exception>(failedFuture, "failure");
             });
         wait_until_future_completed(sut);
 

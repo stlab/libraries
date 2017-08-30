@@ -1,15 +1,17 @@
 /*
-    Copyright 2015 Adobe
+    Copyright 2017 Adobe
     Distributed under the Boost Software License, Version 1.0.
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
-#define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
+#ifndef STLAB_UTILITY_HPP
+#define STLAB_UTILITY_HPP
 
-#include <chrono>
+/**************************************************************************************************/
+
+#include <type_traits>
 
 /**************************************************************************************************/
 
@@ -23,28 +25,30 @@ inline namespace v1 {
 
 namespace detail {
 
-/**************************************************************************************************/
+template <bool, class T>
+struct move_if_helper;
 
-struct immediate_executor_type
-{
-    template <typename F>
-    void operator()(F&& f) {
-        std::forward<F>(f)();
-    }
-
-    template <typename F>
-    void operator()(std::chrono::system_clock::time_point, F&& f) {
-        std::forward<F>(f)();
-    }
+template <class T>
+struct move_if_helper<true, T> {
+    using type = std::remove_reference_t<T>&&;
 };
 
-/**************************************************************************************************/
+template <class T>
+struct move_if_helper<false, T> {
+    using type = std::remove_reference_t<T>&;
+};
+
+template <bool P, class T>
+using move_if_helper_t = typename move_if_helper<P, T>::type;
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-constexpr auto immediate_executor = detail::immediate_executor_type{};
+template <bool P, class T>
+constexpr detail::move_if_helper_t<P, T> move_if(T&& t) noexcept {
+    return static_cast<detail::move_if_helper_t<P, T>>(t);
+}
 
 /**************************************************************************************************/
 
@@ -59,3 +63,4 @@ constexpr auto immediate_executor = detail::immediate_executor_type{};
 #endif
 
 /**************************************************************************************************/
+
