@@ -1380,7 +1380,7 @@ struct value_setter<T, enable_if_copyable<T>>
 
     template <typename F, typename... Args>
     static void set(shared_base<future<T>> &sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&&) {
+        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto f) {
             proceed(_p);
         });
     }
@@ -1408,7 +1408,7 @@ struct value_setter<T, enable_if_not_copyable<T>>
 
     template <typename F, typename... Args>
     static void set(shared_base<future<T>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&&) {
+        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto f) {
             proceed(_p);
         });
     }
@@ -1498,7 +1498,7 @@ template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto f) { return f.get_try().get(); } );
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
 }
 
 /**************************************************************************************************/
@@ -1513,7 +1513,7 @@ template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto f) { return f.get_try().get(); } );
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
 }
 
 /**************************************************************************************************/
@@ -1525,7 +1525,7 @@ inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void> 
 template <typename R>
 auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([_hold = this->shared_from_this()](auto f) { return f.get_try().get(); } );
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
 }
 
 /**************************************************************************************************/
