@@ -1361,10 +1361,9 @@ struct value_setter;
 template <typename T>
 struct value_setter<T, enable_if_copyable<T>>
 {
-    template <typename F, typename... Args>
-    static void set(shared_base<T> &sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
-        typename shared_base<T>::then_t then;
+    template <typename C>
+    static void proceed(C& sb) {
+        typename C::then_t then;
         {
             std::unique_lock<std::mutex> lock(sb._mutex);
             sb._ready = true;
@@ -1374,15 +1373,15 @@ struct value_setter<T, enable_if_copyable<T>>
     }
 
     template <typename F, typename... Args>
+    static void set(shared_base<T> &sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...);
+        proceed(sb);
+    }
+
+    template <typename F, typename... Args>
     static void set(shared_base<future<T>> &sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&&) {
-            typename shared_base<future<T>>::then_t then;
-            {
-                std::unique_lock<std::mutex> lock(_p->_mutex);
-                _p->_ready = true;
-                then = std::move(_p->_then);
-            }
-            for (auto& e : then) e.first(std::move(e.second));
+            proceed(_p);
         });
     }
 };
@@ -1390,10 +1389,9 @@ struct value_setter<T, enable_if_copyable<T>>
 template <typename T>
 struct value_setter<T, enable_if_not_copyable<T>>
 {
-    template <typename F, typename... Args>
-    static void set(shared_base<T>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
-        typename shared_base<T>::then_t then;
+    template <typename C>
+    static void proceed(C& sb) {
+        typename C::then_t then;
         {
             std::unique_lock<std::mutex> lock(sb._mutex);
             sb._ready = true;
@@ -1403,27 +1401,25 @@ struct value_setter<T, enable_if_not_copyable<T>>
     }
 
     template <typename F, typename... Args>
-    static void set(shared_base<future<T>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&&) {
-            typename shared_base<future<T>>::then_t then;
-            {
-                std::unique_lock<std::mutex> lock(_p->_mutex);
-                _p->_ready = true;
-                then = std::move(_p->_then);
-            }
-            if (then.first) then.first(std::move(then.second));
-        });
+    static void set(shared_base<T>& sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...);
+        proceed(sb);
     }
 
+    template <typename F, typename... Args>
+    static void set(shared_base<future<T>>& sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&&) {
+            proceed(_p);
+        });
+    }
 };
 
 template <>
 struct value_setter<void>
 {
-    template <typename F, typename... Args>
-    static void set(shared_base<void>& sb, F& f, Args&&... args) {
-        f(std::forward<Args>(args)...);
-        typename shared_base<void>::then_t then;
+    template <typename C>
+    static void proceed(C& sb) {
+       typename C::then_t then;
         {
             std::unique_lock<std::mutex> lock(sb._mutex);
             sb._ready = true;
@@ -1433,15 +1429,15 @@ struct value_setter<void>
     }
 
     template <typename F, typename... Args>
+    static void set(shared_base<void>& sb, F& f, Args&&... args) {
+        f(std::forward<Args>(args)...);
+        proceed(sb);
+    }
+
+    template <typename F, typename... Args>
     static void set(shared_base<future<void>>& sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()]() {
-            typename shared_base<future<void>>::then_t then;
-            {
-                std::unique_lock<std::mutex> lock(_p->_mutex);
-                _p->_ready = true;
-                then = std::move(_p->_then);
-            }
-            for (const auto& e : then) e.first(std::move(e.second));
+            proceed(_p);
         });
     }
 };
@@ -1498,13 +1494,14 @@ auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<void>>&& r) -> 
     return std::move(r).then([](auto&&f) {} );
 }
 
-
 template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
     return std::move(r).then([](auto&&f) { return std::forward<decltype(f)>(f).get_try().get(); } );
 }
+
+/**************************************************************************************************/
 
 template <typename T>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<void>>&& r) -> future<void>
@@ -1519,6 +1516,8 @@ auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) ->
     return std::move(r).then([](auto&&f) { return std::forward<decltype(f)>(f).get_try().get(); } );
 }
 
+/**************************************************************************************************/
+
 inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void>  {
     return std::move(r).then([](auto&&){});
 }
@@ -1528,7 +1527,6 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R>
 {
     return std::move(r).then([](auto&&f) { return std::forward<decltype(f)>(f).get_try().get(); } );
 }
-
 
 /**************************************************************************************************/
 

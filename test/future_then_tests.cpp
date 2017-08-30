@@ -726,3 +726,21 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
   BOOST_REQUIRE(second);
   BOOST_REQUIRE_EQUAL(42, a.get_try().value());
 }
+
+BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
+    std::atomic_bool first{ false };
+    std::atomic_bool second{ false };
+
+    future<int> a = async(default_executor, [&_flag = first] {
+        _flag = true; std::cout << 1 << std::endl; return 42; }).then([&_flag = second] (auto x) {
+            return async(default_executor, [&_flag] (auto x) { _flag = true; std::cout << 2 << std::endl; return x + 42; }, x);
+    });
+
+    while (!a.get_try()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    BOOST_REQUIRE(first);
+    BOOST_REQUIRE(second);
+    BOOST_REQUIRE_EQUAL(84, a.get_try().value());
+}

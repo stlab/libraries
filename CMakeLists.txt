@@ -38,6 +38,7 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/main_executor.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/progress.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/system_timer.hpp"
+				"${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/task.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/traits.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp" )
