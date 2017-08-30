@@ -1498,7 +1498,7 @@ template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto&&f) { return std::forward<decltype(f)>(f).get_try().get(); } );
+    return std::move(r).then([](auto f) { return f.get_try().get(); } );
 }
 
 /**************************************************************************************************/
@@ -1506,26 +1506,26 @@ auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> fut
 template <typename T>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<void>>&& r) -> future<void>
 {
-    return std::move(r).then([](auto&&f) {} );
+    return std::move(r).then([](auto f) {} );
 }
 
 template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto&&f) { return std::forward<decltype(f)>(f).get_try().get(); } );
+    return std::move(r).then([](auto f) { return f.get_try().get(); } );
 }
 
 /**************************************************************************************************/
 
 inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void>  {
-    return std::move(r).then([](auto&&){});
+    return std::move(r).then([](auto f){});
 }
 
 template <typename R>
 auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto&&f) { return std::forward<decltype(f)>(f).get_try().get(); } );
+    return std::move(r).then([_hold = this->shared_from_this()](auto f) { return f.get_try().get(); } );
 }
 
 /**************************************************************************************************/

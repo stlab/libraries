@@ -694,6 +694,8 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(reduction_future_void) {
+    BOOST_TEST_MESSAGE("running future reduction void to void");
+
     std::atomic_bool first{false};
     std::atomic_bool second{false};
 
@@ -711,6 +713,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_void) {
 
 
 BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
+  BOOST_TEST_MESSAGE("running future reduction void to int");
   std::atomic_bool first{ false };
   std::atomic_bool second{ false };
 
@@ -728,6 +731,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
 }
 
 BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
+  BOOST_TEST_MESSAGE("running future reduction int to int");
     std::atomic_bool first{ false };
     std::atomic_bool second{ false };
 
