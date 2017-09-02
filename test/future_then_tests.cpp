@@ -699,8 +699,8 @@ BOOST_AUTO_TEST_CASE(reduction_future_void) {
     std::atomic_bool first{false};
     std::atomic_bool second{false};
 
-    future<void> a = async(default_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
-        return async(default_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; });
+    future<void> a = async(immediate_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
+        return async(immediate_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; });
     });
 
     while (!a.get_try()) {
@@ -717,8 +717,8 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
   std::atomic_bool first{ false };
   std::atomic_bool second{ false };
 
-  future<int> a = async(default_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
-    return async(default_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; return 42; });
+  future<int> a = async(immediate_executor, [&_flag = first] { _flag = true; std::cout << 1 << std::endl; }).then([&_flag = second] {
+    return async(immediate_executor, [&_flag] { _flag = true; std::cout << 2 << std::endl; return 42; });
   });
 
   while (!a.get_try()) {
@@ -735,9 +735,9 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
     std::atomic_bool first{ false };
     std::atomic_bool second{ false };
 
-    future<int> a = async(default_executor, [&_flag = first] {
+    future<int> a = async(immediate_executor, [&_flag = first] {
         _flag = true; std::cout << 1 << std::endl; return 42; }).then([&_flag = second] (auto x) {
-            return async(default_executor, [&_flag] (auto x) { _flag = true; std::cout << 2 << std::endl; return x + 42; }, x);
+            return async(immediate_executor, [&_flag] (auto x) { _flag = true; std::cout << 2 << std::endl; return x + 42; }, x);
     });
 
     while (!a.get_try()) {
