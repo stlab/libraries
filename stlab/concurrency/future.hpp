@@ -195,6 +195,10 @@ struct reduced_
 template <typename T>
 using reduced_t = typename reduced_<T>::type;
 
+/**************************************************************************************************/
+
+template <typename T, typename = void>
+struct value_setter;
 
 } // namespace detail
 
@@ -649,6 +653,9 @@ class future<T, enable_if_copyable<T>> {
 
     friend struct detail::shared_base<T>;
 
+    template <typename, typename>
+    friend struct detail::value_setter;
+	
   public:
     using result_type = T;
 
@@ -741,6 +748,9 @@ class future<void, void> {
         ->std::pair<detail::packaged_task_from_signature_t<Signature>,
         future<detail::result_of_t_<Signature>>>;
 
+    template <typename, typename>
+    friend struct detail::value_setter;
+
     friend struct detail::shared_base<void>;
 
   public:
@@ -829,6 +839,9 @@ class future<T, enable_if_not_copyable<T>> {
         future<detail::result_of_t_<Signature>>>;
 
     friend struct detail::shared_base<T>;
+
+    template <typename, typename>
+    friend struct detail::value_setter;
 
   public:
     using result_type = T;
@@ -1355,9 +1368,6 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename T, typename = void>
-struct value_setter;
-
 template <typename T>
 struct value_setter<T, enable_if_copyable<T>>
 {
@@ -1372,16 +1382,24 @@ struct value_setter<T, enable_if_copyable<T>>
         for (auto& e : then) e.first(std::move(e.second));
     }
 
-    template <typename F, typename... Args>
-    static void set(shared_base<T> &sb, F& f, Args&&... args) {
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<R> &sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...);
         proceed(sb);
     }
 
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<future<R>> &sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&& f) {
+          proceed(*_p);
+          return std::forward<decltype(f)>(f);
+        });
+    }
+
     template <typename F, typename... Args>
-    static void set(shared_base<future<T>> &sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto f) {
-            proceed(_p);
+    static void set(shared_base<future<void>> &sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()]() {
+            proceed(*_p);
         });
     }
 };
@@ -1400,16 +1418,17 @@ struct value_setter<T, enable_if_not_copyable<T>>
         if (then.first) then.first(std::move(then.second));
     }
 
-    template <typename F, typename... Args>
-    static void set(shared_base<T>& sb, F& f, Args&&... args) {
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<R>& sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...);
         proceed(sb);
     }
 
-    template <typename F, typename... Args>
-    static void set(shared_base<future<T>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto f) {
-            proceed(_p);
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()](auto&& f) {
+            proceed(*_p);
+            return std::forward<decltype(f)>(f);
         });
     }
 };
@@ -1428,26 +1447,21 @@ struct value_setter<void>
         for (auto& e : then) e.first(std::move(e.second));
     }
 
-    template <typename F, typename... Args>
-    static void set(shared_base<void>& sb, F& f, Args&&... args) {
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<R>& sb, F& f, Args&&... args) {
         f(std::forward<Args>(args)...);
         proceed(sb);
     }
 
-    template <typename F, typename... Args>
-    static void set(shared_base<future<void>>& sb, F& f, Args&&... args) {
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()]() {
-            proceed(_p);
+            proceed(*_p);
         });
     }
 };
 
 /**************************************************************************************************/
-
-template <typename F, typename... Args>
-void shared_base<void>::set_value(F& f, Args&&... args) {
-    value_setter<void>::set(*this, f, std::forward<Args>(args)...);
-}
 
 template <typename T>
 template <typename F, typename... Args>
@@ -1455,12 +1469,17 @@ void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
     value_setter<T>::set(*this, f, std::forward<Args>(args)...);
 }
 
-
 template <typename T>
 template <typename F, typename... Args>
 void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) {
     value_setter<T>::set(*this, f, std::forward<Args>(args)...);
 }
+
+template <typename F, typename... Args>
+void shared_base<void>::set_value(F& f, Args&&... args) {
+    value_setter<void>::set(*this, f, std::forward<Args>(args)...);
+}
+
 
 /**************************************************************************************************/
 
