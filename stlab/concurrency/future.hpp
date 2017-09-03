@@ -1423,7 +1423,7 @@ struct value_setter<T, enable_if_copyable<T>>
         sb._result = f(std::forward<Args>(args)...);
         sb._reduction_helper.value = sb._result.value().then([](auto&& f) {
             return std::forward<decltype(f)>(f);
-        }).then([_p = sb.shared_from_this()](auto&) { proceed(*_p); });
+        }).then([_p = sb.shared_from_this()](auto&) { value_setter::proceed(*_p); });
     }
 
     template <typename F, typename... Args>
