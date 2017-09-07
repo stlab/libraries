@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void) {
         return stlab::make_ready_future();
     };
 
-    auto f = when_any_void(stlab::default_executor, [](size_t index){
+    auto f = when_any(stlab::default_executor, [](size_t index){
         std::cout << "f: " << index << '\n';
     }, fv(), fv(), fv(), fv(), fv(), fv());
 

@@ -1028,36 +1028,49 @@ auto when_all(E executor, F f, future<Ts>... args) {
 
 /**************************************************************************************************/
 
-template <typename E, typename F, typename T, typename... Ts>
-auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
-    using result_t = typename std::result_of<F(T, size_t)>::type;
+template <typename T>
+struct make_when_any {
+    template <typename E, typename F, typename... Ts>
+    static auto make(E executor, F f, future<T> arg, future<Ts>... args) {
+        using result_t = typename std::result_of<F(T, size_t)>::type;
 
-    auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts)+1, T>>();
-    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
-        return detail::apply_when_any_arg(_f, _p);
-    });
-    shared->_f = std::move(p.first);
+        auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts)+1, T>>();
+        auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
+            return detail::apply_when_any_arg(_f, _p);
+        });
+        shared->_f = std::move(p.first);
 
-    detail::attach_when_args(shared, std::move(arg), std::move(args)...);
+        detail::attach_when_args(shared, std::move(arg), std::move(args)...);
 
-    return std::move(p.second);
-}
+        return std::move(p.second);
+    }
+};
 
 /**************************************************************************************************/
 
-template <typename E, typename F, typename... Ts>
-auto when_any_void(E executor, F f, future<Ts>... args) {
-    using result_t = typename std::result_of<F(size_t)>::type;
+template <>
+struct make_when_any<void> {
+    template <typename E, typename F, typename... Ts>
+    static auto make(E executor, F f, future<Ts>... args) {
+        using result_t = typename std::result_of<F(size_t)>::type;
 
-    auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
-    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
-        return detail::apply_when_any_arg(_f, _p);
-    });
-    shared->_f = std::move(p.first);
+        auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
+        auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
+            return detail::apply_when_any_arg(_f, _p);
+        });
+        shared->_f = std::move(p.first);
 
-    detail::attach_when_args(shared, std::move(args)...);
+        detail::attach_when_args(shared, std::move(args)...);
 
-    return std::move(p.second);
+        return std::move(p.second);
+    }
+};
+
+/**************************************************************************************************/
+
+template <typename E, typename F, typename T, typename... Ts>
+auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
+    return make_when_any<T>::make(std::move(executor), std::move(f), std::move(arg), std::move(args)...);
 }
 
 /**************************************************************************************************/
