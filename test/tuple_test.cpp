@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void_string_void_bool_void) {
         return stlab::make_ready_future<std::string>("Hello, world!");
     };
     auto fb = []{
-        return stlab::make_ready_future<int>(true);
+        return stlab::make_ready_future<bool>(true);
     };
 
     auto f = when_all(stlab::default_executor, [](auto... args){
