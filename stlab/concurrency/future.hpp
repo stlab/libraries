@@ -38,6 +38,7 @@ inline namespace v1 {
 
 enum class future_error_codes {	// names for futures errors
     broken_promise = 1,
+    reduction_failed,
     no_state
 };
 
@@ -55,6 +56,9 @@ inline const char *Future_error_map(future_error_codes code) noexcept
     case future_error_codes::no_state:
         return "no state";
 
+    case future_error_codes::reduction_failed:
+      	return "reduction failed";
+	  
     default:
         return nullptr;
     }
@@ -567,20 +571,21 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
     }
 
     void remove_promise() override {
-        --_promise_count;
-        // This check does not seems to be possible any more, because in the case of reduction _ready is set later
-        // to be true
-#if 0
-        if (--_promise_count == 0) {
-            std::unique_lock<std::mutex> lock(this->_mutex);
-            if (!this->_ready) {
-                _f = function_t();
-                this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
-                this->_ready = true;
+        if (std::is_same<R, reduced_t<R>>::value) {
+            // this safety check is only possible in case of no reduction
+            if (--_promise_count == 0) {
+                std::unique_lock<std::mutex> lock(this->_mutex);
+                if (!this->_ready) {
+                    _f = function_t();
+                    this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
+                    this->_ready = true;
+                }
             }
+        } else {
+            --_promise_count;
         }
-#endif
     }
+
     void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) override {
@@ -1421,8 +1426,14 @@ struct value_setter<T, enable_if_copyable<T>>
     template <typename R, typename F, typename... Args>
     static void set(shared_base<future<R>> &sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...);
-        sb._reduction_helper.value = sb._result.value().then([](auto&& f) {
-            return std::forward<decltype(f)>(f);
+        sb._reduction_helper.value = sb._result.value().recover([_p = sb.shared_from_this()](future<R> f) {
+            if (f.error())
+            {
+              _p->_error = std::move(f.error().get());
+              value_setter::proceed(*_p);
+              throw future_error(future_error_codes::reduction_failed);
+            }
+            return f.get_try().get();
         }).then([_p = sb.shared_from_this()](auto&) { value_setter::proceed(*_p); });
     }
 
