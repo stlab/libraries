@@ -20,6 +20,7 @@
 #endif
 
 #include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 /**************************************************************************************************/
 

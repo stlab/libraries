@@ -22,6 +22,7 @@
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
+#include <stlab/concurrency/tuple_algorithm.hpp>
 
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
@@ -843,19 +844,35 @@ auto package_with_broken_promise(S s, F f) -> std::pair<detail::packaged_task_fr
 
 namespace detail {
 
-template <typename F, typename... Ts>
+template <typename F>
+struct assign_ready_future {
+    template <typename T>
+    static void assign(T& x, F& f) {
+        x = std::move(f.get_try().value());
+    }
+};
+
+template <>
+struct assign_ready_future<future<void>> {
+    template <typename T>
+    static void assign(T& x, future<void>& f) {
+        x = std::move(typename T::value_type()); // to set the optional
+    }
+};
+
+template <typename F, typename Args>
 struct when_all_shared {
     // decay
-    std::tuple<boost::optional<Ts>...>  _args;
-    future<void>                        _holds[sizeof...(Ts)] {};
-    std::atomic_size_t                  _remaining{sizeof...(Ts)};
+    Args                                _args;
+    future<void>                        _holds[std::tuple_size<Args>::value] {};
+    std::atomic_size_t                  _remaining{std::tuple_size<Args>::value};
     std::atomic_flag                    _error_happened = ATOMIC_FLAG_INIT;
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
     template <std::size_t index, typename FF>
     void done(FF& f) {
-        std::get<index>(_args) = std::move(f.get_try().value());
+        assign_ready_future<FF>::assign(std::get<index>(_args), f);
         if (--_remaining == 0) _f();
     }
 
@@ -906,7 +923,8 @@ inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
 template <typename F, typename Args, typename P, std::size_t... I>
 auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
     (void)std::initializer_list<int>{(rethrow_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
-    return f(std::move(std::get<I>(args).get())...);
+    return apply_optional_indexed<index_sequence_transform_t<std::make_index_sequence<std::tuple_size<Args>::value>,
+        remove_placeholder<Args>::template function>>(f, args);
 }
 
 template <typename F, typename P>
@@ -954,9 +972,11 @@ void attach_when_args(const std::shared_ptr<P>& p, Ts... a) {
 
 template <typename E, typename F, typename... Ts>
 auto when_all(E executor, F f, future<Ts>... args) {
-    using result_t = typename std::result_of<F(Ts...)>::type;
+    using vt_t = voidless_tuple<Ts...>;
+    using opt_t = optional_placeholder_tuple<Ts...>;
+    using result_t = decltype(apply_tuple(std::declval<F>(), std::declval<vt_t>()));
 
-    auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
+    auto shared = std::make_shared<detail::when_all_shared<F, opt_t>>();
     auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
         return detail::apply_when_all_args(_f, _p);
     });
