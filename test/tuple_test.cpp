@@ -185,3 +185,17 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void_string_void_bool_void) {
 }
 
 /**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(future_when_any_void) {
+    auto fv = []{
+        return stlab::make_ready_future();
+    };
+
+    auto f = when_any_void(stlab::default_executor, [](size_t index){
+        std::cout << "f: " << index << '\n';
+    }, fv(), fv(), fv(), fv(), fv(), fv());
+
+    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+/**************************************************************************************************/

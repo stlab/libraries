@@ -889,6 +889,7 @@ struct when_all_shared {
 
 template <typename F, size_t S, typename R>
 struct when_any_shared {
+    using result_type = R;
     // decay
     boost::optional<R>                  _arg;
     future<void>                        _holds[S]{};
@@ -916,6 +917,34 @@ struct when_any_shared {
     }
 };
 
+template <typename F, size_t S>
+struct when_any_shared<F, S, void> {
+    using result_type = void;
+    // decay
+    future<void>                        _holds[S]{};
+    std::atomic_size_t                  _remaining{S};
+    std::atomic_flag                    _value_received = ATOMIC_FLAG_INIT;
+    boost::optional<std::exception_ptr> _error;
+    size_t                              _index;
+    packaged_task<>                     _f;
+
+    void failure(std::exception_ptr error) {
+        if (--_remaining == 0) {
+            _error = std::move(error);
+            _f();
+        }
+    }
+
+    template <size_t index, typename FF>
+    void done(FF&& f) {
+        auto before = _value_received.test_and_set();
+        if (before == false) {
+            _index = index;
+            _f();
+        }
+    }
+};
+
 inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
     if (!x) std::rethrow_exception(p.get());;
 }
@@ -932,13 +961,30 @@ auto apply_when_all_args(F& f, P& p) {
     return apply_when_all_args_(f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
 }
 
+template <typename R>
+struct when_any_invoke {
+    template <typename F, typename P>
+    static auto invoke(F& f, P& p) {
+        return f(std::move(p->_arg.get()), p->_index);
+    }
+};
+
+template <>
+struct when_any_invoke<void> {
+    template <typename F, typename P>
+    static auto invoke(F& f, P& p) {
+        return f(p->_index);
+    }
+};
+
 template <typename F, typename P>
 auto apply_when_any_arg(F& f, P& p) {
     if (p->_error) {
         std::rethrow_exception(p->_error.get());
     }
 
-    return f(std::move(p->_arg.get()), p->_index);
+    //return f(std::move(p->_arg.get()), p->_index);
+    return when_any_invoke<typename P::element_type::result_type>::invoke(f, p);
 }
 
 template <std::size_t i, typename P, typename T>
@@ -1000,6 +1046,23 @@ auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
     shared->_f = std::move(p.first);
 
     detail::attach_when_args(shared, std::move(arg), std::move(args)...);
+
+    return std::move(p.second);
+}
+
+/**************************************************************************************************/
+
+template <typename E, typename F, typename... Ts>
+auto when_any_void(E executor, F f, future<Ts>... args) {
+    using result_t = typename std::result_of<F(size_t)>::type;
+
+    auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts), void>>();
+    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
+        return detail::apply_when_any_arg(_f, _p);
+    });
+    shared->_f = std::move(p.first);
+
+    detail::attach_when_args(shared, std::move(args)...);
 
     return std::move(p.second);
 }
