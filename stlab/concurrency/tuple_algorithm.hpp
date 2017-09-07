@@ -10,7 +10,11 @@
 #ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 #define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
+// stdc++
 #include <tuple>
+
+// boost
+#include <boost/optional.hpp>
 
 /**************************************************************************************************/
 
