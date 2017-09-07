@@ -887,7 +887,7 @@ struct when_all_shared {
 
 };
 
-template <typename F, size_t S, typename R>
+template <size_t S, typename R>
 struct when_any_shared {
     using result_type = R;
     // decay
@@ -915,10 +915,15 @@ struct when_any_shared {
             _f();
         }
     }
+
+    template <typename F>
+    auto apply(F& f) {
+        return f(std::move(_arg.get()), _index);
+    }
 };
 
-template <typename F, size_t S>
-struct when_any_shared<F, S, void> {
+template <size_t S>
+struct when_any_shared<S, void> {
     using result_type = void;
     // decay
     future<void>                        _holds[S]{};
@@ -943,6 +948,11 @@ struct when_any_shared<F, S, void> {
             _f();
         }
     }
+
+    template <typename F>
+    auto apply(F& f) {
+        return f(_index);
+    }
 };
 
 inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
@@ -961,30 +971,13 @@ auto apply_when_all_args(F& f, P& p) {
     return apply_when_all_args_(f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
 }
 
-template <typename R>
-struct when_any_invoke {
-    template <typename F, typename P>
-    static auto invoke(F& f, P& p) {
-        return f(std::move(p->_arg.get()), p->_index);
-    }
-};
-
-template <>
-struct when_any_invoke<void> {
-    template <typename F, typename P>
-    static auto invoke(F& f, P& p) {
-        return f(p->_index);
-    }
-};
-
 template <typename F, typename P>
 auto apply_when_any_arg(F& f, P& p) {
     if (p->_error) {
         std::rethrow_exception(p->_error.get());
     }
 
-    //return f(std::move(p->_arg.get()), p->_index);
-    return when_any_invoke<typename P::element_type::result_type>::invoke(f, p);
+    return p->apply(f);
 }
 
 template <std::size_t i, typename P, typename T>
@@ -1039,7 +1032,7 @@ template <typename E, typename F, typename T, typename... Ts>
 auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
     using result_t = typename std::result_of<F(T, size_t)>::type;
 
-    auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts)+1, T>>();
+    auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts)+1, T>>();
     auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
         return detail::apply_when_any_arg(_f, _p);
     });
@@ -1056,7 +1049,7 @@ template <typename E, typename F, typename... Ts>
 auto when_any_void(E executor, F f, future<Ts>... args) {
     using result_t = typename std::result_of<F(size_t)>::type;
 
-    auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts), void>>();
+    auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
     auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
         return detail::apply_when_any_arg(_f, _p);
     });
