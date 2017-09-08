@@ -146,14 +146,13 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
     }
 
-
     BOOST_AUTO_TEST_CASE(reduction_future_void) {
         BOOST_TEST_MESSAGE("running future reduction void to void");
 
         std::atomic_bool first{false};
         std::atomic_bool second{false};
 
-        sut = async(default_executor, [&_flag = first] { _flag = true; }).then([&_flag = second] {
+        sut = async(default_executor, [& _flag = first] { _flag = true; }).then([& _flag = second] {
             return async(default_executor, [&_flag] { _flag = true; });
         });
 
@@ -163,7 +162,35 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
         BOOST_REQUIRE(second);
     }
 
+    BOOST_AUTO_TEST_CASE(reduction_future_int_to_void) {
+        BOOST_TEST_MESSAGE("running future reduction int to void");
+        std::atomic_bool first{false};
+        std::atomic_bool second{false};
+        std::atomic_int result{0};
+
+        sut = async(default_executor,
+                    [& _flag = first] {
+                        _flag = true;
+                        return 42;
+                    })
+                  .then([& _flag = second, &_result = result ](auto x) {
+                      return async(default_executor,
+                                   [&_flag, &_result](auto x) {
+                                       _flag = true;
+                                       _result = x + 42;
+                                   },
+                                   x);
+                  });
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(84, result);
+    }
+
 BOOST_AUTO_TEST_SUITE_END()
+
 
 
 BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<int>>)
