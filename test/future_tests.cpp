@@ -22,74 +22,74 @@ using namespace future_test_helper;
 
 BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
+        BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
 
-    annotate_counters counters;
-    async(immediate_executor, [](annotate x){ }, annotate(counters));
-    BOOST_REQUIRE(counters.remaining() == 0);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        async(immediate_executor, [](annotate x){ }, annotate(counters));
+        BOOST_REQUIRE(counters.remaining() == 0);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> value");
+        BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> value");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](annotate x){ }, x);
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 1);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](annotate x){ }, x);
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 1);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> value");
+        BOOST_TEST_MESSAGE("running async lambda argument of type ref -> value");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](annotate x){ }, std::ref(x));
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 1);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](annotate x){ }, std::ref(x));
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 1);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type cref -> value");
+        BOOST_TEST_MESSAGE("running async lambda argument of type cref -> value");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](annotate x){ }, std::cref(x));
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 1);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](annotate x){ }, std::cref(x));
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 1);
     }
 //-------
 #if 0
     {
     // EXPECTED WILL NOT COMPILE
-    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &");
+        BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &");
 
-    annotate_counters counters;
-    async(immediate_executor, [](annotate& x){ }, annotate(counters));
-    BOOST_REQUIRE(counters.remaining() == 0);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        async(immediate_executor, [](annotate& x){ }, annotate(counters));
+        BOOST_REQUIRE(counters.remaining() == 0);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> &");
+        BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> &");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](annotate& x){ }, x);
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 1);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](annotate& x){ }, x);
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 1);
     }
 #endif
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> &");
+        BOOST_TEST_MESSAGE("running async lambda argument of type ref -> &");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](annotate& x){ }, std::ref(x));
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](annotate& x){ }, std::ref(x));
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 
 #if 0
@@ -106,61 +106,61 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 #endif
 //-------
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> const&");
+        BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> const&");
 
-    annotate_counters counters;
-    async(immediate_executor, [](const annotate& x){ }, annotate(counters));
-    BOOST_REQUIRE(counters.remaining() == 0);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        async(immediate_executor, [](const annotate& x){ }, annotate(counters));
+        BOOST_REQUIRE(counters.remaining() == 0);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> const&");
+        BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> const&");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](const annotate& x){ }, x);
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 1);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](const annotate& x){ }, x);
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 1);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type ref -> const&");
+        BOOST_TEST_MESSAGE("running async lambda argument of type ref -> const&");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](const annotate& x){ }, std::ref(x));
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](const annotate& x){ }, std::ref(x));
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type cref -> const&");
+        BOOST_TEST_MESSAGE("running async lambda argument of type cref -> const&");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](const annotate& x){ }, std::cref(x));
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](const annotate& x){ }, std::cref(x));
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 //-------
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &&");
+        BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &&");
 
-    annotate_counters counters;
-    async(immediate_executor, [](annotate&& x){ }, annotate(counters));
-    BOOST_REQUIRE(counters.remaining() == 0);
-    BOOST_REQUIRE(counters._copy_ctor == 0);
+        annotate_counters counters;
+        async(immediate_executor, [](annotate&& x){ }, annotate(counters));
+        BOOST_REQUIRE(counters.remaining() == 0);
+        BOOST_REQUIRE(counters._copy_ctor == 0);
     }
 
     {
-    BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> &&");
+        BOOST_TEST_MESSAGE("running async lambda argument of type lvalue -> &&");
 
-    annotate_counters counters;
-    annotate x(counters);
-    async(immediate_executor, [](annotate&& x){ }, x);
-    BOOST_REQUIRE(counters.remaining() == 1);
-    BOOST_REQUIRE(counters._copy_ctor == 1);
+        annotate_counters counters;
+        annotate x(counters);
+        async(immediate_executor, [](annotate&& x){ }, x);
+        BOOST_REQUIRE(counters.remaining() == 1);
+        BOOST_REQUIRE(counters._copy_ctor == 1);
     }
 
 #if 0
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
 /**************************************************************************************************/
 
-using all_test_types = boost::mpl::list<void, int, std::unique_ptr<int>>;
+using all_test_types = boost::mpl::list<void, int, stlab::move_only>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(future_default_constructed, T, all_test_types)
 {
