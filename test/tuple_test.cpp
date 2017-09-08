@@ -25,7 +25,10 @@ namespace {
 template <typename T>
 std::string demangle() {
 #if defined(__clang__)
-    std::unique_ptr<char> c_str(abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr));
+    struct freer_t {
+        void operator()(void* x) const {std::free(x);}
+    };
+    std::unique_ptr<char, freer_t> c_str(abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr));
     return c_str.get();
 #else
     return std::string();
