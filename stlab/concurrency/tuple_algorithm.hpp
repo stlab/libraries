@@ -169,10 +169,6 @@ constexpr decltype(auto) apply_optional_indexed_impl(F&& f, Tuple&& t, std::inde
 
 /**************************************************************************************************/
 
-} // namespace detail
-
-/**************************************************************************************************/
-
 template <class Seq, class F, class Tuple>
 constexpr decltype(auto) apply_indexed(F&& f, Tuple&& t) {
     return detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t), Seq());
@@ -218,6 +214,10 @@ struct remove_placeholder {
 };
 
 /**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
 // type-function variant of std::tuple_cat
 template<typename...Ts>
 using tuple_cat_t = decltype(std::tuple_cat(std::declval<Ts>()...));
@@ -241,7 +241,7 @@ template <typename... Ts>
 using placeholder_tuple = std::tuple<
     typename std::conditional<
         std::is_same<void, Ts>::value,
-        placeholder,
+        detail::placeholder,
         Ts
     >::type...
 >;
@@ -253,7 +253,7 @@ template <typename... Ts>
 using optional_placeholder_tuple = std::tuple<
     boost::optional<typename std::conditional<
         std::is_same<void, Ts>::value,
-        placeholder,
+        detail::placeholder,
         Ts
     >::type>...
 >;

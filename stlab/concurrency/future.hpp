@@ -1013,7 +1013,7 @@ template <typename E, typename F, typename... Ts>
 auto when_all(E executor, F f, future<Ts>... args) {
     using vt_t = voidless_tuple<Ts...>;
     using opt_t = optional_placeholder_tuple<Ts...>;
-    using result_t = decltype(apply_tuple(std::declval<F>(), std::declval<vt_t>()));
+    using result_t = decltype(detail::apply_tuple(std::declval<F>(), std::declval<vt_t>()));
 
     auto shared = std::make_shared<detail::when_all_shared<F, opt_t>>();
     auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
