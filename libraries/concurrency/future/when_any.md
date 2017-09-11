@@ -7,7 +7,7 @@ pure-name: when_any
 brief: Creates a future that continues on the first success of any futures passed
 description: Creates a future that continues on the first success of any futures passed. The results of all passed futures must be convertable to the first parameter of the continuing function. The function must accept the a second parameter of std::size_t. It will receive the index of the future that succeeded first.
 annotation: template function
-example: when_any_example.cpp
+example: [ when_any_example.cpp, when_any_void_example.cpp ]
 defined-in-header: stlab/concurrency/future.hpp
 entities:
   - kind: overloads

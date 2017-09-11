@@ -7,7 +7,7 @@ pure-name: when_all
 brief: Creates a joining future
 description: Creates a joining future
 annotation: template function
-example: when_all_example.cpp
+example: [ when_all_example.cpp, when_all_void_example.cpp ]
 defined-in-header: stlab/concurrency/future.hpp
 entities:
   - kind: overloads
