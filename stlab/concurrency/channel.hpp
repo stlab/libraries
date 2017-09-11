@@ -26,13 +26,6 @@
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
 
-#ifdef max
-#undef max
-#endif
-
-#ifdef min
-#undef min
-#endif
 
 /**************************************************************************************************/
 
@@ -41,6 +34,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 template <typename, typename = void>
@@ -132,7 +126,7 @@ I for_each_n(I p, N n, F f) {
 
 struct identity {
     template <typename T>
-    T operator()(T&& x) {
+    T operator()(T&& x) const {
         return std::forward<T>(x);
     }
 };
@@ -279,6 +273,16 @@ struct shared_process_sender {
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
 };
+
+/**************************************************************************************************/
+
+enum process_timeout_function_state : int
+{
+    no_timout_function_set,
+    timeout_function_set,
+    timeout_function_running
+};
+
 
 /**************************************************************************************************/
 
@@ -560,8 +564,9 @@ struct shared_process_sender_indexed : public shared_process_sender<Arg> {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
             _shared_process._queue.template append<I>(
                 std::forward<U>(u)); // TODO (sparent) : overwrite here.
-            do_run = !_shared_process._receiver_count && (!_shared_process._process_running ||
-                                                          _shared_process._process_timeout_control);
+            do_run = !_shared_process._receiver_count && 
+              (!_shared_process._process_running || _shared_process._process_timeout_control != process_timeout_function_state::no_timout_function_set);
+
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
         if (do_run) _shared_process.run();
@@ -638,6 +643,7 @@ struct shared_process
     : shared_process_receiver<R>
     , shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>
     , std::enable_shared_from_this<shared_process<Q, T, R, Args...>> {
+    
     static_assert((has_process_yield_v<T> && has_process_state_v<T>) ||
                       (!has_process_yield_v<T> && !has_process_state_v<T>),
                   "Processes that use .yield() must have .state() const");
@@ -651,29 +657,32 @@ struct shared_process
     using queue_strategy = Q;
     using process_t = T;
 
-    std::mutex _downstream_mutex;
-    downstream<R> _downstream;
-    queue_strategy _queue;
+    std::mutex                  _downstream_mutex;
+    downstream<R>               _downstream;
+    queue_strategy              _queue;
 
-    executor_t _executor;
-    boost::optional<process_t> _process;
+    executor_t                  _executor;
+    boost::optional<process_t>  _process;
 
-    std::mutex _process_mutex;
+    std::mutex                  _process_mutex;
 
-    bool _process_running = false;
-    std::atomic_size_t _process_suspend_count{0};
-    bool _process_close_queue = false;
+    bool                        _process_running = false;
+    std::atomic_size_t          _process_suspend_count{0};
+    bool                        _process_close_queue = false;
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
-    bool _process_final = false;
-    std::atomic_size_t _process_timeout_control{0}; // 0 means no timeout function set,
-                                                    // 1 means timeout function set,
-                                                    // 2 means timeout function currently running
-    std::atomic_size_t _sender_count{0};
-    std::atomic_size_t _receiver_count;
+    bool                        _process_final = false;
 
-    std::atomic_size_t _process_buffer_size{1};
+    std::atomic_int             _process_timeout_control{ process_timeout_function_state::no_timout_function_set };
+
+    std::atomic_size_t          _sender_count{0};
+    std::atomic_size_t          _receiver_count;
+
+    std::atomic_size_t          _process_buffer_size{1};
 
     const std::tuple<std::shared_ptr<shared_process_receiver<Args>>...> _upstream;
+
+
+
 
     template <typename E, typename F>
     shared_process(E&& e, F&& f)
@@ -752,14 +761,13 @@ struct shared_process
 
         bool do_run = false;
         {
+            const auto process_state = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
             assert(_process_suspend_count > 0 && "Error: Try to unsuspend, but not suspended!");
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
-                // FIXME (sparent): This is calling the process state ender the lock.
-                if (get_process_state(_process).first == process_state::yield || !_queue.empty() ||
-                    _process_close_queue) {
+                if (process_state.first == process_state::yield || !_queue.empty() || _process_close_queue) {
                     do_run = true;
                 } else {
                     _process_running = false;
@@ -823,11 +831,12 @@ struct shared_process
     auto step() -> std::enable_if_t<has_process_yield_v<U>> {
         // in case that the timeout function is just been executed then we have to re-schedule
         // the current run
-        if (_process_timeout_control > 1) {
+        if (_process_timeout_control == process_timeout_function_state::timeout_function_running) {
             run();
             return;
-        } else // If a new value is received then cancel pending timeout.
-            _process_timeout_control = 0;
+        } 
+        // If a new value is received then cancel pending timeout.
+        _process_timeout_control = process_timeout_function_state::no_timout_function_set;
 
         /*
             While we are waiting we will flush the queue. The assumption here is that work
@@ -872,12 +881,11 @@ struct shared_process
                 broadcast((*_process).yield());
             } else {
                 /* Schedule a timeout. */
-                _process_timeout_control = 1;
+                _process_timeout_control = process_timeout_function_state::timeout_function_set;
                 execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
-                    auto _this =
-                        _weak_this
-                            .lock(); // It may be that the complete channel is gone in the meanwhile
-                    if (_this && ++_this->_process_timeout_control == 2) {
+                    auto _this = _weak_this.lock(); 
+                    // It may be that the complete channel is gone in the meanwhile
+                    if (_this && ++_this->_process_timeout_control == process_timeout_function_state::timeout_function_running) {
                         bool do_broadcast = false;
                         {
                             std::unique_lock<std::mutex> lock(_this->_process_mutex);
@@ -887,7 +895,7 @@ struct shared_process
                         }
                         if (do_broadcast) {
                             _this->try_broadcast();
-                            _this->_process_timeout_control = 0;
+                            _this->_process_timeout_control = process_timeout_function_state::no_timout_function_set;
                         }
                     }
 

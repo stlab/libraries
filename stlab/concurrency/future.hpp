@@ -13,7 +13,6 @@
 #include <initializer_list>
 #include <memory>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include <boost/optional.hpp>
