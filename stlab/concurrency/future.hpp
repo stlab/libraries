@@ -1467,13 +1467,12 @@ struct value_setter<T, enable_if_not_copyable<T>>
 
     template <typename R, typename F, typename... Args>
     static void set(shared_base<future<R>> &sb, F& f, Args&&... args) {
-        static_assert(false, "Reduction on move-only types is not supported so far");
-#if 0
-      sb._result = f(std::forward<Args>(args)...);
+        // On VS a static_assert works, on MAC not.
+        assert(!"Reduction on move-only types is not supported so far");
+        sb._result = f(std::forward<Args>(args)...);
         sb._reduction_helper.value = sb._result.value().then([](auto&& f) {
             return std::forward<decltype(f)>(f);
         }).then([_p = sb.shared_from_this()](auto&) { proceed(*_p); });
-#endif
     }
 };
 
@@ -1564,8 +1563,7 @@ template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    static_assert(false, "Reduction on move-only types is not supported so far");
-    //return std::move(r).then([](auto f) { return f.get_try().value(); } );
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
 }
 
 /**************************************************************************************************/
