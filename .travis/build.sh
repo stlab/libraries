@@ -20,7 +20,7 @@ if [ -z "${coverage+xxx}" ]; then export coverage=FALSE; fi
 
 mkdir build
 cd build
-conan remote update conan-community https://api.bintray.com/conan/conan-community/conan
+conan remote add conan-community https://api.bintray.com/conan/conan-community/conan
 conan install ./.. --build=missing
 
 NPROC=`sysctl -n hw.ncpu`
