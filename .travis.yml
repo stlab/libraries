@@ -19,22 +19,24 @@ addons:
       - cmake
       - cmake-data
 
-compiler:
-  - gcc
-  - clang
-
-os:
-  - linux
-  - osx
-  
-osx_image: xcode8
-
-env:
-  - build_type=debug options="-D stlab_testing=ON"
-  - build_type=release options="-D stlab_testing=ON"
-
 matrix:
   include:
+    - os: osx
+      compiler: clang
+      osx_image: xcode8
+      before_install: pip install conan
+      env:
+        build_type=debug
+        options="-D stlab_testing=ON"
+        
+    - os: osx
+      compiler: clang
+      osx_image: xcode8
+      before_install: pip install conan
+      env:
+        build_type=release
+        options="-D stlab_testing=ON"
+        
     - os: linux
       compiler: gcc
       env:
@@ -98,16 +100,12 @@ matrix:
           build_command: ".travis/build.sh"
           branch_pattern: coverity
 
-  exclude:
-    - os: osx
-      compiler: gcc
-
 branches:
   except: /pr\/.*/
   
 before_install:
   - pip install --user conan
-  
+
 script:
   - .travis/build.sh
   
