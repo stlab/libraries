@@ -38,6 +38,8 @@ install:
   # Install conan
   ############################################################################
   - pip install conan
+  - conan remote add conan-community https://api.bintray.com/conan/conan-community/conan
+
 
   ############################################################################
   # Install a recent CMake
