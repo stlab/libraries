@@ -19,22 +19,100 @@ addons:
       - cmake
       - cmake-data
 
-compiler:
-  - gcc
-  - clang
-
-os:
-  - linux
-  - osx
+branches:
+  except: /pr\/.*/
   
-osx_image: xcode8
+before_install:
+  - pip install --user conan
 
-env:
-  - build_type=debug options="-D stlab_testing=ON"
-  - build_type=release options="-D stlab_testing=ON"
-
+script:
+  - .travis/build.sh
+  
 matrix:
   include:
+    #
+    # Mac Clang, Debug & Release
+    #
+    - os: osx
+      compiler: clang
+      osx_image: xcode8
+      before_install: pip install conan
+      env:
+        build_type=debug
+        options="-D stlab_testing=ON"
+        
+    - os: osx
+      compiler: clang
+      osx_image: xcode8
+      before_install: pip install conan
+      env:
+        build_type=release
+        options="-D stlab_testing=ON"
+
+    #
+    # Linux Clang, Debug & Release
+    #
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        options="-D stlab_testing=ON"
+        
+    - os: linux
+      compiler: clang
+      env:
+        build_type=release
+        options="-D stlab_testing=ON"
+
+    #
+    # Linux GCC, Debug & Release
+    #
+    - os: linux
+      compiler: gcc
+      env:
+        build_type=debug
+        options="-D stlab_testing=ON"
+
+    - os: linux
+      compiler: gcc
+      env:
+        build_type=release
+        options="-D stlab_testing=ON"
+
+    #
+    # Address sanitizer
+    #
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=address;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+
+    #
+    # Undefined behavior sanitizer
+    #
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+
+    #
+    # Thread sanitizer
+    #
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        TSAN_OPTIONS="suppressions=${TRAVIS_BUILD_DIR}/test/sanitizer_suppressions"
+        flags="-fsanitize=thread;-fno-omit-frame-pointer;"
+        options="-D stlab_testing=ON"
+
+    #
+    # Coverage
+    #
     - os: linux
       compiler: gcc
       env:
@@ -47,28 +125,9 @@ matrix:
         - cd build
         - bash <(curl -s https://codecov.io/bash) -X fix
 
-    - os: linux
-      compiler: clang
-      env:
-        build_type=debug
-        flags="-fsanitize=address;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
-        
-    - os: linux
-      compiler: clang
-      env:
-        build_type=debug
-        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
-        
-    - os: linux
-      compiler: clang
-      env:
-        build_type=debug
-        TSAN_OPTIONS="suppressions=${TRAVIS_BUILD_DIR}/test/sanitizer_suppressions"
-        flags="-fsanitize=thread;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
-
+    #
+    # Coverity
+    #
     - os: linux
       compiler: clang
       env:
@@ -98,19 +157,6 @@ matrix:
           build_command: ".travis/build.sh"
           branch_pattern: coverity
 
-  exclude:
-    - os: osx
-      compiler: gcc
-
-branches:
-  except: /pr\/.*/
-  
-before_install:
-  - pip install --user conan
-  
-script:
-  - .travis/build.sh
-  
 notifications:
   recipients:
     - felix@petriconi.net
