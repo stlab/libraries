@@ -761,13 +761,13 @@ struct shared_process
 
         bool do_run = false;
         {
-            const auto process_state = get_process_state(_process);
+            const auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
             assert(_process_suspend_count > 0 && "Error: Try to unsuspend, but not suspended!");
             --_process_suspend_count; // could be atomic?
             assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
-                if (process_state.first == process_state::yield || !_queue.empty() || _process_close_queue) {
+                if (ps.first == process_state::yield || !_queue.empty() || _process_close_queue) {
                     do_run = true;
                 } else {
                     _process_running = false;
