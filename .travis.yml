@@ -75,7 +75,7 @@ matrix:
         build_type=debug
         options="-D stlab_testing=ON"
       before_install:
-        - pip install conan
+        - pip install --user conan
         - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
       addons:
         apt:
@@ -106,7 +106,7 @@ branches:
   except: /pr\/.*/
   
 before_install:
-  - pip install conan
+  - pip install --user conan
   
 script:
   - .travis/build.sh
