@@ -606,7 +606,7 @@ struct downstream<
 
     template <typename... Args>
     void send(std::size_t n, Args... args) {
-        for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
+        stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
     }
 };
 
