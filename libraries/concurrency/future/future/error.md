@@ -15,9 +15,6 @@ entities:
         defined-in-header: stlab/concurrency/future.hpp 
         declaration: boost::optional<std::exception_ptr> error() const
         description: In case an error occured, it returns the stored exception pointer.
-  - kind: parameters
   - kind: result
     description: an optional that holds the exception pointer if an exception has occurred.
-  - kind: example
-    code: NoCode
 ---

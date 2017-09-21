@@ -305,10 +305,6 @@ table {
                     margin: 0;
                     display: inline;
                 }
-                > span.annotation {
-                    color: green;
-                    font-style: oblique;
-                }
             }
             > td.decl {
                 font-family: $code-font-family;
@@ -342,10 +338,6 @@ table {
                     margin: 0;
                     display: inline;
                 }
-                > span.annotation {
-                    color: green;
-                    font-style: oblique;
-                }
             }
             > td.decl {
                 font-family: $code-font-family;
@@ -358,11 +350,24 @@ table {
 }
 
 /**
+ * Description list for method descriptions
+ */
+.description-list {
+    > li {
+        padding-bottom: 0.5em;
+        > p {
+            margin: 0;
+            display: inline;
+        }
+    }
+}
+
+/**
  * Annotations.
  */
 span.annotation {
     color: green;
-    font-style: oblique;
+    font-style: italic;
 }
 
 /**

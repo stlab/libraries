@@ -7,10 +7,9 @@ pure-name: merge
 brief: Creates a future that merges all passed arguments
 annotation: template function
 example: merge_example.cpp
+defined-in-header: stlab/concurrency/channel.hpp 
 entities:
   - kind: overloads
-    defined-in-header: stlab/concurrency/channel.hpp 
-    git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp 
     list:
       - name: merge
         pure-name: merge

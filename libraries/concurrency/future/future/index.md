@@ -5,7 +5,6 @@ tags: [library]
 name: stlab::future
 pure-name: future
 defined-in-header: stlab/concurrency/future.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/future.hpp
 ctor: default
 dtor: default
 annotation: template class

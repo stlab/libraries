@@ -9,11 +9,6 @@ description: |
     Since one can create with futures only graphs for single use, this library provides as well channels. With these channels one can build graphs, that can be used for multiple invocations.
 ---
 
-### Source Code
-
-The source code is hosted on [github](https://github.com/stlab/libraries).
-
-
 {% include example_table.html %}
 
 ### Requirements

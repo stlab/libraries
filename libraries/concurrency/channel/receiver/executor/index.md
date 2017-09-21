@@ -6,7 +6,6 @@ scope: stlab
 name: executor
 pure-name: executor
 defined-in-header: stlab/concurrency/channel.hpp
-git-link: https://github.com/stlab/libraries/blob/develop/stlab/concurrency/channel.hpp
 declaration: struct executor
 brief: Executor wrapper class
 description: This class has only one purpose, to encapsulate an executor to be piped to a `receiver<T>`

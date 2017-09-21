@@ -20,7 +20,10 @@ github_username:  stlab
 exclude:
     - _source
     - build
-    - build.sh
+    - stlab # from building examples
+    - boost # from building examples
+    - boost.tgz # from building examples
+    - "*.sh"
     - README.md
     - stlab.bbprojectd/
     - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)

@@ -20,7 +20,4 @@ entities:
     list:
       - name: f
         description: The function object that shall now be executed.
-  - kind: result
-  - kind: example
-    code: NoCode
 ---
