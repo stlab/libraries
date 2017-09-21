@@ -13,6 +13,11 @@ entities:
         pure-name: operator()
         defined-in-header: stlab/concurrency/task.hpp 
         declaration: |
-            void operator()() noexcept
+            void operator()(Args... args) noexcept
         description: Invokes the task
+  - kind: parameters
+    list:
+      - name: args
+        description: The arguments for calling the stored function.
+
 ---

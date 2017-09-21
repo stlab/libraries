@@ -1,15 +1,6 @@
 ---
-layout: class
-title: stlab::task
+layout: library
+title: Task
 tags: [library]
-scope: stlab
-pure-name: task
-defined-in-header: stlab/concurrency/task.hpp
-dtor: default
-annotation: template class
-declaration: |
-  template <typename F>
-  class task
-brief: A type-erased nullary wrapper that supports mutable functions.
-description: Tasks are movable, not copyable.
+brief: Task class and related functions
 ---
