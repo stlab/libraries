@@ -154,9 +154,20 @@ BOOST_AUTO_TEST_CASE(task_n_ary_tests) {
         task<int(int, float, std::string)> t([](int x, float y, std::string z){ return x + y + z.size(); });
         BOOST_CHECK_EQUAL(t(20, 20., "00"), 42);
     }
+
+    {
+        task<int(move_only, int)> x([](move_only m, int i) { return m.member() + i; });
+        BOOST_CHECK_EQUAL(42, x(move_only(40), 2));
+    }
 }
 
 /**************************************************************************************************/
+
+struct large_model
+{
+    char buffer[512] = { 42 };
+    auto operator()() const { return buffer[0]; }
+};
 
 BOOST_AUTO_TEST_CASE(task_type_tests) {
     {
@@ -184,16 +195,32 @@ BOOST_AUTO_TEST_CASE(task_type_tests) {
 
     {
         // large model
-        auto large_model = [] {
-            char buffer[512] = {42};
-            return buffer[0];
-        };
-        task<int()> t = large_model;
+        task<int()> t = large_model();
         BOOST_CHECK(t);
         BOOST_CHECK_EQUAL(t(), 42);
         std::cout << t.target_type().name() << '\n';
-        BOOST_CHECK(t.target<decltype(large_model)>() != nullptr);
+        BOOST_CHECK(t.target<decltype(large_model())>() != nullptr);
     }
 }
 
 /**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(task_equality_tests) {
+  {
+      task<void()> a;
+      BOOST_CHECK(a == std::nullptr_t());
+  }
+  {
+    task<void()> a;
+    BOOST_CHECK(std::nullptr_t() == a);
+  }
+
+  {
+    task<void()> a([]{});
+    BOOST_CHECK(a != std::nullptr_t());
+  }
+  {
+    task<void()> a([] {});
+    BOOST_CHECK(std::nullptr_t() != a);
+  }
+}
