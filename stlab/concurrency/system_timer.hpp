@@ -62,13 +62,13 @@ struct system_timer_type {
 
 
     template<typename F>
-    void operator()(std::chrono::system_clock::time_point when, F f) const {
+    void operator()(std::chrono::steady_clock::time_point when, F f) const {
 
         using namespace std::chrono;
 
         using f_t = decltype(f);
 
-        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - system_clock::now()).count()),
+        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - steady_clock::now()).count()),
                          dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
                          new f_t(std::move(f)),
                          [](void *f_) {
@@ -116,7 +116,7 @@ public:
     }
 
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F&& f) {
+    void operator()(std::chrono::steady_clock::time_point when, F&& f) {
 
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
             new F(std::forward<F>(f)),
@@ -143,10 +143,10 @@ private:
         (*f)();
     }
 
-    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) const {
+    FILETIME time_point_to_FILETIME(const std::chrono::steady_clock::time_point& when) const {
         FILETIME ft = { 0, 0 };
         SYSTEMTIME st = { 0 };
-        time_t t = std::chrono::system_clock::to_time_t(when);
+        time_t t = std::chrono::steady_clock::to_time_t(when);
         tm utc_tm;
         if (!gmtime_s(&utc_tm, &t)) {
             st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
@@ -168,7 +168,7 @@ private:
 
 class system_timer
 {
-    using element_t = std::pair<std::chrono::system_clock::time_point, task<void()>>;
+    using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;
     using queue_t = std::vector<element_t>;
     using lock_t = std::unique_lock<std::mutex>;
 
@@ -197,7 +197,7 @@ class system_timer
 
                 while (_timed_queue.empty() && !_stop) _condition.wait(lock);
                 if (_stop) return;
-                while (std::chrono::system_clock::now() < _timed_queue.front().first) {
+                while (std::chrono::steady_clock::now() < _timed_queue.front().first) {
                     auto when = _timed_queue.front().first;
                     _condition.wait_until(lock, when);
                     if (_stop) return;
@@ -226,7 +226,7 @@ public:
     }
 
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F&& f) {
+    void operator()(std::chrono::steady_clock::time_point when, F&& f) {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(when, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
@@ -244,7 +244,7 @@ struct system_timer_type {
     using result_type = void;
 
     template <typename F>
-    void operator() (std::chrono::system_clock::time_point when, F&& f) const {
+    void operator() (std::chrono::steady_clock::time_point when, F&& f) const {
         static system_timer only_system_timer;
         only_system_timer(when, std::forward<F>(f));
     }
