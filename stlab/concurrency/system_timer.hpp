@@ -143,10 +143,17 @@ private:
         (*f)();
     }
 
+    time_t steady_clock_to_time_t(std::chrono::steady_clock::time_point t) const
+    {
+      return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() +
+        std::chrono::duration_cast<std::chrono::system_clock::duration>(t - std::chrono::steady_clock::now()));
+    }
+    
+
     FILETIME time_point_to_FILETIME(const std::chrono::steady_clock::time_point& when) const {
         FILETIME ft = { 0, 0 };
         SYSTEMTIME st = { 0 };
-        time_t t = std::chrono::steady_clock::to_time_t(when);
+        time_t t = steady_clock_to_time_t(when);
         tm utc_tm;
         if (!gmtime_s(&utc_tm, &t)) {
             st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
