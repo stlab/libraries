@@ -13,13 +13,13 @@
 #include <initializer_list>
 #include <memory>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include <boost/optional.hpp>
 
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 
@@ -661,6 +661,48 @@ class future<T, enable_if_copyable<T>> {
     boost::optional<std::exception_ptr> error() const {
         return _p->_error;
     }
+
+
+    struct promise_type
+    {
+      ptr_t _p;
+
+      promise_type() :  _p(std::make_shared<detail::shared_base<T>>(immediate_executor)) {}
+
+      auto get_return_object() const {
+        return future(_p);
+      }
+
+      auto initial_suspend() const {
+        return false;
+      }
+
+      bool final_suspend() const {
+        return false;
+      }
+
+      template<typename U>
+      void return_value(U&& val) {
+        _p->_result = std::forward<U>(val);
+        _p->_ready = true;
+      }
+
+      void set_exception(std::exception_ptr error) {
+        _p->_error = std::move(error);
+        _p->_ready = true;
+      }
+    };
+
+    bool await_ready() { return static_cast<bool>(get_try()); }
+
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+      then([ch](auto&&) { ch.resume(); }).detach();
+    }
+#endif
+
+    auto await_resume() { return get_try().value(); }
+
 };
 
 /**************************************************************************************************/
@@ -747,6 +789,43 @@ class future<void, void> {
         return _p->_error;
     }
 
+    struct promise_type
+    {
+      ptr_t _p;
+
+      promise_type() : _p(std::make_shared<detail::shared_base<void>>(immediate_executor)) {}
+
+      future get_return_object() const {
+        return future(_p);
+      }
+
+      bool initial_suspend() const {
+        return false;
+      }
+
+      bool final_suspend() const {
+        return false;
+      }
+
+      void return_void() {
+        _p->_ready = true;
+      }
+
+      void set_exception(std::exception_ptr error) {
+        _p->_error = std::move(error);
+        _p->_ready = true;
+      }
+    };
+
+    bool await_ready() { return get_try(); }
+
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+      then([ch] { ch.resume(); }).detach();
+    }
+#endif
+
+    auto await_resume() { return get_try(); }
 };
 
 /**************************************************************************************************/
@@ -820,6 +899,47 @@ class future<T, enable_if_not_copyable<T>> {
     boost::optional<std::exception_ptr> error() const {
         return _p->_error;
     }
+
+    struct promise_type
+    {
+      ptr_t _p;
+
+      promise_type() : _p(std::make_shared<detail::shared_base<T>>(immediate_executor)) {}
+
+      future get_return_object() const {
+        return future(_p);
+      }
+
+      auto initial_suspend() const {
+        return false;
+      }
+
+      bool final_suspend() const {
+        return false;
+      }
+
+      template<typename U>
+      void return_value(U&& val) {
+        _p->_result = std::forward<U>(val);
+        _p->_ready = true;
+      }
+
+      void set_exception(std::exception_ptr error) {
+        _p->_error = std::move(error);
+        _p->_ready = true;
+      }
+    };
+
+    bool await_ready() { return static_cast<bool>(get_try()); }
+
+#ifdef STLAB_WITH_COROUTINE_SUPPORT
+    void await_suspend(std::experimental::coroutine_handle<> ch) {
+      then([ch](auto&&) { ch.resume(); }).detach();
+    }
+#endif
+
+    auto await_resume() { return get_try().value(); }
+
 };
 
 template <typename Sig, typename S, typename F>
