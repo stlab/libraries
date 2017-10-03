@@ -595,6 +595,13 @@ class future<T, enable_if_copyable<T>> {
 
     future() = default;
 
+    void swap(future& x) noexcept { std::swap(_p, x._p); }
+
+    inline friend void swap(future& x, future& y) { x.swap(y); }
+    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
+    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+
+
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -689,6 +696,13 @@ class future<void, void> {
 
     future() = default;
 
+    void swap(future& x) noexcept { std::swap(_p, x._p); }
+
+    inline friend void swap(future& x, future& y) { x.swap(y); }
+    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
+    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+
+
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -779,6 +793,12 @@ class future<T, enable_if_not_copyable<T>> {
     future& operator=(const future&) = delete;
     future& operator=(future&&) noexcept = default;
 
+    void swap(future& x) noexcept { std::swap(_p, x._p); }
+
+    inline friend void swap(future& x, future& y) { x.swap(y); }
+    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
+    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+  
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>

@@ -105,11 +105,12 @@ class task<R(Args...)> {
 public:
     using result_type = void;
 
-    task() noexcept { new (&_data) empty(); }
-    task(std::nullptr_t) : task() {}
+    constexpr task() noexcept { new (&_data) empty(); }
+    constexpr task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
     task(task&) = delete;
     task(task&& x) noexcept { x.self().move_ctor(&_data); }
+
     template <class F>
     task(F&& f) {
         using f_t = std::decay_t<F>;
@@ -138,12 +139,13 @@ public:
         new (&_data) empty();
         return *this;
     }
+
     template <class F>
     task& operator=(F&& f) {
         return *this = task(std::forward<F>(f));
     }
 
-    void swap(task& x) { std::swap(*this, x); }
+    void swap(task& x) noexcept { std::swap(*this, x); }
 
     explicit operator bool() const { return self().pointer(); }
 
@@ -153,6 +155,7 @@ public:
     T* target() {
         return (target_type() == typeid(T)) ? static_cast<T*>(self().pointer()) : nullptr;
     }
+
     template <class T>
     const T* target() const {
         return (target_type() == typeid(T)) ? static_cast<const T*>(self().pointer()) : nullptr;

@@ -606,7 +606,7 @@ struct downstream<
 
     template <typename... Args>
     void send(std::size_t n, Args... args) {
-        for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
+        stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
     }
 };
 
@@ -1311,6 +1311,12 @@ public:
         _ready = true;
     }
 
+    void swap(receiver& x) noexcept { std::swap(*this, x); }
+
+    inline friend void swap(receiver& x, receiver& y) noexcept { x.swap(y); }
+    inline friend bool operator==(const receiver& x, const receiver& y) { return x._p == y._p; };
+    inline friend bool operator!=(const receiver& x, const receiver& y) { return !(x == y); };
+
     bool ready() const { return _ready; }
 
     template <typename F>
@@ -1389,6 +1395,12 @@ public:
 
     sender& operator=(sender&&) noexcept = default;
 
+    void swap(sender& x) noexcept { std::swap(*this, x); }
+
+    inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
+    inline friend bool operator==(const sender& x, const sender& y) { return x._p.lock() == y._p.lock(); };
+    inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
+
     void close() {
         auto p = _p.lock();
         if (p) p->remove_sender();
@@ -1429,6 +1441,12 @@ public:
     sender(sender&&) noexcept = default;
     sender& operator=(const sender& x) = delete;
     sender& operator=(sender&&) noexcept = default;
+
+    void swap(sender& x) noexcept { std::swap(*this, x); }
+
+    inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
+    inline friend bool operator==(const sender& x, const sender& y) { return x._p.lock() == y._p.lock(); };
+    inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {
         auto p = _p.lock();
