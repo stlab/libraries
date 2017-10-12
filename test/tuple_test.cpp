@@ -7,6 +7,7 @@
 
 // stdc++
 #include <iostream>
+#include <thread>
 
 // boost
 #include <boost/test/unit_test.hpp>
