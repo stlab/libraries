@@ -25,20 +25,6 @@ install:
   - mkdir C:\projects\deps
   - cd C:\projects\deps
 
-  ############################################################################
-  # Install Python
-  ############################################################################
-  - set PYTHON_URL="https://www.python.org/ftp/python/3.6.2/python-3.6.2-embed-amd64.zip"
-  - appveyor DownloadFile %PYTHON_URL% -FileName python.zip
-  - 7z x python.zip -oC:\projects\deps\python > nul
-  - set PATH=C:\projects\deps\python;%PATH%
-  - python --version
-
-  ############################################################################
-  # Install conan
-  ############################################################################
-  - pip install conan
-
 
   ############################################################################
   # Install a recent CMake
@@ -58,6 +44,6 @@ before_build:
 build_script:
   - setup_msvc_debug.bat
   - cd build_debug
-  - cmake --build .
+  - cmake -DBOOST_ROOT=C:\Libraries\boost_1_60_0 --build .
   - bin\stlab.test.future.test --log_level=message
   - bin\stlab.test.serial_queue.test.exe
