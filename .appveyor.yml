@@ -40,10 +40,10 @@ before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
   - cd C:\projects\libraries
 
-
 build_script:
-  - setup_msvc_debug.bat
+  - MKDIR build_debug
   - cd build_debug
-  - cmake -DBOOST_ROOT=C:\Libraries\boost_1_60_0 --build .
+  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_60_0 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
+  - cmake  --build .
   - bin\stlab.test.future.test --log_level=message
   - bin\stlab.test.serial_queue.test.exe
