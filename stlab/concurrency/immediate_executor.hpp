@@ -33,7 +33,7 @@ struct immediate_executor_type
     }
 
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point, F&& f) {
+    void operator()(std::chrono::steady_clock::time_point, F&& f) {
         std::forward<F>(f)();
     }
 };

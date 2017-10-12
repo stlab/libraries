@@ -9,6 +9,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/test/model.hpp>
 
 #include <vector>
 
@@ -146,7 +147,7 @@ BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-using channel_test_fixture_move_only_1 = channel_test_fixture<std::unique_ptr<int>, 1>;
+using channel_test_fixture_move_only_1 = channel_test_fixture<stlab::move_only, 1>;
 
 BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_move_only_1)
 
@@ -155,13 +156,11 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&](std::unique_ptr<int> x) { result += *x; };
+        auto check = _receive[0] | [&](move_only x) { result += x.member(); };
 
         _receive[0].set_ready();
         for (int i = 0; i < 10; ++i) {
-            auto arg = std::make_unique<int>();
-            *arg = 1;
-            _send[0](std::move(arg));
+           _send[0](move_only(1));
         }
 
         wait_until_done([&]() { return result == 10; });
@@ -173,15 +172,13 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
 
         std::atomic_int result{ 0 };
 
-        auto check = _receive[0] | [&](std::unique_ptr<int> x) { result += *x; };
+        auto check = _receive[0] | [&](move_only x) { result += x.member(); };
 
         _receive[0].set_ready();
         std::vector<future<void>>  f;
         for (int i = 0; i < 10; ++i) {
             f.push_back(async(default_executor, [&_send = _send[0]] {
-                auto arg = std::make_unique<int>();
-                *arg = 1;
-                _send(std::move(arg));
+                _send(move_only(1));
             }));
         }
 
@@ -195,14 +192,12 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         std::atomic_int result{ 0 };
 
         auto check = _receive[0] |
-                [](std::unique_ptr<int> x) { *x += *x; return x; } |
-                [&](std::unique_ptr<int> x) { result += *x; };
+                [](move_only x) { return move_only(2 * x.member()); } |
+                [&](move_only x) { result += x.member(); };
 
         _receive[0].set_ready();
         for (int i = 0; i < 10; ++i) {
-            auto arg = std::make_unique<int>();
-            *arg = 1;
-            _send[0](std::move(arg));
+            _send[0](move_only(1));
         }
 
         wait_until_done([&]() {  return result >= 20; });
@@ -216,16 +211,14 @@ BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_mo
         std::atomic_int result{ 0 };
 
         auto check = _receive[0] |
-                [](std::unique_ptr<int> x) { *x += *x; return x; } |
-                [&](std::unique_ptr<int> x) { result += *x; };
+                [](move_only x) { return move_only(2 * x.member()); } |
+                [&](move_only x) { result += x.member(); };
 
         _receive[0].set_ready();
         std::vector<future<void>>  f;
         for (int i = 0; i < 10; ++i) {
             f.push_back(async(default_executor, [&_send = _send[0]]{
-                auto arg = std::make_unique<int>();
-            *arg = 1;
-            _send(std::move(arg));
+                _send(move_only(1));
             }));
         }
 

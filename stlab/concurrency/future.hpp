@@ -13,7 +13,6 @@
 #include <initializer_list>
 #include <memory>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include <boost/optional.hpp>
@@ -22,6 +21,7 @@
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
+#include <stlab/concurrency/tuple_algorithm.hpp>
 
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
@@ -675,6 +675,13 @@ class future<T, enable_if_copyable<T>> {
 
     future() = default;
 
+    void swap(future& x) noexcept { std::swap(_p, x._p); }
+
+    inline friend void swap(future& x, future& y) { x.swap(y); }
+    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
+    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+
+
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -772,6 +779,13 @@ class future<void, void> {
 
     future() = default;
 
+    void swap(future& x) noexcept { std::swap(_p, x._p); }
+
+    inline friend void swap(future& x, future& y) { x.swap(y); }
+    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
+    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+
+
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -865,6 +879,12 @@ class future<T, enable_if_not_copyable<T>> {
     future& operator=(const future&) = delete;
     future& operator=(future&&) noexcept = default;
 
+    void swap(future& x) noexcept { std::swap(_p, x._p); }
+
+    inline friend void swap(future& x, future& y) { x.swap(y); }
+    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
+    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+  
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -929,19 +949,35 @@ auto package_with_broken_promise(S s, F f) -> std::pair<detail::packaged_task_fr
 
 namespace detail {
 
-template <typename F, typename... Ts>
+template <typename F>
+struct assign_ready_future {
+    template <typename T>
+    static void assign(T& x, F& f) {
+        x = std::move(f.get_try().value());
+    }
+};
+
+template <>
+struct assign_ready_future<future<void>> {
+    template <typename T>
+    static void assign(T& x, future<void>& f) {
+        x = std::move(typename T::value_type()); // to set the optional
+    }
+};
+
+template <typename F, typename Args>
 struct when_all_shared {
     // decay
-    std::tuple<boost::optional<Ts>...>  _args;
-    future<void>                        _holds[sizeof...(Ts)] {};
-    std::atomic_size_t                  _remaining{sizeof...(Ts)};
+    Args                                _args;
+    future<void>                        _holds[std::tuple_size<Args>::value] {};
+    std::atomic_size_t                  _remaining{std::tuple_size<Args>::value};
     std::atomic_flag                    _error_happened = ATOMIC_FLAG_INIT;
     boost::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
     template <std::size_t index, typename FF>
     void done(FF& f) {
-        std::get<index>(_args) = std::move(f.get_try().value());
+        assign_ready_future<FF>::assign(std::get<index>(_args), f);
         if (--_remaining == 0) _f();
     }
 
@@ -956,8 +992,9 @@ struct when_all_shared {
 
 };
 
-template <typename F, size_t S, typename R>
+template <size_t S, typename R>
 struct when_any_shared {
+    using result_type = R;
     // decay
     boost::optional<R>                  _arg;
     future<void>                        _holds[S]{};
@@ -983,6 +1020,44 @@ struct when_any_shared {
             _f();
         }
     }
+
+    template <typename F>
+    auto apply(F& f) {
+        return f(std::move(_arg.get()), _index);
+    }
+};
+
+template <size_t S>
+struct when_any_shared<S, void> {
+    using result_type = void;
+    // decay
+    future<void>                        _holds[S]{};
+    std::atomic_size_t                  _remaining{S};
+    std::atomic_flag                    _value_received = ATOMIC_FLAG_INIT;
+    boost::optional<std::exception_ptr> _error;
+    size_t                              _index;
+    packaged_task<>                     _f;
+
+    void failure(std::exception_ptr error) {
+        if (--_remaining == 0) {
+            _error = std::move(error);
+            _f();
+        }
+    }
+
+    template <size_t index, typename FF>
+    void done(FF&& f) {
+        auto before = _value_received.test_and_set();
+        if (before == false) {
+            _index = index;
+            _f();
+        }
+    }
+
+    template <typename F>
+    auto apply(F& f) {
+        return f(_index);
+    }
 };
 
 inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
@@ -992,7 +1067,8 @@ inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
 template <typename F, typename Args, typename P, std::size_t... I>
 auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
     (void)std::initializer_list<int>{(rethrow_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
-    return f(std::move(std::get<I>(args).get())...);
+    return apply_optional_indexed<index_sequence_transform_t<std::make_index_sequence<std::tuple_size<Args>::value>,
+        remove_placeholder<Args>::template function>>(f, args);
 }
 
 template <typename F, typename P>
@@ -1006,7 +1082,7 @@ auto apply_when_any_arg(F& f, P& p) {
         std::rethrow_exception(p->_error.get());
     }
 
-    return f(std::move(p->_arg.get()), p->_index);
+    return p->apply(f);
 }
 
 template <std::size_t i, typename P, typename T>
@@ -1040,9 +1116,11 @@ void attach_when_args(const std::shared_ptr<P>& p, Ts... a) {
 
 template <typename E, typename F, typename... Ts>
 auto when_all(E executor, F f, future<Ts>... args) {
-    using result_t = typename std::result_of<F(Ts...)>::type;
+    using vt_t = voidless_tuple<Ts...>;
+    using opt_t = optional_placeholder_tuple<Ts...>;
+    using result_t = decltype(detail::apply_tuple(std::declval<F>(), std::declval<vt_t>()));
 
-    auto shared = std::make_shared<detail::when_all_shared<F, Ts...>>();
+    auto shared = std::make_shared<detail::when_all_shared<F, opt_t>>();
     auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
         return detail::apply_when_all_args(_f, _p);
     });
@@ -1055,19 +1133,49 @@ auto when_all(E executor, F f, future<Ts>... args) {
 
 /**************************************************************************************************/
 
+template <typename T>
+struct make_when_any {
+    template <typename E, typename F, typename... Ts>
+    static auto make(E executor, F f, future<T> arg, future<Ts>... args) {
+        using result_t = typename std::result_of<F(T, size_t)>::type;
+
+        auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts)+1, T>>();
+        auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
+            return detail::apply_when_any_arg(_f, _p);
+        });
+        shared->_f = std::move(p.first);
+
+        detail::attach_when_args(shared, std::move(arg), std::move(args)...);
+
+        return std::move(p.second);
+    }
+};
+
+/**************************************************************************************************/
+
+template <>
+struct make_when_any<void> {
+    template <typename E, typename F, typename... Ts>
+    static auto make(E executor, F f, future<Ts>... args) {
+        using result_t = typename std::result_of<F(size_t)>::type;
+
+        auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
+        auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
+            return detail::apply_when_any_arg(_f, _p);
+        });
+        shared->_f = std::move(p.first);
+
+        detail::attach_when_args(shared, std::move(args)...);
+
+        return std::move(p.second);
+    }
+};
+
+/**************************************************************************************************/
+
 template <typename E, typename F, typename T, typename... Ts>
 auto when_any(E executor, F f, future<T> arg, future<Ts>... args) {
-    using result_t = typename std::result_of<F(T, size_t)>::type;
-
-    auto shared = std::make_shared<detail::when_any_shared<F, sizeof...(Ts)+1, T>>();
-    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared]{
-        return detail::apply_when_any_arg(_f, _p);
-    });
-    shared->_f = std::move(p.first);
-
-    detail::attach_when_args(shared, std::move(arg), std::move(args)...);
-
-    return std::move(p.second);
+    return make_when_any<T>::make(std::move(executor), std::move(f), std::move(arg), std::move(args)...);
 }
 
 /**************************************************************************************************/
