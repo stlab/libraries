@@ -346,7 +346,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_move_only, test_fixture<stlab::v1::move_onl
         
         stlab::v1::move_only m{ 42 };
         
-        sut = async(custom_scheduler<0>(), [&_m = m] () mutable {
+        sut = async(custom_scheduler<0>(), [] () mutable {
             return stlab::v1::move_only{ 10 };
         }).then([&_m = m] (auto x) mutable {
             return std::move(_m);
@@ -532,7 +532,7 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
         
         std::atomic_int p{ 0 };
 
-        auto sut = async(custom_scheduler<0>(), [&_p = p] { throw test_exception("failure"); })
+        auto sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); })
             .then([&_p = p] { _p = 42; });
 
         wait_until_future_fails<test_exception>(sut);

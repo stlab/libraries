@@ -55,13 +55,13 @@ enum class message_t { argument, error };
 
 /**************************************************************************************************/
 
-using process_state_scheduled = std::pair<process_state, std::chrono::system_clock::time_point>;
+using process_state_scheduled = std::pair<process_state, std::chrono::steady_clock::time_point>;
 
 constexpr process_state_scheduled await_forever{process_state::await,
-                                                std::chrono::system_clock::time_point::max()};
+                                                std::chrono::steady_clock::time_point::max()};
 
 constexpr process_state_scheduled yield_immediate{process_state::yield,
-                                                  std::chrono::system_clock::time_point::min()};
+                                                  std::chrono::steady_clock::time_point::min()};
 
 /**************************************************************************************************/
 
@@ -847,9 +847,9 @@ struct shared_process
                 if (!dequeue()) break;
             }
 
-            auto now = std::chrono::system_clock::now();
+            auto now = std::chrono::steady_clock::now();
             process_state state;
-            std::chrono::system_clock::time_point when;
+            std::chrono::steady_clock::time_point when;
             std::tie(state, when) = get_process_state(_process);
 
             /*
@@ -875,7 +875,7 @@ struct shared_process
                 else if we await with an expired timeout then go ahead and yield now.
                 else schedule a timeout when we will yield if not canceled by intervening await.
             */
-            else if (when == std::chrono::system_clock::time_point::max()) {
+            else if (when == std::chrono::steady_clock::time_point::max()) {
                 task_done();
             } else if (when <= now) {
                 broadcast((*_process).yield());
