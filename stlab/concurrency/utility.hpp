@@ -56,6 +56,36 @@ future<T> make_exceptional_future(std::exception_ptr error) {
     return p.second;
 }
 
+template <typename T>
+T blocking_get(future<T> x) {
+    T result;
+    std::exception_ptr error;
+
+    bool set{false};
+    std::condition_variable condition;
+    std::mutex m;
+    auto hold = std::move(x).recover([&](auto&& r) {
+        {
+            std::unique_lock<std::mutex> lock(m);
+            if (r.error())
+                error = std::forward<decltype(r)>(r).error().value();
+            else
+                result = std::forward<decltype(r)>(r).get_try().value();
+            set = true;
+        }
+        condition.notify_one();
+    });
+    std::unique_lock<std::mutex> lock(m);
+    while (!set) {
+        condition.wait(lock);
+    }
+
+    if (error)
+        std::rethrow_exception(error);
+
+    return result;
+}
+
 /**************************************************************************************************/
 
 } // namespace v1
