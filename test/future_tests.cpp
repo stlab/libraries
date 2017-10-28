@@ -373,6 +373,20 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value)
 }
 
 
+BOOST_AUTO_TEST_CASE(future_blocking_get_void)
+{
+    BOOST_TEST_MESSAGE("future blocking_get with void");
+    int v = 0;
+    auto answer = [&] { v = 42; };
+
+    stlab::future<void> f =
+        stlab::async(stlab::default_executor, answer);
+
+
+    stlab::blocking_get(std::move(f));
+    BOOST_REQUIRE_EQUAL(42, v);
+}
+
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case)
 {
     BOOST_TEST_MESSAGE("future blocking_get with copyable value error case");
@@ -399,3 +413,19 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case)
     BOOST_REQUIRE_EXCEPTION(stlab::blocking_get(std::move(f)), test_exception,
                             ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
 }
+
+
+BOOST_AUTO_TEST_CASE(future_blocking_get_void_error_case)
+{
+    BOOST_TEST_MESSAGE("future blocking_get with void error case");
+    
+    auto answer = [] { throw test_exception("failure"); };
+
+    stlab::future<void> f =
+        stlab::async(stlab::default_executor, answer);
+
+
+    BOOST_REQUIRE_EXCEPTION(stlab::blocking_get(std::move(f)), test_exception,
+                            ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
+}
+

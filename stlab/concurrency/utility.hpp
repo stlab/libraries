@@ -86,6 +86,31 @@ T blocking_get(future<T> x) {
     return result;
 }
 
+
+inline void blocking_get(future<void> x) {
+    std::exception_ptr error;
+
+    bool set{false};
+    std::condition_variable condition;
+    std::mutex m;
+    auto hold = std::move(x).recover([&](auto&& r) {
+        {
+            std::unique_lock<std::mutex> lock(m);
+            if (r.error())
+                error = std::forward<decltype(r)>(r).error().value();
+            set = true;
+        }
+        condition.notify_one();
+    });
+    std::unique_lock<std::mutex> lock(m);
+    while (!set) {
+        condition.wait(lock);
+    }
+
+    if (error)
+        std::rethrow_exception(error);
+}
+
 /**************************************************************************************************/
 
 } // namespace v1
