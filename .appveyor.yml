@@ -25,20 +25,6 @@ install:
   - mkdir C:\projects\deps
   - cd C:\projects\deps
 
-  ############################################################################
-  # Install Python
-  ############################################################################
-  - set PYTHON_URL="https://www.python.org/ftp/python/3.6.2/python-3.6.2-embed-amd64.zip"
-  - appveyor DownloadFile %PYTHON_URL% -FileName python.zip
-  - 7z x python.zip -oC:\projects\deps\python > nul
-  - set PATH=C:\projects\deps\python;%PATH%
-  - python --version
-
-  ############################################################################
-  # Install conan
-  ############################################################################
-  - pip install conan
-
 
   ############################################################################
   # Install a recent CMake
@@ -54,10 +40,10 @@ before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
   - cd C:\projects\libraries
 
-
 build_script:
-  - setup_msvc_debug.bat
+  - MKDIR build_debug
   - cd build_debug
-  - cmake --build .
-  - bin\stlab.test.future.test --log_level=message
-  - bin\stlab.test.serial_queue.test.exe
+  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_60_0 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
+  - cmake  --build .
+  - test\Debug\stlab.test.future.test --log_level=message
+  - test\Debug\stlab.test.serial_queue.test.exe
