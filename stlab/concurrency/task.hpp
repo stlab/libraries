@@ -75,7 +75,7 @@ class task<R(Args...)> {
         model(F0&& f) : _f(std::forward<F0>(f)) {}
         model(model&&) noexcept = delete;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
-        R invoke(Args&&... args) override { return _f(std::forward<Args>(args)...); }
+        R invoke(Args&&... args) override { return std::move(_f)(std::forward<Args>(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return &_f; }
         const void* pointer() const noexcept override { return &_f; }
@@ -89,7 +89,7 @@ class task<R(Args...)> {
         model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
         model(model&&) noexcept = default;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
-        R invoke(Args&&... args) override { return (*_p)(std::forward<Args>(args)...); }
+        R invoke(Args&&... args) override { return std::move(*_p)(std::forward<Args>(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return _p.get(); }
         const void* pointer() const noexcept override { return _p.get(); }
