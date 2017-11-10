@@ -656,11 +656,6 @@ class future<T, enable_if_copyable<T>> {
         return _p->get_try();
     }
 
-    // Fp Does it make sense to have this? At the moment I don't see a real use case for it.
-    // One can only ask once on an r-value and then the future is gone.
-    // To perform this in an l-value casted to an r-value does not make sense either,
-    // because in this case _p is not unique any more and internally it is forwarded to
-    // the l-value get_try.
     auto get_try() && {
         return _p->get_try_r(_p.unique());
     }
