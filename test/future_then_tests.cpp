@@ -148,20 +148,16 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<void>)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<int>>)
+BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<stlab::move_only>)
     BOOST_AUTO_TEST_CASE(future_non_copyable_single_task) {
         BOOST_TEST_MESSAGE("running future non copyable single task");
 
-        sut = async(custom_scheduler<0>(), [] { 
-            auto r = std::make_unique<int>(); 
-            *r = 42; 
-            return r;
-        });
+        sut = async(custom_scheduler<0>(), [] { return move_only(42); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
         
-        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -169,11 +165,9 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_TEST_MESSAGE("running future non copyable, detached");
         std::atomic_bool check{ false };
         {
-            async(custom_scheduler<0>(), [&_check = check] { 
-                auto result = std::make_unique<int>(); 
-                *result = 42; 
+            async(custom_scheduler<0>(), [&_check = check] {
                 _check = true;  
-                return result;
+                return move_only(42);
             }).detach();
         }
         while (!check) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
@@ -184,16 +178,12 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         
         stlab::v1::move_only m{ 42 };
         
-        sut = async(custom_scheduler<0>(), [&_m = m] {
-            auto r = std::make_unique<int>();
-            *r = _m.member();
-            return r;
-        });
+        sut = async(custom_scheduler<0>(), [&_m = m] { return move_only(_m.member()); });
         
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
         
-        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -201,15 +191,13 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
         BOOST_TEST_MESSAGE("running future copyable with non copyable as contination with same scheduler, then on r-value");
 
         sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) {
-            auto r = std::make_unique<int>();
-            *r = x;
-            return r;
+            return move_only(x);
         });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -218,15 +206,13 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
 
         sut = async(custom_scheduler<0>(), [] { return 42; })
             .then(custom_scheduler<1>(), [](auto x) {
-                auto r = std::make_unique<int>();
-                *r = x;
-                return r;
+                return move_only(x);
             });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
     }
@@ -236,16 +222,12 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
 
         auto interim = async(custom_scheduler<0>(), [] { return 42; });
 
-        sut = interim.then([](auto x) {
-            auto r = std::make_unique<int>();
-            *r = x;
-            return r;
-        });
+        sut = interim.then([](auto x) { return move_only(x); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
@@ -254,16 +236,12 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
 
         auto interim = async(custom_scheduler<0>(), [] { return 42; });
 
-        sut = interim.then(custom_scheduler<1>(), [](auto x) {
-            auto r = std::make_unique<int>();
-            *r = x;
-            return r;
-        });
+        sut = interim.then(custom_scheduler<1>(), [](auto x) { return move_only(x); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, **result);
+        BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
     }
@@ -271,40 +249,26 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<std::unique_ptr<
     BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
         BOOST_TEST_MESSAGE("running future non copyable as contination with same scheduler, then on r-value");
 
-        sut = async(custom_scheduler<0>(), [] {
-                auto result = std::make_unique<int>();
-                *result = 42;
-                return result; })
-            .then([](auto x) {
-                auto r = std::make_unique<int>();
-                *r = *x * 2;
-                return r;
-            });
+        sut = async(custom_scheduler<0>(), [] { return move_only(42); })
+            .then([](auto x) { return move_only(x.member()*2); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42 * 2, **result);
+        BOOST_REQUIRE_EQUAL(42 * 2, result->member());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
 
     BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_scheduler_then_on_rvalue) {
         BOOST_TEST_MESSAGE("running future non copyable as contination with different scheduler, then on r-value");
 
-        sut = async(custom_scheduler<0>(), [] {
-                auto result = std::make_unique<int>();
-                *result = 42;
-                return result; })
-            .then(custom_scheduler<1>(), [](auto x) {
-                auto r = std::make_unique<int>();
-                *r = *x * 2;
-                return r;
-            });
+        sut = async(custom_scheduler<0>(), [] { return move_only(42); })
+            .then(custom_scheduler<1>(), [](auto x) { return move_only(x.member()*2); });
         
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42 * 2, **result);
+        BOOST_REQUIRE_EQUAL(42 * 2, result->member());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
     }
@@ -382,7 +346,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_move_only, test_fixture<stlab::v1::move_onl
         
         stlab::v1::move_only m{ 42 };
         
-        sut = async(custom_scheduler<0>(), [&_m = m] () mutable {
+        sut = async(custom_scheduler<0>(), [] () mutable {
             return stlab::v1::move_only{ 10 };
         }).then([&_m = m] (auto x) mutable {
             return std::move(_m);
@@ -568,7 +532,7 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
         
         std::atomic_int p{ 0 };
 
-        auto sut = async(custom_scheduler<0>(), [&_p = p] { throw test_exception("failure"); })
+        auto sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); })
             .then([&_p = p] { _p = 42; });
 
         wait_until_future_fails<test_exception>(sut);

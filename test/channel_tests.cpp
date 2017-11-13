@@ -9,8 +9,11 @@
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/concurrency.hpp>
+#include <stlab/test/model.hpp>
 
 #include "channel_test_helper.hpp"
+
+using namespace stlab;
 
 BOOST_AUTO_TEST_CASE(int_sender) {
     BOOST_TEST_MESSAGE("int sender");
@@ -325,3 +328,146 @@ BOOST_AUTO_TEST_CASE(report_channel_broken_when_process_is_already_running) {
             return std::string("process already running") == e.what(); }) );
 }
 
+
+BOOST_AUTO_TEST_CASE(sender_receiver_equality_tests)
+{
+  BOOST_TEST_MESSAGE("running sender equality tests");
+  {
+    sender<int> a, b;
+    receiver<int> x, y;
+
+    BOOST_REQUIRE(a == b);
+    BOOST_REQUIRE(!(a != b));
+
+    BOOST_REQUIRE(x == y);
+    BOOST_REQUIRE(!(x != y));
+  }
+
+  {
+    sender<move_only> a, b;
+    receiver<move_only> x, y;
+    
+    BOOST_REQUIRE(a == b);
+    BOOST_REQUIRE(!(a != b));
+
+    BOOST_REQUIRE(x == y);
+    BOOST_REQUIRE(!(x != y));
+  }
+
+  {
+    sender<int> send;
+    receiver<int> rec;
+    std::tie(send, rec) = channel<int>(immediate_executor);
+
+    auto a = send;
+    auto x = rec;
+    BOOST_REQUIRE(send == a);
+    BOOST_REQUIRE(rec == x);
+  }
+
+  {
+    sender<int> a, b;
+    receiver<int> x, y;
+    std::tie(a, x) = channel<int>(immediate_executor);
+    std::tie(b, y) = channel<int>(immediate_executor);
+
+    BOOST_REQUIRE(a != b);
+    BOOST_REQUIRE(x != y);
+  }
+  {
+    sender<move_only> send;
+    receiver<move_only> rec;
+    std::tie(send, rec) = channel<move_only>(immediate_executor);
+
+    sender<move_only> a;
+    BOOST_REQUIRE(a != send);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(sender_receiver_swap_tests)
+{
+  {
+    sender<int> a, b;
+    receiver<int> x, y;
+    std::tie(a, x) = channel<int>(immediate_executor);
+    std::tie(b, y) = channel<int>(immediate_executor);
+    int result1(0), result2(0);
+
+    auto v = x | [&result1](int i) { result1 = i; };
+    auto w = y | [&result2](int i) { result2 = i; };
+
+    x.set_ready();
+    y.set_ready();
+
+    swap(a, b);
+
+    a(1);
+    b(2);
+
+    BOOST_REQUIRE_EQUAL(1, result2);
+    BOOST_REQUIRE_EQUAL(2, result1);
+  }
+  {
+    sender<int> a, b;
+    receiver<int> x, y;
+    std::tie(a, x) = channel<int>(immediate_executor);
+    std::tie(b, y) = channel<int>(immediate_executor);
+    int result1(0), result2(0);
+
+    swap(x, y);
+
+    auto v = x | [&result1](int i) { result1 = i; };
+    auto w = y | [&result2](int i) { result2 = i; };
+
+    x.set_ready();
+    y.set_ready();
+
+    a(1);
+    b(2);
+
+    BOOST_REQUIRE_EQUAL(1, result2);
+    BOOST_REQUIRE_EQUAL(2, result1);
+  }
+  {
+    sender<move_only> a, b;
+    receiver<move_only> x, y;
+    std::tie(a, x) = channel<move_only>(immediate_executor);
+    std::tie(b, y) = channel<move_only>(immediate_executor);
+    int result1(0), result2(0);
+
+    auto v = x | [&result1](move_only i) { result1 = i.member(); };
+    auto w = y | [&result2](move_only i) { result2 = i.member(); };
+
+    x.set_ready();
+    y.set_ready();
+
+    swap(a, b);
+
+    a(1);
+    b(2);
+
+    BOOST_REQUIRE_EQUAL(1, result2);
+    BOOST_REQUIRE_EQUAL(2, result1);
+  }
+  {
+    sender<move_only> a, b;
+    receiver<move_only> x, y;
+    std::tie(a, x) = channel<move_only>(immediate_executor);
+    std::tie(b, y) = channel<move_only>(immediate_executor);
+    int result1(0), result2(0);
+
+    swap(x, y);
+
+    auto v = x | [&result1](move_only i) { result1 = i.member(); };
+    auto w = y | [&result2](move_only i) { result2 = i.member(); };
+
+    x.set_ready();
+    y.set_ready();
+
+    a(1);
+    b(2);
+
+    BOOST_REQUIRE_EQUAL(1, result2);
+    BOOST_REQUIRE_EQUAL(2, result1);
+  }
+}
