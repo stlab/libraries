@@ -1,3 +1,14 @@
+set( Boost_MULTITHREADED ON ) 
+set( Boost_USE_STATIC_LIBS ON )
+if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+    include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+    set( CONAN_SYSTEM_INCLUDES ON )
+    conan_basic_setup()
+else()
+    find_package( Boost 1.60.0 COMPONENTS unit_test_framework)
+    target_link_libraries( stlab INTERFACE Boost::unit_test_framework)
+endif()
+
 ####################################################################################################
 
 add_executable( stlab.test.future.test
