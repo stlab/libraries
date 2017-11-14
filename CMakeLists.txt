@@ -1,11 +1,18 @@
-cmake_minimum_required( VERSION 3.3 )
+cmake_minimum_required( VERSION 3.8 )
 set( CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Supported configuration types" FORCE )
 
 project( stlab VERSION 1.0.0 LANGUAGES C CXX )
 
+################################################################################              
+# Options
+################################################################################
 option( coverage "Enable binary instrumentation to collect test coverage information in the DEBUG configuration" )
 option( stlab_testing "Compile the stlab tests and integrate with ctest" ${BUILD_TESTING} )
 
+
+################################################################################              
+# Library
+################################################################################
 add_library( stlab INTERFACE )
 target_include_directories(stlab INTERFACE
         $<BUILD_INTERFACE:${stlab_SOURCE_DIR}/include>
@@ -13,17 +20,20 @@ target_include_directories(stlab INTERFACE
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
 find_package( Threads )
 target_link_libraries( stlab INTERFACE Threads::Threads ${CONAN_LIBS} )
+target_compile_features( stlab INTERFACE cxx_std_14 )
 
-set( flags "${stlab_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
-if( EXISTS ${flags} )
-  include( ${flags} )
-else()
-  message( WARNING "No stlab-defined flags for ${CMAKE_CXX_COMPILER_ID} C++ compiler")
-  message( STATUS "Only CMake defaults will be used")
+
+################################################################################              
+# Flags
+################################################################################
+if (MSVC)
+  target_compile_options( stlab INTERFACE "-D_WIN32_WINNT=0x0601 -DNOMINMAX" )
 endif()
-target_compile_options( stlab INTERFACE ${stlab_interface_flags} )
-              
-# Setup install
+
+
+################################################################################              
+# Installation
+################################################################################
 install(TARGETS stlab EXPORT stlabTargets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -44,6 +54,9 @@ install(FILES config/stlabConfig.cmake
 install(DIRECTORY include/stlab/concurrency DESTINATION include FILES_MATCHING
         PATTERN "*.hpp")
 
+################################################################################              
+# Directories
+################################################################################
 if ( stlab_testing )
   enable_testing()
   add_subdirectory( test )
