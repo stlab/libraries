@@ -51,8 +51,8 @@ write_basic_package_version_file("stlabConfigVersion.cmake"
 install(FILES config/stlabConfig.cmake 
               ${stlab_BINARY_DIR}/stlabConfigVersion.cmake
         DESTINATION lib/cmake/stlab)
-install(DIRECTORY include/stlab/concurrency DESTINATION include FILES_MATCHING
-        PATTERN "*.hpp")
+install(DIRECTORY include/stlab/concurrency DESTINATION include/stlab 
+  FILES_MATCHING PATTERN "*.hpp")
 
 ################################################################################              
 # Directories
