@@ -12,8 +12,8 @@ endif()
 ################################################################################
 # Test function
 ################################################################################
-function(stlab_test target_name target_file)
-    add_executable(${target_name} ${target_file})
+function(stlab_test target_name)
+    add_executable(${target_name} ${ARGN})
     target_link_libraries(${target_name} PRIVATE 
       stlab 
       Boost::unit_test_framework)
@@ -37,19 +37,18 @@ stlab_test( stlab.test.task task_test.cpp )
 stlab_test( stlab.test.cow cow_test.cpp )
 stlab_test( stlab.test.serial_queue serial_queue_test.cpp )
 
-stlab_test( stlab.test.channel channel_functor_tests.cpp 
-                               channel_join_tests.cpp 
-                               channel_merge_tests.cpp 
-                               channel_process_tests.cpp 
-                               channel_zip_tests.cpp 
-                               channel_test_helper.cpp
-                               channel_tests.cpp )
-
 stlab_test( stlab.test.future future_recover_tests.cpp 
+                              future_test_helper.cpp
                               future_then_tests.cpp 
                               future_when_all_arguments_tests.cpp 
                               future_when_all_range_tests.cpp 
                               future_when_any_arguments_tests.cpp 
                               future_when_any_range_tests.cpp 
                               future_tests.cpp 
-                              future_test_helper.cpp)
+                              channel_functor_tests.cpp 
+                              channel_join_tests.cpp 
+                              channel_merge_tests.cpp 
+                              channel_process_tests.cpp 
+                              channel_zip_tests.cpp 
+                              channel_test_helper.cpp
+                              channel_tests.cpp )
