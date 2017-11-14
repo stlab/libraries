@@ -30,12 +30,12 @@ endfunction()
 ################################################################################
 # Tests
 ################################################################################
-stlab_test( stlab.test.main "main.cpp" )
-stlab_test( stlab.test.tuple "tuple_test.cpp" )
-stlab_test( stlab.test.tuple.algorithm "tuple_algorithm_test.cpp" )
-stlab_test( stlab.test.task "task_test.cpp" )
-stlab_test( stlab.test.cow "cow_test.cpp" )
-stlab_test( stlab.test.serial_queue "serial_queue_test.cpp" )
+stlab_test( stlab.test.main main.cpp )
+stlab_test( stlab.test.tuple tuple_test.cpp )
+stlab_test( stlab.test.tuple.algorithm tuple_algorithm_test.cpp )
+stlab_test( stlab.test.task task_test.cpp )
+stlab_test( stlab.test.cow cow_test.cpp )
+stlab_test( stlab.test.serial_queue serial_queue_test.cpp )
 
 stlab_test( stlab.test.channel channel_functor_tests.cpp 
                                channel_join_tests.cpp 
@@ -45,11 +45,11 @@ stlab_test( stlab.test.channel channel_functor_tests.cpp
                                channel_test_helper.cpp
                                channel_tests.cpp )
 
-                                     #stlab_future_test( stlab.test.future.recover "future_recover_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future.then "future_then_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future.when.all.arguments "future_when_all_arguments_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future.when.all.range "future_when_all_range_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future.when.any.arguments "future_when_any_arguments_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future.when.any.range "future_when_any_range_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future "future_tests.cpp" )
-                                     #stlab_future_test( stlab.test.future.helper "future_test_helper.cpp" )
+stlab_test( stlab.test.future future_recover_tests.cpp 
+                              future_then_tests.cpp 
+                              future_when_all_arguments_tests.cpp 
+                              future_when_all_range_tests.cpp 
+                              future_when_any_arguments_tests.cpp 
+                              future_when_any_range_tests.cpp 
+                              future_tests.cpp 
+                              future_test_helper.cpp)
