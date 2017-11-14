@@ -5,7 +5,7 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
     set( CONAN_SYSTEM_INCLUDES ON )
     conan_basic_setup()
 else()
-    find_package( Boost COMPONENTS unit_test_framework)
+    find_package( Boost REQUIRED COMPONENTS unit_test_framework)
 endif()
 
 
@@ -33,39 +33,37 @@ endfunction()
 ################################################################################
 # Tests
 ################################################################################
-stlab_test( stlab.test.tuple.test 
-                "tuple_test.cpp"
-                "main.cpp" )
+stlab_test( stlab.test.tuple.test "tuple_test.cpp" )
 
-stlab_test( stlab.test.task.test 
-                "task_test.cpp"
-                "main.cpp" )
-
-stlab_test( stlab.test.cow.test 
-                "cow_test.cpp"
-                "main.cpp" )
-
-stlab_test( stlab.test.serial_queue.test
-                "serial_queue_test.cpp" )
-
-stlab_test( stlab.test.future.test
-                "channel_functor_tests.cpp"
-                "channel_join_tests.cpp"
-                "channel_merge_tests.cpp"
-                "channel_process_tests.cpp"
-                "channel_test_helper.cpp"
-                "channel_tests.cpp"
-                "channel_zip_tests.cpp"
-                "future_recover_tests.cpp"
-                "future_test_helper.cpp"
-                "future_tests.cpp"
-                "future_then_tests.cpp"
-                "future_when_all_arguments_tests.cpp"
-                "future_when_all_range_tests.cpp"
-                "future_when_any_arguments_tests.cpp"
-                "future_when_any_range_tests.cpp"
-                "tuple_algorithm_test.cpp"
-                "main.cpp"
-                "channel_test_helper.hpp"
-                "future_test_helper.hpp" )
+#stlab_test( stlab.test.task.test 
+#                "task_test.cpp"
+#                "main.cpp" )
+#
+#stlab_test( stlab.test.cow.test 
+#                "cow_test.cpp"
+#                "main.cpp" )
+#
+#stlab_test( stlab.test.serial_queue.test
+#                "serial_queue_test.cpp" )
+#
+#stlab_test( stlab.test.future.test
+#                "channel_functor_tests.cpp"
+#                "channel_join_tests.cpp"
+#                "channel_merge_tests.cpp"
+#                "channel_process_tests.cpp"
+#                "channel_test_helper.cpp"
+#                "channel_tests.cpp"
+#                "channel_zip_tests.cpp"
+#                "future_recover_tests.cpp"
+#                "future_test_helper.cpp"
+#                "future_tests.cpp"
+#                "future_then_tests.cpp"
+#                "future_when_all_arguments_tests.cpp"
+#                "future_when_all_range_tests.cpp"
+#                "future_when_any_arguments_tests.cpp"
+#                "future_when_any_range_tests.cpp"
+#                "tuple_algorithm_test.cpp"
+#                "main.cpp"
+#                "channel_test_helper.hpp"
+#                "future_test_helper.hpp" )
 

@@ -3,11 +3,11 @@ set( CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Supported configura
 
 project( stlab VERSION 1.0.0 LANGUAGES C CXX )
 
+
 ################################################################################              
 # Options
 ################################################################################
-option( coverage "Enable binary instrumentation to collect test coverage information in the DEBUG configuration" )
-option( stlab_testing "Compile the stlab tests and integrate with ctest" ${BUILD_TESTING} )
+option( stlab_testing "Compile the stlab tests and integrate with ctest" ON )
 
 
 ################################################################################              
@@ -53,6 +53,7 @@ install(FILES config/stlabConfig.cmake
         DESTINATION lib/cmake/stlab)
 install(DIRECTORY include/stlab/concurrency DESTINATION include/stlab 
   FILES_MATCHING PATTERN "*.hpp")
+
 
 ################################################################################              
 # Directories
