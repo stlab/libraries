@@ -223,7 +223,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then(S s, F f) {
         return recover(std::move(s), [_f = std::move(f)](const auto& x){
-            return _f(x.get_try().value());
+            return _f(x._p->get_ready());
         });
     }
 
@@ -298,6 +298,18 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
+
+    // get_ready() is called internally on continuations when we know _ready is true;
+    auto get_ready() -> const T& {
+        #ifndef NDEBUG
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
+        }
+        #endif
+        if (_error) std::rethrow_exception(_error.get());
+        return _result.value();
+    }
 
     auto get_try() -> boost::optional<T> {
         bool ready = false;
