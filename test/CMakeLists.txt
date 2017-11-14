@@ -24,8 +24,10 @@ function(stlab_test target_name target_file)
       COMMAND ${target_name})
 
   if ( NOT MSVC )
-      target_compile_options(${target_name} "-Wall;-ftemplate-backtrace-limit=0;")
+      target_compile_options(${target_name} PRIVATE "-Wall;-ftemplate-backtrace-limit=0;")
   endif()
+
+  target_compile_definitions(${target_name} PRIVATE BOOST_TEST_MODULE=stlab_libraries_tests)
 
 endfunction()
 
@@ -33,19 +35,16 @@ endfunction()
 ################################################################################
 # Tests
 ################################################################################
-stlab_test( stlab.test.tuple.test "tuple_test.cpp" )
+stlab_test( stlab.test.main "main.cpp" )
 
-#stlab_test( stlab.test.task.test 
-#                "task_test.cpp"
-#                "main.cpp" )
-#
-#stlab_test( stlab.test.cow.test 
-#                "cow_test.cpp"
-#                "main.cpp" )
-#
-#stlab_test( stlab.test.serial_queue.test
-#                "serial_queue_test.cpp" )
-#
+stlab_test( stlab.test.tuple "tuple_test.cpp" )
+stlab_test( stlab.test.task "task_test.cpp" )
+stlab_test( stlab.test.cow "cow_test.cpp" )
+stlab_test( stlab.test.serial_queue "serial_queue_test.cpp" )
+
+
+
+
 #stlab_test( stlab.test.future.test
 #                "channel_functor_tests.cpp"
 #                "channel_join_tests.cpp"
