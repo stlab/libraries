@@ -1,12 +1,11 @@
-set( Boost_MULTITHREADED ON ) 
-set( Boost_USE_STATIC_LIBS ON )
 if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
     include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
     set( CONAN_SYSTEM_INCLUDES ON )
     conan_basic_setup()
-else()
-    find_package( Boost REQUIRED COMPONENTS unit_test_framework)
 endif()
+set( Boost_MULTITHREADED ON ) 
+set( Boost_USE_STATIC_LIBS ON )
+find_package( Boost REQUIRED COMPONENTS unit_test_framework)
 
 
 ################################################################################
@@ -30,13 +29,11 @@ endfunction()
 ################################################################################
 # Tests
 ################################################################################
-stlab_test( stlab.test.main main.cpp )
-stlab_test( stlab.test.tuple tuple_test.cpp )
-stlab_test( stlab.test.tuple.algorithm tuple_algorithm_test.cpp )
-stlab_test( stlab.test.task task_test.cpp )
-stlab_test( stlab.test.cow cow_test.cpp )
+stlab_test( stlab.test.tuple tuple_test.cpp main.cpp )
+stlab_test( stlab.test.tuple.algorithm tuple_algorithm_test.cpp main.cpp)
+stlab_test( stlab.test.task task_test.cpp main.cpp )
+stlab_test( stlab.test.cow cow_test.cpp main.cpp )
 stlab_test( stlab.test.serial_queue serial_queue_test.cpp )
-
 stlab_test( stlab.test.future future_recover_tests.cpp 
                               future_test_helper.cpp
                               future_then_tests.cpp 
@@ -51,4 +48,5 @@ stlab_test( stlab.test.future future_recover_tests.cpp
                               channel_process_tests.cpp 
                               channel_zip_tests.cpp 
                               channel_test_helper.cpp
-                              channel_tests.cpp )
+                              channel_tests.cpp 
+                              main.cpp )
