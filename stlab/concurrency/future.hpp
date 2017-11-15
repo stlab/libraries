@@ -292,8 +292,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             then = move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling
-        for (auto& e : then) { e.second(); }
+        // propagate exception with scheduling
+        for (auto& e : then) { e.first(std::move(e.second)); }
     }
 
     template <typename F, typename... Args>
@@ -473,8 +473,8 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling 
-        for (auto& e : then) { e.second(); }
+        // propagate exception with scheduling 
+        for (auto& e : then) { e.first(std::move(e.second)); }
     }
 
     auto get_try() -> bool {
