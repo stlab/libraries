@@ -252,7 +252,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     reduction_helper<T>                 _reduction_helper;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
-    bool                                _ready = false;
+    std::atomic_bool                    _ready{false};
     then_t                              _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
@@ -263,7 +263,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto then(S s, F f) {
         return recover(std::move(s), [_f = std::move(f)](const auto& x){
-            return _f(x.get_try().value());
+            return _f(x._p->get_ready());
         });
     }
 
@@ -343,12 +343,28 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             then = move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling
-        for (auto& e : then) { e.second(); }
+        // propagate exception with scheduling
+        for (auto& e : then) { e.first(std::move(e.second)); }
     }
 
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
+
+    bool is_ready() const&{
+        return _ready;
+    }
+    
+    // get_ready() is called internally on continuations when we know _ready is true;
+    auto get_ready() -> const T& {
+        #ifndef NDEBUG
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
+        }
+        #endif
+        if (_error) std::rethrow_exception(_error.get());
+        return _result.value();
+    }
 
     auto get_try() -> boost::optional<T> {
         bool ready = false;
@@ -390,7 +406,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     reduction_helper<T>                 _reduction_helper;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
-    bool                                _ready = false;
+    std::atomic_bool                    _ready{false};
     then_t                              _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
@@ -453,6 +469,10 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
+    bool is_ready() const {
+        return _ready;
+    }
+
     auto get_try() -> boost::optional<T> {
         return get_try_r(true);
     }
@@ -480,7 +500,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     executor_t                          _executor;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
-    bool                                _ready = false;
+    std::atomic_bool                    _ready{false};
     then_t                              _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
@@ -532,8 +552,12 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception without scheduling 
-        for (auto& e : then) { e.second(); }
+        // propagate exception with scheduling 
+        for (auto& e : then) { e.first(std::move(e.second)); }
+    }
+
+    bool is_ready() const& {
+        return _ready;
     }
 
     auto get_try() -> bool {
@@ -732,20 +756,19 @@ class future<T, enable_if_copyable<T>> {
         _p.reset();
     }
 
+    bool is_ready() const& {
+        return _p && _p->is_ready();
+    }
+
     auto get_try() const& {
         return _p->get_try();
     }
 
-    // Fp Does it make sense to have this? At the moment I don't see a real use case for it.
-    // One can only ask once on an r-value and then the future is gone.
-    // To perform this in an l-value casted to an r-value does not make sense either,
-    // because in this case _p is not unique any more and internally it is forwarded to
-    // the l-value get_try.
     auto get_try() && {
         return _p->get_try_r(_p.unique());
     }
 
-    boost::optional<std::exception_ptr> error() const {
+    boost::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };
@@ -836,14 +859,17 @@ class future<void, void> {
         _p.reset();
     }
 
+    bool is_ready() const& {
+        return _p && _p->is_ready();
+    }
+
     bool get_try() const& {
         return _p->get_try();
     }
 
-    boost::optional<std::exception_ptr> error() const {
+    boost::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
-
 };
 
 /**************************************************************************************************/
@@ -915,6 +941,10 @@ class future<T, enable_if_not_copyable<T>> {
         _p.reset();
     }
 
+    bool is_ready() const& {
+        return _p && _p->is_ready();
+    }
+
     auto get_try() const& {
         return _p->get_try();
     }
@@ -923,7 +953,7 @@ class future<T, enable_if_not_copyable<T>> {
         return _p->get_try_r(_p.unique());
     }
 
-    boost::optional<std::exception_ptr> error() const {
+    boost::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };
@@ -1429,7 +1459,7 @@ auto when_all(E executor, F f, const std::pair<I, I>& range) {
 
 
     if (range.first == range.second) {
-        auto p = package<result_t()>(std::move(executor),
+        auto p = package<result_t()>(executor,
                                      detail::context_result<F, false, context_result_t>(std::move(f), 0));
         executor(std::move(p.first));
         return std::move(p.second);
