@@ -299,9 +299,10 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
-    bool is_ready() const& {
+    bool is_ready() const&{
         return _ready;
-      
+    }
+    
     // get_ready() is called internally on continuations when we know _ready is true;
     auto get_ready() -> const T& {
         #ifndef NDEBUG
@@ -407,7 +408,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
-    bool is_ready() const& {
+    bool is_ready() const {
         return _ready;
     }
 
