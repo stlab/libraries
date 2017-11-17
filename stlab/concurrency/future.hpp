@@ -212,7 +212,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
-    bool                                _ready = false;
+    std::atomic_bool                    _ready{false};
     then_t                              _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
@@ -299,6 +299,10 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
+    bool is_ready() const& {
+        return _ready;
+    }
+
     auto get_try() -> boost::optional<T> {
         bool ready = false;
         {
@@ -338,7 +342,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     boost::optional<T>                  _result;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
-    bool                                _ready = false;
+    std::atomic_bool                    _ready{false};
     then_t                              _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
@@ -392,6 +396,10 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename F, typename... Args>
     void set_value(F& f, Args&&... args);
 
+    bool is_ready() const& {
+        return _ready;
+    }
+
     auto get_try() -> boost::optional<T> {
         return get_try_r(true);
     }
@@ -419,7 +427,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     executor_t                          _executor;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
-    bool                                _ready = false;
+    std::atomic_bool                    _ready{false};
     then_t                              _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) { }
@@ -463,6 +471,10 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         }
         // propagate exception without scheduling 
         for (auto& e : then) { e.second(); }
+    }
+
+    bool is_ready() const& {
+        return _ready;
     }
 
     auto get_try() -> bool {
@@ -652,6 +664,10 @@ class future<T, enable_if_copyable<T>> {
         _p.reset();
     }
 
+    bool is_ready() const& {
+        return _p && _p->is_ready();
+    }
+
     auto get_try() const& {
         return _p->get_try();
     }
@@ -665,7 +681,7 @@ class future<T, enable_if_copyable<T>> {
         return _p->get_try_r(_p.unique());
     }
 
-    boost::optional<std::exception_ptr> error() const {
+    boost::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };
@@ -753,14 +769,17 @@ class future<void, void> {
         _p.reset();
     }
 
+    bool is_ready() const& {
+        return _p && _p->is_ready();
+    }
+
     bool get_try() const& {
         return _p->get_try();
     }
 
-    boost::optional<std::exception_ptr> error() const {
+    boost::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
-
 };
 
 /**************************************************************************************************/
@@ -829,6 +848,10 @@ class future<T, enable_if_not_copyable<T>> {
         _p.reset();
     }
 
+    bool is_ready() const& {
+        return _p && _p->is_ready();
+    }
+
     auto get_try() const& {
         return _p->get_try();
     }
@@ -837,7 +860,7 @@ class future<T, enable_if_not_copyable<T>> {
         return _p->get_try_r(_p.unique());
     }
 
-    boost::optional<std::exception_ptr> error() const {
+    boost::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };

@@ -197,6 +197,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_default_constructed, T, all_test_types)
 
     auto sut = future<T>();
     BOOST_REQUIRE(sut.valid() == false);
+    BOOST_REQUIRE(sut.is_ready() == false);
 }
 
 using copyable_test_types = boost::mpl::list<int, double>;
@@ -212,6 +213,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
 
         sut.reset();
         BOOST_REQUIRE(sut.valid() == false);
+        BOOST_REQUIRE(sut.is_ready() == false);
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
