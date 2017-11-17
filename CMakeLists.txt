@@ -19,7 +19,7 @@ target_include_directories(stlab INTERFACE
         $<INSTALL_INTERFACE:include>)
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
 find_package( Threads )
-target_link_libraries( stlab INTERFACE Threads::Threads ${CONAN_LIBS} )
+target_link_libraries( stlab INTERFACE Threads::Threads )
 target_compile_features( stlab INTERFACE cxx_std_14 )
 
 
@@ -27,7 +27,7 @@ target_compile_features( stlab INTERFACE cxx_std_14 )
 # Flags
 ################################################################################
 if (MSVC)
-  target_compile_options( stlab INTERFACE "-D_WIN32_WINNT=0x0601 -DNOMINMAX" )
+  target_compile_options( stlab INTERFACE "-D_WIN32_WINNT=0x0601;-DNOMINMAX;" )
 endif()
 
 
