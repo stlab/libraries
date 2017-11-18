@@ -20,6 +20,24 @@ using namespace future_test_helper;
 
 /**************************************************************************************************/
 
+template <class T>
+inline auto promise_future() {
+    return package<T(T)>(immediate_executor, [](auto&& x) -> decltype(x) { return std::forward<decltype(x)>(x); });
+}
+
+
+BOOST_AUTO_TEST_CASE(rvalue_through_continuation) {
+    BOOST_TEST_MESSAGE("running passing rvalue to continuation");
+
+    annotate_counters counters;
+
+    auto pf = promise_future<annotate>();
+    pf.first(annotate(counters));
+    pf.second.then([](const annotate&){ }); // copy happens here!
+
+    std::cout << counters;
+}
+
 BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
     {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
@@ -197,6 +215,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_default_constructed, T, all_test_types)
 
     auto sut = future<T>();
     BOOST_REQUIRE(sut.valid() == false);
+    BOOST_REQUIRE(sut.is_ready() == false);
 }
 
 using copyable_test_types = boost::mpl::list<int, double>;
@@ -212,6 +231,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
 
         sut.reset();
         BOOST_REQUIRE(sut.valid() == false);
+        BOOST_REQUIRE(sut.is_ready() == false);
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
@@ -346,3 +366,28 @@ BOOST_AUTO_TEST_CASE(future_swap_tests)
         BOOST_REQUIRE_EQUAL(4, b.second.get_try().value().member());
     }
 }
+
+BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<int>)
+
+    BOOST_AUTO_TEST_CASE(future_get_try_refref) {
+        BOOST_TEST_MESSAGE("future get_try()&& accessor test");
+
+        auto sut = async(default_executor, [] { return 42; })
+            .then([](int val) {
+                throw test_exception("failure");
+                return 0;
+            })
+            .recover([](auto &&f) {
+                try {
+                    std::forward<decltype(f)>(f).get_try();
+                    return 0;
+                }
+                catch (const test_exception &e) {
+                    return 42;
+                }
+            });
+
+        wait_until_future_completed(sut);
+        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+    }
+BOOST_AUTO_TEST_SUITE_END()
