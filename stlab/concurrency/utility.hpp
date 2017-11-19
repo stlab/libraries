@@ -19,7 +19,6 @@
 
 #endif
 
-#include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 
 /**************************************************************************************************/
@@ -32,23 +31,24 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
-template <typename T>
-future<std::decay_t<T>> make_ready_future(T &&x) {
+template <typename T, typename E>
+future<std::decay_t<T>> make_ready_future(T&& x, E executor) {
     auto p = package<std::decay_t<T>(std::decay_t<T>)>(
-            default_executor, [](auto&& x) { return std::forward<decltype(x)>(x); });
+            std::move(executor), [](auto&& x) { return std::forward<decltype(x)>(x); });
     p.first(std::forward<T>(x));
     return p.second;
 }
 
-inline future<void> make_ready_future() {
-    auto p = package<void()>(default_executor, []() {});
+template <typename E>
+future<void> make_ready_future(E executor) {
+    auto p = package<void()>(std::move(executor), []() {});
     p.first();
     return p.second;
 }
 
-template <typename T>
-future<T> make_exceptional_future(std::exception_ptr error) {
-    auto p = package<T(T)>(default_executor, [_error = error](auto&& x) {
+template <typename T, typename E>
+future<T> make_exceptional_future(std::exception_ptr error, E executor) {
+    auto p = package<T(T)>(std::move(executor), [_error = error](auto&& x) {
         std::rethrow_exception(_error);
         return std::forward<decltype(x)>(x);
     });
