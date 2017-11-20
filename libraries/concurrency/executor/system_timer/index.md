@@ -4,7 +4,7 @@ title: stlab::system_timer
 tags: [library]
 name: stlab::system_timer
 pure-name: system_timer
-defined-in-header: executor/concurrency/system_timer.hpp
+defined-in-header: stlab/concurrency/system_timer.hpp
 declaration: struct system_timer
 brief: Executes a function at a specified time point.
 ctor: default
