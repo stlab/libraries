@@ -2,8 +2,8 @@
 #include <mutex>
 #include <thread>
 
-#include <stlab/future.hpp>
-#include <stlab/utility.hpp>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/utility.hpp>
 
 using namespace stlab;
 using namespace std;
