@@ -14,18 +14,21 @@ entities:
       - name: make_ready_future
         pure-name: make_ready_future
         declaration: |
-            template <typename T>
-            future<T> make_ready_future(T&& x)
+            template <typename T, typename E>
+            future<T> make_ready_future(T&& x, E executor)
         description: This function creates a future that is already fulfilled.
       - name: make_ready_future
         pure-name: make_ready_future
         declaration: |
-            future<void> make_ready_future()
+            template <typename E>
+            future<void> make_ready_future(E executor)
         description: This function creates a future of type `void` that is already fulfilled.
   - kind: parameters
     list:
       - name: x
         description: The result value of the future
+      - name: executor
+        description: The executor that shall be used to create this ready future        
   - kind: result
     description: a future that is already fulfilled.
 ---

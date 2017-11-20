@@ -14,13 +14,15 @@ entities:
       - name: make_exceptional_future
         pure-name: make_exceptional_future
         declaration: |
-            template <typename T>
-            future<T> make_exceptional_future(std::exception_ptr error)
+            template <typename T, typename E>
+            future<T> make_exceptional_future(std::exception_ptr error, E executor)
         description: This function creates a future that is fulfilled as failed.
   - kind: parameters
     list:
       - name: error
         description: The exception pointer to the exception that shall be the result of the fulfilled future
+      - name: executor
+        description: The executor that shall be used to create this ready future
   - kind: result
     description: a future that is already in an error state.
 ---
