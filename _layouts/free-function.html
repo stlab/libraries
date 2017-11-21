@@ -24,6 +24,8 @@ layout: default
           {% endfor %}
           </table>
 
+          {{ page.description | markdownify }}
+          
           <ol>
             {% for item in entity.list %}
               <li>{{ item.description | markdownify }}</li>
