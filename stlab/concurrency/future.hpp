@@ -1371,7 +1371,6 @@ auto when_all(E executor, F f, const std::pair<I, I>& range) {
                                              detail::all_trigger,
                                              detail::single_trigger>;
 
-
     if (range.first == range.second) {
         auto p = package<result_t()>(executor,
                                      detail::context_result<F, false, context_result_t>(std::move(f), 0));
