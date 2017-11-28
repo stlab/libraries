@@ -6,10 +6,13 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
-#define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
+#ifndef STLAB_SCOPE_HPP
+#define STLAB_SCOPE_HPP
 
-#include <chrono>
+/**************************************************************************************************/
+
+#include <tuple>
+#include <utility>
 
 /**************************************************************************************************/
 
@@ -23,28 +26,33 @@ inline namespace v1 {
 
 namespace detail {
 
-/**************************************************************************************************/
+template <typename T, typename Tuple, size_t... S>
+auto scope_call(Tuple&& t, std::index_sequence<S...>) {
+    T scoped(std::forward<std::tuple_element_t<S, Tuple>>(std::get<S>(t))...);
+    (void)scoped;
 
-struct immediate_executor_type
-{
-    template <typename F>
-    void operator()(F&& f) {
-        std::forward<F>(f)();
-    }
-
-    template <typename F>
-    void operator()(std::chrono::steady_clock::time_point, F&& f) {
-        std::forward<F>(f)();
-    }
-};
-
-/**************************************************************************************************/
+    // call the function
+    constexpr size_t last_index = std::tuple_size<Tuple>::value - 1;
+    return std::forward<std::tuple_element_t<last_index, Tuple>>(std::get<last_index>(t))();
+}
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-constexpr auto immediate_executor = detail::immediate_executor_type{};
+template <typename T, typename... Args>
+inline auto scope(Args&&... args) {
+    return detail::scope_call<T>(std::forward_as_tuple(std::forward<Args>(args)...),
+                                 std::make_index_sequence<sizeof...(args) - 1>());
+}
+
+/* Workaround until VS2017 bug is fixed */
+template <typename T, typename F>
+inline auto scope(std::mutex& m, F&& f) {
+    T scoped(m);
+    return std::forward<F>(f)();
+}
+
 
 /**************************************************************************************************/
 
@@ -59,3 +67,4 @@ constexpr auto immediate_executor = detail::immediate_executor_type{};
 #endif
 
 /**************************************************************************************************/
+

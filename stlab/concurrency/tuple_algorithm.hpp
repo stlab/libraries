@@ -7,10 +7,14 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_TUPLE_ALGORITHM_HPP
-#define STLAB_TUPLE_ALGORITHM_HPP
+#ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
+#define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
+// stdc++
 #include <tuple>
+
+// boost
+#include <boost/optional.hpp>
 
 /**************************************************************************************************/
 
@@ -101,8 +105,12 @@ struct void_i_impl<L, L>
     template <typename T, typename F>
     static void go(T&, std::size_t, F&&) { }
 };
-}
 
+/**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
 /*
  * Finds in a tuple an element that satisfies the given predicate and returns the tuple index.
  * It returns an index beyond the last element if no element satisfies the predicate.
@@ -140,6 +148,115 @@ auto void_i(T& t, std::size_t index, F&& f)
 {
     return detail::void_i_impl<0, std::tuple_size<T>::value>::go(t, index, std::forward<F>(f));
 }
+
+/**************************************************************************************************/
+
+namespace detail {
+
+/**************************************************************************************************/
+
+template <class F, class Tuple, std::size_t... I>
+constexpr decltype(auto) apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>)
+{
+    return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
+}
+
+template <class F, class Tuple, std::size_t... I>
+constexpr decltype(auto) apply_optional_indexed_impl(F&& f, Tuple&& t, std::index_sequence<I...>)
+{
+    return std::forward<F>(f)(*std::get<I>(std::forward<Tuple>(t))...);
+}
+
+/**************************************************************************************************/
+
+template <class Seq, class F, class Tuple>
+constexpr decltype(auto) apply_indexed(F&& f, Tuple&& t) {
+    return detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t), Seq());
+}
+
+template <class F, class Tuple>
+constexpr decltype(auto) apply_tuple(F&& f, Tuple&& t) {
+    return detail::apply_impl(std::forward<F>(f),
+                              std::forward<Tuple>(t),
+                              std::make_index_sequence<std::tuple_size<Tuple>::value>());
+}
+
+template <class Seq, class F, class Tuple>
+constexpr decltype(auto) apply_optional_indexed(F&& f, Tuple&& t) {
+    return detail::apply_optional_indexed_impl(std::forward<F>(f), std::forward<Tuple>(t), Seq());
+}
+
+/**************************************************************************************************/
+
+class placeholder { };
+
+template <class T, std::size_t N>
+struct map_placeholder {
+    using type = std::index_sequence<N>;
+};
+
+template <std::size_t N>
+struct map_placeholder<placeholder, N> {
+    using type = std::index_sequence<>;
+};
+
+template <std::size_t N>
+struct map_placeholder<boost::optional<placeholder>, N> {
+    using type = std::index_sequence<>;
+};
+
+template <class Tuple>
+struct remove_placeholder {
+    template <std::size_t Index>
+    struct function {
+        using type = typename map_placeholder<std::tuple_element_t<Index, Tuple>, Index>::type;
+    };
+};
+
+/**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
+// type-function variant of std::tuple_cat
+template<typename...Ts>
+using tuple_cat_t = decltype(std::tuple_cat(std::declval<Ts>()...));
+
+/**************************************************************************************************/
+// type-function that takes a parameter pack and returns a std::tuple<Ts...>
+// where all T[i] = void have been removed.
+template <typename... Ts>
+using voidless_tuple = tuple_cat_t<
+    typename std::conditional<
+        std::is_same<void, Ts>::value,
+        std::tuple<>,
+        std::tuple<Ts>
+    >::type...
+>;
+
+/**************************************************************************************************/
+// type-function that takes a parameter pack and returns a std::tuple<Ts...>
+// where all T[i] = void have been replaced with stlab::placeholder.
+template <typename... Ts>
+using placeholder_tuple = std::tuple<
+    typename std::conditional<
+        std::is_same<void, Ts>::value,
+        detail::placeholder,
+        Ts
+    >::type...
+>;
+
+/**************************************************************************************************/
+// type-function that takes a parameter pack and returns a std::tuple<Ts...>
+// where all T[i] = void have been replaced with stlab::placeholder.
+template <typename... Ts>
+using optional_placeholder_tuple = std::tuple<
+    boost::optional<typename std::conditional<
+        std::is_same<void, Ts>::value,
+        detail::placeholder,
+        Ts
+    >::type>...
+>;
 
 /**************************************************************************************************/
 

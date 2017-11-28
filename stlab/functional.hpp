@@ -1,15 +1,18 @@
 /*
-    Copyright 2015 Adobe
+    Copyright 2017 Adobe
     Distributed under the Boost Software License, Version 1.0.
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
-#define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
+#ifndef STLAB_FUNCTIONAL_HPP
+#define STLAB_FUNCTIONAL_HPP
 
-#include <chrono>
+/**************************************************************************************************/
+
+#include <functional>
+#include <type_traits>
 
 /**************************************************************************************************/
 
@@ -21,30 +24,28 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
-namespace detail {
-
-/**************************************************************************************************/
-
-struct immediate_executor_type
-{
-    template <typename F>
-    void operator()(F&& f) {
-        std::forward<F>(f)();
-    }
-
-    template <typename F>
-    void operator()(std::chrono::steady_clock::time_point, F&& f) {
-        std::forward<F>(f)();
-    }
+template <class T>
+struct unwrap_reference {
+    using type = T;
 };
 
+template <class T>
+struct unwrap_reference<std::reference_wrapper<T>> {
+    using type = T;
+};
+
+template <class T>
+using unwrap_reference_t = typename unwrap_reference<T>::type;
+
 /**************************************************************************************************/
 
-} // namespace detail
+template <class T>
+struct is_reference_wrapper : std::false_type {};
+template <class T>
+struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
-/**************************************************************************************************/
-
-constexpr auto immediate_executor = detail::immediate_executor_type{};
+template <class T>
+constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 
 /**************************************************************************************************/
 
@@ -59,3 +60,4 @@ constexpr auto immediate_executor = detail::immediate_executor_type{};
 #endif
 
 /**************************************************************************************************/
+

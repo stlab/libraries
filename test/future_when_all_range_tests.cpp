@@ -10,10 +10,10 @@
 
 #include <stlab/concurrency/concurrency.hpp>
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
 using namespace stlab;
-using namespace test_helper;
+using namespace future_test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void, test_fixture<void>)
     BOOST_AUTO_TEST_CASE(future_when_all_void_void_empty_range) {
@@ -341,7 +341,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, test_fixture<void>)
         auto start = async(custom_scheduler<0>(), []()->int { return 42; });
         std::vector<stlab::future<void>> futures(4);
         futures[0] = start.then(custom_scheduler<1>(), [&_p = v[0]](auto x) { _p = x + 1; });
-        futures[1] = start.then(custom_scheduler<1>(), [&_p = v[1]](auto x) { throw test_exception("failure"); });
+        futures[1] = start.then(custom_scheduler<1>(), []          (auto x) { throw test_exception("failure"); });
         futures[2] = start.then(custom_scheduler<1>(), [&_p = v[2]](auto x) { _p = x + 3; });
         futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 
@@ -368,7 +368,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, test_fixture<void>)
         futures[2] = start.then(custom_scheduler<1>(), [&_p = v[2]](auto x) { _p = x + 3; });
         futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 
-        sut = when_all(custom_scheduler<0>(), [&_r = r, &v]() { throw test_exception("failure"); }, 
+        sut = when_all(custom_scheduler<0>(), []() { throw test_exception("failure"); },
             std::make_pair(futures.begin(), futures.end()));
 
         wait_until_future_fails<test_exception>(sut);

@@ -6,9 +6,10 @@
 
 /**************************************************************************************************/
 
-#include "test_helper.hpp"
+#include "future_test_helper.hpp"
 
-namespace test_helper
+
+namespace future_test_helper
 {
 
 test_exception::test_exception(const std::string &error)

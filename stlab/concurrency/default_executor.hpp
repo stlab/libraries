@@ -6,10 +6,10 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_DEFAULT_EXECUTOR_HPP
-#define SLABFUTURE_DEFAULT_EXECUTOR_HPP
+#ifndef STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
+#define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
-#include "config.hpp"
+#include <stlab/concurrency/config.hpp>
 
 #include <chrono>
 #include <functional>
@@ -19,9 +19,9 @@
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 #include <emscripten.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
-#include <ppapi/cpp/module.h>
-#include <ppapi/cpp/core.h>
 #include <ppapi/cpp/completion_callback.h>
+#include <ppapi/cpp/core.h>
+#include <ppapi/cpp/module.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 #include <Windows.h>
 #include <memory>
@@ -33,18 +33,12 @@
 #include <thread>
 #include <vector>
 
+#include <stlab/concurrency/task.hpp>
+
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
 #include <dispatch/dispatch.h>
 #endif
-#endif
-
-#ifdef min
-#undef min
-#endif
-
-#ifdef max
-#undef max
 #endif
 
 /**************************************************************************************************/
@@ -63,27 +57,37 @@ namespace detail {
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 
-struct default_executor_type
-{
+struct default_executor_type {
+private:
+    struct group {
+        dispatch_group_t _group = dispatch_group_create();
+        ~group() {
+            dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+            dispatch_release(_group);
+        }
+    };
+
+public:
     using result_type = void;
     template <typename F>
     void operator()(F f) const {
         using f_t = decltype(f);
 
-        dispatch_async_f(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-            new f_t(std::move(f)),
-            [](void* f_) {
-            auto f = static_cast<f_t*>(f_);
-            (*f)();
-            delete f;
-        });
+        static group g;
+
+        dispatch_group_async_f(g._group,
+                               dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                               new f_t(std::move(f)), [](void* f_) {
+                                   auto f = static_cast<f_t*>(f_);
+                                   (*f)();
+                                   delete f;
+                               });
     }
 };
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 
-struct default_executor_type
-{
+struct default_executor_type {
     using result_type = void;
 
     template <typename F>
@@ -91,18 +95,19 @@ struct default_executor_type
         // REVISIT (sparent) : Using a negative timeout may give better performance. Need to test.
         using f_t = decltype(f);
 
-        emscripten_async_call([](void* f_) {
-            auto f = static_cast<f_t*>(f_);
-            (*f)();
-            delete f;
-        }, new f_t(std::move(f)), 0);
+        emscripten_async_call(
+            [](void* f_) {
+                auto f = static_cast<f_t*>(f_);
+                (*f)();
+                delete f;
+            },
+            new f_t(std::move(f)), 0);
     }
 };
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
 
-struct default_executor_type
-{
+struct default_executor_type {
     using result_type = void;
 
     template <typename F>
@@ -110,24 +115,56 @@ struct default_executor_type
         using f_t = decltype(f);
 
         pp::Module::Get()->core()->CallOnMainThread(0,
-            pp::CompletionCallback([](void* f_, int32_t) {
-                auto f = static_cast<f_t*>(f_);
-                (*f)();
-                delete f;
-            }, new f_t(std::move(f))), 0);
+                                                    pp::CompletionCallback(
+                                                        [](void* f_, int32_t) {
+                                                            auto f = static_cast<f_t*>(f_);
+                                                            (*f)();
+                                                            delete f;
+                                                        },
+                                                        new f_t(std::move(f))),
+                                                    0);
     }
 };
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-class default_executor_type
-{
+class task_system {
+    PTP_POOL            _pool = nullptr;
+    TP_CALLBACK_ENVIRON _callBackEnvironment;
+    PTP_CLEANUP_GROUP   _cleanupgroup = nullptr;
+
 public:
+    task_system() {
+        InitializeThreadpoolEnvironment(&_callBackEnvironment);
+        _pool = CreateThreadpool(nullptr);
+        if (_pool == nullptr)
+            throw std::bad_alloc();
+
+        _cleanupgroup = CreateThreadpoolCleanupGroup();
+        if (_pool == nullptr)
+            throw std::bad_alloc();
+
+        SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
+        SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment,
+                                          _cleanupgroup,
+                                          nullptr);
+    }
+
+    ~task_system() {
+        CloseThreadpoolCleanupGroupMembers(_cleanupgroup,
+                                            FALSE,
+                                            nullptr);
+        CloseThreadpoolCleanupGroup(_cleanupgroup);
+        CloseThreadpool(_pool);
+    }
+
+
     template <typename F>
-    void operator()(F&& f) const {
+    void operator()(F&& f) {
         auto work = CreateThreadpoolWork(&callback_impl<F>,
             new F(std::forward<F>(f)),
-            nullptr);
+            &_callBackEnvironment);
+
         if (work == nullptr) {
             throw std::bad_alloc();
         }
@@ -135,59 +172,40 @@ public:
     }
 
 private:
-
     template <typename F>
     static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
-        PVOID                 parameter,
-        PTP_WORK              /*Work*/) {
+                                       PVOID parameter,
+                                       PTP_WORK /*Work*/) {
         std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
     }
-
-    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) const {
-        FILETIME ft = { 0, 0 };
-        SYSTEMTIME st = { 0 };
-        time_t t = std::chrono::system_clock::to_time_t(when);
-        tm utc_tm;
-        if (!gmtime_s(&utc_tm, &t)) {
-            st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
-            st.wMinute = static_cast<WORD>(utc_tm.tm_min);
-            st.wHour = static_cast<WORD>(utc_tm.tm_hour);
-            st.wDay = static_cast<WORD>(utc_tm.tm_mday);
-            st.wMonth = static_cast<WORD>(utc_tm.tm_mon + 1);
-            st.wYear = static_cast<WORD>(utc_tm.tm_year + 1900);
-            st.wMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(when.time_since_epoch()).count() % 1000;
-            SystemTimeToFileTime(&st, &ft);
-        }
-        return ft;
-    }
 };
+
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 /**************************************************************************************************/
 
-class notification_queue
-{
+class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
-    std::deque<std::function<void()>> _q;
-    bool                    _done{ false };
-    std::mutex                   _mutex;
-    std::condition_variable      _ready;
+    std::deque<task<void()>> _q;
+    bool _done{false};
+    std::mutex _mutex;
+    std::condition_variable _ready;
 
 public:
-    bool try_pop(std::function<void()>& x) {
-        lock_t lock{ _mutex, std::try_to_lock };
+    bool try_pop(task<void()>& x) {
+        lock_t lock{_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
         return true;
     }
 
-    template<typename F>
+    template <typename F>
     bool try_push(F&& f) {
         {
-            lock_t lock{ _mutex, std::try_to_lock };
+            lock_t lock{_mutex, std::try_to_lock};
             if (!lock) return false;
             _q.emplace_back(std::forward<F>(f));
         }
@@ -197,25 +215,26 @@ public:
 
     void done() {
         {
-            lock_t lock{ _mutex };
+            lock_t lock{_mutex};
             _done = true;
         }
         _ready.notify_all();
     }
 
-    bool pop(std::function<void()>& x) {
-        lock_t lock{ _mutex };
-        while (_q.empty() && !_done) _ready.wait(lock);
+    bool pop(task<void()>& x) {
+        lock_t lock{_mutex};
+        while (_q.empty() && !_done)
+            _ready.wait(lock);
         if (_q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
         return true;
     }
 
-    template<typename F>
+    template <typename F>
     void push(F&& f) {
         {
-            lock_t lock{ _mutex };
+            lock_t lock{_mutex};
             _q.emplace_back(std::forward<F>(f));
         }
         _ready.notify_one();
@@ -224,16 +243,15 @@ public:
 
 /**************************************************************************************************/
 
-class task_system
-{
-    const unsigned                   _count{ std::thread::hardware_concurrency() };
-    std::vector<std::thread>         _threads;
-    std::vector<notification_queue>  _q{ _count };
-    std::atomic<unsigned>            _index{ 0 };
+class task_system {
+    const unsigned _count{std::thread::hardware_concurrency()};
+    std::vector<std::thread> _threads;
+    std::vector<notification_queue> _q{_count};
+    std::atomic<unsigned> _index{0};
 
     void run(unsigned i) {
         while (true) {
-            std::function<void()> f;
+            task<void()> f;
 
             for (unsigned n = 0; n != _count * 32; ++n) {
                 if (_q[(i + n) % _count].try_pop(f)) break;
@@ -244,7 +262,6 @@ class task_system
         }
     }
 
-
 public:
     task_system() {
         for (unsigned n = 0; n != _count; ++n) {
@@ -253,9 +270,11 @@ public:
     }
 
     ~task_system() {
-        for (auto& e : _q) e.done();
+        for (auto& e : _q)
+            e.done();
 
-        for (auto& e : _threads) e.join();
+        for (auto& e : _threads)
+            e.join();
     }
 
     template <typename F>
@@ -270,18 +289,22 @@ public:
     }
 };
 
+#endif
+
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
+    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+
 struct default_executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator() (F&& f) const {
+    void operator()(F&& f) const {
         static task_system only_task_system;
         only_task_system(std::forward<F>(f));
     }
 };
 
 #endif
-
 /**************************************************************************************************/
 
 } // namespace detail
@@ -300,4 +323,5 @@ constexpr auto default_executor = detail::default_executor_type{};
 
 /**************************************************************************************************/
 
-#endif //SLABFUTURE_DEFAULT_EXECUTOR_HPP
+#endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
+

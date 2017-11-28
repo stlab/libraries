@@ -6,10 +6,12 @@
 
 /**************************************************************************************************/
 
-#ifndef SLABFUTURE_SYSTEM_TIMER_HPP
-#define SLABFUTURE_SYSTEM_TIMER_HPP
+#ifndef STLAB_CONCURRENCY_SYSTEM_TIMER_HPP
+#define STLAB_CONCURRENCY_SYSTEM_TIMER_HPP
 
-#include "config.hpp"
+/**************************************************************************************************/
+
+#include <stlab/concurrency/config.hpp>
 
 #include <chrono>
 #include <functional>
@@ -28,8 +30,10 @@
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 #include <algorithm>
 #include <condition_variable>
-#include <thread>
 #include <vector>
+#include <thread>
+
+#include <stlab/concurrency/task.hpp>
 // REVISIT (sparent) : for testing only
 #if 0 && __APPLE__
 #include <dispatch/dispatch.h>
@@ -58,13 +62,13 @@ struct system_timer_type {
 
 
     template<typename F>
-    void operator()(std::chrono::system_clock::time_point when, F f) const {
+    void operator()(std::chrono::steady_clock::time_point when, F f) const {
 
         using namespace std::chrono;
 
         using f_t = decltype(f);
 
-        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - system_clock::now()).count()),
+        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(when - steady_clock::now()).count()),
                          dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
                          new f_t(std::move(f)),
                          [](void *f_) {
@@ -79,15 +83,45 @@ struct system_timer_type {
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
-class system_timer_type
+class system_timer
 {
+    PTP_POOL            _pool = nullptr;
+    TP_CALLBACK_ENVIRON _callBackEnvironment;
+    PTP_CLEANUP_GROUP   _cleanupgroup = nullptr;
+
+
 public:
+    system_timer() {
+        InitializeThreadpoolEnvironment(&_callBackEnvironment);
+        _pool = CreateThreadpool(nullptr);
+        if (_pool == nullptr)
+            throw std::bad_alloc();
+
+        _cleanupgroup = CreateThreadpoolCleanupGroup();
+        if (_pool == nullptr)
+          throw std::bad_alloc();
+
+        SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
+        SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment,
+            _cleanupgroup,
+            nullptr);
+    }
+
+    ~system_timer() {
+        CloseThreadpoolCleanupGroupMembers(_cleanupgroup,
+            FALSE,
+            nullptr);
+        CloseThreadpoolCleanupGroup(_cleanupgroup);
+        CloseThreadpool(_pool);
+    }
+
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F&& f) const {
+    void operator()(std::chrono::steady_clock::time_point when, F&& f) {
 
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>,
             new F(std::forward<F>(f)),
-            nullptr);
+            &_callBackEnvironment);
+
         if (timer == nullptr) {
             throw std::bad_alloc();
         }
@@ -109,10 +143,17 @@ private:
         (*f)();
     }
 
-    FILETIME time_point_to_FILETIME(const std::chrono::system_clock::time_point& when) const {
+    time_t steady_clock_to_time_t(std::chrono::steady_clock::time_point t) const
+    {
+      return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() +
+        std::chrono::duration_cast<std::chrono::system_clock::duration>(t - std::chrono::steady_clock::now()));
+    }
+    
+
+    FILETIME time_point_to_FILETIME(const std::chrono::steady_clock::time_point& when) const {
         FILETIME ft = { 0, 0 };
         SYSTEMTIME st = { 0 };
-        time_t t = std::chrono::system_clock::to_time_t(when);
+        time_t t = steady_clock_to_time_t(when);
         tm utc_tm;
         if (!gmtime_s(&utc_tm, &t)) {
             st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
@@ -128,12 +169,13 @@ private:
     }
 };
 
+
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
 
-class system_timer_portable
+class system_timer
 {
-    using element_t = std::pair<std::chrono::system_clock::time_point, std::function<void()>>;
+    using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;
     using queue_t = std::vector<element_t>;
     using lock_t = std::unique_lock<std::mutex>;
 
@@ -156,13 +198,13 @@ class system_timer_portable
 
     void timed_queue_run() {
         while (true) {
-            std::function<void()> task;
+            task<void()> task;
             {
                 lock_t lock(_timed_queue_mutex);
 
                 while (_timed_queue.empty() && !_stop) _condition.wait(lock);
                 if (_stop) return;
-                while (std::chrono::system_clock::now() < _timed_queue.front().first) {
+                while (std::chrono::steady_clock::now() < _timed_queue.front().first) {
                     auto when = _timed_queue.front().first;
                     _condition.wait_until(lock, when);
                     if (_stop) return;
@@ -177,11 +219,11 @@ class system_timer_portable
     }
 
 public:
-    system_timer_portable() {
+    system_timer() {
         _timed_queue_thread = std::thread([this] { this->timed_queue_run(); });
     }
 
-    ~system_timer_portable() {
+    ~system_timer() {
         {
             lock_t lock(_timed_queue_mutex);
             _stop = true;
@@ -191,7 +233,7 @@ public:
     }
 
     template <typename F>
-    void operator()(std::chrono::system_clock::time_point when, F&& f) {
+    void operator()(std::chrono::steady_clock::time_point when, F&& f) {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(when, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
@@ -199,16 +241,22 @@ public:
     }
 };
 
+#endif
+
+
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS) \
+  || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE)
 
 struct system_timer_type {
     using result_type = void;
 
     template <typename F>
-    void operator() (std::chrono::system_clock::time_point when, F&& f) const {
-        static system_timer_portable only_system_timer;
+    void operator() (std::chrono::steady_clock::time_point when, F&& f) const {
+        static system_timer only_system_timer;
         only_system_timer(when, std::forward<F>(f));
     }
 };
+
 
 #endif
 
@@ -228,4 +276,6 @@ constexpr auto system_timer = detail::system_timer_type{};
 
 /**************************************************************************************************/
 
-#endif //SLABFUTURE_SYSTEM_TIMER_HPP
+#endif
+
+/**************************************************************************************************/

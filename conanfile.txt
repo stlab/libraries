@@ -8,6 +8,8 @@ cmake
 [options]
 # Boost:shared=True
 Boost:shared=False
+# Remove dependency on bzip2 which break Xcode 9
+Boost:without_iostreams=True
 
 [imports]
 bin, *.dll -> ./bin # copies package bin folder DLLs to "bin" folder
