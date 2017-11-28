@@ -276,16 +276,6 @@ struct shared_process_sender {
 
 /**************************************************************************************************/
 
-enum process_timeout_function_state : int
-{
-    no_timout_function_set,
-    timeout_function_set,
-    timeout_function_running
-};
-
-
-/**************************************************************************************************/
-
 template <typename T>
 using process_close_t = decltype(std::declval<T&>().close());
 
@@ -565,7 +555,7 @@ struct shared_process_sender_indexed : public shared_process_sender<Arg> {
             _shared_process._queue.template append<I>(
                 std::forward<U>(u)); // TODO (sparent) : overwrite here.
             do_run = !_shared_process._receiver_count && 
-              (!_shared_process._process_running || _shared_process._process_timeout_control != process_timeout_function_state::no_timout_function_set);
+              (!_shared_process._process_running || _shared_process._timeout_function_active);
 
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
@@ -653,9 +643,10 @@ struct shared_process
         on push back - this allows us to make calls while additional inserts happen.
     */
 
-    using result = R;
-    using queue_strategy = Q;
-    using process_t = T;
+    using result                = R;
+    using queue_strategy        = Q;
+    using process_t             = T;
+    using lock_t                = std::unique_lock<std::mutex>;
 
     std::mutex                  _downstream_mutex;
     downstream<R>               _downstream;
@@ -672,7 +663,8 @@ struct shared_process
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
     bool                        _process_final = false;
 
-    std::atomic_int             _process_timeout_control{ process_timeout_function_state::no_timout_function_set };
+    std::mutex                  _timeout_function_control;
+    std::atomic_bool            _timeout_function_active{false};
 
     std::atomic_size_t          _sender_count{0};
     std::atomic_size_t          _receiver_count;
@@ -831,12 +823,12 @@ struct shared_process
     auto step() -> std::enable_if_t<has_process_yield_v<U>> {
         // in case that the timeout function is just been executed then we have to re-schedule
         // the current run
-        if (_process_timeout_control == process_timeout_function_state::timeout_function_running) {
+        lock_t lock(_timeout_function_control, std::try_to_lock);
+        if (!lock) {
             run();
             return;
-        } 
-        // If a new value is received then cancel pending timeout.
-        _process_timeout_control = process_timeout_function_state::no_timout_function_set;
+        }
+        _timeout_function_active = false;
 
         /*
             While we are waiting we will flush the queue. The assumption here is that work
@@ -881,24 +873,29 @@ struct shared_process
                 broadcast((*_process).yield());
             } else {
                 /* Schedule a timeout. */
-                _process_timeout_control = process_timeout_function_state::timeout_function_set;
+                _timeout_function_active = true;
                 execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
                     auto _this = _weak_this.lock(); 
                     // It may be that the complete channel is gone in the meanwhile
-                    if (_this && ++_this->_process_timeout_control == process_timeout_function_state::timeout_function_running) {
-                        bool do_broadcast = false;
-                        {
-                            std::unique_lock<std::mutex> lock(_this->_process_mutex);
-                            if (get_process_state(_this->_process).first != process_state::yield) {
-                                do_broadcast = true;
-                            }
-                        }
-                        if (do_broadcast) {
-                            _this->try_broadcast();
-                            _this->_process_timeout_control = process_timeout_function_state::no_timout_function_set;
-                        }
-                    }
+                    if (!_this) return;
+                    
+					// try_lock can fail spuriously
+                    while (true) {
+						// we were cancelled
+	                	if (!_this->_timeout_function_active) return;
 
+                        lock_t lock(_this->_timeout_function_control, std::try_to_lock);
+                        if (!lock) continue;
+
+						// we were cancelled
+	                	if (!_this->_timeout_function_active) return;
+
+                        if (get_process_state(_this->_process).first != process_state::yield) {
+                            _this->try_broadcast();
+                            _this->_timeout_function_active = false;
+                        }
+                        return;
+                    }
                 });
             }
         } catch (...) { // this catches exceptions during _process.await() and _process.yield()
