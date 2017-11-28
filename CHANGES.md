@@ -14,6 +14,8 @@
     - Concurrency library
         - [serial queue](stlab/concurrency/serial_queue.hpp)
         - [task](stlab/concurrency/task.hpp)
+        - Added feature requests [#95](https://github.com/stlab/libraries/issues/95) (flatten futures) and [#38](https://github.com/stlab/libraries/issues/38) (reduction on `future<void>`). Reduction of futures is now supported. So a `future<future<T>>` is reduced to `future<T>`. Currently
+this is restricted to copyable types `T`.
     - [copy on write](stlab/copy_on_write.hpp)
     - [scope](stlab/scope.hpp)
     - [Test library](stlab/test/model.hpp)

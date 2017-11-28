@@ -23,11 +23,9 @@ multiple CPU cores while minimizing contention. This library solves several prob
 
 # Documentation
 
-The complete documentation is available on the [stlab home page](http://stlab.cc) 
+The complete documentation is available on the [stlab home page](http://stlab.cc).
 
-# Release
-
-[Version 1.1](readme.md)
+Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 # Building
 
