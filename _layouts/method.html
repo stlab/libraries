@@ -22,7 +22,7 @@ layout: default
             {% endfor %}
           </table>
 
-          {{ page.description | markdownify }}
+          {{ page.brief | markdownify }}
 
           <ol class='description-list'>
             {% for item in entity.list %}
@@ -35,9 +35,11 @@ layout: default
             {% endfor %}
           </ol>
 
+          {{ page.description | markdownify }}
+
       {% when 'parameters'%}
         <h3>Parameters</h3>
-        {% if entity.list %} 
+        {% if entity.list %}
           <table class='parameter-table'>
           {% for item in entity.list %}
               <tr>
@@ -57,12 +59,12 @@ layout: default
       {% when 'result'%}
         <h3>Return value</h3>
         {% if entity.description %}
-          {{ entity.description | markdownify }} 
+          {{ entity.description | markdownify }}
         {% else %}
           <p>(none)</p>
-        {% endif %}    
+        {% endif %}
       {% when 'utilitys'%}
-        <h3>Utility classes</h3> 
+        <h3>Utility classes</h3>
         <table>
           {% for entry in entity.classes %}
             <tr>
@@ -74,7 +76,7 @@ layout: default
                 </td>
             </tr>
           {% endfor %}
-        </table>      
+        </table>
       {% else %}
       {% endcase %}
     {% endfor %}
