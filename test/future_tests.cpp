@@ -382,7 +382,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<int>)
                     std::forward<decltype(f)>(f).get_try();
                     return 0;
                 }
-                catch (const test_exception &e) {
+                catch (const test_exception &) {
                     return 42;
                 }
             });

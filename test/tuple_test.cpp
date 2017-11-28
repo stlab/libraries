@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(remove_placeholder_test) {
 BOOST_AUTO_TEST_CASE(add_placeholder_test) {
     using interim_t = placeholder_tuple<int, void, int, void>;
 
-    auto x = interim_t(10, detail::placeholder(), 25.0, detail::placeholder());
+    auto x = interim_t(10, detail::placeholder(), 25, detail::placeholder());
 
     detail::apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
         detail::remove_placeholder<decltype(x)>::function>>([](auto... args){
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(future_typecheck_test) {
         return stlab::make_ready_future(stlab::default_executor);
     };
     auto fi = []{
-        static std::size_t count_s{0};
+        static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(future_typecheck_test) {
 
 BOOST_AUTO_TEST_CASE(future_when_all_int_int) {
     auto fi = []{
-        static std::size_t count_s{0};
+        static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_int) {
         return stlab::make_ready_future(stlab::default_executor);
     };
     auto fi = []{
-        static std::size_t count_s{0};
+        static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void) {
         return stlab::make_ready_future(stlab::default_executor);
     };
     auto fi = []{
-        static std::size_t count_s{0};
+        static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
