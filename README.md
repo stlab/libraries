@@ -27,7 +27,7 @@ The complete documentation is available on the [stlab home page](http://stlab.cc
 
 # Release
 
-[Version 1.1](readme.md)
+[Version 1.1](release.md)
 
 # Building
 
