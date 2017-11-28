@@ -1,7 +1,7 @@
 ## v1.1 - 28 November 2017
 
 - Library Additions
-    - [serial queue](concurrency/serial_queue.hpp) (concurrency library)
+    - [serial queue](stlab/concurrency/serial_queue.hpp) (concurrency library)
     - task (concurrency library)
     - copy on write
     - scope
