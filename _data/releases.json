@@ -1,5 +1,44 @@
 [
   {
+    "url": "https://api.github.com/repos/stlab/libraries/releases/8691628",
+    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/8691628/assets",
+    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/8691628/assets{?name,label}",
+    "html_url": "https://github.com/stlab/libraries/releases/tag/v1.1",
+    "id": 8691628,
+    "tag_name": "v1.1",
+    "target_commitish": "master",
+    "name": "1.1",
+    "draft": false,
+    "author": {
+      "login": "fosterbrereton",
+      "id": 1664117,
+      "avatar_url": "https://avatars1.githubusercontent.com/u/1664117?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/fosterbrereton",
+      "html_url": "https://github.com/fosterbrereton",
+      "followers_url": "https://api.github.com/users/fosterbrereton/followers",
+      "following_url": "https://api.github.com/users/fosterbrereton/following{/other_user}",
+      "gists_url": "https://api.github.com/users/fosterbrereton/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/fosterbrereton/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/fosterbrereton/subscriptions",
+      "organizations_url": "https://api.github.com/users/fosterbrereton/orgs",
+      "repos_url": "https://api.github.com/users/fosterbrereton/repos",
+      "events_url": "https://api.github.com/users/fosterbrereton/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/fosterbrereton/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "prerelease": false,
+    "created_at": "2017-11-28T21:47:56Z",
+    "published_at": "2017-11-28T21:58:20Z",
+    "assets": [
+
+    ],
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.1",
+    "body": "Fixed ~10 issues, added several new capabilities and data structures."
+  },
+  {
     "url": "https://api.github.com/repos/stlab/libraries/releases/6672551",
     "assets_url": "https://api.github.com/repos/stlab/libraries/releases/6672551/assets",
     "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/6672551/assets{?name,label}",
@@ -12,7 +51,7 @@
     "author": {
       "login": "fosterbrereton",
       "id": 1664117,
-      "avatar_url": "https://avatars2.githubusercontent.com/u/1664117?v=3",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/1664117?v=4",
       "gravatar_id": "",
       "url": "https://api.github.com/users/fosterbrereton",
       "html_url": "https://github.com/fosterbrereton",
