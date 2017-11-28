@@ -149,7 +149,7 @@ struct regular {
 
 class move_only {
 private:
-    int _member;
+    int _member{0};
 public:
     move_only() {}
     move_only(int member) : _member(member) {}
