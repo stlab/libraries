@@ -38,6 +38,7 @@ inline namespace v1 {
 
 enum class future_error_codes {	// names for futures errors
     broken_promise = 1,
+    reduction_failed,
     no_state
 };
 
@@ -55,6 +56,9 @@ inline const char *Future_error_map(future_error_codes code) noexcept
     case future_error_codes::no_state:
         return "no state";
 
+    case future_error_codes::reduction_failed:
+        return "reduction failed";
+    
     default:
         return nullptr;
     }
@@ -169,6 +173,41 @@ struct packaged_task_from_signature<R (Args...)> {
 template <typename T>
 using packaged_task_from_signature_t = typename packaged_task_from_signature<T>::type;
 
+/**************************************************************************************************/
+
+template<typename>
+struct reduced_;
+
+template<>
+struct reduced_<future<void>>
+{
+    using type = void;
+};
+
+template<typename T>
+struct reduced_<future<T>>
+{
+    using type = T;
+};
+
+template <typename T>
+struct reduced_
+{
+    using type = T;
+};
+
+template <typename T>
+using reduced_t = typename reduced_<T>::type;
+
+
+template <typename T>
+struct reduction_helper;
+
+/**************************************************************************************************/
+
+template <typename T, typename = void>
+struct value_setter;
+
 } // namespace detail
 
 /**************************************************************************************************/
@@ -210,6 +249,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     executor_t                          _executor;
     boost::optional<T>                  _result;
+    reduction_helper<T>                 _reduction_helper;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     std::atomic_bool                    _ready{false};
@@ -247,7 +287,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         if (ready)
             s(std::move(p.first));
 
-        return std::move(p.second);
+        return reduce(std::move(p.second));
     }
 
     template <typename F>
@@ -281,8 +321,19 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         }
         if (ready) s(std::move(p.first));
 
-        return std::move(p.second);
+        return reduce(std::move(p.second));
     }
+
+    template <typename R>
+    auto reduce(R&& r) {
+        return std::forward<R>(r);
+    };
+
+    auto reduce(future<future<void>>&& r) -> future<void>;
+
+    template <typename R>
+    auto reduce(future<future<R>>&& r) -> future<R>;
+
 
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
@@ -352,6 +403,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     executor_t                          _executor;
     boost::optional<T>                  _result;
+    reduction_helper<T>                 _reduction_helper;
     boost::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     std::atomic_bool                    _ready{false};
@@ -390,8 +442,17 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         if (ready)
             s(std::move(p.first));
 
-        return std::move(p.second);
+        return reduce(std::move(p.second));
     }
+
+    template <typename R>
+    auto reduce(R&& r) {
+        return std::forward<R>(r);
+    };
+
+    template <typename R>
+    auto reduce(future<future<R>>&& r) -> future<R>;
+
 
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
@@ -465,13 +526,23 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     auto recover(F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
-    auto recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>;
+    auto recover(S s, F f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>;
 
     template <typename F>
     auto recover_r(bool, F f) { return recover(_executor, std::move(f)); }
 
     template <typename S, typename F>
     auto recover_r(bool, S s, F f) { return recover(std::move(s), std::move(f)); }
+
+    template <typename R>
+    auto reduce(R&& r) {
+        return std::forward<R>(r);
+    };
+
+    auto reduce(future<future<void>>&& r) -> future<void>;
+
+    template <typename R>
+    auto reduce(future<future<R>>&& r) -> future<R>;
 
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
@@ -522,15 +593,21 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
     }
 
     void remove_promise() override {
-        if (--_promise_count == 0) {
-            std::unique_lock<std::mutex> lock(this->_mutex);
-            if (!this->_ready) {
-                _f = function_t();
-                this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
-                this->_ready = true;
+        if (std::is_same<R, reduced_t<R>>::value) {
+            // this safety check is only possible in case of no reduction
+            if (--_promise_count == 0) {
+                std::unique_lock<std::mutex> lock(this->_mutex);
+                if (!this->_ready) {
+                    _f = function_t();
+                    this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
+                    this->_ready = true;
+                }
             }
+        } else {
+            --_promise_count;
         }
     }
+
     void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) override {
@@ -614,6 +691,9 @@ class future<T, enable_if_copyable<T>> {
 
     friend struct detail::shared_base<T>;
 
+    template <typename, typename>
+    friend struct detail::value_setter;
+  
   public:
     using result_type = T;
 
@@ -711,6 +791,9 @@ class future<void, void> {
     friend auto package_with_broken_promise(S, F)
         ->std::pair<detail::packaged_task_from_signature_t<Signature>,
         future<detail::result_of_t_<Signature>>>;
+
+    template <typename, typename>
+    friend struct detail::value_setter;
 
     friend struct detail::shared_base<void>;
 
@@ -810,6 +893,9 @@ class future<T, enable_if_not_copyable<T>> {
         future<detail::result_of_t_<Signature>>>;
 
     friend struct detail::shared_base<T>;
+
+    template <typename, typename>
+    friend struct detail::value_setter;
 
   public:
     using result_type = T;
@@ -1431,23 +1517,149 @@ auto async(E executor, F&& f, Args&&... args)
 
 namespace detail {
 
+template <typename T>
+struct reduction_helper
+{
+};
+
+template <typename T>
+struct reduction_helper<future<T>>
+{
+    future<void> value;
+};
+
+template <>
+struct reduction_helper<future<void>>
+{
+    future<void> value;
+};
+
+
+
 /**************************************************************************************************/
+
+template <typename T>
+struct value_setter<T, enable_if_copyable<T>>
+{
+    template <typename C>
+    static void proceed(C& sb) {
+        typename C::then_t then;
+        {
+            std::unique_lock<std::mutex> lock(sb._mutex);
+            sb._ready = true;
+            then = std::move(sb._then);
+        }
+        for (auto& e : then) e.first(std::move(e.second));
+    }
+
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<R> &sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...);
+        proceed(sb);
+    }
+
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<future<R>> &sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...);
+        sb._reduction_helper.value = sb._result.value().recover([_p = sb.shared_from_this()](future<R> f) {
+            if (f.error())
+            {
+              _p->_error = std::move(f.error().value());
+              value_setter::proceed(*_p);
+              throw future_error(future_error_codes::reduction_failed);
+            }
+            return f.get_try().value();
+        }).then([_p = sb.shared_from_this()](auto&) { value_setter::proceed(*_p); });
+    }
+
+    template <typename F, typename... Args>
+    static void set(shared_base<future<void>> &sb, F& f, Args&&... args) {
+      sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()]() {
+        proceed(*_p);
+      });
+    }
+};
+
+
+template <typename T>
+struct value_setter<T, enable_if_not_copyable<T>>
+{
+    template <typename C>
+    static void proceed(C& sb) {
+        typename C::then_t then;
+        {
+            std::unique_lock<std::mutex> lock(sb._mutex);
+            sb._ready = true;
+            then = std::move(sb._then);
+        }
+        if (then.first) then.first(std::move(then.second));
+    }
+
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<R>& sb, F& f, Args&&... args) {
+        sb._result = f(std::forward<Args>(args)...);
+        proceed(sb);
+    }
+
+
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<future<R>> &sb, F& f, Args&&... args) {
+        // On VS a static_assert works, on MAC not.
+        assert(!"Reduction on move-only types is not supported so far");
+        sb._result = f(std::forward<Args>(args)...);
+        sb._reduction_helper.value = sb._result.value().then([](auto&& f) {
+            return std::forward<decltype(f)>(f);
+        }).then([_p = sb.shared_from_this()](auto&) { proceed(*_p); });
+    }
+};
+
+
+template <>
+struct value_setter<void>
+{
+    template <typename C>
+    static void proceed(C& sb) {
+       typename C::then_t then;
+        {
+            std::unique_lock<std::mutex> lock(sb._mutex);
+            sb._ready = true;
+            then = std::move(sb._then);
+        }
+        for (auto& e : then) e.first(std::move(e.second));
+    }
+
+    template <typename R, typename F, typename... Args>
+    static void set(shared_base<R>& sb, F& f, Args&&... args) {
+        f(std::forward<Args>(args)...);
+        proceed(sb);
+    }
+};
+
+/**************************************************************************************************/
+
+template <typename T>
+template <typename F, typename... Args>
+void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
+    value_setter<T>::set(*this, f, std::forward<Args>(args)...);
+}
+
+template <typename T>
+template <typename F, typename... Args>
+void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) {
+    value_setter<T>::set(*this, f, std::forward<Args>(args)...);
+}
 
 template <typename F, typename... Args>
 void shared_base<void>::set_value(F& f, Args&&... args) {
-    f(std::forward<Args>(args)...);
-    then_t then;
-    {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _ready = true;
-        then = std::move(_then);
-    }
-    for (auto& e : then) e.first(std::move(e.second));
+    value_setter<void>::set(*this, f, std::forward<Args>(args)...);
 }
 
 
+/**************************************************************************************************/
+
+
 template <typename S, typename F>
-auto shared_base<void>::recover(S s, F f) -> future<std::result_of_t<F(future<void>)>>
+auto shared_base<void>::recover(S s, F f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>
  {
     auto p = package<std::result_of_t<F(future<void>)>()>(s,
         [_f = std::move(f), _p = future<void>(this->shared_from_this())] () mutable {
@@ -1464,56 +1676,44 @@ auto shared_base<void>::recover(S s, F f) -> future<std::result_of_t<F(future<vo
     if (ready)
         s(std::move(p.first));
 
-    return std::move(p.second);
+    return reduce(std::move(p.second));
+}
+
+/**************************************************************************************************/
+
+template <typename T>
+auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<void>>&& r) -> future<void>
+{
+    return std::move(r).then([](auto f) {} );
 }
 
 template <typename T>
-template <typename F, typename... Args>
-void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
-    _result = f(std::forward<Args>(args)...);
-    then_t then;
-    {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _ready = true;
-        then = std::move(_then);
-    }
-    for (auto& e : then) e.first(std::move(e.second));
+template <typename R>
+auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
+{
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
 }
+
+/**************************************************************************************************/
 
 template <typename T>
-template <typename F, typename... Args>
-void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) {
-    _result = f(std::forward<Args>(args)...);
-    then_t then;
-    {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _ready = true;
-        then = std::move(_then);
-    }
-    if (then.first) then.first(std::move(then.second));
+template <typename R>
+auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
+{
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
 }
 
-#if 0
-/*
-    REVIST (sparent) : This is doing reduction on future<void> we also need to do the same for
-    other result types.
-*/
+/**************************************************************************************************/
 
-template <>
-template <typename F, typename... Args>
-void shared_base<future<void>>::set_value(F& f, Args&&... args) {
-    _result = f(std::forward<Args>(args)...).then([_p = this->shared_from_this()]() {
-        auto& self = *_p;
-        then_t then;
-        {
-        std::unique_lock<std::mutex> lock(self._mutex);
-        self._ready = true;
-        then = std::move(self._then);
-        }
-        for (const auto& e : then) e.first(e.second);
-    });
+inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void>  {
+    return std::move(r).then([](auto f){});
 }
-#endif
+
+template <typename R>
+auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R>
+{
+    return std::move(r).then([](auto f) { return f.get_try().value(); } );
+}
 
 /**************************************************************************************************/
 
