@@ -14,8 +14,8 @@
     - Concurrency library
         - [serial queue](stlab/concurrency/serial_queue.hpp)
         - [task](stlab/concurrency/task.hpp)
-    - [copy on write](stlab/concurrency/copy_on_write.hpp)
-    - [scope](stlab/concurrency/scope.hpp)
+    - [copy on write](stlab/copy_on_write.hpp)
+    - [scope](stlab/scope.hpp)
     - [Test library](stlab/test/model.hpp)
         - annotate
         - regular
