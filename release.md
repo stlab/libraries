@@ -18,6 +18,11 @@ The following enhancements are part of this release:
 [future TODO: reduction on future<void>](https://github.com/stlab/libraries/issues/38)
 Now reduction of futures is supported. So a future<future<T>> is reduced to future<T>. Currently
 this is restricted to copyable types T.
+* A [serial_queue](https://github.com/stlab/libraries/blob/master/stlab/concurrency/serial_queue.hpp) 
+and a [scope](https://github.com/stlab/libraries/blob/master/stlab/scope.hpp) were added as new concurrency elements.
+* A [copy_on_write](https://github.com/stlab/libraries/blob/master/stlab/copy_on_write.hpp) template class is now part of the library.
+* A [for_each_argument](https://github.com/stlab/libraries/blob/master/stlab/utility.hpp) helper function is now part of the library.
+* A suite of archetype test classes [regular, move_only, and annotate](https://github.com/stlab/libraries/blob/master/stlab/test/model.hpp) were added as well.
 
 ## Breaking Changes
 The following breaking change was necessary.
