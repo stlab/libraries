@@ -1,18 +1,5 @@
 ## v1.1 - 28 November 2017
 
-- Library Additions
-    - [serial queue](stlab/concurrency/serial_queue.hpp) (concurrency library)
-    - task (concurrency library)
-    - copy on write
-    - scope
-    - Test library
-        - annotate
-        - regular
-        - move-only
-- Build & Test
-    - CMake overhaul
-    - Extended Travis CI support
-    - AppVeyor support
 - Fixed Issues
    - [#94](https://github.com/stlab/libraries/issues/94) : Use of moved executor in futures.hpp:1234
    - [#93](https://github.com/stlab/libraries/issues/93) : Stack overflow with exception handling in futures
@@ -23,6 +10,20 @@
    - [#59](https://github.com/stlab/libraries/issues/59) : `task_system` and `notification_queue` doesn't work with move only lambda
    - [#26](https://github.com/stlab/libraries/issues/26) : channel TODO get process state under mutex?
    - [#18](https://github.com/stlab/libraries/issues/18) : future TODO `get_try()`
+- Library Additions
+    - Concurrency library
+        - [serial queue](stlab/concurrency/serial_queue.hpp)
+        - [task](stlab/concurrency/task.hpp)
+    - [copy on write](stlab/concurrency/copy_on_write.hpp)
+    - [scope](stlab/concurrency/scope.hpp)
+    - [Test library](stlab/test/model.hpp)
+        - annotate
+        - regular
+        - move-only
+- Build & Test Improvements
+    - CMake overhaul
+    - Extended Travis CI support
+    - AppVeyor support
 - Breaking Changes
     - With [Issue #85](https://github.com/stlab/libraries/issues/85) the interface of `make_ready_future` and 
 `make_exceptional_future` now require an executor as a second parameter.
