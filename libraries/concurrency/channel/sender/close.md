@@ -15,8 +15,4 @@ entities:
         defined-in-header: stlab/concurrency/channel.hpp 
         declaration: void close()
         description: Closes this side of the channel, so it is not possible to send new values into it. But it does not destructs the channel.
-  - kind: parameters
-  - kind: result
-  - kind: example
-    code: NoCode
 ---

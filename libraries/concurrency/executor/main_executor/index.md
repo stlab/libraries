@@ -4,7 +4,7 @@ title: stlab::main_executor
 tags: [library]
 name: stlab::main_executor
 pure-name: main_executor
-defined-in-header: executor/concurrency/main_executor.hpp
+defined-in-header: stlab/concurrency/main_executor.hpp
 declaration: struct main_executor
 brief: Executes functions on the application's main loop.
 ctor: default

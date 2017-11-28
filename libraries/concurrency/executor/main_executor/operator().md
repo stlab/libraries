@@ -19,7 +19,4 @@ entities:
     list:
       - name: f
         description: The function object that shall be executed on the main loop.
-  - kind: result
-  - kind: example
-    code: NoCode
 ---

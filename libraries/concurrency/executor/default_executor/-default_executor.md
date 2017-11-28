@@ -14,6 +14,4 @@ entities:
         defined-in-header: stlab/default_executor.hpp 
         declaration: ~default_executor()
         description: Destructs a default_executor object
-  - kind: example
-    code: NoCode
 ---

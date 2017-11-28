@@ -10,7 +10,17 @@ layout: default
     <article class="post-content">
         {% include defined_in_header.html %}
 
-        {% if page.declaration %}
+        {% if page.declaration.first != empty %}
+           <table class='declaration-table'>
+            {% for item in page.declaration %}
+            <tr>
+              <td>
+                {% highlight cpp %}{{ item }}{% endhighlight %}
+               </td>
+            </tr>
+           {% endfor %}
+           </table>
+        {% else %}
             {% highlight c++ %}{{ page.declaration }}{% endhighlight %}
         {% endif %}
 
@@ -23,12 +33,20 @@ layout: default
             <table class='definition-table'>
                 <tr class='headers'>
                     <th>Member type</th>
-                    <th>Definition</th>
+                    <th colspan=2>Definition</th>
                 </tr>
                 {% for type in page.member-types %}
                     <tr>
                         <td><code>{{ type.type }}</code></td>
                         <td><code>{{ type.definition }}</code></td>
+                        {% if type.note or type.annotation %}
+                            <td>
+                                {{ type.note }}
+                                {% if type.annotation %}
+                                <span class='annotation'>{{ type.annotation }}</span>
+                                {% endif %}
+                            </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </table>

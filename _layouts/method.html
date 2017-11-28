@@ -4,7 +4,7 @@ layout: default
 <div class="post">
 
   <header class="post-header">
-    <h1 class='code'>{{ page.full-name}}</h1>
+    <h1 class='code'>{{page.full-name}}</h1>
   </header>
 
   <article class="post-content">
@@ -22,22 +22,34 @@ layout: default
             {% endfor %}
           </table>
 
-          {{ page.description | markdownify }}
+          {{ page.brief | markdownify }}
 
-          <ol>
+          <ol class='description-list'>
             {% for item in entity.list %}
-              <li>{{ item.description | markdownify }}</li>
+              <li>
+              {{ item.description | markdownify }}
+              {% if item.annotation %}
+              <span class='annotation'>{{item.annotation}}</span>
+              {% endif %}
+              </li>
             {% endfor %}
           </ol>
 
+          {{ page.description | markdownify }}
+
       {% when 'parameters'%}
         <h3>Parameters</h3>
-        {% if entity.list %} 
+        {% if entity.list %}
           <table class='parameter-table'>
           {% for item in entity.list %}
               <tr>
                 <td class='decl'>{{ item.name }}</td>
-                <td class='defn'>{{ item.description | markdownify }}</td>
+                <td class='defn'>
+                    {{ item.description | markdownify }}
+                    {% if item.annotation %}
+                    <span class='annotation'>{{item.annotation}}</span>
+                    {% endif %}
+                </td>
               </tr>
           {% endfor %}
           </table>
@@ -47,12 +59,12 @@ layout: default
       {% when 'result'%}
         <h3>Return value</h3>
         {% if entity.description %}
-          {{ entity.description | markdownify }} 
+          {{ entity.description | markdownify }}
         {% else %}
           <p>(none)</p>
-        {% endif %}    
+        {% endif %}
       {% when 'utilitys'%}
-        <h3>Utility classes</h3> 
+        <h3>Utility classes</h3>
         <table>
           {% for entry in entity.classes %}
             <tr>
@@ -64,14 +76,14 @@ layout: default
                 </td>
             </tr>
           {% endfor %}
-        </table>      
+        </table>
       {% else %}
       {% endcase %}
     {% endfor %}
 
-    {% include external_examples.html name=page.example header="Example" %}
-
     {{ content }}
+
+    {% include external_examples.html name=page.example header="Example" %}
   </article>
 </div>
 

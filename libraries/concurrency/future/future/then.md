@@ -53,6 +53,4 @@ entities:
         description: Callable object that implements the continuation. `T` of this must be convertible to the parameter of `f`.
   - kind: result
     description: a future of the type of the result type of the passed function object.
-  - kind: example
-    code: NoCode
 ---

@@ -1,6 +1,8 @@
 #include <atomic>
 #include <iostream>
-#include <stlab/concurrency/concurrency.hpp>
+#include <thread>
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 
 using namespace stlab;
 
