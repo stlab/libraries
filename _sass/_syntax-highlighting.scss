@@ -12,7 +12,9 @@
     }
 
     .c     { color: #998; font-style: italic } // Comment
-    .err   { color: #a61717; background-color: #e3d2d2 } // Error
+    // Variadic templates are currently supported for highlighting. Toning down the error a bit.
+    .err   { color: #a61717 } // Error
+    // .err   { color: #a61717; background-color: #e3d2d2 } // Error
     .k     { color: #0000dd } // Keyword
     .o     { font-weight: bold } // Operator
     .cm    { color: #998; font-style: italic } // Comment.Multiline

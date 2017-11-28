@@ -9,11 +9,20 @@ auto make_annotate() {
 }
 
 int main(int, char**) {
-    auto a = make_annotate();
+    {
+        auto a = make_annotate();
+    }
+    std::cout << counters;
 }
 /*
     Result:
-
-        annotate ctor
-        annotate dtor
+		           dtor: 1
+		      copy_ctor: 0
+		      move_ctor: 0
+		copy_assign_lhs: 0
+		copy_assign_rhs: 0
+		move_assign_lhs: 0
+		move_assign_rhs: 0
+		           swap: 0
+		       equality: 0
 */
