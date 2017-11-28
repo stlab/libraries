@@ -75,7 +75,7 @@ class task<R(Args...)> {
         model(F0&& f) : _f(std::forward<F0>(f)) {}
         model(model&&) noexcept = delete;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
-        R invoke(Args&&... args) override { return _f(std::forward<Args>(args)...); }
+        R invoke(Args&&... args) override { return std::move(_f)(std::forward<Args>(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return &_f; }
         const void* pointer() const noexcept override { return &_f; }
@@ -89,7 +89,7 @@ class task<R(Args...)> {
         model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
         model(model&&) noexcept = default;
         void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
-        R invoke(Args&&... args) override { return (*_p)(std::forward<Args>(args)...); }
+        R invoke(Args&&... args) override { return std::move(*_p)(std::forward<Args>(args)...); }
         const std::type_info& target_type() const noexcept override { return typeid(F); }
         void* pointer() noexcept override { return _p.get(); }
         const void* pointer() const noexcept override { return _p.get(); }
@@ -102,18 +102,39 @@ class task<R(Args...)> {
 
     std::aligned_storage_t<small_object_size> _data;
 
+    // REVISIT (sean.parent) : Use `if constexpr` here when we move to C++17
+    template <class F>
+    using possibly_empty_t =
+        std::integral_constant<bool,
+                               std::is_pointer<std::decay_t<F>>::value ||
+                                   std::is_member_pointer<std::decay_t<F>>::value ||
+                                   std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
+
+    template <class F>
+    static auto is_empty(const F& f) -> std::enable_if_t<possibly_empty_t<F>::value, bool> {
+        return !f;
+    }
+
+    template <class F>
+    static auto is_empty(const F& f) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
+        return false;
+    }
+
 public:
-    using result_type = void;
+    using result_type = R;
 
     constexpr task() noexcept { new (&_data) empty(); }
     constexpr task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
-    task(task&) = delete;
     task(task&& x) noexcept { x.self().move_ctor(&_data); }
 
     template <class F>
     task(F&& f) {
         using f_t = std::decay_t<F>;
+        if (is_empty(f)) {
+            new (&_data) empty();
+            return;
+        }
         try {
             new (&_data)
                 model<f_t, sizeof(model<f_t, true>) <= small_object_size>(std::forward<F>(f));
