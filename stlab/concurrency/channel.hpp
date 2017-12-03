@@ -19,10 +19,10 @@
 #include <tuple>
 #include <utility>
 
-#include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
 #include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
 
@@ -283,12 +283,12 @@ template <typename T>
 constexpr bool has_process_close_v = is_detected_v<process_close_t, T>;
 
 template <typename T>
-auto process_close(boost::optional<T>& x) -> std::enable_if_t<has_process_close_v<T>> {
+auto process_close(stlab::optional<T>& x) -> std::enable_if_t<has_process_close_v<T>> {
     if (x.is_initialized()) (*x).close();
 }
 
 template <typename T>
-auto process_close(boost::optional<T>&) -> std::enable_if_t<!has_process_close_v<T>> {}
+auto process_close(stlab::optional<T>&) -> std::enable_if_t<!has_process_close_v<T>> {}
 
 /**************************************************************************************************/
 
@@ -299,13 +299,13 @@ template <typename T>
 constexpr bool has_process_state_v = is_detected_v<process_state_t, T>;
 
 template <typename T>
-auto get_process_state(const boost::optional<T>& x)
+auto get_process_state(const stlab::optional<T>& x)
     -> std::enable_if_t<has_process_state_v<T>, process_state_scheduled> {
     return (*x).state();
 }
 
 template <typename T>
-auto get_process_state(const boost::optional<T>& x)
+auto get_process_state(const stlab::optional<T>& x)
     -> std::enable_if_t<!has_process_state_v<T>, process_state_scheduled> {
     return await_forever;
 }
@@ -320,14 +320,14 @@ template <typename T, typename... U>
 constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, T, U...>;
 
 template <typename T, typename... U>
-auto set_process_error(boost::optional<T>& x,
+auto set_process_error(stlab::optional<T>& x,
                        std::tuple<boost::variant<U, std::exception_ptr>...> error)
     -> std::enable_if_t<has_set_process_error_v<T, U...>, void> {
     (*x).set_error(std::move(error));
 }
 
 template <typename T, typename... U>
-auto set_process_error(boost::optional<T>&,
+auto set_process_error(stlab::optional<T>&,
                        std::tuple<boost::variant<U, std::exception_ptr>...> error)
     -> std::enable_if_t<!has_set_process_error_v<T, U...>, void> {}
 
@@ -609,14 +609,14 @@ template <typename R>
 struct downstream<
     R,
     std::enable_if_t<!std::is_copy_constructible<R>::value && !std::is_same<R, void>::value>> {
-    boost::optional<sender<R>> _data;
+    stlab::optional<sender<R>> _data;
 
     template <typename F>
     void append_receiver(F&& f) {
         _data = std::forward<F>(f);
     }
 
-    void clear() { _data = boost::none; }
+    void clear() { _data = nullopt; }
 
     std::size_t size() const { return 1; }
 
@@ -653,7 +653,7 @@ struct shared_process
     queue_strategy              _queue;
 
     executor_t                  _executor;
-    boost::optional<process_t>  _process;
+    stlab::optional<process_t>  _process;
 
     std::mutex                  _process_mutex;
 
@@ -738,7 +738,7 @@ struct shared_process
         if (do_final) {
             std::unique_lock<std::mutex> lock(_downstream_mutex);
             _downstream.clear(); // This will propogate the close to anything downstream
-            _process = boost::none;
+            _process = nullopt;
         }
     }
 
@@ -772,7 +772,7 @@ struct shared_process
     }
 
     auto pop_from_queue() {
-        boost::optional<typename Q::value_type> message;
+        stlab::optional<typename Q::value_type> message;
         std::array<bool, sizeof...(Args)> do_cts = {{false}};
         bool do_close = false;
 
@@ -794,7 +794,7 @@ struct shared_process
     }
 
     bool dequeue() {
-        boost::optional<typename Q::value_type> message;
+        stlab::optional<typename Q::value_type> message;
         std::array<bool, sizeof...(Args)> do_cts;
         bool do_close = false;
 
@@ -807,13 +807,13 @@ struct shared_process
         });
 
         if (message) {
-            if (argument_with_error(message.get())) {
+            if (argument_with_error(*message)) {
                 if (has_set_process_error_v<T, Args...>)
-                    set_process_error(_process, std::move(message.get()));
+                    set_process_error(_process, std::move(*message));
                 else
                     do_close = true;
             } else
-                await_variant_args(_process, message.get());
+                await_variant_args(_process, *message);
         } else if (do_close)
             process_close(_process);
         return bool(message);
@@ -879,16 +879,16 @@ struct shared_process
                     // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
                     
-					// try_lock can fail spuriously
+                                        // try_lock can fail spuriously
                     while (true) {
-						// we were cancelled
-	                	if (!_this->_timeout_function_active) return;
+                                                // we were cancelled
+                                if (!_this->_timeout_function_active) return;
 
                         lock_t lock(_this->_timeout_function_control, std::try_to_lock);
                         if (!lock) continue;
 
-						// we were cancelled
-	                	if (!_this->_timeout_function_active) return;
+                                                // we were cancelled
+                                if (!_this->_timeout_function_active) return;
 
                         if (get_process_state(_this->_process).first != process_state::yield) {
                             _this->try_broadcast();
@@ -918,7 +918,7 @@ struct shared_process
 
     template <typename U>
     auto step() -> std::enable_if_t<!has_process_yield_v<U>> {
-        boost::optional<typename Q::value_type> message;
+        stlab::optional<typename Q::value_type> message;
         std::array<bool, sizeof...(Args)> do_cts;
         bool do_close = false;
 
@@ -931,11 +931,11 @@ struct shared_process
         });
 
         if (message) {
-            if (argument_with_error(message.get())) {
+            if (argument_with_error(*message)) {
                 do_close = true;
             } else {
                 try {
-                    broadcast(avoid_invoke_variant(*_process, std::move(message.get())));
+                    broadcast(avoid_invoke_variant(*_process, std::move(*message)));
                 } catch (...) {
                     broadcast(std::move(std::current_exception()));
                 }
@@ -1143,8 +1143,8 @@ struct executor {
 namespace detail {
 
 struct annotations {
-    boost::optional<executor_t> _executor;
-    boost::optional<std::size_t> _buffer_size;
+    stlab::optional<executor_t> _executor;
+    stlab::optional<std::size_t> _buffer_size;
 
     explicit annotations(executor_t e) : _executor(std::move(e)) {}
     explicit annotations(std::size_t bs) : _buffer_size(bs) {}
@@ -1350,7 +1350,7 @@ public:
 
         _p->map(sender<T>(p));
 
-        if (ap._annotations._buffer_size) p->set_buffer_size(ap._annotations._buffer_size.value());
+        if (ap._annotations._buffer_size) p->set_buffer_size(*ap._annotations._buffer_size);
 
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }

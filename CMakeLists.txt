@@ -36,6 +36,7 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/future.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/immediate_executor.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/main_executor.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/optional.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/progress.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/system_timer.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/task.hpp"

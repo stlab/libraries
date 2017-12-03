@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
     {
         auto sut = async(custom_scheduler<0>(), []()->T { return T(0); });
         BOOST_REQUIRE(sut.valid() == true);
-        BOOST_REQUIRE(sut.error().is_initialized() == false);
+        BOOST_REQUIRE(!sut.error());
 
         sut.reset();
         BOOST_REQUIRE(sut.valid() == false);
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters, T, 
     {
         auto sut = async(custom_scheduler<0>(), [](auto x)->T { return x + T(0); }, T(42));
         BOOST_REQUIRE(sut.valid() == true);
-        BOOST_REQUIRE(sut.error().is_initialized() == false);
+        BOOST_REQUIRE(!sut.error());
 
         while (!sut.get_try()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -263,13 +263,13 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
             return v1::move_only{ 42 };
         });
         BOOST_REQUIRE(sut.valid() == true);
-        BOOST_REQUIRE(sut.error().is_initialized() == false);
+        BOOST_REQUIRE(!sut.error());
         
         while (!sut.get_try()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().get().member());
+        BOOST_REQUIRE_EQUAL(42, sut.get_try()->member());
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
@@ -337,8 +337,8 @@ BOOST_AUTO_TEST_CASE(future_swap_tests)
         a.first(1);
         b.first(2);
 
-        BOOST_REQUIRE_EQUAL(5, a.second.get_try().value());
-        BOOST_REQUIRE_EQUAL(4, b.second.get_try().value());
+        BOOST_REQUIRE_EQUAL(5, *a.second.get_try());
+        BOOST_REQUIRE_EQUAL(4, *b.second.get_try());
     }
     {
         int x(0), y(0);
@@ -362,8 +362,8 @@ BOOST_AUTO_TEST_CASE(future_swap_tests)
         a.first(1);
         b.first(2);
 
-        BOOST_REQUIRE_EQUAL(5, a.second.get_try().value().member());
-        BOOST_REQUIRE_EQUAL(4, b.second.get_try().value().member());
+        BOOST_REQUIRE_EQUAL(5, a.second.get_try()->member());
+        BOOST_REQUIRE_EQUAL(4, b.second.get_try()->member());
     }
 }
 
@@ -388,7 +388,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<int>)
             });
 
         wait_until_future_completed(sut);
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
     }
 BOOST_AUTO_TEST_SUITE_END()
 

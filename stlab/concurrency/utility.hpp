@@ -68,9 +68,9 @@ T blocking_get(future<T> x) {
         {
             std::unique_lock<std::mutex> lock(m);
             if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
+                error = *(std::forward<decltype(r)>(r).error());
             else
-                result = std::forward<decltype(r)>(r).get_try().value();
+                result = std::move(*(std::forward<decltype(r)>(r).get_try()));
             set = true;
         }
         condition.notify_one();
@@ -97,7 +97,7 @@ inline void blocking_get(future<void> x) {
         {
             std::unique_lock<std::mutex> lock(m);
             if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
+                error = *(std::forward<decltype(r)>(r).error());
             set = true;
         }
         condition.notify_one();

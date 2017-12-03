@@ -426,6 +426,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
         sut = async(custom_scheduler<0>(), [] { return 42; });
         
         auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
+        (void)test_result_1;
         wait_until_future_completed(sut);
         auto test_result_2 = std::move(sut).get_try();
 
@@ -570,7 +571,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         BOOST_REQUIRE(first);
         BOOST_REQUIRE(second);
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
     }
 
     BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
@@ -587,7 +588,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 
         BOOST_REQUIRE(first);
         BOOST_REQUIRE(second);
-        BOOST_REQUIRE_EQUAL(84, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(84, *sut.get_try());
     }
 BOOST_AUTO_TEST_SUITE_END()
 
