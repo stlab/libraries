@@ -1574,7 +1574,15 @@ struct value_setter<T, enable_if_copyable<T>>
 
     template <typename F, typename... Args>
     static void set(shared_base<future<void>> &sb, F& f, Args&&... args) {
-      sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()]() {
+      sb._result = f(std::forward<Args>(args)...).recover([_p = sb.shared_from_this()](future<void> f) {
+          if (f.error())
+          {
+            _p->_error = std::move(f.error().value());
+            value_setter::proceed(*_p);
+            throw future_error(future_error_codes::reduction_failed);
+          }
+          return;
+      }).then([_p = sb.shared_from_this()]() {
         proceed(*_p);
       });
     }
