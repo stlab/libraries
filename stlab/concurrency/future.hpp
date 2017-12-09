@@ -327,7 +327,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
-    };
+    }
 
     auto reduce(future<future<void>>&& r) -> future<void>;
 
@@ -448,7 +448,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
-    };
+    }
 
     template <typename R>
     auto reduce(future<future<R>>&& r) -> future<R>;
@@ -537,7 +537,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
-    };
+    }
 
     auto reduce(future<future<void>>&& r) -> future<void>;
 
