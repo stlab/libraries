@@ -19,7 +19,7 @@
 //  STLAB_VERSION / 100 % 1000 is the minor version
 //  STLAB_VERSION / 100000 is the major version
 
-#define STLAB_VERSION 101010
+#define STLAB_VERSION 100101
 
 //
 //  STLAB_LIB_VERSION must be defined to be the same as STLAB_VERSION
