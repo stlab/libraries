@@ -1,6 +1,6 @@
 sudo: required
 dist: trusty
-group: trusty_latest
+group: deprecated-2017Q4
 language: cpp
 
 cache:
