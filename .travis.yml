@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty_latest
+dist: trusty_lts
 language: cpp
 
 cache:
