@@ -17,7 +17,7 @@
     "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 382
+    "contributions": 394
   },
   {
     "login": "fosterbrereton",
@@ -37,7 +37,7 @@
     "received_events_url": "https://api.github.com/users/fosterbrereton/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 122
+    "contributions": 127
   },
   {
     "login": "sean-parent",
@@ -98,5 +98,25 @@
     "type": "User",
     "site_admin": false,
     "contributions": 8
+  },
+  {
+    "login": "Frans-Willem",
+    "id": 346213,
+    "avatar_url": "https://avatars3.githubusercontent.com/u/346213?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/Frans-Willem",
+    "html_url": "https://github.com/Frans-Willem",
+    "followers_url": "https://api.github.com/users/Frans-Willem/followers",
+    "following_url": "https://api.github.com/users/Frans-Willem/following{/other_user}",
+    "gists_url": "https://api.github.com/users/Frans-Willem/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/Frans-Willem/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/Frans-Willem/subscriptions",
+    "organizations_url": "https://api.github.com/users/Frans-Willem/orgs",
+    "repos_url": "https://api.github.com/users/Frans-Willem/repos",
+    "events_url": "https://api.github.com/users/Frans-Willem/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/Frans-Willem/received_events",
+    "type": "User",
+    "site_admin": false,
+    "contributions": 2
   }
 ]

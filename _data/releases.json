@@ -1,5 +1,44 @@
 [
   {
+    "url": "https://api.github.com/repos/stlab/libraries/releases/8895321",
+    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/8895321/assets",
+    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/8895321/assets{?name,label}",
+    "html_url": "https://github.com/stlab/libraries/releases/tag/v1.1.1",
+    "id": 8895321,
+    "tag_name": "v1.1.1",
+    "target_commitish": "master",
+    "name": "1.1.1",
+    "draft": false,
+    "author": {
+      "login": "FelixPetriconi",
+      "id": 612377,
+      "avatar_url": "https://avatars3.githubusercontent.com/u/612377?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/FelixPetriconi",
+      "html_url": "https://github.com/FelixPetriconi",
+      "followers_url": "https://api.github.com/users/FelixPetriconi/followers",
+      "following_url": "https://api.github.com/users/FelixPetriconi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FelixPetriconi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/FelixPetriconi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FelixPetriconi/subscriptions",
+      "organizations_url": "https://api.github.com/users/FelixPetriconi/orgs",
+      "repos_url": "https://api.github.com/users/FelixPetriconi/repos",
+      "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "prerelease": false,
+    "created_at": "2017-12-13T20:39:36Z",
+    "published_at": "2017-12-13T20:47:59Z",
+    "assets": [
+
+    ],
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.1.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.1.1",
+    "body": "Hot fix release. See CHANGES.md for further datails."
+  },
+  {
     "url": "https://api.github.com/repos/stlab/libraries/releases/8691628",
     "assets_url": "https://api.github.com/repos/stlab/libraries/releases/8691628/assets",
     "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/8691628/assets{?name,label}",
