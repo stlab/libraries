@@ -1,3 +1,9 @@
+## v1.1.1 - 13 December 2017
+
+- Fixed Issues
+   - [#113](https://github.com/stlab/libraries/issues/113) : Reduction does not appear to work for failed futures; Many thanks to Frans-Willem!
+   - [#115](https://github.com/stlab/libraries/issues/115) : Version number is forgotten in version.hpp?
+
 ## v1.1 - 28 November 2017
 
 - Fixed Issues
