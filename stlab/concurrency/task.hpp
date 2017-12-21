@@ -52,123 +52,7 @@ class task<R(Args...)> {
 
         I welcome empirical data from an actual system on a better size.
     */
-    static constexpr std::size_t small_object_size = 256;
-
-    struct concept {
-        struct vtable {
-            void (*dtor)(concept*);
-            void (*move_ctor)(concept*, void*) noexcept;
-            R (*invoke)(concept*, Args&&...);
-            const std::type_info& (*target_type)(const concept*)noexcept;
-            void* (*pointer)(concept*)noexcept;
-            const void* (*const_pointer)(const concept*)noexcept;
-        };
-
-        const vtable* _vtable_ptr; // pointer not const to avoid laundering in C++14
-
-        concept(const vtable* p) : _vtable_ptr(p) {}
-        void dtor() { _vtable_ptr->dtor(this); }
-        void move_ctor(void* p) noexcept { _vtable_ptr->move_ctor(this, p); }
-        R invoke(Args&&... args) { return _vtable_ptr->invoke(this, std::forward<Args>(args)...); }
-        const std::type_info& target_type() const noexcept {
-            return _vtable_ptr->target_type(this);
-        }
-        void* pointer() noexcept { return _vtable_ptr->pointer(this); }
-        const void* pointer() const noexcept { return _vtable_ptr->const_pointer(this); }
-    };
-
-    using vtable_type = const typename concept::vtable;
-
-    struct empty : concept {
-        empty() noexcept : concept(vtable()) {}
-
-        static void dtor(concept* self) { static_cast<empty*>(self)->~empty(); }
-        static void move_ctor(concept*, void* p) noexcept { new (p) empty(); }
-        static auto invoke(concept*, Args&&...) -> R { throw std::bad_function_call(); }
-        static auto target_type(const concept*) noexcept -> const std::type_info& {
-            return typeid(void);
-        }
-        static auto pointer(concept*) noexcept -> void* { return nullptr; }
-        static auto const_pointer(const concept*) noexcept -> const void* { return nullptr; }
-
-        static vtable_type* vtable() {
-            static vtable_type _vtable = {
-                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
-            return &_vtable;
-        }
-    };
-
-    template <class F, bool Small>
-    struct model;
-
-    template <class F>
-    struct model<F, true> : concept {
-        template <class G> // for forwarding
-        model(G&& f) : concept(vtable()), _f(std::forward<G>(f)) {}
-        model(model&&) noexcept = delete;
-
-        static void dtor(concept* self) { static_cast<model*>(self)->~model(); }
-        static void move_ctor(concept* self, void* p) noexcept {
-            new (p) model(std::move(static_cast<model*>(self)->_f));
-        }
-        static auto invoke(concept* self, Args&&... args) -> R {
-            return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
-        }
-        static auto target_type(const concept*) noexcept -> const std::type_info& {
-            return typeid(F);
-        }
-        static auto pointer(concept* self) noexcept -> void* {
-            return &static_cast<model*>(self)->_f;
-        }
-        static auto const_pointer(const concept* self) noexcept -> const void* {
-            return &static_cast<const model*>(self)->_f;
-        }
-
-        static vtable_type* vtable() {
-            static vtable_type _vtable = {
-                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
-            return &_vtable;
-        }
-
-        F _f;
-    };
-
-    template <class F>
-    struct model<F, false> : concept {
-        template <class G> // for forwarding
-        model(G&& f) : concept(vtable()), _p(std::make_unique<F>(std::forward<G>(f))) {}
-        model(model&&) noexcept = default;
-
-        static void dtor(concept* self) { static_cast<model*>(self)->~model(); }
-        static void move_ctor(concept* self, void* p) noexcept {
-            new (p) model(std::move(*static_cast<model*>(self)));
-        }
-        static auto invoke(concept* self, Args&&... args) -> R {
-            return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
-        }
-        static auto target_type(const concept*) noexcept -> const std::type_info& {
-            return typeid(F);
-        }
-        static auto pointer(concept* self) noexcept -> void* {
-            return static_cast<model*>(self)->_p.get();
-        }
-        static auto const_pointer(const concept* self) noexcept -> const void* {
-            return static_cast<const model*>(self)->_p.get();
-        }
-
-        static vtable_type* vtable() {
-            static vtable_type _vtable = {
-                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
-            return &_vtable;
-        }
-
-        std::unique_ptr<F> _p;
-    };
-
-    concept& self() { return reinterpret_cast<concept&>(_data); }
-    const concept& self() const { return reinterpret_cast<const concept&>(_data); }
-
-    std::aligned_storage_t<small_object_size> _data;
+    static constexpr std::size_t small_object_size = 256 - sizeof(void*);
 
     // REVISIT (sean.parent) : Use `if constexpr` here when we move to C++17
     template <class F>
@@ -188,44 +72,157 @@ class task<R(Args...)> {
         return false;
     }
 
+    struct vtable_type {
+        void (*dtor)(void*);
+        void (*move_ctor)(void*, void*) noexcept;
+        R (*invoke)(void*, Args&&...);
+        const std::type_info& (*target_type)(const void*)noexcept;
+        void* (*pointer)(void*)noexcept;
+        const void* (*const_pointer)(const void*)noexcept;
+    };
+
+    // TODO - we don't create an empty so push this empty vtable into concept
+    struct empty {
+        empty() noexcept = delete;
+
+        static void dtor(void*) { }
+        static void move_ctor(void*, void*) noexcept { }
+        static auto invoke(void*, Args&&...) -> R { throw std::bad_function_call(); }
+        static auto target_type(const void*) noexcept -> const std::type_info& {
+            return typeid(void);
+        }
+        static auto pointer(void*) noexcept -> void* { return nullptr; }
+        static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
+
+        static constexpr vtable_type _vtable = {
+                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
+    };
+
+    template <class F, bool Small>
+    struct model;
+
+    template <class F>
+    struct model<F, true> {
+        template <class G> // for forwarding
+        model(G&& f) : _f(std::forward<G>(f)) {}
+        model(model&&) noexcept = delete;
+
+        static void dtor(void* self) { static_cast<model*>(self)->~model(); }
+        static void move_ctor(void* self, void* p) noexcept {
+            new (p) model(std::move(static_cast<model*>(self)->_f));
+        }
+        static auto invoke(void* self, Args&&... args) -> R {
+            return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
+        }
+        static auto target_type(const void*) noexcept -> const std::type_info& {
+            return typeid(F);
+        }
+        static auto pointer(void* self) noexcept -> void* {
+            return &static_cast<model*>(self)->_f;
+        }
+        static auto const_pointer(const void* self) noexcept -> const void* {
+            return &static_cast<const model*>(self)->_f;
+        }
+
+        static vtable_type* vtable() {
+            static vtable_type _vtable = {
+                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
+            return &_vtable;
+        }
+
+        F _f;
+    };
+
+    template <class F>
+    struct model<F, false> {
+        template <class G> // for forwarding
+        model(G&& f) : _p(std::make_unique<F>(std::forward<G>(f))) {}
+        model(model&&) noexcept = default;
+
+        static void dtor(void* self) { static_cast<model*>(self)->~model(); }
+        static void move_ctor(void* self, void* p) noexcept {
+            new (p) model(std::move(*static_cast<model*>(self)));
+        }
+        static auto invoke(void* self, Args&&... args) -> R {
+            return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
+        }
+        static auto target_type(const void*) noexcept -> const std::type_info& {
+            return typeid(F);
+        }
+        static auto pointer(void* self) noexcept -> void* {
+            return static_cast<model*>(self)->_p.get();
+        }
+        static auto const_pointer(const void* self) noexcept -> const void* {
+            return static_cast<const model*>(self)->_p.get();
+        }
+
+        static vtable_type* vtable() {
+            static vtable_type _vtable = {
+                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
+            return &_vtable;
+        }
+
+        std::unique_ptr<F> _p;
+    };
+
+    struct concept {
+        const vtable_type* _vtable_ptr = &empty::_vtable;
+        std::aligned_storage_t<small_object_size> _model;
+
+        constexpr concept() noexcept = default;
+
+        template <class F>
+        concept(F&& f) {
+            using f_t = std::decay_t<F>;
+            using model_t = model<f_t, sizeof(model<f_t, true>) <= small_object_size>;
+
+            if (is_empty(f)) return;
+
+            new (&_model) model_t(std::forward<F>(f));
+            _vtable_ptr = model_t::vtable();
+
+        }
+        ~concept() { _vtable_ptr->dtor(&_model); }
+        concept(concept&& x) noexcept : _vtable_ptr(x._vtable_ptr) {
+            _vtable_ptr->move_ctor(&x._model, &_model);
+        }
+
+        concept& operator=(concept&& x) noexcept {
+            _vtable_ptr->dtor(&_model);
+            _vtable_ptr = x._vtable_ptr;
+            _vtable_ptr->move_ctor(&x._model, &_model);
+        }
+
+        R invoke(Args&&... args) { return _vtable_ptr->invoke(&_model, std::forward<Args>(args)...); }
+        const std::type_info& target_type() const noexcept {
+            return _vtable_ptr->target_type(&_model);
+        }
+        void* pointer() noexcept { return _vtable_ptr->pointer(&_model); }
+        const void* pointer() const noexcept { return _vtable_ptr->const_pointer(&_model); }
+    };
+
+    concept _self;
+
 public:
     using result_type = R;
 
-    /* constexpr */ task() noexcept { new (&_data) empty(); }
-    /* constexpr */ task(std::nullptr_t) noexcept : task() {}
+    constexpr task() noexcept = default;
+    constexpr task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
-    task(task&& x) noexcept { x.self().move_ctor(&_data); }
+    task(task&& x) noexcept = default;
 
     template <class F>
-    task(F&& f) {
-        using f_t = std::decay_t<F>;
-        if (is_empty(f)) {
-            new (&_data) empty();
-            return;
-        }
-        try {
-            new (&_data)
-                model<f_t, sizeof(model<f_t, true>) <= small_object_size>(std::forward<F>(f));
-        } catch (...) {
-            new (&_data) empty();
-            throw;
-        }
-    }
+    task(F&& f) : _self(std::forward<F>(f)) { }
 
-    ~task() noexcept { self().dtor(); }
+    ~task() = default;
 
     task& operator=(const task&) = delete;
     task& operator=(task&) = delete;
 
-    task& operator=(task&& x) noexcept {
-        self().dtor();
-        x.self().move_ctor(&_data);
-        return *this;
-    }
+    task& operator=(task&&) noexcept = default;
 
     task& operator=(std::nullptr_t) noexcept {
-        self().dtor();
-        new (&_data) empty();
+        _self = concept();
         return *this;
     }
 
@@ -236,21 +233,21 @@ public:
 
     void swap(task& x) noexcept { std::swap(*this, x); }
 
-    explicit operator bool() const { return self().pointer() != nullptr; }
+    explicit operator bool() const { return _self.pointer() != nullptr; }
 
-    const std::type_info& target_type() const { return self().target_type(); }
+    const std::type_info& target_type() const { return _self.target_type(); }
 
     template <class T>
     T* target() {
-        return (target_type() == typeid(T)) ? static_cast<T*>(self().pointer()) : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<T*>(_self.pointer()) : nullptr;
     }
 
     template <class T>
     const T* target() const {
-        return (target_type() == typeid(T)) ? static_cast<const T*>(self().pointer()) : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<const T*>(_self.pointer()) : nullptr;
     }
 
-    R operator()(Args... args) { return self().invoke(std::forward<Args>(args)...); }
+    R operator()(Args... args) { return _self.invoke(std::forward<Args>(args)...); }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
@@ -258,6 +255,9 @@ public:
     friend inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
     friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
+
+template <class R, class... Args>
+const typename task<R(Args...)>::vtable_type task<R(Args...)>::empty::_vtable;
 
 /**************************************************************************************************/
 
