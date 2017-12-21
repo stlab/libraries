@@ -59,9 +59,9 @@ class task<R(Args...)> {
             void (*dtor)(concept*);
             void (*move_ctor)(concept*, void*) noexcept;
             R (*invoke)(concept*, Args&&...);
-            const std::type_info& (*target_type)(const concept*) noexcept;
-            void* (*pointer)(concept*) noexcept;
-            const void* (*const_pointer)(const concept*) noexcept;
+            const std::type_info& (*target_type)(const concept*)noexcept;
+            void* (*pointer)(concept*)noexcept;
+            const void* (*const_pointer)(const concept*)noexcept;
         };
 
         const vtable* const _vtable_ptr;
@@ -81,15 +81,16 @@ class task<R(Args...)> {
         constexpr empty() noexcept : concept(&_vtable) {}
 
         static void dtor(concept* self) { static_cast<empty*>(self)->~empty(); }
+        static void move_ctor(concept*, void* p) noexcept { new (p) empty(); }
+        static auto invoke(concept*, Args&&...) -> R { throw std::bad_function_call(); }
+        static auto target_type(const concept*) noexcept -> const std::type_info& {
+            return typeid(void);
+        }
+        static auto pointer(concept*) noexcept -> void* { return nullptr; }
+        static auto const_pointer(const concept*) noexcept -> const void* { return nullptr; }
 
-        constexpr static typename concept::vtable _vtable = {
-            dtor,
-            [](concept*, void* p) noexcept { new (p) empty(); },
-            [](concept*, Args&&...) -> R { throw std::bad_function_call(); },
-            [](const concept*) noexcept->const std::type_info& { return typeid(void); },
-            [](concept*) noexcept->void* { return nullptr; },
-            [](const concept*) noexcept->const void* { return nullptr; }
-        };
+        constexpr static typename concept::vtable _vtable = {dtor,        move_ctor, invoke,
+                                                             target_type, pointer,   const_pointer};
     };
 
     template <class F, bool Small>
@@ -101,20 +102,25 @@ class task<R(Args...)> {
         model(G&& f) : concept(&_vtable), _f(std::forward<G>(f)) {}
         model(model&&) noexcept = delete;
 
-        constexpr static typename concept::vtable _vtable = {
-            [](concept* self) { static_cast<model*>(self)->~model(); },
-            [](concept* self, void* p) noexcept {
-                new (p) model(std::move(static_cast<model*>(self)->_f));
-            },
-            [](concept* self, Args&&... args) -> R {
-                return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
-            },
-            [](const concept*) noexcept->const std::type_info& { return typeid(F); },
-            [](concept* self) noexcept->void* { return &static_cast<model*>(self)->_f; },
-            [](const concept* self) noexcept->const void* {
-                return &static_cast<const model*>(self)->_f;
-            }
-        };
+        static void dtor(concept* self) { static_cast<model*>(self)->~model(); }
+        static void move_ctor(concept* self, void* p) noexcept {
+            new (p) model(std::move(static_cast<model*>(self)->_f));
+        }
+        static auto invoke(concept* self, Args&&... args) -> R {
+            return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
+        }
+        static auto target_type(const concept*) noexcept -> const std::type_info& {
+            return typeid(F);
+        }
+        static auto pointer(concept* self) noexcept -> void* {
+            return &static_cast<model*>(self)->_f;
+        }
+        static auto const_pointer(const concept* self) noexcept -> const void* {
+            return &static_cast<const model*>(self)->_f;
+        }
+
+        constexpr static typename concept::vtable _vtable = {dtor,        move_ctor, invoke,
+                                                             target_type, pointer,   const_pointer};
 
         F _f;
     };
@@ -125,20 +131,25 @@ class task<R(Args...)> {
         model(G&& f) : concept(&_vtable), _p(std::make_unique<F>(std::forward<G>(f))) {}
         model(model&&) noexcept = default;
 
-        constexpr static typename concept::vtable _vtable = {
-            [](concept* self) { static_cast<model*>(self)->~model(); },
-            [](concept* self, void* p) noexcept {
-                new (p) model(std::move(*static_cast<model*>(self)));
-            },
-            [](concept* self, Args&&... args) -> R {
-                return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
-            },
-            [](const concept*) noexcept->const std::type_info& { return typeid(F); },
-            [](concept* self) noexcept->void* { return static_cast<model*>(self)->_p.get(); },
-            [](const concept* self) noexcept->const void* {
-                return static_cast<const model*>(self)->_p.get();
-            }
-        };
+        static void dtor(concept* self) { static_cast<model*>(self)->~model(); }
+        static void move_ctor(concept* self, void* p) noexcept {
+            new (p) model(std::move(*static_cast<model*>(self)));
+        }
+        static auto invoke(concept* self, Args&&... args) -> R {
+            return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
+        }
+        static auto target_type(const concept*) noexcept -> const std::type_info& {
+            return typeid(F);
+        }
+        static auto pointer(concept* self) noexcept -> void* {
+            return static_cast<model*>(self)->_p.get();
+        }
+        static auto const_pointer(const concept* self) noexcept -> const void* {
+            return static_cast<const model*>(self)->_p.get();
+        }
+
+        constexpr static typename concept::vtable _vtable = {dtor,        move_ctor, invoke,
+                                                             target_type, pointer,   const_pointer};
 
         std::unique_ptr<F> _p;
     };
@@ -152,9 +163,9 @@ class task<R(Args...)> {
     template <class F>
     using possibly_empty_t =
         std::integral_constant<bool,
-                           std::is_pointer<std::decay_t<F>>::value ||
-                               std::is_member_pointer<std::decay_t<F>>::value ||
-                               std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
+                               std::is_pointer<std::decay_t<F>>::value ||
+                                   std::is_member_pointer<std::decay_t<F>>::value ||
+                                   std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
 
     template <class F>
     static auto is_empty(const F& f) -> std::enable_if_t<possibly_empty_t<F>::value, bool> {
@@ -254,3 +265,4 @@ public:
 #endif
 
 /**************************************************************************************************/
+
