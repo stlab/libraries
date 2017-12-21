@@ -23,15 +23,13 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-#pragma warning( push )
-#pragma warning( disable : 4521 ) // disable warning multiple copy c'tor
-#pragma warning( disable : 4522 ) // disable warning multiple assignment op
+#pragma warning(push)
+#pragma warning(disable : 4521) // disable warning multiple copy c'tor
+#pragma warning(disable : 4522) // disable warning multiple assignment op
 #endif
-
 
 /*
     tasks are functions with a mutable call operator to support moving items through for single
@@ -57,21 +55,39 @@ class task<R(Args...)> {
     static constexpr std::size_t small_object_size = 256;
 
     struct concept {
-        virtual ~concept() {}
-        virtual void move_ctor(void*) noexcept = 0;
-        virtual R invoke(Args&&...) = 0;
-        virtual const std::type_info& target_type() const noexcept = 0;
-        virtual void* pointer() noexcept = 0;
-        virtual const void* pointer() const noexcept = 0;
+        struct vtable {
+            void (*dtor)(concept*);
+            void (*move_ctor)(concept*, void*) noexcept;
+            R (*invoke)(concept*, Args&&...);
+            const std::type_info& (*target_type)(const concept*) noexcept;
+            void* (*pointer)(concept*) noexcept;
+            const void* (*const_pointer)(const concept*) noexcept;
+        };
+
+        const vtable* const _vtable_ptr;
+
+        concept(const vtable* p) : _vtable_ptr(p) {}
+        void dtor() { _vtable_ptr->dtor(this); }
+        void move_ctor(void* p) noexcept { _vtable_ptr->move_ctor(this, p); }
+        R invoke(Args&&... args) { return _vtable_ptr->invoke(this, std::forward<Args>(args)...); }
+        const std::type_info& target_type() const noexcept {
+            return _vtable_ptr->target_type(this);
+        }
+        void* pointer() noexcept { return _vtable_ptr->pointer(this); }
+        const void* pointer() const noexcept { return _vtable_ptr->const_pointer(this); }
     };
 
     struct empty : concept {
-        constexpr empty() noexcept = default;
-        void move_ctor(void* p) noexcept override { new (p) empty(); }
-        R invoke(Args&&...) override { throw std::bad_function_call(); }
-        const std::type_info& target_type() const noexcept override { return typeid(void); }
-        void* pointer() noexcept override { return nullptr; }
-        const void* pointer() const noexcept override { return nullptr; }
+        constexpr empty() noexcept : concept(&_vtable) {}
+
+        constexpr static typename concept::vtable _vtable = {
+            [](concept* self) { static_cast<empty*>(self)->~empty(); },
+            [](concept*, void* p) noexcept { new (p) empty(); },
+            [](concept*, Args&&...) -> R { throw std::bad_function_call(); },
+            [](const concept*) noexcept->const std::type_info& { return typeid(void); },
+            [](concept*) noexcept->void* { return nullptr; },
+            [](const concept*) noexcept->const void* { return nullptr; }
+        };
     };
 
     template <class F, bool Small>
@@ -79,28 +95,48 @@ class task<R(Args...)> {
 
     template <class F>
     struct model<F, true> : concept {
-        template <class F0> // for forwarding
-        model(F0&& f) : _f(std::forward<F0>(f)) {}
+        template <class G> // for forwarding
+        model(G&& f) : concept(&_vtable), _f(std::forward<G>(f)) {}
         model(model&&) noexcept = delete;
-        void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
-        R invoke(Args&&... args) override { return std::move(_f)(std::forward<Args>(args)...); }
-        const std::type_info& target_type() const noexcept override { return typeid(F); }
-        void* pointer() noexcept override { return &_f; }
-        const void* pointer() const noexcept override { return &_f; }
+
+        constexpr static typename concept::vtable _vtable = {
+            [](concept* self) { static_cast<model*>(self)->~model(); },
+            [](concept* self, void* p) noexcept {
+                new (p) model(std::move(static_cast<model*>(self)->_f));
+            },
+            [](concept* self, Args&&... args) -> R {
+                return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
+            },
+            [](const concept*) noexcept->const std::type_info& { return typeid(F); },
+            [](concept* self) noexcept->void* { return &static_cast<model*>(self)->_f; },
+            [](const concept* self) noexcept->const void* {
+                return &static_cast<const model*>(self)->_f;
+            }
+        };
 
         F _f;
     };
 
     template <class F>
     struct model<F, false> : concept {
-        template <class F0> // for forwarding
-        model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
+        template <class G> // for forwarding
+        model(G&& f) : concept(&_vtable), _p(std::make_unique<F>(std::forward<G>(f))) {}
         model(model&&) noexcept = default;
-        void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
-        R invoke(Args&&... args) override { return std::move(*_p)(std::forward<Args>(args)...); }
-        const std::type_info& target_type() const noexcept override { return typeid(F); }
-        void* pointer() noexcept override { return _p.get(); }
-        const void* pointer() const noexcept override { return _p.get(); }
+
+        constexpr static typename concept::vtable _vtable = {
+            [](concept* self) { static_cast<model*>(self)->~model(); },
+            [](concept* self, void* p) noexcept {
+                new (p) model(std::move(*static_cast<model*>(self)));
+            },
+            [](concept* self, Args&&... args) -> R {
+                return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
+            },
+            [](const concept*) noexcept->const std::type_info& { return typeid(F); },
+            [](concept* self) noexcept->void* { return static_cast<model*>(self)->_p.get(); },
+            [](const concept* self) noexcept->const void* {
+                return static_cast<const model*>(self)->_p.get();
+            }
+        };
 
         std::unique_ptr<F> _p;
     };
@@ -114,9 +150,9 @@ class task<R(Args...)> {
     template <class F>
     using possibly_empty_t =
         std::integral_constant<bool,
-                               std::is_pointer<std::decay_t<F>>::value ||
-                                   std::is_member_pointer<std::decay_t<F>>::value ||
-                                   std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
+                           std::is_pointer<std::decay_t<F>>::value ||
+                               std::is_member_pointer<std::decay_t<F>>::value ||
+                               std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
 
     template <class F>
     static auto is_empty(const F& f) -> std::enable_if_t<possibly_empty_t<F>::value, bool> {
@@ -152,19 +188,19 @@ public:
         }
     }
 
-    ~task() noexcept { self().~concept(); }
+    ~task() noexcept { self().dtor(); }
 
     task& operator=(const task&) = delete;
     task& operator=(task&) = delete;
 
     task& operator=(task&& x) noexcept {
-        self().~concept();
+        self().dtor();
         x.self().move_ctor(&_data);
         return *this;
     }
 
     task& operator=(std::nullptr_t) noexcept {
-        self().~concept();
+        self().dtor();
         new (&_data) empty();
         return *this;
     }
@@ -190,9 +226,7 @@ public:
         return (target_type() == typeid(T)) ? static_cast<const T*>(self().pointer()) : nullptr;
     }
 
-    R operator()(Args... args) {
-        return self().invoke(std::forward<Args>(args)...);
-    }
+    R operator()(Args... args) { return self().invoke(std::forward<Args>(args)...); }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
@@ -204,7 +238,7 @@ public:
 /**************************************************************************************************/
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
-#pragma warning( pop )
+#pragma warning(pop)
 #endif
 
 } // namespace v1
@@ -218,4 +252,3 @@ public:
 #endif
 
 /**************************************************************************************************/
-
