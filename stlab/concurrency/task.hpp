@@ -40,20 +40,6 @@ class task;
 
 template <class R, class... Args>
 class task<R(Args...)> {
-    /*
-        REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
-        Desire is to have something large enough to hold the vast majority of lamda expressions.
-        A single small heap allocation/deallocation takes about as much time as copying 10K of POD
-        data on my MacBook Pro. tasks are move only object so the exepectation is that moving the
-        funciton object is proportional to the sizeof the object. We try to construct tasks emplace
-        and so they are rarely moved (need to review the code to make sure that is true). The
-        concept will consume one word so this gives us 31 words (on a 64 bit machine) for the model.
-        Probably excessive but still allows 16 tasks on a cache line
-
-        I welcome empirical data from an actual system on a better size.
-    */
-    static constexpr std::size_t small_object_size = 256 - sizeof(void*);
-
     // REVISIT (sean.parent) : Use `if constexpr` here when we move to C++17
     template <class F>
     using possibly_empty_t =
@@ -76,26 +62,9 @@ class task<R(Args...)> {
         void (*dtor)(void*);
         void (*move_ctor)(void*, void*) noexcept;
         R (*invoke)(void*, Args&&...);
-        const std::type_info& (*target_type)(const void*)noexcept;
+        const std::type_info& (*target_type)()noexcept;
         void* (*pointer)(void*)noexcept;
         const void* (*const_pointer)(const void*)noexcept;
-    };
-
-    // TODO - we don't create an empty so push this empty vtable into concept
-    struct empty {
-        empty() noexcept = delete;
-
-        static void dtor(void*) { }
-        static void move_ctor(void*, void*) noexcept { }
-        static auto invoke(void*, Args&&...) -> R { throw std::bad_function_call(); }
-        static auto target_type(const void*) noexcept -> const std::type_info& {
-            return typeid(void);
-        }
-        static auto pointer(void*) noexcept -> void* { return nullptr; }
-        static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
-
-        static constexpr vtable_type _vtable = {
-                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
     };
 
     template <class F, bool Small>
@@ -114,21 +83,14 @@ class task<R(Args...)> {
         static auto invoke(void* self, Args&&... args) -> R {
             return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
         }
-        static auto target_type(const void*) noexcept -> const std::type_info& {
-            return typeid(F);
-        }
-        static auto pointer(void* self) noexcept -> void* {
-            return &static_cast<model*>(self)->_f;
-        }
+        static auto target_type() noexcept -> const std::type_info& { return typeid(F); }
+        static auto pointer(void* self) noexcept -> void* { return &static_cast<model*>(self)->_f; }
         static auto const_pointer(const void* self) noexcept -> const void* {
             return &static_cast<const model*>(self)->_f;
         }
 
-        static vtable_type* vtable() {
-            static vtable_type _vtable = {
-                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
-            return &_vtable;
-        }
+        static constexpr vtable_type _vtable = {dtor,        move_ctor, invoke,
+                                                target_type, pointer,   const_pointer};
 
         F _f;
     };
@@ -146,9 +108,7 @@ class task<R(Args...)> {
         static auto invoke(void* self, Args&&... args) -> R {
             return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
         }
-        static auto target_type(const void*) noexcept -> const std::type_info& {
-            return typeid(F);
-        }
+        static auto target_type() noexcept -> const std::type_info& { return typeid(F); }
         static auto pointer(void* self) noexcept -> void* {
             return static_cast<model*>(self)->_p.get();
         }
@@ -156,52 +116,41 @@ class task<R(Args...)> {
             return static_cast<const model*>(self)->_p.get();
         }
 
-        static vtable_type* vtable() {
-            static vtable_type _vtable = {
-                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
-            return &_vtable;
-        }
+        static constexpr vtable_type _vtable = {dtor,        move_ctor, invoke,
+                                                target_type, pointer,   const_pointer};
 
         std::unique_ptr<F> _p;
     };
 
-    struct concept {
-        const vtable_type* _vtable_ptr = &empty::_vtable;
-        std::aligned_storage_t<small_object_size> _model;
+    // empty (default) vtable
+    static void dtor(void*) {}
+    static void move_ctor(void*, void*) noexcept {}
+    static auto invoke(void*, Args&&...) -> R { throw std::bad_function_call(); }
+    static auto target_type_() noexcept -> const std::type_info& { return typeid(void); }
+    static auto pointer(void*) noexcept -> void* { return nullptr; }
+    static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
 
-        constexpr concept() noexcept = default;
+    static constexpr vtable_type _vtable = {dtor,        move_ctor, invoke,
+                                            target_type_, pointer,   const_pointer};
 
-        template <class F>
-        concept(F&& f) {
-            using f_t = std::decay_t<F>;
-            using model_t = model<f_t, sizeof(model<f_t, true>) <= small_object_size>;
+    const vtable_type* _vtable_ptr = &_vtable;
 
-            if (is_empty(f)) return;
+    /*
+        REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
+        Desire is to have something large enough to hold the vast majority of lamda expressions.
+        A single small heap allocation/deallocation takes about as much time as copying 10K of POD
+        data on my MacBook Pro. tasks are move only object so the exepectation is that moving the
+        funciton object is proportional to the sizeof the object. We try to construct tasks emplace
+        and so they are rarely moved (need to review the code to make sure that is true). The
+        concept will consume one word so this gives us 31 words (on a 64 bit machine) for the model.
+        Probably excessive but still allows 16 tasks on a cache line
 
-            new (&_model) model_t(std::forward<F>(f));
-            _vtable_ptr = model_t::vtable();
+        I welcome empirical data from an actual system on a better size.
 
-        }
-        ~concept() { _vtable_ptr->dtor(&_model); }
-        concept(concept&& x) noexcept : _vtable_ptr(x._vtable_ptr) {
-            _vtable_ptr->move_ctor(&x._model, &_model);
-        }
-
-        concept& operator=(concept&& x) noexcept {
-            _vtable_ptr->dtor(&_model);
-            _vtable_ptr = x._vtable_ptr;
-            _vtable_ptr->move_ctor(&x._model, &_model);
-        }
-
-        R invoke(Args&&... args) { return _vtable_ptr->invoke(&_model, std::forward<Args>(args)...); }
-        const std::type_info& target_type() const noexcept {
-            return _vtable_ptr->target_type(&_model);
-        }
-        void* pointer() noexcept { return _vtable_ptr->pointer(&_model); }
-        const void* pointer() const noexcept { return _vtable_ptr->const_pointer(&_model); }
-    };
-
-    concept _self;
+        sizeof(std::function<R(Args...)>)
+    */
+    static constexpr std::size_t small_object_size = 256 - sizeof(void*);
+    std::aligned_storage_t<small_object_size> _model;
 
 public:
     using result_type = R;
@@ -209,22 +158,33 @@ public:
     constexpr task() noexcept = default;
     constexpr task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
-    task(task&& x) noexcept = default;
+    task(task&& x) noexcept : _vtable_ptr(x._vtable_ptr) {
+        _vtable_ptr->move_ctor(&x._model, &_model);
+    }
 
     template <class F>
-    task(F&& f) : _self(std::forward<F>(f)) { }
+    task(F&& f) {
+        using f_t = std::decay_t<F>;
+        using model_t = model<f_t, sizeof(model<f_t, true>) <= small_object_size>;
 
-    ~task() = default;
+        if (is_empty(f)) return;
+
+        new (&_model) model_t(std::forward<F>(f));
+        _vtable_ptr = &model_t::_vtable;
+    }
+
+    ~task() { _vtable_ptr->dtor(&_model); };
 
     task& operator=(const task&) = delete;
-    task& operator=(task&) = delete;
 
-    task& operator=(task&&) noexcept = default;
-
-    task& operator=(std::nullptr_t) noexcept {
-        _self = concept();
+    task& operator=(task&& x) noexcept {
+        _vtable_ptr->dtor(&_model);
+        _vtable_ptr = x._vtable_ptr;
+        _vtable_ptr->move_ctor(&x._model, &_model);
         return *this;
     }
+
+    task& operator=(std::nullptr_t) noexcept { return *this = task(); }
 
     template <class F>
     task& operator=(F&& f) {
@@ -233,21 +193,24 @@ public:
 
     void swap(task& x) noexcept { std::swap(*this, x); }
 
-    explicit operator bool() const { return _self.pointer() != nullptr; }
+    explicit operator bool() const { return _vtable_ptr->const_pointer(&_model) != nullptr; }
 
-    const std::type_info& target_type() const { return _self.target_type(); }
+    const std::type_info& target_type() const noexcept { return _vtable_ptr->target_type(); }
 
     template <class T>
     T* target() {
-        return (target_type() == typeid(T)) ? static_cast<T*>(_self.pointer()) : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<T*>(_vtable_ptr->pointer(&_model)) :
+                                              nullptr;
     }
 
     template <class T>
     const T* target() const {
-        return (target_type() == typeid(T)) ? static_cast<const T*>(_self.pointer()) : nullptr;
+        return (target_type() == typeid(T)) ?
+                   static_cast<const T*>(_vtable_ptr->const_pointer(&_model)) :
+                   nullptr;
     }
 
-    R operator()(Args... args) { return _self.invoke(std::forward<Args>(args)...); }
+    R operator()(Args... args) { return _vtable_ptr->invoke(&_model, std::forward<Args>(args)...); }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
@@ -256,8 +219,17 @@ public:
     friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
 
+#if (__cplusplus < 201703L)
+// In C++17 constexpr implies inline and these definitions are deprecated
 template <class R, class... Args>
-const typename task<R(Args...)>::vtable_type task<R(Args...)>::empty::_vtable;
+const typename task<R(Args...)>::vtable_type task<R(Args...)>::_vtable;
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::vtable_type task<R(Args...)>::template model<F, false>::_vtable;
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::vtable_type task<R(Args...)>::template model<F, true>::_vtable;
+#endif
 
 /**************************************************************************************************/
 
@@ -276,4 +248,3 @@ const typename task<R(Args...)>::vtable_type task<R(Args...)>::empty::_vtable;
 #endif
 
 /**************************************************************************************************/
-
