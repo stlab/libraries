@@ -64,9 +64,9 @@ class task<R(Args...)> {
             const void* (*const_pointer)(const concept*)noexcept;
         };
 
-        const vtable* const _vtable_ptr;
+        const vtable* _vtable_ptr; // pointer not const to avoid laundering in C++14
 
-        constexpr concept(const vtable* p) : _vtable_ptr(p) {}
+        concept(const vtable* p) : _vtable_ptr(p) {}
         void dtor() { _vtable_ptr->dtor(this); }
         void move_ctor(void* p) noexcept { _vtable_ptr->move_ctor(this, p); }
         R invoke(Args&&... args) { return _vtable_ptr->invoke(this, std::forward<Args>(args)...); }
@@ -77,8 +77,10 @@ class task<R(Args...)> {
         const void* pointer() const noexcept { return _vtable_ptr->const_pointer(this); }
     };
 
+    using vtable_type = const typename concept::vtable;
+
     struct empty : concept {
-        constexpr empty() noexcept : concept(&_vtable) {}
+        empty() noexcept : concept(vtable()) {}
 
         static void dtor(concept* self) { static_cast<empty*>(self)->~empty(); }
         static void move_ctor(concept*, void* p) noexcept { new (p) empty(); }
@@ -89,8 +91,11 @@ class task<R(Args...)> {
         static auto pointer(concept*) noexcept -> void* { return nullptr; }
         static auto const_pointer(const concept*) noexcept -> const void* { return nullptr; }
 
-        constexpr static typename concept::vtable _vtable = {dtor,        move_ctor, invoke,
-                                                             target_type, pointer,   const_pointer};
+        static vtable_type* vtable() {
+            static vtable_type _vtable = {
+                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
+            return &_vtable;
+        }
     };
 
     template <class F, bool Small>
@@ -99,7 +104,7 @@ class task<R(Args...)> {
     template <class F>
     struct model<F, true> : concept {
         template <class G> // for forwarding
-        model(G&& f) : concept(&_vtable), _f(std::forward<G>(f)) {}
+        model(G&& f) : concept(vtable()), _f(std::forward<G>(f)) {}
         model(model&&) noexcept = delete;
 
         static void dtor(concept* self) { static_cast<model*>(self)->~model(); }
@@ -119,8 +124,11 @@ class task<R(Args...)> {
             return &static_cast<const model*>(self)->_f;
         }
 
-        constexpr static typename concept::vtable _vtable = {dtor,        move_ctor, invoke,
-                                                             target_type, pointer,   const_pointer};
+        static vtable_type* vtable() {
+            static vtable_type _vtable = {
+                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
+            return &_vtable;
+        }
 
         F _f;
     };
@@ -128,7 +136,7 @@ class task<R(Args...)> {
     template <class F>
     struct model<F, false> : concept {
         template <class G> // for forwarding
-        model(G&& f) : concept(&_vtable), _p(std::make_unique<F>(std::forward<G>(f))) {}
+        model(G&& f) : concept(vtable()), _p(std::make_unique<F>(std::forward<G>(f))) {}
         model(model&&) noexcept = default;
 
         static void dtor(concept* self) { static_cast<model*>(self)->~model(); }
@@ -148,8 +156,11 @@ class task<R(Args...)> {
             return static_cast<const model*>(self)->_p.get();
         }
 
-        constexpr static typename concept::vtable _vtable = {dtor,        move_ctor, invoke,
-                                                             target_type, pointer,   const_pointer};
+        static vtable_type* vtable() {
+            static vtable_type _vtable = {
+                dtor, move_ctor, invoke, target_type, pointer, const_pointer};
+            return &_vtable;
+        }
 
         std::unique_ptr<F> _p;
     };
@@ -180,8 +191,8 @@ class task<R(Args...)> {
 public:
     using result_type = R;
 
-    constexpr task() noexcept { new (&_data) empty(); }
-    constexpr task(std::nullptr_t) noexcept : task() {}
+    /* constexpr */ task() noexcept { new (&_data) empty(); }
+    /* constexpr */ task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
     task(task&& x) noexcept { x.self().move_ctor(&_data); }
 
