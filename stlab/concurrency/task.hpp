@@ -77,6 +77,7 @@ class task<R(Args...)> {
         const void* pointer() const noexcept { return _vtable_ptr->const_pointer(this); }
     };
 
+    struct empty;
     struct empty : concept {
         constexpr empty() noexcept : concept(&_vtable) {}
 
