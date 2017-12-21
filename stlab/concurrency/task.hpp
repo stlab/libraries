@@ -225,7 +225,7 @@ public:
 
     void swap(task& x) noexcept { std::swap(*this, x); }
 
-    explicit operator bool() const { return self().pointer(); }
+    explicit operator bool() const { return static_cast<bool>(self().pointer()); }
 
     const std::type_info& target_type() const { return self().target_type(); }
 
