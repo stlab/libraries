@@ -66,7 +66,7 @@ class task<R(Args...)> {
 
         const vtable* const _vtable_ptr;
 
-        concept(const vtable* p) : _vtable_ptr(p) {}
+        constexpr concept(const vtable* p) : _vtable_ptr(p) {}
         void dtor() { _vtable_ptr->dtor(this); }
         void move_ctor(void* p) noexcept { _vtable_ptr->move_ctor(this, p); }
         R invoke(Args&&... args) { return _vtable_ptr->invoke(this, std::forward<Args>(args)...); }
