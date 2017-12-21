@@ -77,12 +77,13 @@ class task<R(Args...)> {
         const void* pointer() const noexcept { return _vtable_ptr->const_pointer(this); }
     };
 
-    struct empty;
     struct empty : concept {
         constexpr empty() noexcept : concept(&_vtable) {}
 
+        static void dtor(concept* self) { static_cast<empty*>(self)->~empty(); }
+
         constexpr static typename concept::vtable _vtable = {
-            [](concept* self) { static_cast<empty*>(self)->~empty(); },
+            dtor,
             [](concept*, void* p) noexcept { new (p) empty(); },
             [](concept*, Args&&...) -> R { throw std::bad_function_call(); },
             [](const concept*) noexcept->const std::type_info& { return typeid(void); },
