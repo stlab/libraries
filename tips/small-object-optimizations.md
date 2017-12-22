@@ -8,7 +8,7 @@ draft: true
 
 ## The Problem
 
-At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk [Polymorphic Task Template in Ten](http://sean-parent.stlab.cc/papers-and-presentations#polymorphic-task-template-in-ten) which showed an easy way to implement a polymorphic task template, similar to [`std::function`](http://en.cppreference.com/w/cpp/utility/functional/function), with a small object optimization in 10 minutes. If you haven't seen the talk, I recommend watching it before reading futher. The problem is that the small object optimization leads to [_undefined behavior_](http://en.cppreference.com/w/cpp/language/ub). This was first caught by Maikel Nadolski and pointed out in the #meetingcpp channel on Slack.
+At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk [Polymorphic Task Template in Ten](http://sean-parent.stlab.cc/papers-and-presentations#polymorphic-task-template-in-ten) which showed an easy way to implement a polymorphic task template, similar to [`std::function`](http://en.cppreference.com/w/cpp/utility/functional/function), with a small object optimization in 10 minutes. If you haven't seen the talk, I recommend watching it before reading further. The problem is that the small object optimization leads to [_undefined behavior_](http://en.cppreference.com/w/cpp/language/ub). This was first caught by Maikel Nadolski and pointed out in the #meetingcpp channel on Slack.
 
 From the example in the talk, here is the issue:
 
@@ -22,7 +22,7 @@ task(F&& f) {
 }
 ```
 
-The code to access the `model`, does so by casting the address of `_data` to `concept` a base class of `model`.
+The code to access the `model` does so by casting the address of `_data` to `concept`, a base class of `model`.
 
 ```cpp
 concept& self() { return *static_cast<concept*>(static_cast<void*>(&_data)); }
@@ -37,11 +37,11 @@ Because of this, the cast to `concept` is undefined behavior.
 
 ## The Fix
 
-One possible fix is to store the pointer returned by pacement new, cast to the base `concept*`. I believe this is the approach taken by most standard library implementations. This costs an extra word of storage, and an extra indirection on every use, and it will _always_ (as far as I can determine) be pointing to the aligned storage (a fixed offset), but it is not guaranteed to point directly to the aligned storage.
+One possible fix is to store the pointer returned by placement new, cast to the base `concept*`. I believe this is the approach taken by most standard library implementations. This costs an extra word of storage, and an extra indirection on every use, and it will _always_ (as far as I can determine) be pointing to the aligned storage (a fixed offset), but it is not guaranteed to point directly to the aligned storage.
 
-I could lobby the standard committee to losen the requirements on pointer-interconvertible. As one example; the class [`adobe::any_regular_t`](https://github.com/stlab/adobe_source_libraries/blob/master/adobe/any_regular.hpp), which has been in fairly wide use for over a decade, suffers the same problem when the captured value is not a `StandardLayoutType`. Although the standard should ratify existing practice, I will leave it to those who have a deeper understanding of why the existing rules are defined as they are to argue this point.
+I could lobby the standard committee to loosen the requirements on pointer-interconvertible. As one example; the class [`adobe::any_regular_t`](https://github.com/stlab/adobe_source_libraries/blob/master/adobe/any_regular.hpp), which has been in fairly wide use for over a decade, suffers the same problem when the captured value is not a `StandardLayoutType`. Although the standard should ratify existing practice, I will leave it to those who have a deeper understanding of why the existing rules are defined as they are to argue this point.
 
-There is a trick used in `any_regular_t` to remove the need for virtual member functions which can be used to fix the task implementation (and to fix `any_regular_t`). `any_regular_t` still uses inheritance, but it avoids language virtual functions by building [vtables](https://en.wikipedia.org/wiki/Virtual_method_table) with templates. This was done to guarantee object layout for ABI compatibility. To have a complete solution, we also need to remove inheritance. To do that, we split the vtable pointer for our pure virtual base class from the remainder of the object. Seeing how this is done may be very instructive if you are not familiar with how vtable work.
+There is a trick used in `any_regular_t` to remove the need for virtual member functions which can be used to fix the task implementation (and to fix `any_regular_t`). `any_regular_t` still uses inheritance, but it avoids language virtual functions by building [vtables](https://en.wikipedia.org/wiki/Virtual_method_table) with templates. This was done to guarantee object layout for ABI compatibility. To have a complete solution, we also need to remove inheritance. To do that, we split the vtable pointer for our pure virtual base class from the remainder of the object. Seeing how this is done may be very instructive if you are not familiar with how vtables work.
 
 Using the terminology from my talk, I recast the idea of `concept` into a struct holding function pointers for the virtual operations. The definition of `concept` becomes:
 
@@ -56,7 +56,7 @@ struct task<R(Args...)>::concept {
 
 The first argument to each function pointer will be the _this_ pointer. The `_dtor` and `_move` functions are used to implement the destructor and both the move constructor and move assignment operators. The `_invoke` function is used to invoke the type erased `Callable`.
 
-The task will then store a `const concept*`, simply called `_concept` (this is our vtable pointer), as well as aligned storage for the model. The `_concept` member is initialized to point to a `cancept` with a do nothing `_dtor` function. This is the equivalent of declaring a pure base class as:
+The task will then store a `const concept*`, simply called `_concept` (this is our vtable pointer), as well as aligned storage for the model. The `_concept` member is initialized to point to a `concept` with a do nothing `_dtor` function. This is the equivalent of declaring a pure base class as:
 
 ```cpp
 sturct concept {
@@ -119,7 +119,7 @@ struct task<R(Args...)>::model<F, false> {
 };
 ```
 
-Then it is straight forward to fill in the basic operations on the task in terms of model operations:
+Then it is straightforward to fill in the basic operations on the task in terms of model operations:
 
 ```cpp
 template <class R, class... Args>
