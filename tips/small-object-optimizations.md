@@ -30,7 +30,7 @@ The code to access the `model` does so by casting the address of `_data` to `con
 concept& self() { return *static_cast<concept*>(static_cast<void*>(&_data)); }
 ```
 
-Since a `concept` was not stored at this location, this cast is only allowed if the pointer types `model*` and `concept*` are [_pointer-interconvertible_](http://en.cppreference.com/w/cpp/language/static_cast). That would only be true if `model` is a [_standard-layout class_](http://en.cppreference.com/w/cpp/concept/StandardLayoutType). Unfortunately, that is not the case for two reasons.
+Since a `concept` was not stored at this location, this cast is only allowed if the pointer types `model*` and `concept*` are [_pointer-interconvertible_](http://en.cppreference.com/w/cpp/language/static_cast). Pointer-interconvertible means that a void* which points to an object of one type, also points to an object of the other type. That would only be true if `model` is a [_standard-layout class_](http://en.cppreference.com/w/cpp/concept/StandardLayoutType). Unfortunately, that is not the case for two reasons.
 
 - `model` (and `concept`) contain virtual functions.
 - `model` may have a member which is not a `StandardLayoutType` because it holds an arbitrary `Callable` object.
@@ -45,7 +45,7 @@ I could lobby the standard committee to loosen the requirements on pointer-inter
 
 There is a trick used in `any_regular_t` to remove the need for virtual member functions which can be used to fix the task implementation (and to fix `any_regular_t`). `any_regular_t` still uses inheritance, but it avoids language virtual functions by building [vtables](https://en.wikipedia.org/wiki/Virtual_method_table) with templates. This was done to guarantee object layout for ABI compatibility. To have a complete solution, we also need to remove inheritance. To do that, we split the vtable pointer for our pure virtual base class from the remainder of the object. Seeing how this is done may be very instructive if you are not familiar with how vtables work.
 
-Using the terminology from my talk, I recast the idea of the `concept` class into a struct holding function pointers for the virtual operations. The definition of `tast::concept` becomes:
+Using the terminology from my talk, I recast the idea of the `concept` class into a struct holding function pointers for the virtual operations. The definition of `task::concept` becomes:
 
 ```cpp
 template <class R, class... Args>
@@ -148,6 +148,7 @@ public:
 
     task(task&& x) noexcept : _concept(x._concept) { _concept->_move(&x._model, &_model); }
     task& operator=(task&& x) noexcept {
+        if (this == &x) return *this;
         _concept->dtor(&_model);
         _concept = x._concept;
         _concept->_move(&x._model, &_model);
@@ -159,10 +160,10 @@ public:
 
 The `task` never casts to either a `concept` or a `model` pointer, instead a pointer to the `_model` storage is passed to a function in the vtable which casts the pointer to the correct model type stored in that memory. Undefined behavior is avoided because the pointer is only ever cast to the stored type.
 
-Using this technique generates less code, largely because without virtual functions there are no tables for RTTI generated. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the original code, with undefined behavior, presented at my talk [https://godbolt.org/g/ki2TSJ](https://godbolt.org/g/ki2TSJ) and here is the code without inheritance or language virtual functions [https://godbolt.org/g/RmktXt](https://godbolt.org/g/RmktXt).
+Using this technique generates less code, largely because without virtual functions there are no tables for RTTI generated. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the [original code](https://godbolt.org/g/ki2TSJ), with undefined behavior, presented at my talk and here is the [code without inheritance or language virtual functions](https://godbolt.org/g/8FHUw3).
 
 I'm in the process of updating the [stlab library implementation of tasks](https://github.com/stlab/libraries/pull/118). It hasn't been decided if we roll this into a 1.1.2 bug fix release or hold it for a 1.2 release. I'm also looking at fixing `adobe::any_regular_t` in ASL.
 
 I'll update my lighting talk if I get asked to present it again. This solution is a little more complicated but it still demonstrates the power of using concept based polymorphism to shift the allocation strategy to the use of the objects.
 
-I frequently tell developers that writing papers and presenting talks is a really good way to improve your code. Sometime it can be a bit embarrassing when you present a great way to use undefined behavior at a major conference. But this is how we learn and grow as professionals. Thanks Maikel for the catch!
+I frequently tell developers that writing papers and presenting talks is a really good way to improve your code. It can be a bit embarrassing when you present a great way to use undefined behavior at a major conference, but this is how we learn and grow as professionals. Thanks Maikel for the catch!
