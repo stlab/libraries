@@ -12,7 +12,7 @@ At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk 
 
 From the example in the talk here is the issue:
 
-The constructor for the task is using placement new on a `model` type in a `_data` aligned storage member.
+The constructor for the task is using placement new on a `model` type in the aligned storage member, `_data` .
 
 ```cpp
 template <class F>
@@ -37,13 +37,13 @@ Because of this, the cast to `concept` is undefined behavior.
 
 ## The Fix
 
-One possible fix is to store the pointer returned by operator new() cast to the base class. I believe this is the approach taken by most standard library implementations. The problem is that this costs an extra word of storage, and an extra indirection on every use, and it will _always_ (as far as I can determine) be pointing to the aligned storage, but it is not guaranteed to point to the aligned storage.
+One possible fix is to store the pointer returned by pacement new cast to the base, `concept` class. I believe this is the approach taken by most standard library implementations. This costs an extra word of storage, and an extra indirection on every use, and it will _always_ (as far as I can determine) be pointing to the aligned storage, but it is not guaranteed to point to the aligned storage.
 
-I could lobby the standard committee to losen the requirements on pointer-interconvertible. As one example, the [`adobe::any_regular_t`](https://github.com/stlab/adobe_source_libraries/blob/master/adobe/any_regular.hpp), which has been in fairly wide use for over a decade, suffers the same problem when the captured value is not a StandardLayoutType. Although I think it would be great for the standard to ratify existing practice, I will leave it to those who have a deeper understanding of why the existing rules are defined as they are.
+I could lobby the standard committee to losen the requirements on pointer-interconvertible. As one example; the class [`adobe::any_regular_t`](https://github.com/stlab/adobe_source_libraries/blob/master/adobe/any_regular.hpp), which has been in fairly wide use for over a decade, suffers the same problem when the captured value is not a `StandardLayoutType`. Although the standard should ratify existing practice, I will leave it to those who have a deeper understanding of why the existing rules are defined as they are to argue for this.
 
-There is a trick used in `any_regular_t` to remove the need for virtual member functions to fix my task implementation (and to fix `any_regular_t`). `any_regular_t` still uses inheritance, but it avoid language virtual functions by building [vtables](https://en.wikipedia.org/wiki/Virtual_method_table) with a little template magic. If we can also remove inheritance, then we have a solution. To do that, we split the vtable pointer for our pure virtual base class, from the remainder of the object. Seeing how this is done is also very instructive if you didn't know what vtables are.
+There is a trick used in `any_regular_t` to remove the need for virtual member functions which can be used to fix the task implementation (and to fix `any_regular_t`). `any_regular_t` still uses inheritance, but it avoids language virtual functions by building [vtables](https://en.wikipedia.org/wiki/Virtual_method_table) with templates. If we can also remove inheritance, then we have a solution. To do that, we split the vtable pointer for our pure virtual base class from the remainder of the object. Seeing how this is done may be very instructive if you are not familiar with how vtable work.
 
-Using the terminology from my talk, we'll recast the idea of `concept` into a struct holding function pointers for the virtual operations. The definition of `concept` becomes:
+Using the terminology from my talk, I recast the idea of `concept` into a struct holding function pointers for the virtual operations. The definition of `concept` becomes:
 
 ```cpp
 template <class R, class... Args>
@@ -54,9 +54,9 @@ struct task<R(Args...)>::concept {
 };
 ```
 
-The first argument to each function pointer will be the _this_ pointer. The `_dtor` and `_move` are to implement the destructor and both the move constructor and move assignment operators. The `_invoke` call is how we will actually invoke the type erased `Callable`.
+The first argument to each function pointer will be the _this_ pointer. The `_dtor` and `_move` functions are used to implement the destructor and both the move constructor and move assignment operators. The `_invoke` function is used to invoke the type erased `Callable`.
 
-Our task will then store a `const concept*`, `_concept` (this is our vtable pointer), and aligned storage for the model. We initialize `_concept` to point to a `cancept` with a do nothing `_dtor` function. This is the equivalent of declaring a pure base class as:
+The task will then store a `const concept*`, simply called `_concept` (this is our vtable pointer), and aligned storage for the model. The `_concept` member is initialized to point to a `cancept` with a do nothing `_dtor` function. This is the equivalent of declaring a pure base class as:
 
 ```cpp
 sturct concept {
@@ -73,7 +73,7 @@ But since we can't use inheritance or virtual functions, we write this as:
     const concept* _concept = &empty; // vtable pointer
 ```
 
-To implement a model, we simply declare a set of static functions, which will act as our virtual functions, and fill them into a vtable. The static functions can cast the first argument to the model type safely (the _this_ pointer) and from there access any members in the model. Our small model looks like this:
+To implement a model, we simply declare a set of static functions, which will act as virtual functions, and use them to populate the vtable. The static functions can cast the first argument to the model type safely (the _this_ pointer) and then access any members in the model. Our small model looks like this:
 
 ```cpp
 template <class R, class... Args>
@@ -119,7 +119,7 @@ struct task<R(Args...)>::model<F, false> {
 };
 ```
 
-From here, it is fairly straight forward to fill in the operations on the task:
+Then it is fairly straight forward to fill in the basic operations on the task in terms of model operations:
 
 ```cpp
 template <class R, class... Args>
@@ -154,12 +154,13 @@ public:
     R operator()(Args... args) { return _concept->_invoke(&_model, forward<Args>(args)...); }
 };
 ```
-Here we see the `task` never casts to either a concept or a model pointer, instead it passes a pointer to the _model storage to a function in the vtable which casts the pointer to they type stored in that memory. Undefined behavior is avoided.
 
-As a bonus, using this technique generates less code, largely because without virtual functions we don't need any tables for RTTI. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the original code, with undefined behavior, presented at my talk [https://godbolt.org/g/ki2TSJ](https://godbolt.org/g/ki2TSJ) and here is the code without inheritance or language virtual functions [https://godbolt.org/g/RmktXt](https://godbolt.org/g/RmktXt).
+The `task` never casts to either a `concept` or a `model` pointer, instead it passes a pointer to the `_model` storage to a function in the vtable which casts the pointer to the correct model type stored in that memory. Undefined behavior is avoided.
 
-I'm in the process of updating the [stlab library implementation](https://github.com/stlab/libraries/pull/118) of tasks. It hasn't been decided if we roll this into a 1.1.2 bug fix release or hold it for a 1.2 release. I'm also looking at fixing `adobe::any_regular_t`.
+Using this technique generates less code, largely because without virtual functions we don't need any tables for RTTI. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the original code, with undefined behavior, presented at my talk [https://godbolt.org/g/ki2TSJ](https://godbolt.org/g/ki2TSJ) and here is the code without inheritance or language virtual functions [https://godbolt.org/g/RmktXt](https://godbolt.org/g/RmktXt).
 
-I'll update my lighting talk if I get asked to present it again. Although this solution is a little more complicated, it still demonstrates the power of using concept based polymorphism to shift the allocation strategy to the use of the objects.
+I'm in the process of updating the [stlab library implementation](https://github.com/stlab/libraries/pull/118) of tasks. It hasn't been decided if we roll this into a 1.1.2 bug fix release or hold it for a 1.2 release. I'm also looking at fixing `adobe::any_regular_t` in ASL.
 
-I always tell developers that writing papers and presenting talks is a really good way to improve your code. Sometime it can be a bit embarrassing when you do something like present a great way to use undefined behavior at a major conference. But this is how we learn and grow as professionals. Thanks Maikel for the catch.
+I'll update my lighting talk if I get asked to present it again. This solution is a little more complicated but it still demonstrates the power of using concept based polymorphism to shift the allocation strategy to the use of the objects.
+
+I frequently tell developers that writing papers and presenting talks is a really good way to improve your code. Sometime it can be a bit embarrassing when you present a great way to use undefined behavior at a major conference. But this is how we learn and grow as professionals. Thanks Maikel for the catch!
