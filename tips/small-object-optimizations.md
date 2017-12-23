@@ -68,7 +68,7 @@ The first argument to each function pointer will be the _this_ pointer. The `_dt
 The task stores a `const concept*`, simply called `_concept` (this is our vtable pointer), as well as aligned storage for the model. The `_concept` member is initialized to point to a `concept` with a do nothing `_dtor` function. This is the equivalent of declaring a pure base class as:
 
 ```cpp
-sturct concept {
+struct concept {
     ~concept() = default;
     virtual move(void*) noexcept = 0;
     virtual R invoke(Args&&...) = 0;
