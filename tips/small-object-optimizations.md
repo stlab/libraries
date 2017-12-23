@@ -3,14 +3,21 @@ title: Small Object Optimization for Polymorphic Types
 layout: page
 tags: [tips]
 comments: true
-draft: true
 ---
+
+## Summary
+
+At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk [Polymorphic Task Template in Ten](http://sean-parent.stlab.cc/papers-and-presentations#polymorphic-task-template-in-ten) which showed an easy way to implement a polymorphic task template, similar to [`std::function`](http://en.cppreference.com/w/cpp/utility/functional/function), with a small object optimization in 10 minutes.
+
+Unfortunately, the small object optimization, as described, leads to [_undefined behavior_](http://en.cppreference.com/w/cpp/language/ub). As a general rule, you cannot store an object of one type in memory and read it back as another, even if the other type is the objects base class (there are exceptions to this rule, but they do not apply to this situation).
+
+This tip looks at the details of the issue and describes a solution which turns out to be more efficient although it does require slightly more, and more complex, code to implement. A small object optimization for polymorphic types is a very useful construct so it important to understand how it can be done correctly.
 
 ## The Problem
 
-At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk [Polymorphic Task Template in Ten](http://sean-parent.stlab.cc/papers-and-presentations#polymorphic-task-template-in-ten) which showed an easy way to implement a polymorphic task template, similar to [`std::function`](http://en.cppreference.com/w/cpp/utility/functional/function), with a small object optimization in 10 minutes. If you haven't seen the talk, I recommend watching it before reading further.
+If you haven't seen [the talk](https://www.youtube.com/watch?v=2KGkcGtGVM4), I recommend watching it before reading further.
 
-Unfortunately, the small object optimization, as described, leads to [_undefined behavior_](http://en.cppreference.com/w/cpp/language/ub). This was first caught by Maikel Nadolski and pointed out in the #meetingcpp channel on Slack.
+Maikel Nadolski pointed out in the #meetingcpp Slack channel that this solution relies on undefined behavior because it reads back an object as a different type than what was stored.
 
 From the example in the talk, here is the issue:
 
@@ -149,7 +156,7 @@ public:
     task(task&& x) noexcept : _concept(x._concept) { _concept->_move(&x._model, &_model); }
     task& operator=(task&& x) noexcept {
         if (this == &x) return *this;
-        _concept->dtor(&_model);
+        _concept->_dtor(&_model);
         _concept = x._concept;
         _concept->_move(&x._model, &_model);
         return *this;
@@ -160,10 +167,12 @@ public:
 
 The `task` never casts to either a `concept` or a `model` pointer, instead a pointer to the `_model` storage is passed to a function in the vtable which casts the pointer to the correct model type stored in that memory. Undefined behavior is avoided because the pointer is only ever cast to the stored type.
 
-Using this technique generates less code, largely because without virtual functions there are no tables for RTTI generated. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the [original code](https://godbolt.org/g/ki2TSJ), with undefined behavior, presented at my talk and here is the [code without inheritance or language virtual functions](https://godbolt.org/g/8FHUw3).
+Using this technique generates less code, largely because without virtual functions there are no tables for RTTI generated. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the [original code](https://godbolt.org/g/ki2TSJ), with undefined behavior, presented at my talk and here is the [code without inheritance or language virtual functions](https://godbolt.org/g/oxBz9T).
 
 I'm in the process of updating the [stlab library implementation of tasks](https://github.com/stlab/libraries/pull/118). It hasn't been decided if we roll this into a 1.1.2 bug fix release or hold it for a 1.2 release. I'm also looking at fixing `adobe::any_regular_t` in ASL.
 
 I'll update my lighting talk if I get asked to present it again. This solution is a little more complicated but it still demonstrates the power of using concept based polymorphism to shift the allocation strategy to the use of the objects.
+
+As part of preparing this errata, Eric Niebler informed me that his [folly/Poly library](https://github.com/facebook/folly/blob/master/folly/docs/Poly.md) uses a similar technique to implement the small object optimization.
 
 I frequently tell developers that writing papers and presenting talks is a really good way to improve your code. It can be a bit embarrassing when you present a great way to use undefined behavior at a major conference, but this is how we learn and grow as professionals. Thanks Maikel for the catch!
