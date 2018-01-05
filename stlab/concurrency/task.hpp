@@ -58,7 +58,7 @@ class task<R(Args...)> {
         return false;
     }
 
-    struct vtable_type {
+    struct concept {
         void (*dtor)(void*);
         void (*move_ctor)(void*, void*) noexcept;
         R (*invoke)(void*, Args&&...);
@@ -89,7 +89,7 @@ class task<R(Args...)> {
             return &static_cast<const model*>(self)->_f;
         }
 
-        static constexpr vtable_type _vtable = {dtor,        move_ctor, invoke,
+        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
                                                 target_type, pointer,   const_pointer};
 
         F _f;
@@ -116,7 +116,7 @@ class task<R(Args...)> {
             return static_cast<const model*>(self)->_p.get();
         }
 
-        static constexpr vtable_type _vtable = {dtor,        move_ctor, invoke,
+        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
                                                 target_type, pointer,   const_pointer};
 
         std::unique_ptr<F> _p;
@@ -130,10 +130,10 @@ class task<R(Args...)> {
     static auto pointer(void*) noexcept -> void* { return nullptr; }
     static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
 
-    static constexpr vtable_type _vtable = {dtor,        move_ctor, invoke,
+    static constexpr concept _vtable = {dtor,        move_ctor, invoke,
                                             target_type_, pointer,   const_pointer};
 
-    const vtable_type* _vtable_ptr = &_vtable;
+    const concept* _vtable_ptr = &_vtable;
 
     /*
         REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
@@ -222,13 +222,13 @@ public:
 #if (__cplusplus < 201703L)
 // In C++17 constexpr implies inline and these definitions are deprecated
 template <class R, class... Args>
-const typename task<R(Args...)>::vtable_type task<R(Args...)>::_vtable;
+const typename task<R(Args...)>::concept task<R(Args...)>::_vtable;
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::vtable_type task<R(Args...)>::template model<F, false>::_vtable;
+const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, false>::_vtable;
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::vtable_type task<R(Args...)>::template model<F, true>::_vtable;
+const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, true>::_vtable;
 #endif
 
 /**************************************************************************************************/
