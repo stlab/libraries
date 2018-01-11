@@ -58,57 +58,75 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
 
 template <typename T>
 T blocking_get(future<T> x) {
-    T result;
-    std::exception_ptr error;
+    boost::optional<T> result;
+    std::exception_ptr error = nullptr;
 
-    bool set{false};
+    bool flag{0};
     std::condition_variable condition;
     std::mutex m;
-    auto hold = std::move(x).recover([&](auto&& r) {
+
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error())
+            error = std::forward<decltype(r)>(r).error().value();
+        else
+            result = std::forward<decltype(r)>(r).get_try().value();
+
         {
-            std::unique_lock<std::mutex> lock(m);
-            if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
-            else
-                result = std::forward<decltype(r)>(r).get_try().value();
-            set = true;
+            std::unique_lock<std::mutex> lock{m};
+            flag = true;
+            /*
+                WARNING : Calling `notify_one()` inside the lock is a pessimization because
+                it means the code waiting will block aquiring the lock as soon as it wakes up.
+
+                However, if we do the notificiation outside the lock, blocking_get will return
+                and we'll be calling a destructed condition variable.
+            */
+            condition.notify_one();
         }
-        condition.notify_one();
     });
-    std::unique_lock<std::mutex> lock(m);
-    while (!set) {
-        condition.wait(lock);
+
+    {
+        std::unique_lock<std::mutex> lock{m};
+        while (!flag) {
+            condition.wait(lock);
+        }
     }
 
     if (error)
         std::rethrow_exception(error);
 
-    return result;
+    return result.get();
 }
 
-
 inline void blocking_get(future<void> x) {
-    std::exception_ptr error;
+    std::exception_ptr error = nullptr;
 
     bool set{false};
     std::condition_variable condition;
     std::mutex m;
-    auto hold = std::move(x).recover([&](auto&& r) {
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error()) error = std::forward<decltype(r)>(r).error().value();
         {
             std::unique_lock<std::mutex> lock(m);
-            if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
             set = true;
+            /*
+                WARNING : Calling `notify_one()` inside the lock is a pessimization because
+                it means the code waiting will block aquiring the lock as soon as it wakes up.
+
+                However, if we do the notificiation outside the lock, blocking_get will return
+                and we'll be calling a destructed condition variable.
+            */
+            condition.notify_one();
         }
-        condition.notify_one();
     });
-    std::unique_lock<std::mutex> lock(m);
-    while (!set) {
-        condition.wait(lock);
+    {
+        std::unique_lock<std::mutex> lock(m);
+        while (!set) {
+            condition.wait(lock);
+        }
     }
 
-    if (error)
-        std::rethrow_exception(error);
+    if (error) std::rethrow_exception(error);
 }
 
 /**************************************************************************************************/
