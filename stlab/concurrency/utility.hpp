@@ -71,7 +71,7 @@ T blocking_get(future<T> x) {
     boost::optional<T> result;
     std::exception_ptr error = nullptr;
 
-    bool flag{0};
+    bool flag{false};
     std::condition_variable condition;
     std::mutex m;
 

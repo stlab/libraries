@@ -304,7 +304,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     auto recover_r(bool unique, F&& f) { return recover_r(unique, _executor, std::forward<F>(f)); }
 
     template <typename S, typename F>
-    auto recover_r(bool unique, S s, F&& f) {
+    auto recover_r(bool unique, S&& s, F&& f) {
         if (!unique) return recover(std::forward<S>(s),std::forward<F>(f));
 
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
@@ -425,9 +425,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     auto recover_r(bool unique, F&& f) { return recover_r(unique, _executor, std::forward<F>(f)); }
 
     template <typename S, typename F>
-    auto recover_r(bool, S&& s, F&& f) {
+    auto recover_r(bool, S s, F&& f) {
         // rvalue case unique is assumed.
-        auto p = package<std::result_of_t<F(future<T>)>()>(std::forward<S>(s),
+        auto p = package<std::result_of_t<F(future<T>)>()>(s,
             [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())] () mutable {
                 return _f(std::move(_p));
             });
@@ -934,7 +934,7 @@ class future<T, enable_if_not_copyable<T>> {
     }
 
     template <typename S, typename F>
-    auto recover(S s, F&& f) && {
+    auto recover(S&& s, F&& f) && {
         return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
     }
 
@@ -1480,7 +1480,7 @@ template <
     typename E, // models task executor
     typename F, // models functional object
     typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_any(E executor, F f, const std::pair<I, I>& range) {
+auto when_any(E executor, F&& f, const std::pair<I, I>& range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
@@ -1490,12 +1490,12 @@ auto when_any(E executor, F f, const std::pair<I, I>& range) {
     if (range.first == range.second) {
         auto p = package_with_broken_promise<result_t()>(
             std::move(executor),
-            detail::context_result<F, true, context_result_t>(std::move(f), 0));
+            detail::context_result<F, true, context_result_t>(std::forward<F>(f), 0));
         return std::move(p.second);
     }
 
     return detail::create_range_of_futures<result_t, context_t>::do_it(
-        std::move(executor), std::move(f), range.first, range.second);
+        std::move(executor), std::forward<F>(f), range.first, range.second);
 }
 
 /**************************************************************************************************/
@@ -1675,7 +1675,7 @@ template <typename S, typename F>
 auto shared_base<void>::recover(S s, F&& f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>
  {
     auto p = package<std::result_of_t<F(future<void>)>()>(s,
-        [_f = std::move(f), _p = future<void>(this->shared_from_this())] () mutable {
+        [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())] () mutable {
             return _f(_p);
         });
 
