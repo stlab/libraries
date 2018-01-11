@@ -416,7 +416,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     template <typename S, typename F>
     auto then_r(bool unique, S&& s, F&& f) {
-        return recover_r(unique, std::forward<F>(s), [_f = std::forward<F>(f)](auto x) mutable {
+        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x) mutable {
             return std::move(_f)(std::move(x).get_try().value());
         });
     }
