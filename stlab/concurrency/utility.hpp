@@ -95,7 +95,7 @@ T blocking_get(future<T> x) {
     if (error)
         std::rethrow_exception(error);
 
-    return result.get();
+    return std::move(result.get());
 }
 
 inline void blocking_get(future<void> x) {
