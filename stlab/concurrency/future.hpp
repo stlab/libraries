@@ -427,7 +427,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename S, typename F>
     auto recover_r(bool, S&& s, F&& f) {
         // rvalue case unique is assumed.
-        auto p = package<std::result_of_t<F(future<T>)>()>(std::forward<F>(s),
+        auto p = package<std::result_of_t<F(future<T>)>()>(std::forward<S>(s),
             [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())] () mutable {
                 return _f(std::move(_p));
             });
