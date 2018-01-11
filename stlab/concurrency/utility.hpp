@@ -17,7 +17,7 @@
 #include <boost/optional.hpp>
 
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/immediate_exector.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 
 /**************************************************************************************************/
 
