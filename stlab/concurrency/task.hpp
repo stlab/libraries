@@ -16,6 +16,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <stlab/concurrency/config.hpp>
+
 /**************************************************************************************************/
 
 namespace stlab {
