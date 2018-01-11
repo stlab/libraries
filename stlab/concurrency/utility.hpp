@@ -9,6 +9,18 @@
 #ifndef STLAB_CONCURRENCY_UTILITY_HPP
 #define STLAB_CONCURRENCY_UTILITY_HPP
 
+#include <condition_variable>
+#include <exception>
+#include <mutex>
+#include <type_traits>
+
+#include <boost/optional.hpp>
+
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_exector.hpp>
+
+/**************************************************************************************************/
+
 #if 0
 
 #include <thread>
@@ -18,8 +30,6 @@
     printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
 
 #endif
-
-#include <stlab/concurrency/future.hpp>
 
 /**************************************************************************************************/
 
