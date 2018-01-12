@@ -224,7 +224,7 @@ BOOST_FIXTURE_TEST_CASE(int_join_channel_different_type_void_functor, channel_ty
     std::atomic_int result{ 0 };
 
     auto check = join(default_executor,
-                      [&](int x, std::string y) { result +=  2 + static_cast<int>(y.size()); },
+                      [&](int, std::string y) { result +=  2 + static_cast<int>(y.size()); },
                       receive<0>(),
                       receive<1>());
 

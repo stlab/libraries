@@ -16,6 +16,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <stlab/concurrency/config.hpp>
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -124,7 +126,7 @@ class task<R(Args...)> {
     }
 
     template <class F>
-    static auto is_empty(const F& f) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
+    static auto is_empty(const F&) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
         return false;
     }
 
