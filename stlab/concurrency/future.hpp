@@ -583,19 +583,19 @@ template <class F, class R, class... Args>
 struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
 {
     std::atomic_size_t _promise_count;
-    /*
-        NOTE (sean.parent) : Any resource held by _f are not released until the last future
-        destructs. The lines commented as `_f.reset();` could be enabled if this was optional,
-        however, that seems like overkill for the rare broken promise case or for the time
-        between when the promise is invoked and when the future is destructed. However,
-        with solid data for the later case it could be enabled.
-    */
-    F _f;
+    boost::optional<F> _f;
 
     template <class G>
     shared(executor_t s, G&& f) : shared_base<R>(std::move(s)), _f(std::forward<G>(f)) {
         _promise_count = 1;
     }
+
+    /*
+        NOTE (sean.parent) : There is some twisted logic in here. The promise count is used
+        by the packaged task. When it destructs the promise count is artificially decremented, _f
+        is reset which breaks a retain loop on this shared object. Without the optional and reset()
+        we have a memory leak.
+    */
 
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
@@ -603,7 +603,7 @@ struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
             if (--_promise_count == 0) {
                 std::unique_lock<std::mutex> lock(this->_mutex);
                 if (!this->_ready) {
-                    // _f.reset();
+                    _f.reset();
                     this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
                     this->_ready = true;
                 }
@@ -617,11 +617,11 @@ struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
 
     void operator()(Args... args) override {
         try {
-            this->set_value(_f, std::move(args)...);
+            this->set_value(_f.get(), std::move(args)...);
         } catch(...) {
             this->set_exception(std::current_exception());
         }
-        // _f.reset();
+        _f.reset();
     }
 };
 
