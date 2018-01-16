@@ -348,7 +348,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
-    };
+    }
 
     auto reduce(future<future<void>>&& r) -> future<void>;
 
@@ -469,7 +469,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
-    };
+    }
 
     template <typename R>
     auto reduce(future<future<R>>&& r) -> future<R>;
@@ -558,7 +558,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
-    };
+    }
 
     auto reduce(future<future<void>>&& r) -> future<void>;
 
@@ -1595,7 +1595,15 @@ struct value_setter<T, enable_if_copyable<T>>
 
     template <typename F, typename... Args>
     static void set(shared_base<future<void>> &sb, F& f, Args&&... args) {
-      sb._result = f(std::forward<Args>(args)...).then([_p = sb.shared_from_this()]() {
+      sb._result = f(std::forward<Args>(args)...).recover([_p = sb.shared_from_this()](future<void> f) {
+          if (f.error())
+          {
+            _p->_error = std::move(f.error().value());
+            value_setter::proceed(*_p);
+            throw future_error(future_error_codes::reduction_failed);
+          }
+          return;
+      }).then([_p = sb.shared_from_this()]() {
         proceed(*_p);
       });
     }

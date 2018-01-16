@@ -636,6 +636,27 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
         BOOST_REQUIRE_EQUAL(42, p);
         BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
     }
+
+    BOOST_AUTO_TEST_CASE(reduction_future_void_to_void_error) {
+      BOOST_TEST_MESSAGE("running future reduction void to void where the inner future fails");
+      std::atomic_bool first{ false };
+      std::atomic_bool second{ false };
+
+      sut = async(default_executor, [&_flag = first] {
+        _flag = true;
+      }).then([&_flag = second] {
+        return async(default_executor, [&_flag] {
+          _flag = true;
+          throw test_exception("failure");
+        });
+      });
+
+      wait_until_future_fails<test_exception>(sut);
+
+      BOOST_REQUIRE(first);
+      BOOST_REQUIRE(second);
+    }
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -778,7 +799,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
     }
 
 
-
+ 
 BOOST_AUTO_TEST_SUITE_END()
 
 
