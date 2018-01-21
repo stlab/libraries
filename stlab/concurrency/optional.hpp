@@ -9,21 +9,29 @@
 #ifndef STLAB_CONCURRENCY_OPTIONAL_HPP
 #define STLAB_CONCURRENCY_OPTIONAL_HPP
 
+#include <stlab/concurrency/config.hpp>
+
 #define STLAB_STD_OPTIONAL               1
 #define STLAB_STD_EXPERIMENTAL_OPTIONAL  2
-#define STLAB_STD_BOOST_OPTIONAL         3
+#define STLAB_BOOST_OPTIONAL             3
+
+#include <boost/preprocessor/stringize.hpp>
+#pragma message( "C++Version" BOOST_PP_STRINGIZE(__cplusplus) )
 
 #ifdef __has_include                           // Check if __has_include is present
-#  if __has_include(<optional>)                // Check for a standard library
+#  if __has_include(<optional>) && STLAB_CPP_VERSION == 17   // Check for a standard library
 #    include<optional>
 #    define STLAB_OPTIONAL STLAB_STD_OPTIONAL
 #  elif __has_include(<experimental/optional>) // Check for an experimental version
 #    include <experimental/optional>
 #    define STLAB_OPTIONAL STLAB_STD_EXPERIMENTAL_OPTIONAL
+#  else
+#    include <boost/optional.hpp>
+#    define STLAB_OPTIONAL STLAB_BOOST_OPTIONAL
 #  endif
 #else
-#    include <boost/optional.hpp>
-#    define STLAB_OPTIONAL STLAB_STD_BOOST_OPTIONAL
+#  include <boost/optional.hpp>
+#  define STLAB_OPTIONAL STLAB_BOOST_OPTIONAL
 #endif
 
 namespace stlab
@@ -33,7 +41,7 @@ namespace stlab
 
 template <typename T>
 using optional = std::optional<T>;
-constexpr std::nullopt_t nullopt{ std::nullopt_t::_Tag{} };
+constexpr std::nullopt_t nullopt{std::nullopt};
 
 #elif STLAB_OPTIONAL == STLAB_STD_EXPERIMENTAL_OPTIONAL
 template<typename T>
@@ -41,11 +49,11 @@ using optional = std::experimental::optional<T>;
 
 constexpr std::experimental::nullopt_t nullopt{0};
 
-#elif STLAB_OPTIONAL == STLAB_STD_BOOST_OPTIONAL
+#elif STLAB_OPTIONAL == STLAB_BOOST_OPTIONAL
 template <typename T>
 using optional = boost::optional<T>;
 
-constexpr boost::none_t = nullopt;
+using nullopt = boost::none_t;
 
 #else
 #error "No optional!"

@@ -54,7 +54,7 @@ target_link_libraries( stlab.test.future.test PUBLIC
 target_link_libraries( stlab.test.future.test PUBLIC
                        "${stlab_appended_flags}" )
 
-set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD 14)
+set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD 17)
 set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD_REQUIRED ON)
                      
 add_test( NAME stlab.test.future COMMAND stlab.test.future.test )
@@ -201,3 +201,4 @@ set_property(TARGET stlab.test.tuple.test PROPERTY CXX_STANDARD 14)
 set_property(TARGET stlab.test.tuple.test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 add_test( NAME stlab.test.tuple COMMAND stlab.test.tuple.test )
+

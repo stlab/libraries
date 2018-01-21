@@ -1598,7 +1598,7 @@ struct value_setter<T, enable_if_copyable<T>>
       sb._result = f(std::forward<Args>(args)...).recover([_p = sb.shared_from_this()](future<void> f) {
           if (f.error())
           {
-            _p->_error = std::move(f.error().value());
+            _p->_error = std::move(*f.error());
             value_setter::proceed(*_p);
             throw future_error(future_error_codes::reduction_failed);
           }
