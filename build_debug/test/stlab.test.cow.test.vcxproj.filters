@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\misc\GitHub\libraries\test\cow_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\misc\GitHub\libraries\test\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\channel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\config.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\default_executor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\executor_base.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\future.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\immediate_executor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\main_executor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\progress.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\system_timer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\traits.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\tuple_algorithm.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\utility.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\misc\GitHub\libraries\test\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{E91D2A88-A924-3911-883F-9A6DAA376309}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{89DC2EB6-B6CE-3EC6-8B81-5465C4498D16}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

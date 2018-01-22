@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{307B3DBE-8D08-3287-8A4C-DD60B0EAADD1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>stlab.test.cow.test</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\misc\GitHub\libraries\build_debug\bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stlab.test.cow.test.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stlab.test.cow.test</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\misc\GitHub\libraries\build_debug\bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stlab.test.cow.test.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stlab.test.cow.test</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\.conan\ureof2\1\include;C:\Users\felixp\.conan\data\zlib\1.2.11\conan\stable\package\c32596dcd26b8c708dc3d19cb73738d2b48f12a8\include;D:\misc\GitHub\libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;BOOST_USE_STATIC_LIBS;BOOST_ALL_NO_LIB;_WIN32_WINNT=0x0601;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;BOOST_USE_STATIC_LIBS;BOOST_ALL_NO_LIB;_WIN32_WINNT=0x0601;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\.conan\ureof2\1\include;C:\Users\felixp\.conan\data\zlib\1.2.11\conan\stable\package\c32596dcd26b8c708dc3d19cb73738d2b48f12a8\include;D:\misc\GitHub\libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\.conan\ureof2\1\include;C:\Users\felixp\.conan\data\zlib\1.2.11\conan\stable\package\c32596dcd26b8c708dc3d19cb73738d2b48f12a8\include;D:\misc\GitHub\libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>libboost_wave-vc140-mt-gd-1_64.lib;libboost_unit_test_framework-vc140-mt-gd-1_64.lib;libboost_prg_exec_monitor-vc140-mt-gd-1_64.lib;libboost_container-vc140-mt-gd-1_64.lib;libboost_graph-vc140-mt-gd-1_64.lib;libboost_iostreams-vc140-mt-gd-1_64.lib;libboost_locale-vc140-mt-gd-1_64.lib;libboost_log-vc140-mt-gd-1_64.lib;libboost_log_setup-vc140-mt-gd-1_64.lib;libboost_math_c99-vc140-mt-gd-1_64.lib;libboost_math_c99f-vc140-mt-gd-1_64.lib;libboost_math_c99l-vc140-mt-gd-1_64.lib;libboost_math_tr1-vc140-mt-gd-1_64.lib;libboost_math_tr1f-vc140-mt-gd-1_64.lib;libboost_math_tr1l-vc140-mt-gd-1_64.lib;libboost_program_options-vc140-mt-gd-1_64.lib;libboost_random-vc140-mt-gd-1_64.lib;libboost_regex-vc140-mt-gd-1_64.lib;libboost_wserialization-vc140-mt-gd-1_64.lib;libboost_serialization-vc140-mt-gd-1_64.lib;libboost_signals-vc140-mt-gd-1_64.lib;libboost_coroutine-vc140-mt-gd-1_64.lib;libboost_context-vc140-mt-gd-1_64.lib;libboost_timer-vc140-mt-gd-1_64.lib;libboost_thread-vc140-mt-gd-1_64.lib;libboost_chrono-vc140-mt-gd-1_64.lib;libboost_date_time-vc140-mt-gd-1_64.lib;libboost_atomic-vc140-mt-gd-1_64.lib;libboost_filesystem-vc140-mt-gd-1_64.lib;libboost_system-vc140-mt-gd-1_64.lib;libboost_exception-vc140-mt-gd-1_64.lib;libboost_test_exec_monitor-vc140-mt-gd-1_64.lib;zlibd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/.conan/ureof2/1/lib;C:/.conan/ureof2/1/lib/$(Configuration);C:/Users/felixp/.conan/data/zlib/1.2.11/conan/stable/package/c32596dcd26b8c708dc3d19cb73738d2b48f12a8/lib;C:/Users/felixp/.conan/data/zlib/1.2.11/conan/stable/package/c32596dcd26b8c708dc3d19cb73738d2b48f12a8/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/misc/GitHub/libraries/build_debug/lib/stlab.test.cow.test.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/misc/GitHub/libraries/build_debug/bin/stlab.test.cow.test.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+      <Version></Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\.conan\ureof2\1\include;C:\Users\felixp\.conan\data\zlib\1.2.11\conan\stable\package\c32596dcd26b8c708dc3d19cb73738d2b48f12a8\include;D:\misc\GitHub\libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_USE_STATIC_LIBS;BOOST_ALL_NO_LIB;_WIN32_WINNT=0x0601;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_USE_STATIC_LIBS;BOOST_ALL_NO_LIB;_WIN32_WINNT=0x0601;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\.conan\ureof2\1\include;C:\Users\felixp\.conan\data\zlib\1.2.11\conan\stable\package\c32596dcd26b8c708dc3d19cb73738d2b48f12a8\include;D:\misc\GitHub\libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\.conan\ureof2\1\include;C:\Users\felixp\.conan\data\zlib\1.2.11\conan\stable\package\c32596dcd26b8c708dc3d19cb73738d2b48f12a8\include;D:\misc\GitHub\libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>libboost_wave-vc140-mt-gd-1_64.lib;libboost_unit_test_framework-vc140-mt-gd-1_64.lib;libboost_prg_exec_monitor-vc140-mt-gd-1_64.lib;libboost_container-vc140-mt-gd-1_64.lib;libboost_graph-vc140-mt-gd-1_64.lib;libboost_iostreams-vc140-mt-gd-1_64.lib;libboost_locale-vc140-mt-gd-1_64.lib;libboost_log-vc140-mt-gd-1_64.lib;libboost_log_setup-vc140-mt-gd-1_64.lib;libboost_math_c99-vc140-mt-gd-1_64.lib;libboost_math_c99f-vc140-mt-gd-1_64.lib;libboost_math_c99l-vc140-mt-gd-1_64.lib;libboost_math_tr1-vc140-mt-gd-1_64.lib;libboost_math_tr1f-vc140-mt-gd-1_64.lib;libboost_math_tr1l-vc140-mt-gd-1_64.lib;libboost_program_options-vc140-mt-gd-1_64.lib;libboost_random-vc140-mt-gd-1_64.lib;libboost_regex-vc140-mt-gd-1_64.lib;libboost_wserialization-vc140-mt-gd-1_64.lib;libboost_serialization-vc140-mt-gd-1_64.lib;libboost_signals-vc140-mt-gd-1_64.lib;libboost_coroutine-vc140-mt-gd-1_64.lib;libboost_context-vc140-mt-gd-1_64.lib;libboost_timer-vc140-mt-gd-1_64.lib;libboost_thread-vc140-mt-gd-1_64.lib;libboost_chrono-vc140-mt-gd-1_64.lib;libboost_date_time-vc140-mt-gd-1_64.lib;libboost_atomic-vc140-mt-gd-1_64.lib;libboost_filesystem-vc140-mt-gd-1_64.lib;libboost_system-vc140-mt-gd-1_64.lib;libboost_exception-vc140-mt-gd-1_64.lib;libboost_test_exec_monitor-vc140-mt-gd-1_64.lib;zlibd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/.conan/ureof2/1/lib;C:/.conan/ureof2/1/lib/$(Configuration);C:/Users/felixp/.conan/data/zlib/1.2.11/conan/stable/package/c32596dcd26b8c708dc3d19cb73738d2b48f12a8/lib;C:/Users/felixp/.conan/data/zlib/1.2.11/conan/stable/package/c32596dcd26b8c708dc3d19cb73738d2b48f12a8/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/misc/GitHub/libraries/build_debug/lib/stlab.test.cow.test.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/misc/GitHub/libraries/build_debug/bin/stlab.test.cow.test.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+      <Version></Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\misc\GitHub\libraries\test\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/misc/GitHub/libraries/test/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\cmake\3.9.2\bin\cmake.exe -HD:/misc/GitHub/libraries -BD:/misc/GitHub/libraries/build_debug --check-stamp-file D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:/misc/GitHub/libraries/test/CMakeLists.txt;D:\misc\GitHub\libraries\test\CMakeLists.txt;D:\misc\GitHub\libraries\test\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\misc\GitHub\libraries\build_debug\test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/misc/GitHub/libraries/test/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\cmake\3.9.2\bin\cmake.exe -HD:/misc/GitHub/libraries -BD:/misc/GitHub/libraries/build_debug --check-stamp-file D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:/misc/GitHub/libraries/test/CMakeLists.txt;D:\misc\GitHub\libraries\test\CMakeLists.txt;D:\misc\GitHub\libraries\test\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\misc\GitHub\libraries\build_debug\test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="D:\misc\GitHub\libraries\test\cow_test.cpp"  />
+    <ClCompile Include="D:\misc\GitHub\libraries\test\main.cpp"  />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\channel.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\config.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\default_executor.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\executor_base.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\future.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\immediate_executor.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\main_executor.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\progress.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\system_timer.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\traits.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\tuple_algorithm.hpp" />
+    <ClInclude Include="D:\misc\GitHub\libraries\stlab\concurrency\utility.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="D:\misc\GitHub\libraries\build_debug\ZERO_CHECK.vcxproj">
+      <Project>{3C8A1626-4675-32B0-9C44-C1730946507D}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

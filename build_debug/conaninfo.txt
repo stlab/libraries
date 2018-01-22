@@ -1,0 +1,69 @@
+[settings]
+    arch=x86_64
+    build_type=Debug
+    compiler=Visual Studio
+    compiler.runtime=MDd
+    compiler.version=14
+    os=Windows
+
+[requires]
+    Boost/1.Y.Z
+
+[options]
+
+
+[full_settings]
+    arch=x86_64
+    build_type=Debug
+    compiler=Visual Studio
+    compiler.runtime=MDd
+    compiler.version=14
+    os=Windows
+
+[full_requires]
+    Boost/1.64.0@conan/stable:b17b520b4b55729a7391c6b2d20631fec4cf1564
+    zlib/1.2.11@conan/stable:c32596dcd26b8c708dc3d19cb73738d2b48f12a8
+
+[full_options]
+    Boost:header_only=False
+    Boost:python=False
+    Boost:shared=False
+    Boost:without_atomic=False
+    Boost:without_chrono=False
+    Boost:without_container=False
+    Boost:without_context=False
+    Boost:without_coroutine=False
+    Boost:without_coroutine2=False
+    Boost:without_date_time=False
+    Boost:without_exception=False
+    Boost:without_fiber=False
+    Boost:without_filesystem=False
+    Boost:without_graph=False
+    Boost:without_graph_parallel=False
+    Boost:without_iostreams=False
+    Boost:without_locale=False
+    Boost:without_log=False
+    Boost:without_math=False
+    Boost:without_metaparse=False
+    Boost:without_mpi=False
+    Boost:without_program_options=False
+    Boost:without_random=False
+    Boost:without_regex=False
+    Boost:without_serialization=False
+    Boost:without_signals=False
+    Boost:without_system=False
+    Boost:without_test=False
+    Boost:without_thread=False
+    Boost:without_timer=False
+    Boost:without_type_erasure=False
+    Boost:without_wave=False
+    zlib:shared=False
+
+[scope]
+    dev=True
+
+[recipe_hash]
+
+
+[env]
+

@@ -1,0 +1,8 @@
+D:/misc/GitHub/libraries/build_debug/CMakeFiles/RUN_TESTS.dir
+D:/misc/GitHub/libraries/build_debug/CMakeFiles/ALL_BUILD.dir
+D:/misc/GitHub/libraries/build_debug/CMakeFiles/ZERO_CHECK.dir
+D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/stlab.test.future.test.dir
+D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/stlab.test.serial_queue.test.dir
+D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/stlab.test.cow.test.dir
+D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/stlab.test.task.test.dir
+D:/misc/GitHub/libraries/build_debug/test/CMakeFiles/RUN_TESTS.dir
