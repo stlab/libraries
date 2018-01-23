@@ -15,35 +15,40 @@
 #define STLAB_STD_EXPERIMENTAL_VARIANT  2
 #define STLAB_BOOST_VARIANT             3
 
-//#include <boost/preprocessor/stringize.hpp>
-//#pragma message( "C++Version" BOOST_PP_STRINGIZE(__cplusplus) )
+// The library can be used with boost::variant or std::variant.
+// Without any additional define, it uses the versions from the standard, if it is available.
+//
+// If using of boost::variant shall be enforced, set the define STLAB_FORCE_BOOST_VARIANT
 
-#ifdef __has_include                          // Check if __has_include is present
-#  if __has_include(<variant>) && STLAB_CPP_VERSION == 17 // Check for a standard library
-#    include<variant>
-#    define STLAB_VARIANT STLAB_STD_VARIANT
-#  elif __has_include(<experimental/variant>) // Check for an experimental version
-#    include <experimental/variant>
-#    define STLAB_VARIANT STLAB_STD_EXPERIMENTAL_VARIANT
-#  else
-#    include <boost/variant.hpp>
-#    define STLAB_VARIANT STLAB_BOOST_VARIANT
-#  endif
-#else
-#    include <boost/variant.hpp>
-#    define STLAB_VARIANT STLAB_BOOST_VARIANT
+#ifdef STLAB_FORCE_BOOST_VARIANT
+#   include <boost/variant.hpp>
+#   define STLAB_VARIANT STLAB_BOOST_VARIANT
+#endif
+
+#ifndef STLAB_VARIANT
+#   ifdef __has_include
+#       if __has_include(<variant>) && STLAB_CPP_VERSION == 17
+#       include<variant>
+#       define STLAB_VARIANT STLAB_STD_VARIANT
+#   elif __has_include(<experimental/variant>)
+#       include <experimental/variant>
+#       define STLAB_VARIANT STLAB_STD_EXPERIMENTAL_VARIANT
+#   else
+#       include <boost/variant.hpp>
+#       define STLAB_VARIANT STLAB_BOOST_VARIANT
+#   endif
+#   else
+#       include <boost/variant.hpp>
+#       define STLAB_VARIANT STLAB_BOOST_VARIANT
+#   endif
 #endif
 
 namespace stlab
-{
-inline namespace v1
 {
 #if STLAB_VARIANT == STLAB_STD_VARIANT
 
 template <typename...T>
 using variant = std::variant<T...>;
-
-
 
 template <class T, class... Types>
 constexpr T& get(std::variant<Types...>& v) {
@@ -106,9 +111,6 @@ constexpr auto index(const boost::variant<Types...>& v) {
 #else
 #error "No variant!"
 #endif
-
-
-}
 
 } // stlab
 
