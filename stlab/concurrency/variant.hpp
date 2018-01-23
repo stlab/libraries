@@ -81,9 +81,10 @@ template <class T, class... Types>
 constexpr T& get(boost::variant<Types...>& v) {
     return boost::get<T>(v);
 };
-template <class T, class... Types>
-constexpr T&& get(boost::variant<Types...>&& v) {
-    return boost::get<T>(std::forward<Types...>(v));
+
+template <class T, std::size_t I, typename... Types>
+constexpr T& get(boost::variant<Types...>& v) {
+    return boost::get<I>(v);
 };
 
 template <class T, class... Types>
@@ -91,9 +92,9 @@ constexpr const T& get(const boost::variant<Types...>& v) {
     return boost::get<T>(v);
 };
 
-template <class T, class... Types>
+template <class T, std::size_t I, typename... Types>
 constexpr const T&& get(const boost::variant<Types...>&& v) {
-    return boost::get<T>(std::forward<Types...>(v));
+    return boost::get<I>(std::forward<Types...>(v));
 };
 
 template <typename...Types>

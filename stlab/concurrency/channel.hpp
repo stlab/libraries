@@ -210,41 +210,42 @@ auto avoid_invoke(F&& f, std::tuple<variant<Args, std::exception_ptr>...>& t)
 
 /**************************************************************************************************/
 
-// The following can be much simplified with if constexpr() in C++17
+// The following can be much simplified with if constexpr() in C++17 and w/o a bug in clang and VS
+// TODO std::variant make T a forwarding ref when the dependency to boost is gone.
 
 template <std::size_t S>
 struct invoke_variant_dispatcher {
     template <typename F, typename T, typename... Args, std::size_t... I>
-    static auto invoke_(F&& f, T&& t, std::index_sequence<I...>) {
-        return std::forward<F>(f)(std::move(stlab::get<Args>(std::get<I>(std::forward<T>(t))))...);
+    static auto invoke_(F&& f, T& t, std::index_sequence<I...>) {
+        return std::forward<F>(f)(std::move(stlab::get<Args>(std::get<I>(t)))...);
     }
 
     template <typename F, typename T, typename... Args>
-    static auto invoke(F&& f, T&& t) {
-        return invoke_<F, T, Args...>(std::forward<F>(f), std::forward<T>(t), std::make_index_sequence<sizeof...(Args)>());
+    static auto invoke(F&& f, T& t) {
+        return invoke_<F, T, Args...>(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
     }
 };
 
 template <>
 struct invoke_variant_dispatcher<1> {
     template <typename F, typename T, typename Arg>
-    static auto invoke_(F&& f, T&& t) {
-        return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(std::forward<T>(t)))));
+    static auto invoke_(F&& f, T& t) {
+        return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
     }
     template <typename F, typename T, typename... Args>
-    static auto invoke(F&& f, T&& t) {
-        return invoke_<F, T, first_t<Args...>>(std::forward<F>(f), std::forward<T>(t));
+    static auto invoke(F&& f, T& t) {
+        return invoke_<F, T, first_t<Args...>>(std::forward<F>(f), t);
     }
 };
 
 template <typename F, typename T, typename R, std::size_t S, typename... Args>
-auto avoid_invoke_variant(F&& f, T&& t) -> std::enable_if_t<!std::is_same<void, R>::value, R> {
-    return invoke_variant_dispatcher<S>::template invoke<F, T, Args...>(std::forward<F>(f), std::forward<T>(t));
+auto avoid_invoke_variant(F&& f, T& t) -> std::enable_if_t<!std::is_same<void, R>::value, R> {
+    return invoke_variant_dispatcher<S>::template invoke<F, T, Args...>(std::forward<F>(f), t);
 }
 
 template <typename F, typename T, typename R, std::size_t S, typename... Args>
-auto avoid_invoke_variant(F&& f, T&& t) -> std::enable_if_t<std::is_same<void, R>::value, avoid_> {
-    invoke_variant_dispatcher<S>::template invoke<F, T, Args...>(std::forward<F>(f), std::forward<T>(t));
+auto avoid_invoke_variant(F&& f, T& t) -> std::enable_if_t<std::is_same<void, R>::value, avoid_> {
+    invoke_variant_dispatcher<S>::template invoke<F, T, Args...>(std::forward<F>(f), t);
     return avoid_();
 }
 
@@ -360,7 +361,7 @@ template <typename P, typename... T, std::size_t... I>
 void await_variant_args_(P& process,
                          std::tuple<variant<T, std::exception_ptr>...>& args,
                          std::index_sequence<I...>) {
-    process.await(std::move(std::get<T>(get<I>(args)))...);
+    process.await(std::move(stlab::get<T>(std::get<I>(args)))...);
 }
 
 template <typename P, typename... T>
@@ -372,7 +373,7 @@ template <typename T>
 bool argument_with_error(const T& argument) {
     return tuple_find(argument, [](const auto& c) {
                return static_cast<message_t>(index(c)) == message_t::error;
-           }) != std::tuple_size_v<T>;
+           }) != std::tuple_size<T>::value;
 }
 
 /**************************************************************************************************/
@@ -899,16 +900,16 @@ struct shared_process
                     // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
                     
-                                        // try_lock can fail spuriously
+					// try_lock can fail spuriously
                     while (true) {
-                                                // we were cancelled
-                                if (!_this->_timeout_function_active) return;
+						// we were cancelled
+	                	if (!_this->_timeout_function_active) return;
 
                         lock_t lock(_this->_timeout_function_control, std::try_to_lock);
                         if (!lock) continue;
 
-                                                // we were cancelled
-                                if (!_this->_timeout_function_active) return;
+						// we were cancelled
+	                	if (!_this->_timeout_function_active) return;
 
                         if (get_process_state(_this->_process).first != process_state::yield) {
                             _this->try_broadcast();
@@ -956,7 +957,8 @@ struct shared_process
                 do_close = true;
             } else {
                 try {
-                    broadcast(avoid_invoke_variant<process_t, queue_t, R, Q::arguments_size, Args...>(std::move(*_process), std::move(*message)));
+                    // The message cannot be moved because boost::variant supports r-values just since 1.65.
+                    broadcast(avoid_invoke_variant<process_t, queue_t, R, Q::arguments_size, Args...>(std::move(*_process), *message));
                 } catch (...) {
                     broadcast(std::move(std::current_exception()));
                 }

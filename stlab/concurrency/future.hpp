@@ -153,26 +153,6 @@ struct result_of_when_any_t
 
 /**************************************************************************************************/
 
-template <typename T>
-constexpr bool is_set(const stlab::optional<T>& val) {
-    return static_cast<bool>(val);
-}
-
-template <typename T>
-constexpr const T& ref(const stlab::optional<T>& val) {
-    return *val;
-}
-
-template <typename T>
-constexpr T& ref(stlab::optional<T>&& val) {
-    return *val;
-}
-
-template <typename T>
-constexpr T value(const stlab::optional<T>& val) {
-    return val.value();
-}
-
 template <typename...> class packaged_task;
 
 template <typename, typename = void> class future;
