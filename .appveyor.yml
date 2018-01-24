@@ -44,7 +44,7 @@ build_script:
   - IF EXIST build_debug RMDIR /S /Q build_debug
   - MKDIR build_debug
   - cd build_debug
-  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_60_0 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
+  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_64_0 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
   - cmake  --build .
   - test\Debug\stlab.test.future.test --log_level=message
   - test\Debug\stlab.test.serial_queue.test.exe
