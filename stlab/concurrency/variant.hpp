@@ -12,8 +12,7 @@
 #include <stlab/concurrency/config.hpp>
 
 #define STLAB_STD_VARIANT               1
-#define STLAB_STD_EXPERIMENTAL_VARIANT  2
-#define STLAB_BOOST_VARIANT             3
+#define STLAB_BOOST_VARIANT             2
 
 // The library can be used with boost::variant or std::variant.
 // Without any additional define, it uses the versions from the standard, if it is available.
@@ -28,19 +27,15 @@
 #ifndef STLAB_VARIANT
 #   ifdef __has_include
 #       if __has_include(<variant>) && STLAB_CPP_VERSION == 17
-#       include<variant>
-#       define STLAB_VARIANT STLAB_STD_VARIANT
-#   elif __has_include(<experimental/variant>)
-#       include <experimental/variant>
-#       define STLAB_VARIANT STLAB_STD_EXPERIMENTAL_VARIANT
-#   else
-#       include <boost/variant.hpp>
-#       define STLAB_VARIANT STLAB_BOOST_VARIANT
+#           include <variant>
+#           define STLAB_VARIANT STLAB_STD_VARIANT
+#       endif
 #   endif
-#   else
-#       include <boost/variant.hpp>
-#       define STLAB_VARIANT STLAB_BOOST_VARIANT
-#   endif
+#endif
+
+#ifndef STLAB_VARIANT
+#   include <boost/variant.hpp>
+#   define STLAB_VARIANT STLAB_BOOST_VARIANT
 #endif
 
 namespace stlab
@@ -53,54 +48,52 @@ using variant = std::variant<T...>;
 template <class T, class... Types>
 constexpr T& get(std::variant<Types...>& v) {
     return std::get<T>(v);
-};
+}
+
 template <class T, class... Types>
 constexpr T&& get(std::variant<Types...>&& v) {
     return std::get<T>(std::move(v));
-};
+}
 
 template <class T, class... Types>
 constexpr const T& get(const std::variant<Types...>& v) {
     return std::get<T>(v);
-};
+}
 
 template <class T, class... Types>
 constexpr const T&& get(const std::variant<Types...>&& v) {
     return std::get<T>(std::move(v));
-};
+}
 
 template <typename...Types>
 constexpr auto index(const std::variant<Types...>& v) {
     return v.index();
 }
 
-#elif STLAB_VARIANT == STLAB_STD_EXPERIMENTAL_VARIANT
-template<typename...T>
-using variant = std::experimental::variant<T...>;
-
 #elif STLAB_VARIANT == STLAB_BOOST_VARIANT
+
 template <typename...T>
 using variant = boost::variant<T...>;
 
 template <class T, class... Types>
 constexpr T& get(boost::variant<Types...>& v) {
     return boost::get<T>(v);
-};
+}
 
 template <class T, std::size_t I, typename... Types>
 constexpr T& get(boost::variant<Types...>& v) {
     return boost::get<I>(v);
-};
+}
 
 template <class T, class... Types>
 constexpr const T& get(const boost::variant<Types...>& v) {
     return boost::get<T>(v);
-};
+}
 
 template <class T, std::size_t I, typename... Types>
 constexpr const T&& get(const boost::variant<Types...>&& v) {
     return boost::get<I>(std::forward<Types...>(v));
-};
+}
 
 template <typename...Types>
 constexpr auto index(const boost::variant<Types...>& v) {

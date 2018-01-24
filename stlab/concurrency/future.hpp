@@ -1097,7 +1097,7 @@ inline void rethrow_if_false(bool x, stlab::optional<std::exception_ptr>& p) {
 
 template <typename F, typename Args, typename P, std::size_t... I>
 auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
-    (void)std::initializer_list<int>{(rethrow_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
+    (void)std::initializer_list<int>{(rethrow_if_false(static_cast<bool>(std::get<I>(args)), p->_error), 0)... };
     return apply_optional_indexed<index_sequence_transform_t<std::make_index_sequence<std::tuple_size<Args>::value>,
         remove_placeholder<Args>::template function>>(f, args);
 }

@@ -336,15 +336,13 @@ template <typename P, typename... U>
 constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P, U...>;
 
 template <typename P, typename... U>
-auto set_process_error(P& process,
-                       std::tuple<variant<U, std::exception_ptr>...> error)
+auto set_process_error(P& process, std::exception_ptr&& error)
     -> std::enable_if_t<has_set_process_error_v<P, U...>, void> {
     process.set_error(std::move(error));
 }
 
 template <typename P, typename... U>
-auto set_process_error(P&,
-                       std::tuple<variant<U, std::exception_ptr>...> error)
+auto set_process_error(P&, std::exception_ptr&& error)
     -> std::enable_if_t<!has_set_process_error_v<P, U...>, void> {}
 
 /**************************************************************************************************/
@@ -370,10 +368,20 @@ void await_variant_args(P& process, std::tuple<variant<T, std::exception_ptr>...
 }
 
 template <typename T>
-bool argument_with_error(const T& argument) {
-    return tuple_find(argument, [](const auto& c) {
-               return static_cast<message_t>(index(c)) == message_t::error;
-           }) != std::tuple_size<T>::value;
+stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
+    stlab::optional<std::exception_ptr> result;
+
+    auto error_index = tuple_find(argument, [](const auto& c) {
+        return static_cast<message_t>(index(c)) == message_t::error;
+    });
+
+    if (error_index != std::tuple_size<T>::value) {
+        result = get_i(argument, error_index, [](auto&& elem) {
+            return stlab::get<std::exception_ptr>(std::forward<decltype(elem)>(elem));
+        }, std::exception_ptr{});
+    }
+
+    return result;
 }
 
 /**************************************************************************************************/
@@ -828,9 +836,10 @@ struct shared_process
         });
 
         if (message) {
-            if (argument_with_error(*message)) {
+            auto error = find_argument_error(*message);
+            if (error) {
                 if (has_set_process_error_v<T, Args...>)
-                    set_process_error<process_t, queue_t>(*_process, std::move(*message));
+                    set_process_error(*_process, std::move(*error));
                 else
                     do_close = true;
             } else
@@ -899,17 +908,17 @@ struct shared_process
                     auto _this = _weak_this.lock(); 
                     // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
-                    
-					// try_lock can fail spuriously
+
+                    // try_lock can fail spuriously
                     while (true) {
-						// we were cancelled
-	                	if (!_this->_timeout_function_active) return;
+                        // we were cancelled
+                        // if (!_this->_timeout_function_active) return;
 
                         lock_t lock(_this->_timeout_function_control, std::try_to_lock);
                         if (!lock) continue;
 
-						// we were cancelled
-	                	if (!_this->_timeout_function_active) return;
+                        // we were cancelled
+                        // if (!_this->_timeout_function_active) return;
 
                         if (get_process_state(_this->_process).first != process_state::yield) {
                             _this->try_broadcast();
@@ -953,7 +962,8 @@ struct shared_process
         });
 
         if (message) {
-            if (argument_with_error(*message)) {
+            auto error = find_argument_error(*message);
+            if (error) {
                 do_close = true;
             } else {
                 try {

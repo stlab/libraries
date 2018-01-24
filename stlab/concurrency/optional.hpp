@@ -33,15 +33,15 @@
 #       elif __has_include(<experimental/optional>) // Check for an experimental version
 #           include <experimental/optional>
 #           define STLAB_OPTIONAL STLAB_STD_EXPERIMENTAL_OPTIONAL
-#       else
-#           include <boost/optional.hpp>
-#           define STLAB_OPTIONAL STLAB_BOOST_OPTIONAL
 #       endif
-#   else
-#       include <boost/optional.hpp>
-#       define STLAB_OPTIONAL STLAB_BOOST_OPTIONAL
 #   endif
 #endif
+
+#ifndef STLAB_OPTIONAL
+#   include <boost/optional.hpp>
+#   define STLAB_OPTIONAL STLAB_BOOST_OPTIONAL
+#endif
+
 
 namespace stlab
 {
@@ -50,15 +50,18 @@ namespace stlab
 
 template <typename T>
 using optional = std::optional<T>;
+
 constexpr std::nullopt_t nullopt{std::nullopt};
 
 #elif STLAB_OPTIONAL == STLAB_STD_EXPERIMENTAL_OPTIONAL
+
 template<typename T>
 using optional = std::experimental::optional<T>;
 
-constexpr std::experimental::nullopt_t nullopt{0};
+constexpr std::experimental::nullopt_t nullopt{std::experimental::nullopt};
 
 #elif STLAB_OPTIONAL == STLAB_BOOST_OPTIONAL
+
 template <typename T>
 using optional = boost::optional<T>;
 
