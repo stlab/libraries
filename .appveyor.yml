@@ -48,3 +48,4 @@ build_script:
   - test\Release\stlab.test.serial_queue.test.exe
   - test\Release\stlab.test.task.test.exe
   - test\Release\stlab.test.tuple.test.exe
+  
