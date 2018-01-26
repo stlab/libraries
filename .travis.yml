@@ -25,6 +25,8 @@ branches:
   
 before_install:
   - pip install --user conan
+  - conan remote add conan_community https://api.bintray.com/conan/conan-community/conan
+  - conan search Boost* -r=conan_community
 
 script:
   - .travis/build.sh
