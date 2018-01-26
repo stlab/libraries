@@ -5,14 +5,13 @@
 
 shallow_clone: true
 
-os:
-  - Visual Studio 2017
+image: Visual Studio 2015
 
 build:
   verbosity: detailed
 
 configuration:
-  - Debug
+  - Release
 
 branches:
   except:
@@ -22,8 +21,8 @@ install:
   ############################################################################
   # All external dependencies are installed in C:\projects\deps
   ############################################################################
-  - mkdir C:\projects\deps
-  - cd C:\projects\deps
+  #- mkdir C:\projects\deps
+  #- cd C:\projects\deps
 
 
   ############################################################################
@@ -41,12 +40,12 @@ before_build:
   - cd C:\projects\libraries
 
 build_script:
-  - IF EXIST build_debug RMDIR /S /Q build_debug
-  - MKDIR build_debug
-  - cd build_debug
-  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_63_0 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
+  - IF EXIST build RMDIR /S /Q build
+  - MKDIR build
+  - cd build
+  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_63_0 -D stlab_testing=ON ..
   - cmake  --build .
-  - test\Debug\stlab.test.future.test --log_level=message
-  - test\Debug\stlab.test.serial_queue.test.exe
-  - test\Debug\stlab.test.task.test.exe
-  - test\Debug\stlab.test.tuple.test.exe
+  - test\Release\stlab.test.future.test --log_level=message
+  - test\Release\stlab.test.serial_queue.test.exe
+  - test\Release\stlab.test.task.test.exe
+  - test\Release\stlab.test.tuple.test.exe
