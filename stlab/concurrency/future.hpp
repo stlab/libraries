@@ -10,6 +10,7 @@
 #define STLAB_CONCURRENCY_FUTURE_HPP
 
 #include <atomic>
+#include <cassert>
 #include <initializer_list>
 #include <memory>
 #include <mutex>
