@@ -28,12 +28,12 @@ namespace detail {
 struct immediate_executor_type
 {
     template <typename F>
-    void operator()(F&& f) const {
+    void operator()(F&& f) {
         std::forward<F>(f)();
     }
 
     template <typename F>
-    void operator()(std::chrono::steady_clock::time_point, F&& f) const {
+    void operator()(std::chrono::steady_clock::time_point, F&& f) {
         std::forward<F>(f)();
     }
 };
