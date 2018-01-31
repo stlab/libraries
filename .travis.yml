@@ -25,8 +25,7 @@ branches:
   
 before_install:
   - pip install --user conan
-  - conan remote add conan_community https://api.bintray.com/conan/conan-community/conan
-  - conan search Boost* -r=conan_community
+  - ./enhance_conan.sh
 
 script:
   - .travis/build.sh
@@ -38,11 +37,12 @@ matrix:
     #
     - os: osx
       compiler: clang
-      osx_image: xcode8
+      osx_image: xcode9
       before_install:
-        - pip install --user conan
-        - conan remote add conan_community https://api.bintray.com/conan/conan-community/conan
-        - conan search Boost* -r=conan_community
+        - brew update
+        - brew install python3
+        - pip3 install conan
+        - ./enhance_conan.sh
 
       env:
         build_type=debug
@@ -50,11 +50,12 @@ matrix:
         
     - os: osx
       compiler: clang
-      osx_image: xcode8
+      osx_image: xcode9
       before_install:
-        - pip install --user conan
-        - conan remote add conan_community https://api.bintray.com/conan/conan-community/conan
-        - conan search Boost* -r=conan_community
+        - brew update
+        - brew install python3
+        - pip3 install conan
+        - ./enhance_conan.sh
 
       env:
         build_type=release
@@ -146,8 +147,7 @@ matrix:
         options="-D stlab_testing=ON"
       before_install:
         - pip install --user conan
-        - conan remote add conan_community https://api.bintray.com/conan/conan-community/conan
-        - conan search Boost* -r=conan_community
+        - ./enhance_conan.sh
         - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
       addons:
         apt:
