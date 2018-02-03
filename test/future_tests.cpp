@@ -476,3 +476,29 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_error_case)
                             ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
 }
 
+
+BOOST_AUTO_TEST_CASE(future_package_void_void_case)
+{
+    BOOST_TEST_MESSAGE("future package void void case");
+    bool check = false;
+    auto promise = stlab::package<void()>(stlab::default_executor, [&check]{ check = true; });
+
+    promise.first();
+    blocking_get(promise.second);
+
+    BOOST_REQUIRE_EQUAL(true, check);
+}
+
+BOOST_AUTO_TEST_CASE(future_package_void_void_error_case)
+{
+    BOOST_TEST_MESSAGE("future package void void case");
+    bool check = false;
+    auto promise = stlab::package<void()>(stlab::default_executor, [&check]{ check = true; });
+
+    promise.first.set_exception(std::make_exception_ptr(test_exception("failure")));
+
+    BOOST_REQUIRE_EXCEPTION(blocking_get(promise.second), test_exception,
+                            ([_m = std::string("failure")](const auto& e) { return std::string(_m) == std::string(e.what()); }));
+
+    BOOST_REQUIRE_EQUAL(false, check);
+}
