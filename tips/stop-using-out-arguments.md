@@ -89,7 +89,7 @@ We can even write the code without the temporary, and it will be no less perform
 my_class y(obj.get());
 ```
 
-This code is concise an no worse in performance that our original code.
+This code is concise and no worse in performance that our original code.
 
 ## Improving the In Argument
 
@@ -116,11 +116,11 @@ my_class::my_class(string x) { swap(_member, x); }
 A common usage of out params is to allow for an error state on return.  For example:
 
 ```cpp
-bool getValue(std::string& out) {
-    if(!canFetchValue) {
+bool get_value(std::string& out) {
+    if(!_can_fetch_value) {
         return false;
     }
-    out = fetchValue();
+    out = fetch_value();
     return true;
 }
 ```
@@ -128,11 +128,11 @@ bool getValue(std::string& out) {
 With everything we have learned above we could simply treat the empty state of an object as our invalid case. Assuming fetchValue doesn't throw.
 
 ```cpp
-std::string getValue() {
-    if(!canFetchValue) {
-        return "";
+std::string get_value() {
+    if(!_can_fetch_value) {
+        return std::string();
     }
-    return fetchValue();
+    return fetch_value();
 }
 ```
 
@@ -142,37 +142,37 @@ If your type can't be constructed cheapily or has no obvious empty state, then y
 Let us assume that an empty string is expensive to create for the following example.
 
 ```cpp
-std::optional<std::string> getValue() {
-    if(!canFetchValue) {
+std::optional<std::string> get_value() {
+    if(!_can_fetch_value) {
         return {};
     }
-    return fetchValue();
+    return fetch_value();
 }
 ```
 
-Here we have avoided creating a string, and a very lightweight class in the error case. This may loook strange at first but by this allows for much more expressiveness in your function signature. It tells the caller that this operation could possibly fail and has to be aware of it. It can also reduce the amount of branching at the call site, while reducing the mental overhead of having to come up with sane values.
+Here we have avoided creating a string, and and use a very lightweight class instance in the error case. This may look strange at first but it allows for much more expressiveness in the function signature. The signature makes it clear that this operation could possibly fail and the caller has to be aware of it. It can also reduce the amount of branching at the call site, while reducing the mental overhead of having to come up with out-of-band values.
 
 For the default case:
 ```cpp
-std::string value = getValue().value_or("not found");
+std::string value = get_value().value_or("not found");
 ```
 
 Tricky default values
 
 ```cpp
-int getUserInt(std::string userInput) {
-    //parse user input
+int get_user_int(std::string user_input) {
+    //parse user input and return value
     return -1; //invalid
 }
 ```
 
 ```cpp
-std::optional<int> getUserInt(std::string userInput) {
-    //parse user input
+std::optional<int> get_user_int(std::string user_input) {
+    //parse user input and return value
     return {}; //invalid
 }
 ```
-It is now obvious what the error case looks like and their is no ambiguity or worse, having to throw an exception for a common path and can avoid allocations! No more using pointers and nullptr checks to indicate/check for an empty state.
+It is now obvious what the error case looks like and their is no ambiguity, no need to throw an exception for a common path, and can avoid allocations. No more using pointers and nullptr checks to indicate/check for an empty state.
 
 ## In-Out Arguments
 
@@ -188,7 +188,7 @@ In this case we can combine the two approaches:
 string append(string sink) { sink += "appended data"; return sink; }
 ```
 
-To see how this is improves the code, consider a simple example like:
+To see how this improves the code, consider a simple example like:
 
 ```cpp
 string x("initial value");
@@ -209,7 +209,7 @@ x = append(std::move(x));
 
 ### When to Modify In-situ
 
-There are situations where an object has a large local part, so move is expensive, and it makes sense to modify the object in place. However, these should be treated as the exception, not the rule.
+There are situations where an object has a large local part, so move is expensive. There are also cases where you might only be operating on part of the object (such as sorting a subrange of a vector). In such cases it makes sense to modify the object in place. However, these should be treated as the exception, not the rule.
 
 ## Multiple Out Arguments
 
@@ -274,6 +274,40 @@ Without ever copying a string!
 
 `apply()` is available today on Mac in `<experimental/tuple>`.
 
+### Naming Multiple Results
+
+One issue with returning multiple results via a tuple is that it may not be clear from the caller which result is which. Arguments have the same issue at the call site, but you can at least look at the function signature. In the `root_extension()` example the name of the function was chosen to make it clear that the first result is the root, and the second the example.
+
+Another option is to return a struct.
+
+```cpp
+struct root_extension_t {
+    string root;
+    string extension;
+};
+```
+
+Unfortunately there is no good way to make this work with `tie()`, you would also need to provide a templated `get` accessor returning a `tuple_element`, this is non-trivial.
+
+With C++17, this does work with structured bindings.
+
+```cpp
+root_extensions_t root_extension(const string& in) {
+	auto p = in.find_last_of('.');
+	if (p == string::npos) p = in.size();
+	return { in.substr(0, p), in.substr(p, in.size() - p) };
+}
+auto [root, ext] = root_extension("path/file.jpg");
+```
+
+Unfortunately, anonymous structs are not allow:
+
+```cpp
+auto root_extension(const string& in) -> struct { string root; string extension; }; // ERROR
+```
+
+The recommendation is that unless you already have a correct type for the result type, and you are using C++17, then use the type as the result. Otherwise return a tuple and use a good name for the function to make the result clear.
+
 ## Final thoughts
 
-As with all goals, if you find case where using an out argument is better than using the function result, please do (and start a discussion here on the topic) but in most use cases I find that out arguments lose by all measures compared to using function results.
+As with all goals, if you find a case where using an out argument is better than using the function result, please do (and start a discussion here on the topic) but in most use cases I find that out arguments lose by all measures compared to using function results.
