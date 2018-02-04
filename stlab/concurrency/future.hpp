@@ -331,7 +331,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template<typename S, typename F>
     auto then_r(bool unique, S &&s, F &&f) {
-        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x) {
+        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x) mutable {
             return _f(std::move(x).get_try().get());
         });
     }
@@ -345,7 +345,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
                                                            [_f = std::forward<F>(f), _p = future<T>(
-                                                               this->shared_from_this())] {
+                                                               this->shared_from_this())] () mutable {
                                                                return _f(std::move(_p));
                                                            });
 
@@ -835,20 +835,6 @@ public:
     boost::optional<std::exception_ptr> error() const &{
         return _p->_error;
     }
-
-#ifdef STLAB_FUTURE_COROUTINE_SUPPORT
-    bool await_ready() {
-        return is_ready();
-    }
-
-    auto await_resume() { return *get_try(); }
-
-    void await_suspend(std::experimental::coroutine_handle<> ch) {
-        then(stlab::default_executor, [ch](auto&& ) mutable {
-            ch.resume();
-        }).detach();
-    }
-#endif
 };
 
 /**************************************************************************************************/
@@ -952,20 +938,6 @@ public:
     boost::optional<std::exception_ptr> error() const &{
         return _p->_error;
     }
-
-#ifdef STLAB_FUTURE_COROUTINE_SUPPORT
-    bool await_ready() {
-        return is_ready();
-    }
-
-    auto await_resume() { return get_try(); }
-
-    void await_suspend(std::experimental::coroutine_handle<> ch) {
-        then(stlab::default_executor, [ch]() mutable {
-            ch.resume();
-        }).detach();
-    }
-#endif
 };
 
 /**************************************************************************************************/
@@ -1060,21 +1032,9 @@ public:
     boost::optional<std::exception_ptr> error() const &{
         return _p->_error;
     }
-
-#ifdef STLAB_FUTURE_COROUTINE_SUPPORT
-    bool await_ready() {
-        return is_ready();
-    }
-
-    auto await_resume() { return std::move(*get_try()); }
-
-    void await_suspend(std::experimental::coroutine_handle<> ch) {
-        then(stlab::default_executor, [ch](auto&& ) mutable {
-            ch.resume();
-        }).detach();
-    }
-#endif
 };
+
+/**************************************************************************************************/
 
 template<typename Sig, typename S, typename F>
 auto
@@ -1859,10 +1819,6 @@ auto shared_base<void>::reduce(future<future<R>> &&r) -> future<R> {
 
 
 #ifdef STLAB_FUTURE_COROUTINE_SUPPORT
-//namespace stlab
-//{
-//inline namespace v1
-//{
 
 template<typename T, typename... Args>
 struct std::experimental::coroutine_traits<stlab::future<T>, Args...>
@@ -1878,7 +1834,7 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...>
         }
 
         stlab::future<T> get_return_object() {
-            return _promise.second;
+            return std::move(_promise.second);
         }
 
         auto initial_suspend() const {
@@ -1945,6 +1901,45 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...>
         }
     };
 };
+
+
+template <typename R>
+auto operator co_await(stlab::future<R> &&f) {
+    struct Awaiter {
+        stlab::future<R> &&_input;
+        R _result;
+
+        bool await_ready() { return _input.is_ready(); }
+
+        auto await_resume() { return std::move(_result); }
+
+        void await_suspend(std::experimental::coroutine_handle<> ch) {
+            std::move(_input).then(stlab::default_executor, [this, ch](auto&& result) mutable {
+                this->_result = std::forward<decltype(result)>(result);
+                ch.resume();
+            }).detach();
+        }
+    };
+    return Awaiter{static_cast<stlab::future<R> &&>(f)};
+}
+
+template <>
+auto operator co_await(stlab::future<void> &&f) {
+    struct Awaiter {
+        stlab::future<void> &&_input;
+
+        bool await_ready() { return _input.is_ready(); }
+
+        auto await_resume() {}
+
+        void await_suspend(std::experimental::coroutine_handle<> ch) {
+            std::move(_input).then(stlab::default_executor, [ch]() mutable {
+                ch.resume();
+            }).detach();
+        }
+    };
+    return Awaiter{static_cast<stlab::future<void> &&>(f)};
+}
 
 #endif
 
