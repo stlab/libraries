@@ -40,6 +40,7 @@ install:
   - cmake --version
 
 build_script:
+  - cd C:\projects\libraries
   - IF EXIST build RMDIR /S /Q build
   - MKDIR build
   - cd build
