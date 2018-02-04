@@ -26,6 +26,16 @@
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
 
+// as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
+// support for the channels tests
+#ifdef __has_include
+#   if __has_include(<experimental/coroutine>) && !defined(STLAB_DISABLE_FUTURE_COROUTINES)
+#       include <stlab/concurrency/default_executor.hpp>
+#       include <stlab/concurrency/immediate_executor.hpp>
+#       include <experimental/coroutine>
+#       define STLAB_FUTURE_COROUTINE_SUPPORT
+#   endif
+#endif
 /**************************************************************************************************/
 
 namespace stlab {
@@ -46,10 +56,8 @@ enum class future_error_codes {	// names for futures errors
 
 namespace detail {
 
-inline const char *Future_error_map(future_error_codes code) noexcept
-{	// convert to name of future error
-    switch (code)
-    {	// switch on error code value
+inline const char *Future_error_map(future_error_codes code) noexcept {    // convert to name of future error
+    switch (code) {    // switch on error code value
     case future_error_codes::broken_promise:
         return "broken promise";
 
@@ -76,8 +84,7 @@ class future_error : public std::logic_error
 {
 public:
     explicit future_error(future_error_codes code)
-        : logic_error(""), _code(code)
-    {}
+        : logic_error(""), _code(code) {}
 
     const future_error_codes& code() const noexcept {
         return _code;
@@ -97,7 +104,10 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename...> struct type_list { };
+template<typename...>
+struct type_list
+{
+};
 
 template <typename>
 struct result_of_;
@@ -301,7 +311,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename S, typename F>
     auto then_r(bool unique, S&& s, F&& f) {
-        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x){
+        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x) mutable {
             return _f(std::move(x).get_try().get());
         });
     }
@@ -314,7 +324,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         if (!unique) return recover(std::forward<S>(s),std::forward<F>(f));
 
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
-            [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())] {
+                                                           [_f = std::forward<F>(f), _p = future<T>(
+                                                               this->shared_from_this())] () mutable {
                 return _f(std::move(_p));
             });
 
@@ -1810,28 +1821,28 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...>
     {
         std::pair<stlab::packaged_task<>, stlab::future<void>> _promise;
 
-        promise_type() {
+        inline promise_type() {
             _promise = stlab::package<void()>(stlab::immediate_executor, []()mutable{});
         }
 
-        stlab::future<void> get_return_object() {
+        inline stlab::future<void> get_return_object() {
             return _promise.second;
         }
 
-        auto initial_suspend() const {
+        inline auto initial_suspend() const {
             return std::experimental::suspend_never{};
         }
 
-        auto final_suspend() const {
+        inline auto final_suspend() const {
             return std::experimental::suspend_never{};
         }
 
-        void return_void() {
+        inline void return_void() {
             _promise.first();
         }
 
 #if STLAB_TASK_SYSTEM != STLAB_TASK_SYSTEM_WINDOWS
-        void unhandled_exception() {
+        inline void unhandled_exception() {
             set_exception(std::current_exception());
         }
 #endif
@@ -1864,15 +1875,15 @@ auto operator co_await(stlab::future<R> &&f) {
 }
 
 template <>
-auto operator co_await(stlab::future<void> &&f) {
+inline auto operator co_await(stlab::future<void> &&f) {
     struct Awaiter {
         stlab::future<void> &&_input;
 
-        bool await_ready() { return _input.is_ready(); }
+        inline bool await_ready() { return _input.is_ready(); }
 
-        auto await_resume() {}
+        inline auto await_resume() {}
 
-        void await_suspend(std::experimental::coroutine_handle<> ch) {
+        inline void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input).then(stlab::default_executor, [ch]() mutable {
                 ch.resume();
             }).detach();

@@ -9,7 +9,8 @@
 #ifndef FUTURE_TEST_HELPER_HPP_
 #define FUTURE_TEST_HELPER_HPP_
 
-#include <stlab/concurrency/concurrency.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 #include <atomic>
 #include <boost/test/unit_test.hpp>

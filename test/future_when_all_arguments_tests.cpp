@@ -8,7 +8,9 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/concurrency/concurrency.hpp>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/utility.hpp>
 
 #include <string>
 

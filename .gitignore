@@ -36,5 +36,5 @@
 build/
 
 .idea
-cmake-*
-clion_*
+cmake-build-*
+clion_build
