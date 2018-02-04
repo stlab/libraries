@@ -145,6 +145,10 @@ struct result_of_when_any_t
     using result_type = typename std::result_of<F(R, size_t)>::type;
 };
 
+template <typename T>
+bool unique_usage(const std::shared_ptr<T>& p) {
+    return p.use_count() == 1;
+}
 
 /**************************************************************************************************/
 
@@ -725,12 +729,12 @@ class future<T, enable_if_copyable<T>> {
 
     template <typename F>
     auto then(F&& f) && {
-        return _p->then_r(_p.unique(), std::forward<F>(f));
+        return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        return _p->then_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
@@ -745,12 +749,12 @@ class future<T, enable_if_copyable<T>> {
 
     template <typename F>
     auto recover(F&& f) && {
-        return _p->recover_r(_p.unique(), std::forward<F>(f));
+        return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        return _p->recover_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
@@ -770,7 +774,7 @@ class future<T, enable_if_copyable<T>> {
     }
 
     auto get_try() && {
-        return _p->get_try_r(_p.unique());
+        return _p->get_try_r(unique_usage(_p));
     }
 
     boost::optional<std::exception_ptr> error() const& {
@@ -828,12 +832,12 @@ class future<void, void> {
 
     template <typename F>
     auto then(F&& f) && {
-        return _p->then_r(_p.unique(), std::forward<F>(f));
+        return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        return _p->then_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
@@ -848,12 +852,12 @@ class future<void, void> {
 
     template <typename F>
     auto recover(F&& f) && {
-        return _p->recover_r(_p.unique(), std::forward<F>(f));
+        return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        return _p->recover_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
@@ -920,26 +924,26 @@ class future<T, enable_if_not_copyable<T>> {
 
     template <typename F>
     auto then(F&& f) && {
-        return _p->then_r(_p.unique(), std::forward<F>(f));
+        return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto then(S&& s, F&& f) && {
-        return _p->then_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        return _p->then_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
     }
 
     template <typename F>
     auto recover(F&& f) && {
-        return _p->recover_r(_p.unique(), std::forward<F>(f));
+        return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
     template <typename S, typename F>
     auto recover(S&& s, F&& f) && {
-        return _p->recover_r(_p.unique(), std::forward<S>(s), std::forward<F>(f));
+        return _p->recover_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
     }
 
     void detach() const {
-        _p->then_r(_p.unique(), [_hold = _p](auto f) {}, [](auto&&) {});
+        _p->then_r(unique_usage(_p), [_hold = _p](auto f) {}, [](auto&&) {});
     }
 
     void reset() {
@@ -955,7 +959,7 @@ class future<T, enable_if_not_copyable<T>> {
     }
 
     auto get_try() && {
-        return _p->get_try_r(_p.unique());
+        return _p->get_try_r(unique_usage(_p));
     }
 
     boost::optional<std::exception_ptr> error() const& {
