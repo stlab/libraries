@@ -1801,14 +1801,8 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...>
             _promise.first(std::forward<U>(val));
         }
 
-#if STLAB_TASK_SYSTEM != STLAB_TASK_SYSTEM_WINDOWS
         void unhandled_exception() {
-            set_exception(std::current_exception());
-        }
-#endif
-
-        void set_exception(std::exception_ptr error) {
-            _promise.first.set_exception(std::move(error));
+            _promise.first.set_exception(std::current_exception());
         }
     };
 };
@@ -1841,14 +1835,8 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...>
             _promise.first();
         }
 
-#if STLAB_TASK_SYSTEM != STLAB_TASK_SYSTEM_WINDOWS
         inline void unhandled_exception() {
-            set_exception(std::current_exception());
-        }
-#endif
-
-        void set_exception(std::exception_ptr error) {
-            _promise.first.set_exception(std::move(error));
+            _promise.first.set_exception(std::current_exception());
         }
     };
 };
