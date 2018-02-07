@@ -3,8 +3,8 @@ title: Stop using _out_ arguments
 layout: page
 tags: [tips]
 comments: true
-draft: true
 ---
+
 ## The Problem with Out Arguments
 
 I have been lecturing about [Return-Value-Optimization](http://en.cppreference.com/w/cpp/language/copy_elision) for over a decade, yet I still see a lot of code written in this form:
@@ -143,7 +143,7 @@ Assume the following is how std::string is implmented
 
 ```cpp
 string() = delete;
-string(const char * initial_value) {  
+string(const char * initial_value) {
     _buffer = malloc(1024 * 1024); // we don't know how much room a user could use!
 }
 ```
@@ -181,7 +181,7 @@ int get_user_int(std::string user_input) {
 ```
 
 What if the user had wanted `-1` as their value? How would we deal with this? We could throw an exception if we couldn't parse the input.
-This means that you have to document this exception, and the user has to remember to catch it. 
+This means that you have to document this exception, and the user has to remember to catch it.
 
 We could use an out variable to indicate success? Hopefully, you have seen why you should reconsider this.
 
