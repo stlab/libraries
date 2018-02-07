@@ -136,10 +136,22 @@ std::string get_value() {
 }
 ```
 
-Using the empty state for objects is prefered as it removes the need for null checks at the call site.
-If your type can't be constructed cheapily or has no obvious empty state, then you should consider using boost::optional (or std::optional if you are using c++17).
+Using the empty state for objects is prefered as it removes the need for null checks at the call site or accidently letting it flow to unrelated parts of your program.
 
-Let us assume that an empty string is expensive to create for the following example.
+This above works, but what if std::string has no default constructor, or is expensive to create?  How can we avoid creating the object if we don't need to?
+Assume the following is how std::string is implmented
+
+```cpp
+string() = delete;
+string(const char * initial_value) {  
+    _buffer = malloc(1024 * 1024); // we don't know how much room a user could use!
+}
+```
+
+How can we work with these ases in the above example? We obviously can't use the empty constructor and we can't use the other constructor as we don't want to waste that memory.
+
+This is where optional shines. It is shipping as standard in c++17 but is also available as boost::optional.
+
 
 ```cpp
 std::optional<std::string> get_value() {
@@ -150,14 +162,16 @@ std::optional<std::string> get_value() {
 }
 ```
 
-Here we have avoided creating a string, and and use a very lightweight class instance in the error case. This may look strange at first but it allows for much more expressiveness in the function signature. The signature makes it clear that this operation could possibly fail and the caller has to be aware of it. It can also reduce the amount of branching at the call site, while reducing the mental overhead of having to come up with out-of-band values.
+Here we have avoided creating a string, and and use a very lightweight class instance in the error case. This may look strange at first but it allows for much more expressiveness in the function signature. The signature makes it clear that this operation could possibly fail and the caller has to be aware of it. It can also reduce the amount of branching at the call site see default case below, while reducing the mental overhead of having to come up with out-of-band values.
 
 For the default case:
 ```cpp
-std::string value = get_value().value_or("not found");
+auto value = get_value().value_or("not found");
 ```
 
-Tricky default values
+## Tricky default values
+
+Some cases make it hard to know what to return to indicate failure. Take the following example
 
 ```cpp
 int get_user_int(std::string user_input) {
@@ -166,6 +180,13 @@ int get_user_int(std::string user_input) {
 }
 ```
 
+What if the user had wanted `-1` as their value? How would we deal with this? We could throw an exception if we couldn't parse the input.
+This means that you have to document this exception, and the user has to remember to catch it. 
+
+We could use an out variable to indicate success? Hopefully, you have seen why you should reconsider this.
+
+This is another case where optional shines.
+
 ```cpp
 std::optional<int> get_user_int(std::string user_input) {
     //parse user input and return value
@@ -173,6 +194,8 @@ std::optional<int> get_user_int(std::string user_input) {
 }
 ```
 It is now obvious what the error case looks like and their is no ambiguity, no need to throw an exception for a common path, and can avoid allocations. No more using pointers and nullptr checks to indicate/check for an empty state.
+
+If you want to carry some sort of information about why the parsing failed, I encourage the reader to look into std::variant.
 
 ## In-Out Arguments
 
