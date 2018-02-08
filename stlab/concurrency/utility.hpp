@@ -38,6 +38,14 @@ namespace stlab {
 
 inline namespace v1 {
 
+namespace detail {
+    struct shared_state {
+        bool flag{false};
+        std::condition_variable condition;
+        std::mutex m;
+    };
+}
+
 /**************************************************************************************************/
 
 template <typename T, typename E>
@@ -103,20 +111,20 @@ template <typename T>
 boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
     boost::optional<T> result;
     std::exception_ptr error = nullptr;
-
-    bool flag{false};
-    std::condition_variable condition;
-    std::mutex m;
-
-    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+    auto state = std::make_shared<detail::shared_state>();
+    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state), &result, &error](auto&& r) {
+        auto state = _weak_state.lock();
+        if (!state) {
+            return;
+        }
         if (r.error())
             error = std::forward<decltype(r)>(r).error().value();
         else
             result = std::forward<decltype(r)>(r).get_try().value();
 
         {
-            std::unique_lock<std::mutex> lock{m};
-            flag = true;
+            std::unique_lock<std::mutex> lock{state->m};
+            state->flag = true;
             /*
                 WARNING : Calling `notify_one()` inside the lock is a pessimization because
                 it means the code waiting will block aquiring the lock as soon as it wakes up.
@@ -124,13 +132,13 @@ boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
                 However, if we do the notificiation outside the lock, blocking_get will return
                 and we'll be calling a destructed condition variable.
             */
-            condition.notify_one();
+            state->condition.notify_one();
         }
     });
     
-    std::unique_lock<std::mutex> lock{m};
-    while (!flag) {
-        if(condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+    std::unique_lock<std::mutex> lock{state->m};
+    while (!state->flag) {
+        if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
             hold.reset();
             return result;
         }
@@ -167,18 +175,18 @@ inline void blocking_get(future<void> x) {
     if (error) std::rethrow_exception(error);
 }
 
-
 inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout) {
     std::exception_ptr error = nullptr;
-
-    bool set{false};
-    std::condition_variable condition;
-    std::mutex m;
-    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+    auto state = std::make_shared<detail::shared_state>();
+    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state), &error](auto&& r) {
         if (r.error()) error = std::forward<decltype(r)>(r).error().value();
         {
-            std::unique_lock<std::mutex> lock(m);
-            set = true;
+            auto state =_weak_state.lock();
+            if (!state) {
+                return;
+            }
+            std::unique_lock<std::mutex> lock(state->m);
+            state->flag = true;
             /*
                 WARNING : Calling `notify_one()` inside the lock is a pessimization because
                 it means the code waiting will block aquiring the lock as soon as it wakes up.
@@ -186,13 +194,13 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
                 However, if we do the notificiation outside the lock, blocking_get will return
                 and we'll be calling a destructed condition variable.
             */
-            condition.notify_one();
+            state->condition.notify_one();
         }
     });
     {
-        std::unique_lock<std::mutex> lock(m);
-        while (!set) {
-            if(condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+        while (!state->flag) {
+            std::unique_lock<std::mutex> lock(state->m);
+            if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
                 hold.reset();
                 return false;
             }

@@ -444,9 +444,9 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout)
         stlab::async(stlab::default_executor, answer);
 
 
-    auto r = stlab::blocking_get(f, std::chrono::seconds(1));
+    auto r = stlab::blocking_get(f, std::chrono::seconds(2));
     BOOST_REQUIRE_EQUAL(42, v);
-    BOOST_REQUIRE(r);
+    BOOST_REQUIRE_EQUAL(true, r);
 }
 
 
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout_reached)
 
     auto r = stlab::blocking_get(f, std::chrono::milliseconds(100));
     BOOST_REQUIRE_EQUAL(0, v);
-    BOOST_REQUIRE(!r);
+    BOOST_REQUIRE_EQUAL(false, r);
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case)
