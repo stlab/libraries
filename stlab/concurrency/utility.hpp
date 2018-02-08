@@ -100,7 +100,7 @@ T blocking_get(future<T> x) {
 }
 
 template <typename T>
-boost::optional<T> blocking_get(future<T> x,const std::chrono::nanoseconds& timeout) {
+boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
     boost::optional<T> result;
     std::exception_ptr error = nullptr;
 
@@ -165,6 +165,42 @@ inline void blocking_get(future<void> x) {
     }
 
     if (error) std::rethrow_exception(error);
+}
+
+
+inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout) {
+    std::exception_ptr error = nullptr;
+
+    bool set{false};
+    std::condition_variable condition;
+    std::mutex m;
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error()) error = std::forward<decltype(r)>(r).error().value();
+        {
+            std::unique_lock<std::mutex> lock(m);
+            set = true;
+            /*
+                WARNING : Calling `notify_one()` inside the lock is a pessimization because
+                it means the code waiting will block aquiring the lock as soon as it wakes up.
+
+                However, if we do the notificiation outside the lock, blocking_get will return
+                and we'll be calling a destructed condition variable.
+            */
+            condition.notify_one();
+        }
+    });
+    {
+        std::unique_lock<std::mutex> lock(m);
+        while (!set) {
+            if(condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+                hold.reset();
+                return false;
+            }
+        }
+    }
+
+    if (error) std::rethrow_exception(error);
+    return true;
 }
 
 /**************************************************************************************************/
