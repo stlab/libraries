@@ -758,7 +758,7 @@ class future<T, enable_if_copyable<T>> {
     }
 
     void detach() const {
-        then([_hold = _p](auto f){ }, [](const auto& x){ });
+        then([_hold = _p](auto f){ }, [](const auto&){ });
     }
 
     void reset() {
