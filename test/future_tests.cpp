@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](annotate& x){ }, std::ref(x));
+        async(immediate_executor, [](annotate&){ }, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> const&");
 
         annotate_counters counters;
-        async(immediate_executor, [](const annotate& x){ }, annotate(counters));
+        async(immediate_executor, [](const annotate&){ }, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](const annotate& x){ }, x);
+        async(immediate_executor, [](const annotate&){ }, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](const annotate& x){ }, std::ref(x));
+        async(immediate_executor, [](const annotate&){ }, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](const annotate& x){ }, std::cref(x));
+        async(immediate_executor, [](const annotate&){ }, std::cref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &&");
 
         annotate_counters counters;
-        async(immediate_executor, [](annotate&& x){ }, annotate(counters));
+        async(immediate_executor, [](annotate&&){ }, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](annotate&& x){ }, x);
+        async(immediate_executor, [](annotate&&){ }, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -375,10 +375,9 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<int>)
     BOOST_AUTO_TEST_CASE(future_get_try_refref) {
         BOOST_TEST_MESSAGE("future get_try()&& accessor test");
 
-        auto sut = async(default_executor, [] { return 42; })
-            .then([](int val) {
+        sut = async(default_executor, [] { return 42; })
+            .then([](int) -> int {
                 throw test_exception("failure");
-                return 0;
             })
             .recover([](auto &&f) {
                 try {
@@ -440,7 +439,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void)
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case)
 {
     BOOST_TEST_MESSAGE("future blocking_get with copyable value error case");
-    auto answer = [] { throw test_exception("failure"); return 42; };
+    auto answer = []()->int { throw test_exception("failure"); };
 
     stlab::future<int> f =
         stlab::async(stlab::default_executor, answer);
@@ -454,7 +453,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case)
 BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case)
 {
     BOOST_TEST_MESSAGE("future blocking_get with moveonly value");
-    auto answer = [] { throw test_exception("failure"); return stlab::move_only(42); };
+    auto answer = []()->stlab::move_only { throw test_exception("failure"); };
 
     stlab::future<stlab::move_only> f =
         stlab::async(stlab::default_executor, answer);

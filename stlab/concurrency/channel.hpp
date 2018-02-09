@@ -305,7 +305,7 @@ auto get_process_state(const boost::optional<T>& x)
 }
 
 template <typename T>
-auto get_process_state(const boost::optional<T>& x)
+auto get_process_state(const boost::optional<T>&)
     -> std::enable_if_t<!has_process_state_v<T>, process_state_scheduled> {
     return await_forever;
 }

@@ -43,7 +43,7 @@ struct tuple_find_impl
 template<std::size_t L, typename T, typename Op>
 struct tuple_find_impl<L, L, T, Op>
 {
-    static auto find(const T& t, Op op) { return L; }
+    static auto find(const T&, Op) { return L; }
 };
 
 

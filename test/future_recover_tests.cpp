@@ -200,10 +200,10 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
         BOOST_TEST_MESSAGE("running future recover while failed when_all on l-value");
 
         int result{ 0 };
-        auto f1 = async(custom_scheduler<0>(), [] { throw test_exception("failure"); return 42; });
+        auto f1 = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
         auto f2 = async(custom_scheduler<1>(), [] { return 42; });
 
-        auto sut = when_all(custom_scheduler<0>(), [](int x, int y) {
+        sut = when_all(custom_scheduler<0>(), [](int x, int y) {
             return x + y;
         }, f1, f2).recover([](auto error) {
             if (error.error()) 
