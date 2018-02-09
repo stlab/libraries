@@ -24,6 +24,7 @@
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
 #include <stlab/concurrency/variant.hpp>
+#include <stlab/memory.hpp>
 
 
 /**************************************************************************************************/
@@ -253,15 +254,6 @@ auto avoid_invoke_variant(F&& f, T& t) -> std::enable_if_t<std::is_same<void, R>
 
 template <typename T>
 using receiver_t = typename std::remove_reference_t<T>::result_type;
-
-/**************************************************************************************************/
-
-// REVISIT (sparent) : I have a make_weak_ptr() someplace already. Should be in memory.hpp
-
-template <typename T>
-auto make_weak_ptr(const std::shared_ptr<T>& x) {
-    return std::weak_ptr<T>(x);
-}
 
 /**************************************************************************************************/
 

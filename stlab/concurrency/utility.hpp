@@ -17,6 +17,9 @@
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 
+
+#include <stlab/memory.hpp>
+
 /**************************************************************************************************/
 
 #if 0
