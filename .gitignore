@@ -39,5 +39,5 @@ build/
 clion_build/
 
 .idea
-cmake-build-debug
-cmake-build-release
+cmake-*
+clion_*

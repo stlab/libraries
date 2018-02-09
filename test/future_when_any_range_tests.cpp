@@ -27,7 +27,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         std::vector<stlab::future<void>> emptyFutures;
         
         sut = when_any(custom_scheduler<0>(), 
-            [&_check = check](size_t index) { _check = true;}, 
+            [&_check = check](size_t) { _check = true;}, 
             std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
         wait_until_future_fails<stlab::future_error>(sut);
@@ -42,7 +42,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         std::vector<stlab::future<int>> emptyFutures;
 
         sut = when_any(custom_scheduler<0>(), 
-            [&_check = check](int x, size_t index) { _check = true;}, 
+            [&_check = check](int, size_t) { _check = true;}, 
             std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
         wait_until_future_fails<stlab::future_error>(sut);
@@ -60,7 +60,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_void, test_fixture<void>)
         futures.push_back(async(custom_scheduler<1>(), [&_interim_result = interim_result] { _interim_result = 42; }));
 
         sut = when_any(custom_scheduler<1>(),
-            [&_result = result, &_interim_result = interim_result](size_t index) { _result = _interim_result; },
+            [&_result = result, &_interim_result = interim_result](size_t) { _result = _interim_result; },
             std::make_pair(futures.begin(), futures.end()));
 
         wait_until_future_completed(sut);
@@ -313,7 +313,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_any_range_int, test_fixture<int>)
 
         bool check{ false };
         std::vector<stlab::future<int>> emptyFutures;
-        sut = when_any(custom_scheduler<0>(), [&_check = check](int x, size_t index) {
+        sut = when_any(custom_scheduler<0>(), [&_check = check](int x, size_t) {
             _check = true;
             return x + 42;
         }, std::make_pair(emptyFutures.begin(), emptyFutures.end()));
