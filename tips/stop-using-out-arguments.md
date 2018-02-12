@@ -25,7 +25,7 @@ my_class::my_class(const string& in);
 
 There are several issues with the above code. Let's improve `get()` first, then we'll move on to `my_class`.
 
-With an out parameter, the implementation of `get()` could take one of several forms: copying some existing date (such as a data member), calculating a new value and assigning it, or building up `out` to be the new value. Examples:
+With an out parameter, the implementation of `get()` could take one of several forms: copying some existing data (such as a data member), calculating a new value and assigning it, or building up `out` to be the new value. Examples:
 
 ```cpp
 void get(string& out) const { out = _member; }
@@ -38,7 +38,7 @@ void get(string& out) const {
 
 The problems with these examples are legion:
 
-1. ***Error Prone:*** The comment in the last examples points out why this is an error prone pattern. Unless you are careful, you can accidentally rely on the prior state of the object making this an in-out argument.
+1. ***Error Prone:*** The comment in the last example points out why this is an error prone pattern. Unless you are careful, you can accidentally rely on the prior state of the object making this an in-out argument.
 
 2. ***Inefficient:*** The compiler is required to copy the data from the source (`obj`) into the destination (`x`). This leads to expenses that can otherwise be avoided.
 
@@ -125,7 +125,7 @@ bool get_value(std::string& out) {
 }
 ```
 
-With everything we have learned above we could simply treat the empty state of an object as our invalid case. Assuming fetchValue doesn't throw.
+With everything we have learned above we could simply treat the empty state of an object as our invalid case. Assuming `fetch_value()` doesn't throw.
 
 ```cpp
 std::string get_value() {
@@ -138,8 +138,8 @@ std::string get_value() {
 
 Using the empty state for objects is prefered as it removes the need for null checks at the call site or accidently letting it flow to unrelated parts of your program.
 
-This above works, but what if std::string has no default constructor, or is expensive to create?  How can we avoid creating the object if we don't need to?
-Assume the following is how std::string is implmented
+This above works, but what if `std::string` has no default constructor, or is expensive to create?  How can we avoid creating the object if we don't need to?
+Assume the following is how `std::string` is implemented:
 
 ```cpp
 string() = delete;
@@ -148,9 +148,9 @@ string(const char * initial_value) {
 }
 ```
 
-How can we work with these ases in the above example? We obviously can't use the empty constructor and we can't use the other constructor as we don't want to waste that memory.
+How can we work with the cases in the above example? We obviously can't use the empty constructor and we can't use the other constructor as we don't want to waste that memory.
 
-This is where optional shines. It is shipping as standard in c++17 but is also available as boost::optional.
+This is where optional shines. It is shipping as standard in C++17 but is also available as `boost::optional`.
 
 
 ```cpp
@@ -162,7 +162,7 @@ std::optional<std::string> get_value() {
 }
 ```
 
-Here we have avoided creating a string, and and use a very lightweight class instance in the error case. This may look strange at first but it allows for much more expressiveness in the function signature. The signature makes it clear that this operation could possibly fail and the caller has to be aware of it. It can also reduce the amount of branching at the call site see default case below, while reducing the mental overhead of having to come up with out-of-band values.
+Here we have avoided creating a string, and and use a very lightweight class instance in the error case. This may look strange at first but it allows for much more expressiveness in the function signature. The signature makes it clear that this operation could possibly fail and the caller has to be aware of it. It can also reduce the amount of branching at the call site (see default case below) while eliminating the need to come up with out-of-band values.
 
 For the default case:
 ```cpp
@@ -193,9 +193,9 @@ std::optional<int> get_user_int(std::string user_input) {
     return {}; //invalid
 }
 ```
-It is now obvious what the error case looks like and their is no ambiguity, no need to throw an exception for a common path, and can avoid allocations. No more using pointers and nullptr checks to indicate/check for an empty state.
+It is now obvious what the error case looks like and there is no ambiguity, no need to throw an exception for a common path, and can avoid allocations. No more using pointers and nullptr checks to indicate/check for an empty state.
 
-If you want to carry some sort of information about why the parsing failed, I encourage the reader to look into std::variant.
+If you want to carry some sort of information about why the parsing failed, I encourage the reader to look into `std::variant`.
 
 ## In-Out Arguments
 
@@ -299,7 +299,7 @@ Without ever copying a string!
 
 ### Naming Multiple Results
 
-One issue with returning multiple results via a tuple is that it may not be clear from the caller which result is which. Arguments have the same issue at the call site, but you can at least look at the function signature. In the `root_extension()` example the name of the function was chosen to make it clear that the first result is the root, and the second the example.
+One issue with returning multiple results via a tuple is that it may not be clear from the caller which result is which. Arguments have the same issue at the call site, but you can at least look at the function signature. In the `root_extension()` example the name of the function was chosen to make it clear that the first result is the root, and the second the extension.
 
 Another option is to return a struct.
 
@@ -315,7 +315,7 @@ Unfortunately there is no good way to make this work with `tie()`, you would als
 With C++17, this does work with structured bindings.
 
 ```cpp
-root_extensions_t root_extension(const string& in) {
+root_extension_t root_extension(const string& in) {
 	auto p = in.find_last_of('.');
 	if (p == string::npos) p = in.size();
 	return { in.substr(0, p), in.substr(p, in.size() - p) };
@@ -323,7 +323,7 @@ root_extensions_t root_extension(const string& in) {
 auto [root, ext] = root_extension("path/file.jpg");
 ```
 
-Unfortunately, anonymous structs are not allow:
+Unfortunately, anonymous structs are not allowed:
 
 ```cpp
 auto root_extension(const string& in) -> struct { string root; string extension; }; // ERROR
