@@ -9,18 +9,6 @@
 #ifndef STLAB_CONCURRENCY_UTILITY_HPP
 #define STLAB_CONCURRENCY_UTILITY_HPP
 
-#include <condition_variable>
-#include <exception>
-#include <mutex>
-#include <type_traits>
-
-#include <boost/optional.hpp>
-
-#include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/immediate_executor.hpp>
-
-/**************************************************************************************************/
-
 #if 0
 
 #include <thread>
@@ -30,6 +18,8 @@
     printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
 
 #endif
+
+#include <stlab/concurrency/future.hpp>
 
 /**************************************************************************************************/
 
@@ -68,75 +58,57 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
 
 template <typename T>
 T blocking_get(future<T> x) {
-    boost::optional<T> result;
-    std::exception_ptr error = nullptr;
+    T result;
+    std::exception_ptr error;
 
-    bool flag{false};
+    bool set{false};
     std::condition_variable condition;
     std::mutex m;
-
-    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (r.error())
-            error = std::forward<decltype(r)>(r).error().value();
-        else
-            result = std::forward<decltype(r)>(r).get_try().value();
-
+    auto hold = std::move(x).recover([&](auto&& r) {
         {
-            std::unique_lock<std::mutex> lock{m};
-            flag = true;
-            /*
-                WARNING : Calling `notify_one()` inside the lock is a pessimization because
-                it means the code waiting will block aquiring the lock as soon as it wakes up.
-
-                However, if we do the notificiation outside the lock, blocking_get will return
-                and we'll be calling a destructed condition variable.
-            */
-            condition.notify_one();
+            std::unique_lock<std::mutex> lock(m);
+            if (r.error())
+                error = std::forward<decltype(r)>(r).error().value();
+            else
+                result = std::forward<decltype(r)>(r).get_try().value();
+            set = true;
         }
+        condition.notify_one();
     });
-
-    {
-        std::unique_lock<std::mutex> lock{m};
-        while (!flag) {
-            condition.wait(lock);
-        }
+    std::unique_lock<std::mutex> lock(m);
+    while (!set) {
+        condition.wait(lock);
     }
 
     if (error)
         std::rethrow_exception(error);
 
-    return std::move(result.get());
+    return result;
 }
 
+
 inline void blocking_get(future<void> x) {
-    std::exception_ptr error = nullptr;
+    std::exception_ptr error;
 
     bool set{false};
     std::condition_variable condition;
     std::mutex m;
-    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (r.error()) error = std::forward<decltype(r)>(r).error().value();
+    auto hold = std::move(x).recover([&](auto&& r) {
         {
             std::unique_lock<std::mutex> lock(m);
+            if (r.error())
+                error = std::forward<decltype(r)>(r).error().value();
             set = true;
-            /*
-                WARNING : Calling `notify_one()` inside the lock is a pessimization because
-                it means the code waiting will block aquiring the lock as soon as it wakes up.
-
-                However, if we do the notificiation outside the lock, blocking_get will return
-                and we'll be calling a destructed condition variable.
-            */
-            condition.notify_one();
         }
+        condition.notify_one();
     });
-    {
-        std::unique_lock<std::mutex> lock(m);
-        while (!set) {
-            condition.wait(lock);
-        }
+    std::unique_lock<std::mutex> lock(m);
+    while (!set) {
+        condition.wait(lock);
     }
 
-    if (error) std::rethrow_exception(error);
+    if (error)
+        std::rethrow_exception(error);
 }
 
 /**************************************************************************************************/
