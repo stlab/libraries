@@ -13,9 +13,7 @@
 #include <exception>
 #include <mutex>
 #include <type_traits>
-
 #include <boost/optional.hpp>
-
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 
@@ -30,6 +28,7 @@
     printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
 
 #endif
+
 
 /**************************************************************************************************/
 
@@ -74,7 +73,6 @@ T blocking_get(future<T> x) {
     bool flag{false};
     std::condition_variable condition;
     std::mutex m;
-
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
         if (r.error())
             error = *std::forward<decltype(r)>(r).error();
@@ -84,21 +82,14 @@ T blocking_get(future<T> x) {
         {
             std::unique_lock<std::mutex> lock{m};
             flag = true;
-            /*
-                WARNING : Calling `notify_one()` inside the lock is a pessimization because
-                it means the code waiting will block aquiring the lock as soon as it wakes up.
 
-                However, if we do the notificiation outside the lock, blocking_get will return
-                and we'll be calling a destructed condition variable.
-            */
-            condition.notify_one();
+        condition.notify_one();
         }
     });
-
     {
         std::unique_lock<std::mutex> lock{m};
         while (!flag) {
-            condition.wait(lock);
+        condition.wait(lock);
         }
     }
 
@@ -107,6 +98,7 @@ T blocking_get(future<T> x) {
 
     return std::move(*result);
 }
+
 
 inline void blocking_get(future<void> x) {
     std::exception_ptr error = nullptr;
@@ -119,21 +111,15 @@ inline void blocking_get(future<void> x) {
         {
             std::unique_lock<std::mutex> lock(m);
             set = true;
-            /*
-                WARNING : Calling `notify_one()` inside the lock is a pessimization because
-                it means the code waiting will block aquiring the lock as soon as it wakes up.
 
-                However, if we do the notificiation outside the lock, blocking_get will return
-                and we'll be calling a destructed condition variable.
-            */
-            condition.notify_one();
+        condition.notify_one();
         }
     });
     {
-        std::unique_lock<std::mutex> lock(m);
-        while (!set) {
-            condition.wait(lock);
-        }
+    std::unique_lock<std::mutex> lock(m);
+    while (!set) {
+        condition.wait(lock);
+    }
     }
 
     if (error) std::rethrow_exception(error);

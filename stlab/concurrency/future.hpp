@@ -229,7 +229,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <class, class> struct shared;
+template <typename> struct shared;
 template <typename, typename = void> struct shared_base;
 
 /**************************************************************************************************/
@@ -586,23 +586,18 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     void set_value(F& f, Args&&... args);
 };
 
-template <class F, class R, class... Args>
-struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
+template <typename R, typename... Args>
+struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
 {
-    std::atomic_size_t _promise_count;
-    stlab::optional<F> _f;
+    using function_t = task<R (Args...)>;
 
-    template <class G>
-    shared(executor_t s, G&& f) : shared_base<R>(std::move(s)), _f(std::forward<G>(f)) {
+    std::atomic_size_t _promise_count;
+    function_t _f;
+
+    template <typename F>
+    shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {
         _promise_count = 1;
     }
-
-    /*
-        NOTE (sean.parent) : There is some twisted logic in here. The promise count is used
-        by the packaged task. When it destructs the promise count is artificially decremented, _f
-        is reset which breaks a retain loop on this shared object. Without the optional and reset()
-        we have a memory leak.
-    */
 
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
@@ -610,7 +605,7 @@ struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
             if (--_promise_count == 0) {
                 std::unique_lock<std::mutex> lock(this->_mutex);
                 if (!this->_ready) {
-                    _f = stlab::nullopt;
+                    _f = function_t();
                     this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
                     this->_ready = true;
                 }
@@ -623,12 +618,12 @@ struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
     void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) override {
-        try {
-            this->set_value(*_f, std::move(args)...);
+        if (_f) try {
+            this->set_value(_f, std::move(args)...);
         } catch(...) {
             this->set_exception(std::current_exception());
         }
-        _f = stlab::nullopt;
+        _f = function_t();
     }
 };
 
@@ -972,14 +967,14 @@ class future<T, enable_if_not_copyable<T>> {
 
 template <typename Sig, typename S, typename F>
 auto package(S&& s, F&& f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<std::decay_t<F>, Sig>>(std::forward<S>(s), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::forward<S>(s), std::forward<F>(f));
     return std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
             future<detail::result_of_t_<Sig>>(p));
 }
 
 template <typename Sig, typename S, typename F>
 auto package_with_broken_promise(S&& s, F&& f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<std::decay_t<F>, Sig>>(std::forward<S>(s), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::forward<S>(s), std::forward<F>(f));
     auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
         future<detail::result_of_t_<Sig>>(p));
     result.second._p->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
