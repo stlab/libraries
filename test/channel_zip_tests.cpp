@@ -169,7 +169,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_channel_same_type_void_functor_many_values_async
 
     std::atomic_int  result{ 0 };
     std::atomic_bool zipped_ok{ true };
-    int              expected_input = std::size_t( 0 );
+    std::size_t      expected_input{0};
 
     auto check = zip(default_executor,
                      [&](std::pair<int, std::size_t> x) {

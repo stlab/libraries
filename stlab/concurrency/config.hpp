@@ -21,6 +21,11 @@
 
 #ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_LIBDISPATCH
+
+#if __cplusplus >= 201703L
+#define STLAB_CPP_VERSION 17
+#endif
+
 #endif
 
 #elif __EMSCRIPTEN__
@@ -41,12 +46,20 @@
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_WINDOWS
 #endif
 
+#if _MSC_FULL_VER >= 191225830 && _MSVC_LANG >= 201403L
+#define STLAB_CPP_VERSION 17
+#endif
+
 #endif
 
 // Default configuration
 
 #ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_PORTABLE
+#endif
+
+#ifndef STLAB_CPP_VERSION
+#define STLAB_CPP_VERSION 14
 #endif
 
 /**************************************************************************************************/

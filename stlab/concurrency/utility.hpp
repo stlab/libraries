@@ -9,6 +9,16 @@
 #ifndef STLAB_CONCURRENCY_UTILITY_HPP
 #define STLAB_CONCURRENCY_UTILITY_HPP
 
+#include <condition_variable>
+#include <exception>
+#include <mutex>
+#include <type_traits>
+#include <boost/optional.hpp>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+
+/**************************************************************************************************/
+
 #if 0
 
 #include <thread>
@@ -19,7 +29,6 @@
 
 #endif
 
-#include <stlab/concurrency/future.hpp>
 
 /**************************************************************************************************/
 
@@ -58,57 +67,62 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
 
 template <typename T>
 T blocking_get(future<T> x) {
-    T result;
-    std::exception_ptr error;
+    stlab::optional<T> result;
+    std::exception_ptr error = nullptr;
 
-    bool set{false};
+    bool flag{false};
     std::condition_variable condition;
     std::mutex m;
-    auto hold = std::move(x).recover([&](auto&& r) {
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error())
+            error = *std::forward<decltype(r)>(r).error();
+        else
+            result = std::move(*std::forward<decltype(r)>(r).get_try());
+
         {
-            std::unique_lock<std::mutex> lock(m);
-            if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
-            else
-                result = std::forward<decltype(r)>(r).get_try().value();
-            set = true;
-        }
+            std::unique_lock<std::mutex> lock{m};
+            flag = true;
+
         condition.notify_one();
+        }
     });
-    std::unique_lock<std::mutex> lock(m);
-    while (!set) {
+    {
+        std::unique_lock<std::mutex> lock{m};
+        while (!flag) {
         condition.wait(lock);
+        }
     }
 
     if (error)
         std::rethrow_exception(error);
 
-    return result;
+    return std::move(*result);
 }
 
 
 inline void blocking_get(future<void> x) {
-    std::exception_ptr error;
+    std::exception_ptr error = nullptr;
 
     bool set{false};
     std::condition_variable condition;
     std::mutex m;
-    auto hold = std::move(x).recover([&](auto&& r) {
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error()) error = *std::forward<decltype(r)>(r).error();
         {
             std::unique_lock<std::mutex> lock(m);
-            if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
             set = true;
-        }
+
         condition.notify_one();
+        }
     });
+    {
     std::unique_lock<std::mutex> lock(m);
     while (!set) {
         condition.wait(lock);
     }
+    }
 
-    if (error)
-        std::rethrow_exception(error);
+    if (error) std::rethrow_exception(error);
 }
 
 /**************************************************************************************************/

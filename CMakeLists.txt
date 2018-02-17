@@ -36,12 +36,14 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/future.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/immediate_executor.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/main_executor.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/optional.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/progress.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/system_timer.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/task.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/traits.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp" )
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/variant.hpp")
 
 set( flags "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
 if( EXISTS ${flags} )

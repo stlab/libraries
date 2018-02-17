@@ -35,6 +35,9 @@
 # cmake build directory
 build/
 
+# clion build directory
+clion_build/
+
 .idea
 cmake-*
 clion_*

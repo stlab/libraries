@@ -232,7 +232,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
     }
 
@@ -252,7 +252,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
     }
 
@@ -277,7 +277,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
     }
 
@@ -304,7 +304,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
     }
 
@@ -324,7 +324,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -348,7 +348,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -375,7 +375,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -403,7 +403,7 @@ BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 
         wait_until_future_completed(sut);
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try().value());
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
