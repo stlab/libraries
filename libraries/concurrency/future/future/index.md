@@ -5,7 +5,6 @@ tags: [library]
 name: stlab::future
 pure-name: future
 defined-in-header: stlab/concurrency/future.hpp
-ctor: default
 dtor: default
 annotation: template class
 declaration: |
@@ -17,7 +16,7 @@ description: |
   
   1. This future is copyable, so there is no need for a `std::shared_future`.
   1. If this future is only used as an rvalue and there are no copies, then the value (either returned by `get_try` or through a continuation) will be moved. 
-  1. Multiple continutations - forming a split - may be attached to a single future with `then()`. `then()` is declared `const` since it does not mutate the result object of the future. The continuation is called with the value type, not the future. 
+  1. Multiple continuations - forming a split - may be attached to a single future with `then()`. `then()` is declared `const` since it does not mutate the result object of the future. The continuation is called with the value type, not the future. 
   1. A sink argument to a continuation should take the argument by value and move the object as needed. 
   1. If the continuation reads the argument it should take it by `const&`. 
   1. Behavior of modifying the argument through a non-const reference is undefined (may be a compilation error). 

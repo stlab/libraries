@@ -23,10 +23,10 @@ int main() {
     });
 
     y.detach();
-  } // The futures x and y are destructed here, but not cancelled,
-    // because the continiation was detached.
+  } // The futures x and y are destructed here, but not canceled,
+    // because the continuation was detached.
 
-  // Waiting just for illustrational purpose
+  // Waiting just for illustration purpose
   while (!done) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 
