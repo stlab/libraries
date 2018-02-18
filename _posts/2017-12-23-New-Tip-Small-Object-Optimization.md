@@ -1,1 +1,1 @@
-[Small Object Optimization for Polymorphic Types](tips/small-object-optimizations.html)
+[Small Object Optimization for Polymorphic Types](/tips/small-object-optimizations.html)
