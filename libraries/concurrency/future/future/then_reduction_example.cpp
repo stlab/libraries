@@ -17,7 +17,7 @@ int main() {
         this_thread::sleep_for(chrono::milliseconds(1));
     }
 
-    cout << a.get_try().value() << '\n';
+    cout << *a.get_try() << '\n';
 
     return 0;
 }
