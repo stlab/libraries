@@ -13,7 +13,7 @@
 #include <exception>
 #include <mutex>
 #include <type_traits>
-#include <boost/optional.hpp>
+#include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 
@@ -53,7 +53,7 @@ namespace detail {
 
     template <typename T>
     struct shared_state_result : shared_state {
-        boost::optional<T> result;
+        stlab::optional<T> result;
     };
 }
 
@@ -119,7 +119,7 @@ T blocking_get(future<T> x) {
 }
 
 template <typename T>
-boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
+stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
     std::exception_ptr error = nullptr;
     auto state = std::make_shared<detail::shared_state_result<T>>();
     auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
@@ -128,10 +128,10 @@ boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
             return;
         }
         if (r.error())
-            state->error = std::forward<decltype(r)>(r).error().value();
+            state->error = *std::forward<decltype(r)>(r).error();
         else
-            state->result = std::forward<decltype(r)>(r).get_try().value();
-
+            state->result = std::move(*std::forward<decltype(r)>(r).get_try());
+        
         {
             std::unique_lock<std::mutex> lock{state->m};
             state->flag = true;
@@ -151,7 +151,7 @@ boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
         while (!state->flag) {
             if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
                 hold.reset();
-                return boost::optional<T>{};
+                return stlab::optional<T>{};
             }
         }
     }
@@ -165,21 +165,21 @@ boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
 inline void blocking_get(future<void> x) {
     std::exception_ptr error = nullptr;
 
-    bool set{false};
+    bool flag{false};
     std::condition_variable condition;
     std::mutex m;
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
         if (r.error()) error = *std::forward<decltype(r)>(r).error();
         {
             std::unique_lock<std::mutex> lock(m);
-            set = true;
+            flag = true;
 
         condition.notify_one();
         }
     });
     {
     std::unique_lock<std::mutex> lock(m);
-    while (!set) {
+    while (!flag) {
         condition.wait(lock);
     }
     }
@@ -194,7 +194,7 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
         if (!state) { return; }
         std::unique_lock<std::mutex> lock(state->m);
         {
-            if (r.error()) state->error = std::forward<decltype(r)>(r).error().value();
+            if (r.error()) state->error = *std::forward<decltype(r)>(r).error();
             state->flag = true;
             /*
                 WARNING : Calling `notify_one()` inside the lock is a pessimization because
