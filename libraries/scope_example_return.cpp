@@ -7,6 +7,7 @@
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/utility.hpp>
 
 using namespace stlab;
 using namespace std;
