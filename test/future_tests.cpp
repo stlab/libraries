@@ -453,19 +453,15 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout)
 BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout_reached)
 {
     BOOST_TEST_MESSAGE("future blocking_get with void with a timeout");
-    int v = 0;
     auto answer = [&] {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        v = 42;
+        throw test_exception("failure");
     };
 
     stlab::future<void> f =
         stlab::async(stlab::default_executor, answer);
 
-
-    auto r = stlab::blocking_get(f, std::chrono::milliseconds(100));
-    BOOST_REQUIRE_EQUAL(0, v);
-    BOOST_REQUIRE_EQUAL(false, r);
+    BOOST_REQUIRE_NO_THROW(stlab::blocking_get(f, std::chrono::milliseconds(100)));
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case)

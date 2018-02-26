@@ -41,11 +41,19 @@ namespace stlab {
 
 inline namespace v1 {
 
+
 namespace detail {
+
     struct shared_state {
         bool flag{false};
         std::condition_variable condition;
         std::mutex m;
+        std::exception_ptr error{nullptr};
+    };
+
+    template <typename T>
+    struct shared_state_result : shared_state {
+        boost::optional<T> result;
     };
 }
 
@@ -112,18 +120,17 @@ T blocking_get(future<T> x) {
 
 template <typename T>
 boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
-    boost::optional<T> result;
     std::exception_ptr error = nullptr;
-    auto state = std::make_shared<detail::shared_state>();
-    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state), &result, &error](auto&& r) {
+    auto state = std::make_shared<detail::shared_state_result<T>>();
+    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
         auto state = _weak_state.lock();
         if (!state) {
             return;
         }
         if (r.error())
-            error = std::forward<decltype(r)>(r).error().value();
+            state->error = std::forward<decltype(r)>(r).error().value();
         else
-            result = std::forward<decltype(r)>(r).get_try().value();
+            state->result = std::forward<decltype(r)>(r).get_try().value();
 
         {
             std::unique_lock<std::mutex> lock{state->m};
@@ -139,18 +146,20 @@ boost::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
         }
     });
     
-    std::unique_lock<std::mutex> lock{state->m};
-    while (!state->flag) {
-        if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
-            hold.reset();
-            return result;
+    {
+        std::unique_lock<std::mutex> lock{state->m};
+        while (!state->flag) {
+            if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+                hold.reset();
+                return boost::optional<T>{};
+            }
         }
     }
+    
+    if (state->error)
+        std::rethrow_exception(state->error);
 
-    if (error)
-        std::rethrow_exception(error);
-
-    return result;
+    return std::move(state->result);
 }
 
 inline void blocking_get(future<void> x) {
@@ -179,16 +188,13 @@ inline void blocking_get(future<void> x) {
 }
 
 inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout) {
-    std::exception_ptr error = nullptr;
     auto state = std::make_shared<detail::shared_state>();
-    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state), &error](auto&& r) {
-        if (r.error()) error = std::forward<decltype(r)>(r).error().value();
+    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
+        auto state =_weak_state.lock();
+        if (!state) { return; }
+        std::unique_lock<std::mutex> lock(state->m);
         {
-            auto state =_weak_state.lock();
-            if (!state) {
-                return;
-            }
-            std::unique_lock<std::mutex> lock(state->m);
+            if (r.error()) state->error = std::forward<decltype(r)>(r).error().value();
             state->flag = true;
             /*
                 WARNING : Calling `notify_one()` inside the lock is a pessimization because
@@ -197,12 +203,14 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
                 However, if we do the notificiation outside the lock, blocking_get will return
                 and we'll be calling a destructed condition variable.
             */
-            state->condition.notify_one();
+        state->condition.notify_one();
         }
     });
+   
     {
+        std::unique_lock<std::mutex> lock(state->m);
         while (!state->flag) {
-            std::unique_lock<std::mutex> lock(state->m);
+            
             if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
                 hold.reset();
                 return false;
@@ -210,7 +218,7 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
         }
     }
 
-    if (error) std::rethrow_exception(error);
+    if (state->error) std::rethrow_exception(state->error);
     return true;
 }
 
