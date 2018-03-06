@@ -101,8 +101,7 @@ T blocking_get(future<T> x) {
         {
             std::unique_lock<std::mutex> lock{m};
             flag = true;
-
-        condition.notify_one();
+            condition.notify_one();
         }
     });
     {
@@ -131,19 +130,11 @@ stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
             state->error = *std::forward<decltype(r)>(r).error();
         else
             state->result = std::move(*std::forward<decltype(r)>(r).get_try());
-        
         {
             std::unique_lock<std::mutex> lock{state->m};
             state->flag = true;
-            /*
-                WARNING : Calling `notify_one()` inside the lock is a pessimization because
-                it means the code waiting will block aquiring the lock as soon as it wakes up.
-
-                However, if we do the notificiation outside the lock, blocking_get will return
-                and we'll be calling a destructed condition variable.
-            */
-            state->condition.notify_one();
         }
+        state->condition.notify_one();
     });
     
     {
@@ -192,19 +183,12 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
     auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
         auto state =_weak_state.lock();
         if (!state) { return; }
-        std::unique_lock<std::mutex> lock(state->m);
+        if (r.error()) state->error = *std::forward<decltype(r)>(r).error();
         {
-            if (r.error()) state->error = *std::forward<decltype(r)>(r).error();
+            std::unique_lock<std::mutex> lock(state->m);
             state->flag = true;
-            /*
-                WARNING : Calling `notify_one()` inside the lock is a pessimization because
-                it means the code waiting will block aquiring the lock as soon as it wakes up.
-
-                However, if we do the notificiation outside the lock, blocking_get will return
-                and we'll be calling a destructed condition variable.
-            */
-        state->condition.notify_one();
         }
+        state->condition.notify_one();
     });
    
     {
