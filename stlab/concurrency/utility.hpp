@@ -164,8 +164,7 @@ inline void blocking_get(future<void> x) {
         {
             std::unique_lock<std::mutex> lock(m);
             flag = true;
-
-        condition.notify_one();
+            condition.notify_one();
         }
     });
     {
