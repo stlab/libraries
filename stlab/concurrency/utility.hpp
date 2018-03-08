@@ -13,9 +13,12 @@
 #include <exception>
 #include <mutex>
 #include <type_traits>
-#include <boost/optional.hpp>
+#include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
+
+
+#include <stlab/memory.hpp>
 
 /**************************************************************************************************/
 
@@ -37,6 +40,22 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
+
+namespace detail {
+
+    struct shared_state {
+        bool flag{false};
+        std::condition_variable condition;
+        std::mutex m;
+        std::exception_ptr error{nullptr};
+    };
+
+    template <typename T>
+    struct shared_state_result : shared_state {
+        stlab::optional<T> result;
+    };
+}
 
 /**************************************************************************************************/
 
@@ -82,8 +101,7 @@ T blocking_get(future<T> x) {
         {
             std::unique_lock<std::mutex> lock{m};
             flag = true;
-
-        condition.notify_one();
+            condition.notify_one();
         }
     });
     {
@@ -99,30 +117,92 @@ T blocking_get(future<T> x) {
     return std::move(*result);
 }
 
+template <typename T>
+stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
+    std::exception_ptr error = nullptr;
+    auto state = std::make_shared<detail::shared_state_result<T>>();
+    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
+        auto state = _weak_state.lock();
+        if (!state) {
+            return;
+        }
+        if (r.error())
+            state->error = *std::forward<decltype(r)>(r).error();
+        else
+            state->result = std::move(*std::forward<decltype(r)>(r).get_try());
+        {
+            std::unique_lock<std::mutex> lock{state->m};
+            state->flag = true;
+        }
+        state->condition.notify_one();
+    });
+    
+    {
+        std::unique_lock<std::mutex> lock{state->m};
+        while (!state->flag) {
+            if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+                hold.reset();
+                return stlab::optional<T>{};
+            }
+        }
+    }
+    
+    if (state->error)
+        std::rethrow_exception(state->error);
+
+    return std::move(state->result);
+}
 
 inline void blocking_get(future<void> x) {
     std::exception_ptr error = nullptr;
 
-    bool set{false};
+    bool flag{false};
     std::condition_variable condition;
     std::mutex m;
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
         if (r.error()) error = *std::forward<decltype(r)>(r).error();
         {
             std::unique_lock<std::mutex> lock(m);
-            set = true;
-
-        condition.notify_one();
+            flag = true;
+            condition.notify_one();
         }
     });
     {
     std::unique_lock<std::mutex> lock(m);
-    while (!set) {
+    while (!flag) {
         condition.wait(lock);
     }
     }
 
     if (error) std::rethrow_exception(error);
+}
+
+inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout) {
+    auto state = std::make_shared<detail::shared_state>();
+    auto hold = std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
+        auto state =_weak_state.lock();
+        if (!state) { return; }
+        if (r.error()) state->error = *std::forward<decltype(r)>(r).error();
+        {
+            std::unique_lock<std::mutex> lock(state->m);
+            state->flag = true;
+        }
+        state->condition.notify_one();
+    });
+   
+    {
+        std::unique_lock<std::mutex> lock(state->m);
+        while (!state->flag) {
+            
+            if(state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+                hold.reset();
+                return false;
+            }
+        }
+    }
+
+    if (state->error) std::rethrow_exception(state->error);
+    return true;
 }
 
 /**************************************************************************************************/
