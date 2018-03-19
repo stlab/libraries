@@ -58,9 +58,11 @@ namespace future_test_helper
     public:
         test_exception() {}
 
-        explicit test_exception(const std::string& error);
+        explicit test_exception(const std::string& error)
+          : _error(error) {}
 
-        explicit test_exception(const char* error);
+        explicit test_exception(const char* error)
+          : _error(error) {}
 
         test_exception& operator=(const test_exception&) = default;
         test_exception(const test_exception&) = default;
@@ -69,7 +71,9 @@ namespace future_test_helper
 
         virtual ~test_exception() {}
 
-        const char* what() const noexcept override;
+        const char* what() const noexcept override {
+          return _error.c_str();
+        }
     };
 
 
