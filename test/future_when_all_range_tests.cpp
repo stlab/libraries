@@ -341,7 +341,7 @@ BOOST_FIXTURE_TEST_SUITE(future_when_all_range_void_error, test_fixture<void>)
         auto start = async(custom_scheduler<0>(), []()->int { return 42; });
         std::vector<stlab::future<void>> futures(4);
         futures[0] = start.then(custom_scheduler<1>(), [&_p = v[0]](auto x) { _p = x + 1; });
-        futures[1] = start.then(custom_scheduler<1>(), []          (auto x) { throw test_exception("failure"); });
+        futures[1] = start.then(custom_scheduler<1>(), []          (auto  ) { throw test_exception("failure"); });
         futures[2] = start.then(custom_scheduler<1>(), [&_p = v[2]](auto x) { _p = x + 3; });
         futures[3] = start.then(custom_scheduler<1>(), [&_p = v[3]](auto x) { _p = x + 5; });
 

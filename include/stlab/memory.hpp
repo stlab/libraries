@@ -1,15 +1,17 @@
 /*
-    Copyright 2015 Adobe
+    Copyright 2017 Adobe
     Distributed under the Boost Software License, Version 1.0.
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
-#define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
+#ifndef STLAB_MEMORY_HPP
+#define STLAB_MEMORY_HPP
 
-#include <chrono>
+/**************************************************************************************************/
+
+#include <memory>
 
 /**************************************************************************************************/
 
@@ -21,30 +23,10 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
-namespace detail {
-
-/**************************************************************************************************/
-
-struct immediate_executor_type
-{
-    template <typename F>
-    void operator()(F&& f) const {
-        std::forward<F>(f)();
+    template <typename T>
+    auto make_weak_ptr(const std::shared_ptr<T>& x) {
+        return std::weak_ptr<T>(x);
     }
-
-    template <typename F>
-    void operator()(std::chrono::steady_clock::time_point, F&& f) const {
-        std::forward<F>(f)();
-    }
-};
-
-/**************************************************************************************************/
-
-} // namespace detail
-
-/**************************************************************************************************/
-
-constexpr auto immediate_executor = detail::immediate_executor_type{};
 
 /**************************************************************************************************/
 
@@ -57,5 +39,3 @@ constexpr auto immediate_executor = detail::immediate_executor_type{};
 /**************************************************************************************************/
 
 #endif
-
-/**************************************************************************************************/

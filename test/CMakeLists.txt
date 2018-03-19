@@ -29,24 +29,23 @@ endfunction()
 ################################################################################
 # Tests
 ################################################################################
-stlab_test( stlab.test.tuple tuple_test.cpp main.cpp )
-stlab_test( stlab.test.tuple.algorithm tuple_algorithm_test.cpp main.cpp)
-stlab_test( stlab.test.task task_test.cpp main.cpp )
-stlab_test( stlab.test.cow cow_test.cpp main.cpp )
+stlab_test( stlab.test.tuple tuple_test.cpp )
+stlab_test( stlab.test.tuple.algorithm tuple_algorithm_test.cpp)
+stlab_test( stlab.test.task task_test.cpp )
+stlab_test( stlab.test.cow cow_test.cpp )
 stlab_test( stlab.test.serial_queue serial_queue_test.cpp )
-stlab_test( stlab.test.future future_recover_tests.cpp 
-                              future_test_helper.cpp
-                              future_then_tests.cpp 
-                              future_when_all_arguments_tests.cpp 
-                              future_when_all_range_tests.cpp 
-                              future_when_any_arguments_tests.cpp 
-                              future_when_any_range_tests.cpp 
-                              future_tests.cpp 
-                              channel_functor_tests.cpp 
-                              channel_join_tests.cpp 
-                              channel_merge_tests.cpp 
-                              channel_process_tests.cpp 
-                              channel_zip_tests.cpp 
-                              channel_test_helper.cpp
-                              channel_tests.cpp 
-                              main.cpp )
+
+stlab_test( stlab.test.channel_functor channel_functor_tests.cpp)
+stlab_test( stlab.test.channel_join channel_join_tests.cpp)
+stlab_test( stlab.test.channel_merge channel_merge_tests.cpp)
+stlab_test( stlab.test.channel_process channel_process_tests.cpp)
+stlab_test( stlab.test.channel_zip channel_zip_tests.cpp)
+stlab_test( stlab.test.channel channel_tests.cpp)
+
+stlab_test( stlab.test.future_recover future_recover_tests.cpp ) 
+stlab_test( stlab.test.future future_tests.cpp )
+stlab_test( stlab.test.future_then future_then_tests.cpp )
+stlab_test( stlab.test.future_when_all_arguments future_when_all_arguments_tests.cpp )
+stlab_test( stlab.test.future_when_all_range future_when_all_range_tests.cpp )
+stlab_test( stlab.test.future_when_any_arguments future_when_any_arguments_tests.cpp ) 
+stlab_test( stlab.test.future_when_any_range future_when_any_range_tests.cpp ) 

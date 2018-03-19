@@ -58,9 +58,11 @@ namespace future_test_helper
     public:
         test_exception() {}
 
-        explicit test_exception(const std::string& error);
+        explicit test_exception(const std::string& error)
+          : _error(error) {}
 
-        explicit test_exception(const char* error);
+        explicit test_exception(const char* error)
+          : _error(error) {}
 
         test_exception& operator=(const test_exception&) = default;
         test_exception(const test_exception&) = default;
@@ -69,7 +71,9 @@ namespace future_test_helper
 
         virtual ~test_exception() {}
 
-        const char* what() const noexcept override;
+        const char* what() const noexcept override {
+          return _error.c_str();
+        }
     };
 
 
@@ -102,7 +106,7 @@ namespace future_test_helper
         template <typename F>
         auto wait_until_future_r_completed(F& f) {
             auto result = f.get_try();
-            while (!result.is_initialized()) {
+            while (!result) {
                 result = f.get_try();
             }
             return std::move(result);
@@ -112,13 +116,13 @@ namespace future_test_helper
 
         void check_valid_future(const stlab::future<T>& f) {
             BOOST_REQUIRE(f.valid() == true);
-            BOOST_REQUIRE(f.error().is_initialized() == false);
+            BOOST_REQUIRE(!f.error());
         }
 
         template <typename F, typename... FS>
         void check_valid_future(const F& f, const FS&... fs) {
             BOOST_REQUIRE(f.valid() == true);
-            BOOST_REQUIRE(f.error().is_initialized() == false);
+            BOOST_REQUIRE(!f.error());
             check_valid_future(fs...);
         }
 

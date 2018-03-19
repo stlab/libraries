@@ -23,6 +23,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 /*
@@ -34,6 +35,101 @@ class task;
 
 template <class R, class... Args>
 class task<R(Args...)> {
+    // REVISIT (sean.parent) : Use `if constexpr` here when we move to C++17
+    template <class F>
+    using possibly_empty_t =
+        std::integral_constant<bool,
+                               std::is_pointer<std::decay_t<F>>::value ||
+                                   std::is_member_pointer<std::decay_t<F>>::value ||
+                                   std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
+
+    template <class F>
+    static auto is_empty(const F& f) -> std::enable_if_t<possibly_empty_t<F>::value, bool> {
+        return !f;
+    }
+
+    template <class F>
+    static auto is_empty(const F& f) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
+        return false;
+    }
+
+    struct concept {
+        void (*dtor)(void*);
+        void (*move_ctor)(void*, void*) noexcept;
+        R (*invoke)(void*, Args&&...);
+        const std::type_info& (*target_type)()noexcept;
+        void* (*pointer)(void*)noexcept;
+        const void* (*const_pointer)(const void*)noexcept;
+    };
+
+    template <class F, bool Small>
+    struct model;
+
+    template <class F>
+    struct model<F, true> {
+        template <class G> // for forwarding
+        model(G&& f) : _f(std::forward<G>(f)) {}
+        model(model&&) noexcept = delete;
+
+        static void dtor(void* self) { static_cast<model*>(self)->~model(); }
+        static void move_ctor(void* self, void* p) noexcept {
+            new (p) model(std::move(static_cast<model*>(self)->_f));
+        }
+        static auto invoke(void* self, Args&&... args) -> R {
+            return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
+        }
+        static auto target_type() noexcept -> const std::type_info& { return typeid(F); }
+        static auto pointer(void* self) noexcept -> void* { return &static_cast<model*>(self)->_f; }
+        static auto const_pointer(const void* self) noexcept -> const void* {
+            return &static_cast<const model*>(self)->_f;
+        }
+
+        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
+                                                target_type, pointer,   const_pointer};
+
+        F _f;
+    };
+
+    template <class F>
+    struct model<F, false> {
+        template <class G> // for forwarding
+        model(G&& f) : _p(std::make_unique<F>(std::forward<G>(f))) {}
+        model(model&&) noexcept = default;
+
+        static void dtor(void* self) { static_cast<model*>(self)->~model(); }
+        static void move_ctor(void* self, void* p) noexcept {
+            new (p) model(std::move(*static_cast<model*>(self)));
+        }
+        static auto invoke(void* self, Args&&... args) -> R {
+            return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
+        }
+        static auto target_type() noexcept -> const std::type_info& { return typeid(F); }
+        static auto pointer(void* self) noexcept -> void* {
+            return static_cast<model*>(self)->_p.get();
+        }
+        static auto const_pointer(const void* self) noexcept -> const void* {
+            return static_cast<const model*>(self)->_p.get();
+        }
+
+        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
+                                                target_type, pointer,   const_pointer};
+
+        std::unique_ptr<F> _p;
+    };
+
+    // empty (default) vtable
+    static void dtor(void*) {}
+    static void move_ctor(void*, void*) noexcept {}
+    static auto invoke(void*, Args&&...) -> R { throw std::bad_function_call(); }
+    static auto target_type_() noexcept -> const std::type_info& { return typeid(void); }
+    static auto pointer(void*) noexcept -> void* { return nullptr; }
+    static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
+
+    static constexpr concept _vtable = {dtor,        move_ctor, invoke,
+                                            target_type_, pointer,   const_pointer};
+
+    const concept* _vtable_ptr = &_vtable;
+
     /*
         REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
         Desire is to have something large enough to hold the vast majority of lamda expressions.
@@ -45,100 +141,45 @@ class task<R(Args...)> {
         Probably excessive but still allows 16 tasks on a cache line
 
         I welcome empirical data from an actual system on a better size.
+
+        sizeof(std::function<R(Args...)>)
     */
-    static constexpr std::size_t small_object_size = 256;
-
-    struct concept {
-        virtual ~concept() {}
-        virtual void move_ctor(void*) noexcept = 0;
-        virtual R invoke(Args&&...) = 0;
-        virtual const std::type_info& target_type() const noexcept = 0;
-        virtual void* pointer() noexcept = 0;
-        virtual const void* pointer() const noexcept = 0;
-    };
-
-    struct empty : concept {
-        constexpr empty() noexcept = default;
-        void move_ctor(void* p) noexcept override { new (p) empty(); }
-        R invoke(Args&&...) override { throw std::bad_function_call(); }
-        const std::type_info& target_type() const noexcept override { return typeid(void); }
-        void* pointer() noexcept override { return nullptr; }
-        const void* pointer() const noexcept override { return nullptr; }
-    };
-
-    template <class F, bool Small>
-    struct model;
-
-    template <class F>
-    struct model<F, true> : concept {
-        template <class F0> // for forwarding
-        model(F0&& f) : _f(std::forward<F0>(f)) {}
-        model(model&&) noexcept = delete;
-        void move_ctor(void* p) noexcept override { new (p) model(std::move(_f)); }
-        R invoke(Args&&... args) override { return _f(std::forward<Args>(args)...); }
-        const std::type_info& target_type() const noexcept override { return typeid(F); }
-        void* pointer() noexcept override { return &_f; }
-        const void* pointer() const noexcept override { return &_f; }
-
-        F _f;
-    };
-
-    template <class F>
-    struct model<F, false> : concept {
-        template <class F0> // for forwarding
-        model(F0&& f) : _p(std::make_unique<F>(std::forward<F0>(f))) {}
-        model(model&&) noexcept = default;
-        void move_ctor(void* p) noexcept override { new (p) model(std::move(*this)); }
-        R invoke(Args&&... args) override { return (*_p)(std::forward<Args>(args)...); }
-        const std::type_info& target_type() const noexcept override { return typeid(F); }
-        void* pointer() noexcept override { return _p.get(); }
-        const void* pointer() const noexcept override { return _p.get(); }
-
-        std::unique_ptr<F> _p;
-    };
-
-    concept& self() { return reinterpret_cast<concept&>(_data); }
-    const concept& self() const { return reinterpret_cast<const concept&>(_data); }
-
-    std::aligned_storage_t<small_object_size> _data;
+    static constexpr std::size_t small_object_size = 256 - sizeof(void*);
+    std::aligned_storage_t<small_object_size> _model;
 
 public:
-    using result_type = void;
+    using result_type = R;
 
-    constexpr task() noexcept { new (&_data) empty(); }
+    constexpr task() noexcept = default;
     constexpr task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
-    task(task&) = delete;
-    task(task&& x) noexcept { x.self().move_ctor(&_data); }
+    task(task&& x) noexcept : _vtable_ptr(x._vtable_ptr) {
+        _vtable_ptr->move_ctor(&x._model, &_model);
+    }
 
     template <class F>
     task(F&& f) {
         using f_t = std::decay_t<F>;
-        try {
-            new (&_data)
-                model<f_t, sizeof(model<f_t, true>) <= small_object_size>(std::forward<F>(f));
-        } catch (...) {
-            new (&_data) empty();
-            throw;
-        }
+        using model_t = model<f_t, sizeof(model<f_t, true>) <= small_object_size>;
+
+        if (is_empty(f)) return;
+
+        new (&_model) model_t(std::forward<F>(f));
+        _vtable_ptr = &model_t::_vtable;
     }
 
-    ~task() noexcept { self().~concept(); }
+    ~task() { _vtable_ptr->dtor(&_model); };
 
     task& operator=(const task&) = delete;
-    task& operator=(task&) = delete;
 
     task& operator=(task&& x) noexcept {
-        self().~concept();
-        x.self().move_ctor(&_data);
+        _vtable_ptr->dtor(&_model);
+        _vtable_ptr = x._vtable_ptr;
+        _vtable_ptr->move_ctor(&x._model, &_model);
         return *this;
     }
 
-    task& operator=(std::nullptr_t) noexcept {
-        self().~concept();
-        new (&_data) empty();
-        return *this;
-    }
+    task& operator=(std::nullptr_t) noexcept { return *this = task(); }
 
     template <class F>
     task& operator=(F&& f) {
@@ -147,23 +188,24 @@ public:
 
     void swap(task& x) noexcept { std::swap(*this, x); }
 
-    explicit operator bool() const { return self().pointer(); }
+    explicit operator bool() const { return _vtable_ptr->const_pointer(&_model) != nullptr; }
 
-    const std::type_info& target_type() const { return self().target_type(); }
+    const std::type_info& target_type() const noexcept { return _vtable_ptr->target_type(); }
 
     template <class T>
     T* target() {
-        return (target_type() == typeid(T)) ? static_cast<T*>(self().pointer()) : nullptr;
+        return (target_type() == typeid(T)) ? static_cast<T*>(_vtable_ptr->pointer(&_model)) :
+                                              nullptr;
     }
 
     template <class T>
     const T* target() const {
-        return (target_type() == typeid(T)) ? static_cast<const T*>(self().pointer()) : nullptr;
+        return (target_type() == typeid(T)) ?
+                   static_cast<const T*>(_vtable_ptr->const_pointer(&_model)) :
+                   nullptr;
     }
 
-    R operator()(Args... args) {
-        return self().invoke(std::forward<Args>(args)...);
-    }
+    R operator()(Args... args) { return _vtable_ptr->invoke(&_model, std::forward<Args>(args)...); }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
@@ -171,6 +213,36 @@ public:
     friend inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
     friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
+
+#if STLAB_CPP_VERSION < 17
+// In C++17 constexpr implies inline and these definitions are deprecated
+
+template <class R, class... Args>
+const typename task<R(Args...)>::concept task<R(Args...)>::_vtable;
+
+#ifdef _MSC_VER
+
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::concept task<R(Args...)>::model<F, false>::_vtable;
+
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::concept task<R(Args...)>::model<F, true>::_vtable;
+
+#else
+
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, false>::_vtable;
+
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, true>::_vtable;
+
+#endif
+
+#endif
 
 /**************************************************************************************************/
 
@@ -185,4 +257,3 @@ public:
 #endif
 
 /**************************************************************************************************/
-

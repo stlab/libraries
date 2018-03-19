@@ -10,11 +10,11 @@
 #ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 #define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
+#include <stlab/concurrency/optional.hpp>
+
 // stdc++
 #include <tuple>
 
-// boost
-#include <boost/optional.hpp>
 
 /**************************************************************************************************/
 
@@ -43,7 +43,7 @@ struct tuple_find_impl
 template<std::size_t L, typename T, typename Op>
 struct tuple_find_impl<L, L, T, Op>
 {
-    static auto find(const T& t, Op op) { return L; }
+    static auto find(const T&, Op) { return L; }
 };
 
 
@@ -201,7 +201,7 @@ struct map_placeholder<placeholder, N> {
 };
 
 template <std::size_t N>
-struct map_placeholder<boost::optional<placeholder>, N> {
+struct map_placeholder<stlab::optional<placeholder>, N> {
     using type = std::index_sequence<>;
 };
 
@@ -251,7 +251,7 @@ using placeholder_tuple = std::tuple<
 // where all T[i] = void have been replaced with stlab::placeholder.
 template <typename... Ts>
 using optional_placeholder_tuple = std::tuple<
-    boost::optional<typename std::conditional<
+    stlab::optional<typename std::conditional<
         std::is_same<void, Ts>::value,
         detail::placeholder,
         Ts

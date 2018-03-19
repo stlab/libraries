@@ -1,5 +1,6 @@
 sudo: required
 dist: trusty
+group: deprecated-2017Q4
 language: cpp
 
 cache:
@@ -24,6 +25,7 @@ branches:
   
 before_install:
   - pip install --user conan
+  - ./enhance_conan.sh
 
 script:
   - .travis/build.sh
@@ -35,16 +37,26 @@ matrix:
     #
     - os: osx
       compiler: clang
-      osx_image: xcode8
-      before_install: pip install conan
+      osx_image: xcode9
+      before_install:
+        - brew update
+        - brew upgrade python
+        - pip3 install conan
+        - ./enhance_conan.sh
+
       env:
         build_type=debug
         options="-D stlab_testing=ON"
         
     - os: osx
       compiler: clang
-      osx_image: xcode8
-      before_install: pip install conan
+      osx_image: xcode9
+      before_install:
+        - brew update
+        - brew upgrade python
+        - pip3 install conan
+        - ./enhance_conan.sh
+
       env:
         build_type=release
         options="-D stlab_testing=ON"
@@ -135,6 +147,7 @@ matrix:
         options="-D stlab_testing=ON"
       before_install:
         - pip install --user conan
+        - ./enhance_conan.sh
         - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
       addons:
         apt:
