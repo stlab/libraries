@@ -14,12 +14,9 @@
  */
 module.exports = {
     "ui": {
-        "port": 3001,
-        "weinre": {
-            "port": 8080
-        }
+        "port": 3001
     },
-    "files": "./_site/*",
+    "files": ["./_site/**/*"],
     "watchEvents": [
         "change"
     ],
@@ -31,12 +28,10 @@ module.exports = {
     "port": 3000,
     "middleware": false,
     "serveStatic": ["./_site"],
-    "serveStaticOptions": {
-        "extensions": ['html']
-    },
     "ghostMode": {
         "clicks": true,
         "scroll": true,
+        "location": true,
         "forms": {
             "submit": true,
             "inputs": true,
@@ -44,7 +39,7 @@ module.exports = {
         }
     },
     "logLevel": "info",
-    "logPrefix": "BS",
+    "logPrefix": "Browsersync",
     "logConnections": false,
     "logFileChanges": true,
     "logSnippet": true,
