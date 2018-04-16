@@ -467,6 +467,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout_reached)
     BOOST_REQUIRE_NO_THROW(stlab::blocking_get(f, std::chrono::milliseconds(100)));
 }
 
+
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case)
 {
     BOOST_TEST_MESSAGE("future blocking_get with copyable value error case");
@@ -510,6 +511,21 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_error_case)
 }
 
 
+BOOST_AUTO_TEST_CASE(future_blocking_get_void_error_case_with_timeout)
+{
+    BOOST_TEST_MESSAGE("future blocking_get with void error case with timout");
+
+    auto answer = [] { throw test_exception("failure"); };
+
+    stlab::future<void> f =
+        stlab::async(stlab::default_executor, answer);
+
+
+    BOOST_REQUIRE_EXCEPTION(stlab::blocking_get(f, std::chrono::seconds(60)), test_exception,
+                            ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
+}
+
+
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_timeout)
 {
     BOOST_TEST_MESSAGE("future blocking_get with copyable value with timeout");
@@ -519,7 +535,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_timeout)
     };
 
     stlab::future<int> f =
-      stlab::async(stlab::default_executor, answer);
+        stlab::async(stlab::default_executor, answer);
 
     auto r = stlab::blocking_get(f, std::chrono::milliseconds(500));
     //timeout should have been reached
@@ -527,42 +543,31 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_timeout)
 }
 
 
-BOOST_AUTO_TEST_CASE(future_package_void_void_case)
+BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_and_timeout)
 {
-    BOOST_TEST_MESSAGE("future package void void case");
-    bool check = false;
-    auto promise = stlab::package<void()>(stlab::default_executor, [&check]{ check = true; });
+    BOOST_TEST_MESSAGE("future blocking_get with moveonly value");
+    auto answer = [] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        return stlab::move_only(42);
+    };
 
-    promise.first();
-    blocking_get(promise.second);
-
-    BOOST_REQUIRE_EQUAL(true, check);
+    stlab::future<stlab::move_only> f =
+        stlab::async(stlab::default_executor, answer);
+    auto r = stlab::blocking_get(std::move(f), std::chrono::milliseconds(500));
+    BOOST_REQUIRE(r);
+    BOOST_REQUIRE_EQUAL(42, (*r).member());
 }
 
-BOOST_AUTO_TEST_CASE(future_package_void_void_error_case)
+
+BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case_and_timeout)
 {
-    BOOST_TEST_MESSAGE("future package void void case");
-    bool check = false;
-    auto promise = stlab::package<void()>(stlab::default_executor, [&check]{ check = true; });
+    BOOST_TEST_MESSAGE("future blocking_get with moveonly value and timeout set");
+    auto answer = [] { throw test_exception("failure"); return stlab::move_only(42); };
 
-    promise.first.set_exception(std::make_exception_ptr(test_exception("failure")));
-
-    BOOST_REQUIRE_EXCEPTION(blocking_get(promise.second), test_exception,
-                            ([_m = std::string("failure")](const auto& e) { return std::string(_m) == std::string(e.what()); }));
-
-    BOOST_REQUIRE_EQUAL(false, check);
-}
-
-BOOST_AUTO_TEST_CASE(future_blocking_get_void_error_case_with_timeout)
-{
-    BOOST_TEST_MESSAGE("future blocking_get with void error case with timout");
-    
-    auto answer = [] { throw test_exception("failure"); };
-
-    stlab::future<void> f =
+    stlab::future<stlab::move_only> f =
         stlab::async(stlab::default_executor, answer);
 
 
-    BOOST_REQUIRE_EXCEPTION(stlab::blocking_get(f, std::chrono::seconds(60)), test_exception,
+    BOOST_REQUIRE_EXCEPTION(stlab::blocking_get(std::move(f), std::chrono::seconds(500)), test_exception,
                             ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
 }
