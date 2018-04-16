@@ -13,7 +13,6 @@ build:
 
 configuration:
   - Debug
-
 platform:
   - x64
 
@@ -52,3 +51,4 @@ build_script:
   - test\Debug\stlab.test.serial_queue.test.exe
   - test\Debug\stlab.test.task.test --log_level=message
   - test\Debug\stlab.test.tuple.test --log_level=message
+  

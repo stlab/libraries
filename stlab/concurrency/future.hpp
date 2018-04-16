@@ -9,22 +9,25 @@
 #ifndef STLAB_CONCURRENCY_FUTURE_HPP
 #define STLAB_CONCURRENCY_FUTURE_HPP
 
+#include <algorithm>
 #include <atomic>
+#include <cassert>
 #include <initializer_list>
 #include <memory>
 #include <mutex>
 #include <vector>
 
-#include <boost/optional.hpp>
-
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
 
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
+
+
 
 // as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
 // support for the channels tests
@@ -36,6 +39,7 @@
 #       define STLAB_FUTURE_COROUTINE_SUPPORT
 #   endif
 #endif
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -56,8 +60,10 @@ enum class future_error_codes {	// names for futures errors
 
 namespace detail {
 
-inline const char *Future_error_map(future_error_codes code) noexcept {    // convert to name of future error
-    switch (code) {    // switch on error code value
+inline const char *Future_error_map(future_error_codes code) noexcept
+{	// convert to name of future error
+    switch (code)
+    {	// switch on error code value
     case future_error_codes::broken_promise:
         return "broken promise";
 
@@ -66,7 +72,7 @@ inline const char *Future_error_map(future_error_codes code) noexcept {    // co
 
     case future_error_codes::reduction_failed:
         return "reduction failed";
-    
+
     default:
         return nullptr;
     }
@@ -84,7 +90,8 @@ class future_error : public std::logic_error
 {
 public:
     explicit future_error(future_error_codes code)
-        : logic_error(""), _code(code) {}
+        : logic_error(""), _code(code)
+    {}
 
     const future_error_codes& code() const noexcept {
         return _code;
@@ -104,10 +111,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template<typename...>
-struct type_list
-{
-};
+template <typename...> struct type_list { };
 
 template <typename>
 struct result_of_;
@@ -236,7 +240,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <class, class> struct shared;
+template <typename> struct shared;
 template <typename, typename = void> struct shared_base;
 
 /**************************************************************************************************/
@@ -264,9 +268,9 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     using then_t = std::vector<std::pair<executor_t, task<void()>>>;
 
     executor_t                          _executor;
-    boost::optional<T>                  _result;
+    stlab::optional<T>                  _result;
     reduction_helper<T>                 _reduction_helper;
-    boost::optional<std::exception_ptr> _error;
+    stlab::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     std::atomic_bool                    _ready{false};
     then_t                              _then;
@@ -311,8 +315,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename S, typename F>
     auto then_r(bool unique, S&& s, F&& f) {
-        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x) mutable {
-            return _f(std::move(x).get_try().get());
+        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto&& x) mutable {
+            return _f(std::move(*(std::forward<decltype(x)>(x).get_try())));
         });
     }
 
@@ -324,8 +328,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         if (!unique) return recover(std::forward<S>(s),std::forward<F>(f));
 
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
-                                                           [_f = std::forward<F>(f), _p = future<T>(
-                                                               this->shared_from_this())] () mutable {
+            [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())] () mutable {
                 return _f(std::move(_p));
             });
 
@@ -370,7 +373,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     bool is_ready() const&{
         return _ready;
     }
-    
+
     // get_ready() is called internally on continuations when we know _ready is true;
     auto get_ready() -> const T& {
         #ifndef NDEBUG
@@ -379,24 +382,24 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
         }
         #endif
-        if (_error) std::rethrow_exception(_error.get());
-        return _result.value();
+        if (_error) std::rethrow_exception(*_error);
+        return *_result;
     }
 
-    auto get_try() -> boost::optional<T> {
+    auto get_try() -> stlab::optional<T> {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(*_error);
             return _result;
         }
-        return boost::none;
+        return {};
     }
 
-    auto get_try_r(bool unique) -> boost::optional<T> {
+    auto get_try_r(bool unique) -> stlab::optional<T> {
         if (!unique) return get_try();
 
         bool ready = false;
@@ -405,10 +408,10 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(*_error);
             return std::move(_result);
         }
-        return boost::none;
+        return {};
     }
 };
 
@@ -419,9 +422,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     using then_t = std::pair<executor_t, task<void()>>;
 
     executor_t                          _executor;
-    boost::optional<T>                  _result;
+    stlab::optional<T>                  _result;
     reduction_helper<T>                 _reduction_helper;
-    boost::optional<std::exception_ptr> _error;
+    stlab::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     std::atomic_bool                    _ready{false};
     then_t                              _then;
@@ -433,8 +436,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     template <typename S, typename F>
     auto then_r(bool unique, S&& s, F&& f) {
-        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto x) mutable {
-            return std::move(_f)(std::move(x).get_try().value());
+        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto&& x) mutable {
+            return std::move(_f)(std::move(*std::forward<decltype(x)>(x).get_try()));
         });
     }
 
@@ -490,21 +493,21 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return _ready;
     }
 
-    auto get_try() -> boost::optional<T> {
+    auto get_try() -> stlab::optional<T> {
         return get_try_r(true);
     }
 
-    auto get_try_r(bool) -> boost::optional<T> {
+    auto get_try_r(bool) -> stlab::optional<T> {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(*_error);
             return std::move(_result);
         }
-        return boost::none;
+        return {};
     }
 };
 
@@ -515,7 +518,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     using then_t = std::vector<std::pair<executor_t, task<void()>>>;
 
     executor_t                          _executor;
-    boost::optional<std::exception_ptr> _error;
+    stlab::optional<std::exception_ptr> _error;
     std::mutex                          _mutex;
     std::atomic_bool                    _ready{false};
     then_t                              _then;
@@ -569,7 +572,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception with scheduling 
+        // propagate exception with scheduling
         for (auto& e : then) { e.first(std::move(e.second)); }
     }
 
@@ -584,7 +587,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             ready = _ready;
         }
         if (ready) {
-            if (_error) std::rethrow_exception(_error.get());
+            if (_error) std::rethrow_exception(*_error);
             return true;
         }
         return false;
@@ -596,14 +599,16 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     void set_value(F& f, Args&&... args);
 };
 
-template <class F, class R, class... Args>
-struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
+template <typename R, typename... Args>
+struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
 {
-    std::atomic_size_t _promise_count;
-    boost::optional<F> _f;
+    using function_t = task<R (Args...)>;
 
-    template <class G>
-    shared(executor_t s, G&& f) : shared_base<R>(std::move(s)), _f(std::forward<G>(f)) {
+    std::atomic_size_t _promise_count;
+    function_t _f;
+
+    template <typename F>
+    shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {
         _promise_count = 1;
     }
 
@@ -620,7 +625,7 @@ struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
             if (--_promise_count == 0) {
                 std::unique_lock<std::mutex> lock(this->_mutex);
                 if (!this->_ready) {
-                    _f.reset();
+                    _f = function_t();
                     this->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
                     this->_ready = true;
                 }
@@ -633,12 +638,12 @@ struct shared<F, R (Args...)> : shared_base<R>, shared_task<Args...>
     void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) override {
-        try {
-            this->set_value(_f.get(), std::move(args)...);
+        if (_f) try {
+            this->set_value(_f, std::move(args)...);
         } catch(...) {
             this->set_exception(std::current_exception());
         }
-        _f.reset();
+        _f = function_t();
     }
 
     void set_error(std::exception_ptr error) override {
@@ -724,7 +729,7 @@ class future<T, enable_if_copyable<T>> {
 
     template <typename, typename>
     friend struct detail::value_setter;
-  
+
   public:
     using result_type = T;
 
@@ -799,7 +804,7 @@ class future<T, enable_if_copyable<T>> {
         return _p->get_try_r(unique_usage(_p));
     }
 
-    boost::optional<std::exception_ptr> error() const& {
+    stlab::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };
@@ -898,7 +903,7 @@ class future<void, void> {
         return _p->get_try();
     }
 
-    boost::optional<std::exception_ptr> error() const& {
+    stlab::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };
@@ -941,7 +946,7 @@ class future<T, enable_if_not_copyable<T>> {
     inline friend void swap(future& x, future& y) { x.swap(y); }
     inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
     inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
-  
+
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -984,24 +989,24 @@ class future<T, enable_if_not_copyable<T>> {
         return _p->get_try_r(unique_usage(_p));
     }
 
-    boost::optional<std::exception_ptr> error() const& {
+    stlab::optional<std::exception_ptr> error() const& {
         return _p->_error;
     }
 };
 
 template <typename Sig, typename S, typename F>
 auto package(S&& s, F&& f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<std::decay_t<F>, Sig>>(std::forward<S>(s), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::forward<S>(s), std::forward<F>(f));
     return std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
             future<detail::result_of_t_<Sig>>(p));
 }
 
 template <typename Sig, typename S, typename F>
 auto package_with_broken_promise(S&& s, F&& f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<std::decay_t<F>, Sig>>(std::forward<S>(s), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::forward<S>(s), std::forward<F>(f));
     auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
         future<detail::result_of_t_<Sig>>(p));
-    result.second._p->_error = std::make_exception_ptr(stlab::future_error(stlab::future_error_codes::broken_promise));
+    result.second._p->_error = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
     result.second._p->_ready = true;
     return result;
 }
@@ -1014,7 +1019,7 @@ template <typename F>
 struct assign_ready_future {
     template <typename T>
     static void assign(T& x, F& f) {
-        x = std::move(f.get_try().value());
+        x = *(std::move(f).get_try());
     }
 };
 
@@ -1033,7 +1038,7 @@ struct when_all_shared {
     future<void>                        _holds[std::tuple_size<Args>::value] {};
     std::atomic_size_t                  _remaining{std::tuple_size<Args>::value};
     std::atomic_flag                    _error_happened = ATOMIC_FLAG_INIT;
-    boost::optional<std::exception_ptr> _error;
+    stlab::optional<std::exception_ptr> _error;
     packaged_task<>                     _f;
 
     template <std::size_t index, typename FF>
@@ -1057,11 +1062,11 @@ template <size_t S, typename R>
 struct when_any_shared {
     using result_type = R;
     // decay
-    boost::optional<R>                  _arg;
+    stlab::optional<R>                  _arg;
     future<void>                        _holds[S]{};
     std::atomic_size_t                  _remaining{S};
     std::atomic_flag                    _value_received = ATOMIC_FLAG_INIT;
-    boost::optional<std::exception_ptr> _error;
+    stlab::optional<std::exception_ptr> _error;
     size_t                              _index;
     packaged_task<>                     _f;
 
@@ -1076,7 +1081,7 @@ struct when_any_shared {
     void done(FF&& f) {
         auto before = _value_received.test_and_set();
         if (before == false) {
-            _arg = std::move(std::forward<FF>(f).get_try().value());
+            _arg = std::move(*std::forward<FF>(f).get_try());
             _index = index;
             _f();
         }
@@ -1084,7 +1089,7 @@ struct when_any_shared {
 
     template <typename F>
     auto apply(F& f) {
-        return f(std::move(_arg.get()), _index);
+        return f(std::move(*_arg), _index);
     }
 };
 
@@ -1095,7 +1100,7 @@ struct when_any_shared<S, void> {
     future<void>                        _holds[S]{};
     std::atomic_size_t                  _remaining{S};
     std::atomic_flag                    _value_received = ATOMIC_FLAG_INIT;
-    boost::optional<std::exception_ptr> _error;
+    stlab::optional<std::exception_ptr> _error;
     size_t                              _index;
     packaged_task<>                     _f;
 
@@ -1121,13 +1126,13 @@ struct when_any_shared<S, void> {
     }
 };
 
-inline void rethrow_if_false(bool x, boost::optional<std::exception_ptr>& p) {
-    if (!x) std::rethrow_exception(p.get());;
+inline void rethrow_if_false(bool x, stlab::optional<std::exception_ptr>& p) {
+    if (!x) std::rethrow_exception(*p);;
 }
 
 template <typename F, typename Args, typename P, std::size_t... I>
 auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
-    (void)std::initializer_list<int>{(rethrow_if_false(std::get<I>(args).is_initialized(), p->_error), 0)... };
+    (void)std::initializer_list<int>{(rethrow_if_false(static_cast<bool>(std::get<I>(args)), p->_error), 0)... };
     return apply_optional_indexed<index_sequence_transform_t<std::make_index_sequence<std::tuple_size<Args>::value>,
         remove_placeholder<Args>::template function>>(f, args);
 }
@@ -1140,7 +1145,7 @@ auto apply_when_all_args(F& f, P& p) {
 template <typename F, typename P>
 auto apply_when_any_arg(F& f, P& p) {
     if (p->_error) {
-        std::rethrow_exception(p->_error.get());
+        std::rethrow_exception(*p->_error);
     }
 
     return p->apply(f);
@@ -1299,7 +1304,7 @@ struct context_result
     using result_type = R;
 
     R                                     _results;
-    boost::optional<std::exception_ptr>   _error;
+    stlab::optional<std::exception_ptr>   _error;
     size_t                                _index;
     F                                     _f;
 
@@ -1335,7 +1340,7 @@ struct context_result
 template<typename F, bool Indexed>
 struct context_result<F, Indexed, void>
 {
-    boost::optional<std::exception_ptr>   _error;
+    stlab::optional<std::exception_ptr>   _error;
     size_t                                _index;
     F                                     _f;
 
@@ -1416,7 +1421,7 @@ struct common_context : CR
 
     auto execute() {
         if (this->_error) {
-            std::rethrow_exception(this->_error.get());
+            std::rethrow_exception(*(this->_error));
         }
         return CR::operator()();
     }
@@ -1592,15 +1597,15 @@ struct value_setter<T, enable_if_copyable<T>>
     template <typename R, typename F, typename... Args>
     static void set(shared_base<future<R>> &sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...);
-        sb._reduction_helper.value = sb._result.value().recover([_p = sb.shared_from_this()](future<R> f) {
+        sb._reduction_helper.value = (*sb._result).recover([_p = sb.shared_from_this()](future<R> f) {
             if (f.error())
             {
-              _p->_error = std::move(f.error().value());
+              _p->_error = std::move(*f.error());
               value_setter::proceed(*_p);
               throw future_error(future_error_codes::reduction_failed);
             }
-            return f.get_try().value();
-        }).then([_p = sb.shared_from_this()](auto&) { value_setter::proceed(*_p); });
+            return *f.get_try();
+        }).then([_p = sb.shared_from_this()](auto) { value_setter::proceed(*_p); });
     }
 
     template <typename F, typename... Args>
@@ -1608,7 +1613,7 @@ struct value_setter<T, enable_if_copyable<T>>
       sb._result = f(std::forward<Args>(args)...).recover([_p = sb.shared_from_this()](future<void> f) {
           if (f.error())
           {
-            _p->_error = std::move(f.error().value());
+            _p->_error = std::move(*f.error());
             value_setter::proceed(*_p);
             throw future_error(future_error_codes::reduction_failed);
           }
@@ -1646,7 +1651,7 @@ struct value_setter<T, enable_if_not_copyable<T>>
         // On VS a static_assert works, on MAC not.
         assert(!"Reduction on move-only types is not supported so far");
         sb._result = f(std::forward<Args>(args)...);
-        sb._reduction_helper.value = sb._result.value().then([](auto&& f) {
+        sb._reduction_helper.value = (*sb._result).then([](auto&& f) {
             return std::forward<decltype(f)>(f);
         }).then([_p = sb.shared_from_this()](auto&) { proceed(*_p); });
     }
@@ -1730,7 +1735,7 @@ template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto f) { return f.get_try().value(); } );
+    return std::move(r).then([](auto f) { return *f.get_try(); } );
 }
 
 /**************************************************************************************************/
@@ -1739,7 +1744,7 @@ template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto f) { return f.get_try().value(); } );
+    return std::move(r).then([](auto f) { return *f.get_try(); } );
 }
 
 /**************************************************************************************************/
@@ -1751,7 +1756,7 @@ inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void> 
 template <typename R>
 auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R>
 {
-    return std::move(r).then([](auto f) { return f.get_try().value(); } );
+    return std::move(r).then([](auto f) { return *f.get_try(); } );
 }
 
 /**************************************************************************************************/
