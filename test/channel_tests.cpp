@@ -8,12 +8,17 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/concurrency/concurrency.hpp>
+#define STLAB_DISABLE_FUTURE_COROUTINES
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/test/model.hpp>
 
 #include "channel_test_helper.hpp"
 
 using namespace stlab;
+using namespace channel_test_helper;
 
 BOOST_AUTO_TEST_CASE(int_sender) {
     BOOST_TEST_MESSAGE("int sender");

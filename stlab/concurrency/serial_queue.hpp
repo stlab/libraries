@@ -18,6 +18,8 @@
 
 #include <stlab/scope.hpp>
 
+#define STLAB_DISABLE_FUTURE_COROUTINES
+
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/task.hpp>
 

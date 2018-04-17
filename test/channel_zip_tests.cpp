@@ -8,13 +8,17 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/concurrency/concurrency.hpp>
+#define STLAB_DISABLE_FUTURE_COROUTINES
+#include <stlab/concurrency/channel.hpp>
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 #include <string>
 
 #include "channel_test_helper.hpp"
 
 using namespace stlab;
+using namespace channel_test_helper;
 
 using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
 

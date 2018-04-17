@@ -29,6 +29,17 @@
 
 
 
+// as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
+// support for the channels tests
+#ifdef __has_include
+#   if __has_include(<experimental/coroutine>) && !defined(STLAB_DISABLE_FUTURE_COROUTINES)
+#       include <stlab/concurrency/default_executor.hpp>
+#       include <stlab/concurrency/immediate_executor.hpp>
+#       include <experimental/coroutine>
+#       define STLAB_FUTURE_COROUTINE_SUPPORT
+#   endif
+#endif
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -61,7 +72,7 @@ inline const char *Future_error_map(future_error_codes code) noexcept
 
     case future_error_codes::reduction_failed:
         return "reduction failed";
-    
+
     default:
         return nullptr;
     }
@@ -246,6 +257,8 @@ struct shared_task {
     virtual void add_promise() = 0;
 
     virtual void operator()(Args... args) = 0;
+
+    virtual void set_error(std::exception_ptr error) = 0;
 };
 
 /**************************************************************************************************/
@@ -302,7 +315,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename S, typename F>
     auto then_r(bool unique, S&& s, F&& f) {
-        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto&& x){
+        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto&& x) mutable {
             return _f(std::move(*(std::forward<decltype(x)>(x).get_try())));
         });
     }
@@ -315,7 +328,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         if (!unique) return recover(std::forward<S>(s),std::forward<F>(f));
 
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
-            [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())] {
+            [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())] () mutable {
                 return _f(std::move(_p));
             });
 
@@ -360,7 +373,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     bool is_ready() const&{
         return _ready;
     }
-    
+
     // get_ready() is called internally on continuations when we know _ready is true;
     auto get_ready() -> const T& {
         #ifndef NDEBUG
@@ -559,7 +572,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             then = std::move(_then);
             _ready = true;
         }
-        // propagate exception with scheduling 
+        // propagate exception with scheduling
         for (auto& e : then) { e.first(std::move(e.second)); }
     }
 
@@ -599,6 +612,13 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
         _promise_count = 1;
     }
 
+    /*
+        NOTE (sean.parent) : There is some twisted logic in here. The promise count is used
+        by the packaged task. When it destructs the promise count is artificially decremented, _f
+        is reset which breaks a retain loop on this shared object. Without the optional and reset()
+        we have a memory leak.
+    */
+
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
             // this safety check is only possible in case of no reduction
@@ -624,6 +644,10 @@ struct shared<R (Args...)> : shared_base<R>, shared_task<Args...>
             this->set_exception(std::current_exception());
         }
         _f = function_t();
+    }
+
+    void set_error(std::exception_ptr error) override {
+        this->set_exception(std::move(error));
     }
 };
 
@@ -675,6 +699,11 @@ public:
         auto p = _p.lock();
         if (p) (*p)(std::forward<A>(args)...);
     }
+
+    void set_exception(std::exception_ptr error) {
+        auto p = _p.lock();
+        if (p) p->set_error(std::move(error));
+    }
 };
 
 /**************************************************************************************************/
@@ -700,7 +729,7 @@ class future<T, enable_if_copyable<T>> {
 
     template <typename, typename>
     friend struct detail::value_setter;
-  
+
   public:
     using result_type = T;
 
@@ -917,7 +946,7 @@ class future<T, enable_if_not_copyable<T>> {
     inline friend void swap(future& x, future& y) { x.swap(y); }
     inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
     inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
-  
+
     bool valid() const { return static_cast<bool>(_p); }
 
     template <typename F>
@@ -1743,6 +1772,120 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R>
 } // namespace stlab
 
 /**************************************************************************************************/
+
+
+#ifdef STLAB_FUTURE_COROUTINE_SUPPORT
+
+template<typename T, typename... Args>
+struct std::experimental::coroutine_traits<stlab::future<T>, Args...>
+{
+    struct promise_type
+    {
+        std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
+
+        promise_type() {
+            _promise = stlab::package<T(T)>(stlab::immediate_executor, [](auto&& x) -> decltype(x) {
+                return std::forward<decltype(x)>(x);
+                });
+        }
+
+        stlab::future<T> get_return_object() {
+            return std::move(_promise.second);
+        }
+
+        auto initial_suspend() const {
+            return std::experimental::suspend_never{};
+        }
+
+        auto final_suspend() const {
+            return std::experimental::suspend_never{};
+        }
+
+        template<typename U>
+        void return_value(U&& val) {
+            _promise.first(std::forward<U>(val));
+        }
+
+        void unhandled_exception() {
+            _promise.first.set_exception(std::current_exception());
+        }
+    };
+};
+
+
+template<typename... Args>
+struct std::experimental::coroutine_traits<stlab::future<void>, Args...>
+{
+    struct promise_type
+    {
+        std::pair<stlab::packaged_task<>, stlab::future<void>> _promise;
+
+        inline promise_type() {
+            _promise = stlab::package<void()>(stlab::immediate_executor, []()mutable{});
+        }
+
+        inline stlab::future<void> get_return_object() {
+            return _promise.second;
+        }
+
+        inline auto initial_suspend() const {
+            return std::experimental::suspend_never{};
+        }
+
+        inline auto final_suspend() const {
+            return std::experimental::suspend_never{};
+        }
+
+        inline void return_void() {
+            _promise.first();
+        }
+
+        inline void unhandled_exception() {
+            _promise.first.set_exception(std::current_exception());
+        }
+    };
+};
+
+
+template <typename R>
+auto operator co_await(stlab::future<R> &&f) {
+    struct Awaiter {
+        stlab::future<R> &&_input;
+        R _result;
+
+        bool await_ready() { return _input.is_ready(); }
+
+        auto await_resume() { return std::move(_result); }
+
+        void await_suspend(std::experimental::coroutine_handle<> ch) {
+            std::move(_input).then(stlab::default_executor, [this, ch](auto&& result) mutable {
+                this->_result = std::forward<decltype(result)>(result);
+                ch.resume();
+            }).detach();
+        }
+    };
+    return Awaiter{static_cast<stlab::future<R> &&>(f)};
+}
+
+template <>
+inline auto operator co_await(stlab::future<void> &&f) {
+    struct Awaiter {
+        stlab::future<void> &&_input;
+
+        inline bool await_ready() { return _input.is_ready(); }
+
+        inline auto await_resume() {}
+
+        inline void await_suspend(std::experimental::coroutine_handle<> ch) {
+            std::move(_input).then(stlab::default_executor, [ch]() mutable {
+                ch.resume();
+            }).detach();
+        }
+    };
+    return Awaiter{static_cast<stlab::future<void> &&>(f)};
+}
+
+#endif
 
 #endif
 
