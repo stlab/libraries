@@ -20,22 +20,21 @@
 
 using lock_t = std::unique_lock<std::mutex>;
 
-namespace channel_test_helper
-{
+namespace channel_test_helper {
 
-class manual_scheduler
-{
+class manual_scheduler {
     static std::mutex _mutex;
     static std::queue<stlab::task<void()>> _tasks;
 
 public:
     static void clear() {
         lock_t lock(_mutex);
-        while (!_tasks.empty()) _tasks.pop();
+        while (!_tasks.empty())
+            _tasks.pop();
     }
 
-    template<typename F>
-    void operator()(F &&f) {
+    template <typename F>
+    void operator()(F&& f) {
         lock_t lock(_mutex);
         _tasks.push(std::forward<F>(f));
     }
@@ -59,19 +58,17 @@ public:
     }
 };
 
-struct channel_test_fixture_base
-{
-    template<typename F>
-    void wait_until_done(F &&f) const {
+struct channel_test_fixture_base {
+    template <typename F>
+    void wait_until_done(F&& f) const {
         while (!std::forward<F>(f)()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 };
 
-template<typename T, std::size_t N>
-struct channel_test_fixture : channel_test_fixture_base
-{
+template <typename T, std::size_t N>
+struct channel_test_fixture : channel_test_fixture_base {
     std::array<stlab::sender<T>, N> _send;
     std::array<stlab::receiver<T>, N> _receive;
 
@@ -81,10 +78,8 @@ struct channel_test_fixture : channel_test_fixture_base
     }
 };
 
-
-template<typename U, typename V>
-struct channel_types_test_fixture : channel_test_fixture_base
-{
+template <typename U, typename V>
+struct channel_types_test_fixture : channel_test_fixture_base {
     std::tuple<stlab::sender<U>, stlab::sender<V>> _send;
     std::tuple<stlab::receiver<U>, stlab::receiver<V>> _receive;
 
@@ -93,18 +88,19 @@ struct channel_types_test_fixture : channel_test_fixture_base
         std::tie(send<1>(), receive<1>()) = stlab::channel<V>(stlab::default_executor);
     }
 
-    template<std::size_t I>
-    auto &send() { return std::get<I>(_send); }
+    template <std::size_t I>
+    auto& send() {
+        return std::get<I>(_send);
+    }
 
-    template<std::size_t I>
-    auto &receive() { return std::get<I>(_receive); }
-
+    template <std::size_t I>
+    auto& receive() {
+        return std::get<I>(_receive);
+    }
 };
 
-
-template<typename T1, typename T2>
-class channel_combine_test_fixture
-{
+template <typename T1, typename T2>
+class channel_combine_test_fixture {
 public:
     stlab::sender<T1> _send1;
     stlab::receiver<T2> _receive1;
@@ -116,18 +112,16 @@ public:
         std::tie(_send2, _receive2) = stlab::channel<T2>(stlab::default_executor);
     }
 
-    template<typename F>
-    void wait_until_done(F &&f) const {
+    template <typename F>
+    void wait_until_done(F&& f) const {
         while (!std::forward<F>(f)()) {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
 };
 
-
-template<std::size_t N>
-struct sum
-{
+template <std::size_t N>
+struct sum {
     int _number_additions{0};
     int _x{0};
     stlab::process_state_scheduled _state{stlab::await_forever};
@@ -156,8 +150,7 @@ inline stlab::process_state_scheduled await_soon() {
                           std::chrono::steady_clock::now() + std::chrono::seconds(1));
 }
 
-struct timed_sum
-{
+struct timed_sum {
     const int _limit;
     static std::mutex _mutex;
     int _number_additions{0};
@@ -199,10 +192,8 @@ struct timed_sum
     }
 };
 
-
-template<std::size_t N>
-struct collector
-{
+template <std::size_t N>
+struct collector {
     int _collected_items{0};
     std::vector<int> _c;
 
@@ -227,6 +218,6 @@ struct collector
     auto state() const { return _state; }
 };
 
-}
+} // namespace channel_test_helper
 
 #endif
