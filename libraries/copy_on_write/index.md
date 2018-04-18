@@ -12,7 +12,7 @@ declaration: |
   class copy_on_write
 brief: A copy-on-write wrapper for any type that models `RegularType`.
 description: |
-    Copy-on-write sematics allow for an object to be lazily copied - only creating a copy when 1) the value is modified, and 2) there is more than one reference to the value.
+    Copy-on-write semantics allow for an object to be lazily copied - only creating a copy when 1) the value is modified, and 2) there is more than one reference to the value.
 
     `copy_on_write` is thread safe, and supports types that model `MoveableType`.
 member-types:

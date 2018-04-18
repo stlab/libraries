@@ -25,5 +25,5 @@ entities:
         description: Const variant
   - kind: result
     description: |
-        A pointer to the underlying function, iff `target_type() == typeid(T)`. Otherwise, `nullptr`.
+        A pointer to the underlying function, if `target_type() == typeid(T)`. Otherwise, `nullptr`.
 ---

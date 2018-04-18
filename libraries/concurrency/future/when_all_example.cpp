@@ -15,7 +15,7 @@ int main() {
         cout << text << " " << answer << '\n';
     }, argument1, argument2);
 
-    // Waiting just for illustrational purpose
+    // Waiting just for illustration purpose
     while (!result.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 
