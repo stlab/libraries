@@ -1758,9 +1758,9 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...> {
 };
 
 template <typename R>
-auto operator co_await(stlab::future<R>&& f) {
+auto operator co_await(stlab::future<R> f) {
     struct Awaiter {
-        stlab::future<R>&& _input;
+        stlab::future<R> _input;
         R _result;
 
         bool await_ready() { return _input.is_ready(); }
@@ -1777,13 +1777,12 @@ auto operator co_await(stlab::future<R>&& f) {
                 .detach();
         }
     };
-    return Awaiter{static_cast<stlab::future<R>&&>(f)};
+    return Awaiter{std::move(f)};
 }
 
-template <>
-inline auto operator co_await(stlab::future<void>&& f) {
+inline auto operator co_await(stlab::future<void> f) {
     struct Awaiter {
-        stlab::future<void>&& _input;
+        stlab::future<void> _input;
 
         inline bool await_ready() { return _input.is_ready(); }
 
@@ -1795,7 +1794,7 @@ inline auto operator co_await(stlab::future<void>&& f) {
                 .detach();
         }
     };
-    return Awaiter{static_cast<stlab::future<void>&&>(f)};
+    return Awaiter{std::move(f)};
 }
 
 #endif
