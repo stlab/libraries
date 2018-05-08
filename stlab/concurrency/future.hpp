@@ -1363,7 +1363,7 @@ struct all_trigger {
     }
 };
 
-template <typename CR, typename F, typename ResultCollector, typename FailureCollector>
+template <typename CR, typename F, typename ResultCollector, typename FailureCollector, bool Throw = true>
 struct common_context : CR {
     std::atomic_size_t _remaining;
     std::atomic_flag _single_event_trigger = ATOMIC_FLAG_INIT;
@@ -1373,7 +1373,7 @@ struct common_context : CR {
     common_context(F f, size_t s) : CR(std::move(f), s), _remaining(s), _holds(_remaining) {}
 
     auto execute() {
-        if (this->_error) {
+        if (Throw && this->_error) {
             std::rethrow_exception(*(this->_error));
         }
         return CR::operator()();
@@ -1442,6 +1442,31 @@ auto when_all(E executor, F f, const std::pair<I, I>& range) {
         std::conditional_t<std::is_same<void, param_t>::value, void, std::vector<param_t>>;
     using context_t = detail::common_context<detail::context_result<F, false, context_result_t>, F,
                                              detail::all_trigger, detail::single_trigger>;
+
+    if (range.first == range.second) {
+        auto p = package<result_t()>(
+            executor, detail::context_result<F, false, context_result_t>(std::move(f), 0));
+        executor(std::move(p.first));
+        return std::move(p.second);
+    }
+
+    return detail::create_range_of_futures<result_t, context_t>::do_it(
+        std::move(executor), std::move(f), range.first, range.second);
+}
+
+/**************************************************************************************************/
+
+template <
+    typename E, // models task executor
+    typename F, // models functional object
+    typename I> // models ForwardIterator that reference to a range of futures of the same type
+auto try_all(E executor, F f, const std::pair<I, I>& range) {
+    using param_t = typename std::iterator_traits<I>::value_type::result_type;
+    using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
+    using context_result_t =
+        std::conditional_t<std::is_same<void, param_t>::value, void, std::vector<param_t>>;
+    using context_t = detail::common_context<detail::context_result<F, false, context_result_t>, F,
+                                             detail::all_trigger, detail::single_trigger, false>;
 
     if (range.first == range.second) {
         auto p = package<result_t()>(
