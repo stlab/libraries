@@ -38,7 +38,7 @@ fi
 if [ ! -d boost ]; then
     if [ ! -f boost.tgz ]; then
         echo "Downloading boost..."
-        curl -L https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_64_0.tar.gz -o boost.tgz
+        curl -L https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.gz -o boost.tgz
         if [ $? -ne 0 ]; then exit 1; fi
     fi
 
