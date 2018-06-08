@@ -28,10 +28,10 @@ redirect_from: /legacy/index.php/Papers_and_Presentations
   Revised for [Google Tech Talks, July 25, 2007](https://www.youtube.com/user/googletechtalks). [Recorded Presentation](https://www.youtube.com/watch?v=4moyKUHApq4).
 
 * [A Possible Future of Software Development](figures/Boostcon_possible_future.pdf)\\
-  Revised for [http://www.boostcon.com/ BoostCon'07 Keynote, May 16, 2007].
+  Revised for [http://cppnow.org/ BoostCon'07 Keynote, May 16, 2007].
 
 * [Concept-Based Runtime Polymorphism](figures/Boost_poly.pdf)\\
-  From [BoostCon'07, May 17, 2007](http://www.boostcon.com/).
+  From [BoostCon'07, May 17, 2007](http://cppnow.org/).
 
 * [A Possible Future of Software Development](figures/Possible_future.pdf)\\
   From [Library-Centric Software Design Workshop, OOPSLA, October 22, 2006](https://web.archive.org/web/20150404055433/http://lcsd.cs.tamu.edu/2006/).

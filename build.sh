@@ -38,18 +38,18 @@ fi
 if [ ! -d boost ]; then
     if [ ! -f boost.tgz ]; then
         echo "Downloading boost..."
-        curl -L https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz -o boost.tgz
+        curl -L https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.gz -o boost.tgz
         if [ $? -ne 0 ]; then exit 1; fi
     fi
 
     mkdir -p boost
 
     echo "Unpacking boost headers..."
-    tar -C boost -xzf boost.tgz --strip-components 1 boost_1_66_0/boost/
+    tar -C boost -xzf boost.tgz --strip-components 1 boost_1_64_0/boost/
     if [ $? -ne 0 ]; then exit 1; fi
 
     echo "Unpacking boost sources..."
-    tar -C boost -xzf boost.tgz --strip-components 1 boost_1_66_0/libs/
+    tar -C boost -xzf boost.tgz --strip-components 1 boost_1_64_0/libs/
     if [ $? -ne 0 ]; then exit 1; fi
 else
     echo "Found boost..."

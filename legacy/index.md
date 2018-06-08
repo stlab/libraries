@@ -33,7 +33,6 @@ This portion of the web site is place where users of the Adobe Source Libraries 
 
 * [GitHub Migration and Status](github-migration-and-status.html)
 * [Release Process](release-process.html)
-* [Adding an Adobe internal client](adding-an-adobe-internal-client.html)
 * [Configuring Perforce client for two servers](configure-perforce-client-for-two-servers.html)
 * [Updating the public website](updating-the-public-website.html)
 * [Adding a user to the ASL Wiki](adding-a-user-to-the-asl-wiki.html)
