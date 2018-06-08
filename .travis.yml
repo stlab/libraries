@@ -185,6 +185,12 @@ install:
     fi
   - cmake --version
   
+  ############################################################################
+  # Go back to the root of the project and setup the build directory
+  ############################################################################  
+  - cd "${TRAVIS_BUILD_DIR}"
+  
+  
 script:
   - .travis/build.sh
 
