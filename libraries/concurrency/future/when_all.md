@@ -22,8 +22,8 @@ entities:
         pure-name: when_all
         declaration: |
             template <typename E, typename F, typename I>
-            auto when_all(E e, F f, const std::pair<I,I>& range)
-        description: This function create a joining future
+            auto when_all(E e, F f, std::pair<I,I> range)
+        description: This function create a joining future out of the given range. In case that it is a range of futures of move-only types, the futures are moved internally out of the range into the function.
   - kind: parameters
     list:
       - name: e
