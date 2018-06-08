@@ -3,6 +3,7 @@ title: List/Tree Widget
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/List/Tree_Widget
 ---
 
 _(For the time being the focus will be on lists, not heirarchical trees.)_

@@ -3,6 +3,7 @@ title: Build Matrix
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Build_Matrix
 ---
 #### Contents
 {:.no_toc}
@@ -21,7 +22,7 @@ comments: true
   * Yellow (bgcolor='yellow') Outstanding issue under investigation
     * Please mark the box with a note. If it is extended, use the <nowiki>[name](#subsection)</nowiki> notation. (Example: [1](#win32-bjam-issues))
   * Red (bgcolor='red') Failure
-    * Please mark the box with a submitted [SourceForge.net](http://sourceforge.net/tracker/?group_id=132417&atid=724218) bug number.
+    * Please mark the box with a submitted [SourceForge.net](https://sourceforge.net/p/adobe-source/bugs/?page=1) bug number.
 
 ## QA Matrix for Macintosh
 

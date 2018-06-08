@@ -3,6 +3,7 @@ title: Guide Consumer
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Guide_Consumer
 ---
 #### Contents
 {:.no_toc}

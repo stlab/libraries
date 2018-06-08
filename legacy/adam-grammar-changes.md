@@ -3,6 +3,7 @@ title: Adam Grammar Changes
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Adam_Grammar_Changes
 ---
 #### Contents
 {:.no_toc}

@@ -13,7 +13,7 @@ int main() {
     auto c1 = x.then([](int x) { printf("Split A %d \n", x); });
     auto c2 = x.then([](int x) { printf("Split B %d \n", x); });
 
-    // Waiting just for illustrational purpose
+    // Waiting just for illustration purpose
     while (!c1.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
     while (!c2.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }

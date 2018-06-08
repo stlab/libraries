@@ -3,6 +3,7 @@ title: Derive quadratic equation solution
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Derive_quadratic_equation_solution
 ---
 $$
     ax^2+bx+c=0\,\!
@@ -35,14 +36,14 @@ $$
     (2ax+b)^2                   =b^2-4ac
 $$
 
-$$ 
+$$
     2ax+b                         =\pm\sqrt{b^2-4ac}
 $$
 
 $$
-    2ax                             =-b\pm\sqrt{b^2-4ac}  
+    2ax                             =-b\pm\sqrt{b^2-4ac}
 $$
 
 $$
-    x                                 =\frac{-b\pm\sqrt{b^2-4ac}}{2a} 
+    x                                 =\frac{-b\pm\sqrt{b^2-4ac}}{2a}
 $$

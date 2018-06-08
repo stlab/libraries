@@ -3,6 +3,7 @@ title: Locale-savvy isspace
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Locale-savvy_isspace
 ---
 
 isspace() relies on the locale() - we currently document the CEL parser as assuming the "C" locale - we should note the same requirement in the XML parser. Later it would be good to have a library providing this functionality which is wired to utf encoding - most likely this would be along the lines of the current parser syntax - something like the following:

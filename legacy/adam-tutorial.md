@@ -3,6 +3,7 @@ title: Adam Tutorial
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Adam_Tutorial
 ---
 The following question came in Alan Shouls on the adobe-source forum:
 

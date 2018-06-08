@@ -13,8 +13,8 @@ entities:
       - name: swap
         pure-name: swap
         declaration: |
-            bool swap(const task& x, std::nullptr_t)
-        description: Checks if the given task `x` is not equal an empty task
+            void swap(task& x, task& y)
+        description: Swaps task x and task y
   - kind: parameters
     list:
       - name: x

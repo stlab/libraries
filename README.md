@@ -18,6 +18,9 @@ You'll need Homebrew to make sure you have the most recent version of Ruby.
 2. `brew install ruby`
 3. `sudo gem install bundle jekyll github-pages liquid`
 
+
+Periodically run `gem update` and `bundle update` to make sure you have the latest jekyll tooling.
+
 ## Building Docs
 1. `cd` to repo directory
 2. `bundle exec jekyll serve --watch`

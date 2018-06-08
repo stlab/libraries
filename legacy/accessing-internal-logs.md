@@ -3,6 +3,7 @@ title: Accessing Internal Logs
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Accessing_Internal_Logs
 ---
 We have a tool called Log Viewer accessible via web-tech.corp.adobe.com/logviewer
 

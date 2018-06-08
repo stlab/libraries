@@ -3,6 +3,7 @@ title: Adam Evolution
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Adam_Evolution
 ---
 #### Contents
 {:.no_toc}

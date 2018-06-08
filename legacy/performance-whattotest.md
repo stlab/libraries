@@ -3,6 +3,7 @@ title: Performance/WhatToTest
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Performance/WhatToTest
 ---
 
 What things need to be tested as part of this benchmark suite?

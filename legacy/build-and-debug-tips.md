@@ -3,6 +3,7 @@ title: Build and Debug Tips
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Build_and_Debug_Tips
 ---
 #### Contents
 {:.no_toc}

@@ -3,6 +3,7 @@ title: Derive Quadratic Equation
 layout: page
 tags: [legacy]
 comments: true
+# redirect_from: /legacy/index.php/
 ---
 ## Derive Quadratic Equation
 Derive the quadratic equation.

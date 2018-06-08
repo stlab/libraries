@@ -3,6 +3,7 @@ title: Argument Against GC
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Argument_Against_GC
 ---
 #### Contents
 {:.no_toc}

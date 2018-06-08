@@ -9,17 +9,20 @@ ctor: default
 dtor: default
 annotation: template class
 declaration: |
-    template <typename T> 
+    template <typename T>
     class receiver
 brief: Implements the receiving part of a CSP channel
 description: |
-  Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must of a type that implements an `await()` and `yield()` method.
-  
-  Multiple calls with this operator on the same object realize a split. That means that the result of this process is copied into all attached downstream channels.
-  
+  Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must be of a type that implements an `await()` and `yield()` method.
+
+  Multiple calls to `operator|` on the same object split the channel. That means that the result of this process is copied into all attached downstream channels.
+
   The queue size of the attached process can be limited with a `buffer_size`.
 
   If an exception is thrown while calling the attached process, the exception pointer is passed to the attached process, if it has a `set_error()` method, otherwise this process is closed.
+
+  All non-destructed receivers on a channel must be `set_ready()` or data cannot flow to any
+  stream processes.
 member-types:
   - type: value_type
     definition: T

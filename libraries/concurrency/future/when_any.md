@@ -35,5 +35,5 @@ entities:
       - name: range
         description: This describes the range of futures. If an empty range is provided then an stlab::future_exception with code stlab::future_errc::broken_promise is thrown.
   - kind: result
-    description: a future that reduces a number of input futures to the first that successds and passes it to the associated function object
+    description: a future that reduces a number of input futures to the first that succeeds and passes it to the associated function object
 ---

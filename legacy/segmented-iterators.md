@@ -3,6 +3,7 @@ title: Segmented Iterators
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Segmented_Iterators
 ---
 
 A segmented iterator (also sometimes referred to as a nested iterator, multi-dimentional iterator, etc.) is an iterator which iterates over a collection of ranges (segments).

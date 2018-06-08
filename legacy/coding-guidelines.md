@@ -3,6 +3,7 @@ title: Coding Guidelines
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Coding_Guidelines
 ---
 #### Contents
 {:.no_toc}

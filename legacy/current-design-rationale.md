@@ -3,6 +3,7 @@ title: Current Design Rationale
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Current_Design_Rationale
 ---
 This is a place to document design rationale so that the same issues do not have to be rediscovered and revisited.
 

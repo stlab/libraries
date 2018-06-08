@@ -3,6 +3,7 @@ title: Visual Editor (Expresso2)
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Visual_Editor_(Expresso2)
 ---
 
 Sean Parent wrote in mail to adobe-source-devel regarding his thoughts on a visual editor for Eve files:

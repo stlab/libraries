@@ -3,6 +3,7 @@ title: PropertyModelEvaluator
 layout: page
 tags: [legacy]
 comments: true
+# redirect_from: /legacy/index.php/
 ---
 <pre>
 Usage: pmeval [option]... [file]...

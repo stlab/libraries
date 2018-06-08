@@ -3,6 +3,7 @@ title: Widget Style
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Widget_Style
 ---
 #### Contents
 {:.no_toc}

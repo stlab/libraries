@@ -3,6 +3,7 @@ title: EMacs Questions
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/EMacs_Questions
 ---
 Q: In C/C++ modes, I want:
 * Tabs as spaces

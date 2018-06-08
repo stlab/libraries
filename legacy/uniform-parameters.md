@@ -3,6 +3,7 @@ title: Uniform Parameters
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Uniform_Parameters
 ---
 #### Contents
 {:.no_toc}

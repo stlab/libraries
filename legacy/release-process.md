@@ -3,6 +3,7 @@ title: Release Process
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Release_Process
 ---
 #### Contents
 {:.no_toc}

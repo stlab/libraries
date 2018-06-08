@@ -3,6 +3,7 @@ title: Prof. Lumsdaine Collaboration
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Prof._Lumsdaine_Collaboration
 ---
 #### Contents
 {:.no_toc}

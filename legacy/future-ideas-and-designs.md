@@ -3,6 +3,7 @@ title: Future Ideas and Designs
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Future_Ideas_and_Designs
 ---
 #### Contents
 {:.no_toc}

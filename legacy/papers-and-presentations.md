@@ -3,6 +3,7 @@ title: Papers and Presentations
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Papers_and_Presentations
 ---
 #### Contents
 {:.no_toc}

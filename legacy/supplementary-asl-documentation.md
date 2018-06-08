@@ -3,6 +3,7 @@ title: Supplementary ASL Documentation
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Supplementary_ASL_Documentation
 ---
 
 _The documentation presented here should be considered under development. The intent is that documentation from here is reviewed, updated and eventually finalized, at which point it is migrated to the official documentation within the "Adobe Source Libraries" distribution_

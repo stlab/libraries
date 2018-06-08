@@ -3,6 +3,7 @@ title: Copy On Write
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Copy_On_Write
 ---
 ### Reference Links
 

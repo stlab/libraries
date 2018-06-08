@@ -3,6 +3,7 @@ title: ABI safe library theory of operation
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/ABI_safe_library_theory_of_operation
 ---
 The idea with the ABI safe library (currently the version_1 namespace types) is to provide a set of types that have a defined binary representation regardless of compiler settings, version, or options. And so these types can be passed freely across a DLL boundary.
 

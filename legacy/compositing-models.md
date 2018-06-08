@@ -3,6 +3,7 @@ title: Compositing Models
 layout: page
 tags: [legacy]
 comments: true
+redirect_from: /legacy/index.php/Compositing_Models
 ---
 A common point of confusion with the property model library (aka Adam) is that it is a mechanism for constructing user interfaces. That isn't the case. The property model library is a library for constructing models of how discrete properties interact. These properties might represent the parameters to a function (as is often the case in a dialog) or may be properties of the document itself.
 
