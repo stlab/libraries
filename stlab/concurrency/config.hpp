@@ -56,6 +56,9 @@
 
 #ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_PORTABLE
+#if __cplusplus >= 201703L
+#define STLAB_CPP_VERSION 17
+#endif
 #endif
 
 #ifndef STLAB_CPP_VERSION
