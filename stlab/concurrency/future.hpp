@@ -1269,7 +1269,7 @@ template <typename R>
 struct result_creator<false, R> {
     template <typename C>
     static auto go(C& context) {
-        return context._f(context._results);
+        return context._f(std::move(context._results));
     }
 };
 
@@ -1392,7 +1392,7 @@ struct common_context : CR {
 /**************************************************************************************************/
 
 template <typename C, typename T>
-void attach_tasks(size_t index, const std::shared_ptr<C>& context, T a) {
+void attach_tasks(size_t index, const std::shared_ptr<C>& context, T&& a) {
     context->_holds[index] =
         std::move(a).recover([_context = std::weak_ptr<C>(context), _i = index](auto x) {
             auto p = _context.lock();
@@ -1418,8 +1418,9 @@ struct create_range_of_futures {
         context->_f = std::move(p.first);
 
         size_t index(0);
-        std::for_each(first, last,
-                      [&index, &context](auto item) { attach_tasks(index++, context, item); });
+        for (; first != last; ++first) {
+            attach_tasks(index++, context, std::forward<decltype(*first)>(*first));
+        }
 
         return std::move(p.second);
     }

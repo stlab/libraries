@@ -105,8 +105,8 @@ future<void> do_it(future<int> x, std::atomic_int& result) {
 
 BOOST_AUTO_TEST_CASE(future_coroutine_combined_void_int) {
     BOOST_TEST_MESSAGE("future coroutine combination of void and int future");
-    std::atomic_int intCheck = 0;
-    std::atomic_bool boolCheck = false;
+    std::atomic_int intCheck{0};
+    std::atomic_bool boolCheck{false};
 
     auto done = do_it(async(default_executor, [] { return 42; }), intCheck);
     auto hold = done.then([&boolCheck] { boolCheck = true; });
