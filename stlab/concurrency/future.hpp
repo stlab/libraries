@@ -1261,7 +1261,7 @@ template <typename R>
 struct result_creator<true, R> {
     template <typename C>
     static auto go(C& context) {
-        return context._f(context._results, context._index);
+        return context._f(std::move(context._results), context._index);
     }
 };
 
@@ -1269,7 +1269,7 @@ template <typename R>
 struct result_creator<false, R> {
     template <typename C>
     static auto go(C& context) {
-        return context._f(context._results);
+        return context._f(std::move(context._results));
     }
 };
 
@@ -1392,7 +1392,7 @@ struct common_context : CR {
 /**************************************************************************************************/
 
 template <typename C, typename T>
-void attach_tasks(size_t index, const std::shared_ptr<C>& context, T a) {
+void attach_tasks(size_t index, const std::shared_ptr<C>& context, T&& a) {
     context->_holds[index] =
         std::move(a).recover([_context = std::weak_ptr<C>(context), _i = index](auto x) {
             auto p = _context.lock();
@@ -1406,24 +1406,51 @@ void attach_tasks(size_t index, const std::shared_ptr<C>& context, T a) {
         });
 }
 
-template <typename R, typename C>
-struct create_range_of_futures {
+template <typename R, typename T, typename C, typename Enabled = void>
+struct create_range_of_futures;
+
+template <typename R, typename T, typename C>
+struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
+
     template <typename S, typename F, typename I>
     static auto do_it(S&& s, F&& f, I first, I last) {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
-        auto p = package<R()>(std::move(s), [_c = context] { return _c->execute(); });
+        auto p = package<R()>(std::forward<S>(s), [_c = context] { return _c->execute(); });
 
         context->_f = std::move(p.first);
 
         size_t index(0);
-        std::for_each(first, last,
-                      [&index, &context](auto item) { attach_tasks(index++, context, item); });
+        for (; first != last; ++first) {
+            attach_tasks(index++, context, *first);
+        }
 
         return std::move(p.second);
     }
 };
+
+template <typename R, typename T, typename C>
+struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
+
+  template <typename S, typename F, typename I>
+  static auto do_it(S&& s, F&& f, I first, I last) {
+    assert(first != last);
+
+    auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
+    auto p = package<R()>(std::forward<S>(s), [_c = context] { return _c->execute(); });
+
+    context->_f = std::move(p.first);
+
+    size_t index(0);
+    for (; first != last; ++first) {
+      attach_tasks(index++, context, std::forward<decltype(*first)>(*first));
+    }
+
+    return std::move(p.second);
+  }
+};
+
 
 /**************************************************************************************************/
 
@@ -1435,7 +1462,7 @@ template <
     typename E, // models task executor
     typename F, // models functional object
     typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_all(E executor, F f, const std::pair<I, I>& range) {
+auto when_all(E executor, F f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
     using context_result_t =
@@ -1450,7 +1477,7 @@ auto when_all(E executor, F f, const std::pair<I, I>& range) {
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t, context_t>::do_it(
+    return detail::create_range_of_futures<result_t, param_t, context_t>::do_it(
         std::move(executor), std::move(f), range.first, range.second);
 }
 
@@ -1460,7 +1487,7 @@ template <
     typename E, // models task executor
     typename F, // models functional object
     typename I> // models ForwardIterator that reference to a range of futures of the same type
-auto when_any(E executor, F&& f, const std::pair<I, I>& range) {
+auto when_any(E executor, F&& f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
@@ -1474,7 +1501,7 @@ auto when_any(E executor, F&& f, const std::pair<I, I>& range) {
         return std::move(p.second);
     }
 
-    return detail::create_range_of_futures<result_t, context_t>::do_it(
+    return detail::create_range_of_futures<result_t, param_t, context_t>::do_it(
         std::move(executor), std::forward<F>(f), range.first, range.second);
 }
 

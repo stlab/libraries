@@ -11,6 +11,7 @@
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/utility.hpp>
+#include <stlab/test/model.hpp>
 
 #include <array>
 
@@ -562,6 +563,59 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_diamond_formation_elements) 
     BOOST_WARN_EQUAL(4711 + 2, *sut.get_try());
     BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
     BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_FIXTURE_TEST_SUITE(future_when_any_range_move_only, test_fixture<stlab::move_only>)
+
+BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elements) {
+  BOOST_TEST_MESSAGE("running future when_any move_only with range with diamond formation");
+
+  thread_block_context block_context;
+
+  size_t index = 0;
+  {
+    lock_t lock(*block_context._mutex);
+    auto start = async(custom_scheduler<0>(), [] { return 4711; });
+    std::vector<stlab::future<stlab::move_only>> futures;
+    futures.push_back(
+      start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 1 }; },
+        _task_counter, block_context)));
+    futures.push_back(
+      start.then(custom_scheduler<1>(), make_non_blocking_functor(
+        [&_context = block_context](auto x) {
+      _context._may_proceed = true;
+      return stlab::move_only{ x + 2 };
+    },
+        _task_counter)));
+    futures.push_back(
+      start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 3 }; },
+        _task_counter, block_context)));
+    futures.push_back(
+      start.then(custom_scheduler<1>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 5 }; },
+        _task_counter, block_context)));
+
+    sut = when_any(custom_scheduler<0>(),
+      [&_i = index](stlab::move_only x, size_t index) {
+      _i = index;
+      return std::move(x);
+    },
+      std::make_pair(futures.begin(), futures.end()));
+
+    check_valid_future(sut);
+    wait_until_future_completed(sut);
+    block_context._go = true;
+  }
+
+  block_context._thread_block.notify_all();
+  wait_until_all_tasks_completed();
+
+  BOOST_WARN_EQUAL(size_t(1), index);
+  BOOST_WARN_EQUAL(4711 + 2, (*sut.get_try()).member());
+  BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
+  BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
