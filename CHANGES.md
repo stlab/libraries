@@ -1,3 +1,15 @@
+## v1.2.0 - 15 June 2018
+
+- Fixed Issues 
+   - [#146](https://github.com/stlab/libraries/issues/146) : when_all() does not compile with move-only objects
+   - [#142](https://github.com/stlab/libraries/issues/142) : boost/variant.hpp: No such file or directory
+   - [#119](https://github.com/stlab/libraries/issues/119) : blocking_get randomly does not return
+- Library Additions
+   - Concurrency Library
+       - Adding usage of std::optional, std::variant or std::experimental::optional when compiling with C++17 mode. So the dependency to boost.optional is optional.
+       - Adding co-routine support for futures. (Only for VS 2017 and clang 5.0)
+	   - Adding main_executor for Qt support
+   
 ## v1.1.1 - 13 December 2017
 
 - Fixed Issues
