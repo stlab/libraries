@@ -496,7 +496,7 @@ rewraps the polymorphic concept in the appropriate regular layer $$ P_r -> R_r $
 
 [Str03] Stroustrup, Bjarne: [Concept checking - a more abstract way to type checking](http://www.stroustrup.com/n1510-concept-checking.pdf). C++ Committee, Paper 1510, 2003.
 
-[CSH96] Cleeland, C.; Schmidt, D.; Harrison, T.: [External Polymorphism](http://www.cs.wustl.edu/~schmidt/PDF/External-Polymorphism.pdf) PLoPD '96.
+[CSH96] Cleeland, C.; Schmidt, D.; Harrison, T.: [External Polymorphism](https://www.cs.wustl.edu/~schmidt/PDF/External-Polymorphism.pdf) PLoPD '96.
 
 [DS98] James C. Dehnert and Alexander Stepanov. [Fundamentals of Generic Programming](http://stepanovpapers.com/DeSt98.pdf). In _Report of the Dagstuhl Seminar on Generic Programming_, volume 1766 of Lecture Notes in Computer Science, pages 1–11, Schloss Dagstuhl, Germany, April 1998.
 
