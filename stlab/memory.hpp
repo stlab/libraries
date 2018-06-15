@@ -6,13 +6,12 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_FUNCTIONAL_HPP
-#define STLAB_FUNCTIONAL_HPP
+#ifndef STLAB_MEMORY_HPP
+#define STLAB_MEMORY_HPP
 
 /**************************************************************************************************/
 
-#include <functional>
-#include <type_traits>
+#include <memory>
 
 /**************************************************************************************************/
 
@@ -23,28 +22,10 @@ namespace stlab {
 inline namespace v1 {
 /**************************************************************************************************/
 
-template <class T>
-struct unwrap_reference {
-    using type = T;
-};
-
-template <class T>
-struct unwrap_reference<std::reference_wrapper<T>> {
-    using type = T;
-};
-
-template <class T>
-using unwrap_reference_t = typename unwrap_reference<T>::type;
-
-/**************************************************************************************************/
-
-template <class T>
-struct is_reference_wrapper : std::false_type {};
-template <class T>
-struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
-
-template <class T>
-constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
+template <typename T>
+auto make_weak_ptr(const std::shared_ptr<T>& x) {
+    return std::weak_ptr<T>(x);
+}
 
 /**************************************************************************************************/
 
@@ -57,5 +38,3 @@ constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 /**************************************************************************************************/
 
 #endif
-
-/**************************************************************************************************/

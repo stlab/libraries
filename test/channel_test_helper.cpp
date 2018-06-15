@@ -8,8 +8,8 @@
 
 #include "channel_test_helper.hpp"
 
-std::queue<stlab::task<void()>> manual_scheduler::_tasks;
-std::mutex manual_scheduler::_mutex;
+std::queue<stlab::task<void()>> channel_test_helper::manual_scheduler::_tasks;
+std::mutex channel_test_helper::manual_scheduler::_mutex;
 
-int                               timed_sum::_x{0};
-std::mutex                        timed_sum::_mutex;
+int channel_test_helper::timed_sum::_x{0};
+std::mutex channel_test_helper::timed_sum::_mutex;

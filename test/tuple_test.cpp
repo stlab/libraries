@@ -13,6 +13,7 @@
 #include <boost/test/unit_test.hpp>
 
 // stlab
+#define STLAB_DISABLE_FUTURE_COROUTINES
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
@@ -30,8 +31,8 @@ std::string demangle() {
     struct freer_t {
         void operator()(void* x) const { std::free(x); }
     };
-    std::unique_ptr<char, freer_t> c_str(abi::__cxa_demangle(typeid(T).name(),
-                                         nullptr, nullptr, nullptr));
+    std::unique_ptr<char, freer_t> c_str(
+        abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr));
     return c_str.get();
 #else
     return std::string();
@@ -52,10 +53,10 @@ using namespace stlab;
 BOOST_AUTO_TEST_CASE(remove_placeholder_test) {
     auto x = std::make_tuple(10, detail::placeholder(), 25.0, detail::placeholder());
 
-    detail::apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
-        detail::remove_placeholder<decltype(x)>::function>>([](auto... args){
-            for_each_argument([](auto x) { cout << x << endl; }, args...);
-        }, x);
+    detail::apply_indexed<
+        index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
+                                   detail::remove_placeholder<decltype(x)>::function>>(
+        [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, x);
 }
 
 /**************************************************************************************************/
@@ -65,10 +66,10 @@ BOOST_AUTO_TEST_CASE(add_placeholder_test) {
 
     auto x = interim_t(10, detail::placeholder(), 25, detail::placeholder());
 
-    detail::apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
-        detail::remove_placeholder<decltype(x)>::function>>([](auto... args){
-            for_each_argument([](auto x) { cout << x << endl; }, args...);
-        }, x);
+    detail::apply_indexed<
+        index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
+                                   detail::remove_placeholder<decltype(x)>::function>>(
+        [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, x);
 }
 
 /**************************************************************************************************/
@@ -89,119 +90,111 @@ void when_all_typecheck(F f, future<Ts>... args) {
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_typecheck_test) {
-    auto fv = []{
-        return stlab::make_ready_future(stlab::default_executor);
-    };
-    auto fi = []{
+    auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
+    auto fi = [] {
         static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
-    when_all_typecheck([](auto... args){
-        for_each_argument([](auto x) { cout << x << endl; }, args...);
-    }, fv(), fi(), fv(), fi());
+    when_all_typecheck(
+        [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, fv(),
+        fi(), fv(), fi());
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_when_all_int_int) {
-    auto fi = []{
+    auto fi = [] {
         static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
-    auto f = when_all(stlab::default_executor, [](auto... args){
-        for_each_argument([](auto x) { cout << x << "\n"; }, args...);
-    }, fi(), fi());
+    auto f = when_all(
+        stlab::default_executor,
+        [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
+        fi());
 
-    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (!f.get_try())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_when_all_void) {
-    auto fv = []{
-        return stlab::make_ready_future(stlab::default_executor);
-    };
+    auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
 
-    auto f = when_all(stlab::default_executor, [](){
-        cout << "done!\n";
-    }, fv());
+    auto f = when_all(stlab::default_executor, []() { cout << "done!\n"; }, fv());
 
-    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (!f.get_try())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_when_all_void_int) {
-    auto fv = []{
-        return stlab::make_ready_future(stlab::default_executor);
-    };
-    auto fi = []{
+    auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
+    auto fi = [] {
         static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
-    auto f = when_all(stlab::default_executor, [](auto... args){
-        for_each_argument([](auto x) { cout << x << "\n"; }, args...);
-    }, fv(), fi());
+    auto f = when_all(
+        stlab::default_executor,
+        [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fv(),
+        fi());
 
-    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (!f.get_try())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_when_all_int_void) {
-    auto fv = []{
-        return stlab::make_ready_future(stlab::default_executor);
-    };
-    auto fi = []{
+    auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
+    auto fi = [] {
         static int count_s{0};
         return stlab::make_ready_future<int>(count_s++, stlab::default_executor);
     };
 
-    auto f = when_all(stlab::default_executor, [](auto... args){
-        for_each_argument([](auto x) { cout << x << "\n"; }, args...);
-    }, fi(), fv());
+    auto f = when_all(
+        stlab::default_executor,
+        [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
+        fv());
 
-    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (!f.get_try())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_when_all_int_void_string_void_bool_void) {
-    auto fv = []{
-        return stlab::make_ready_future(stlab::default_executor);
-    };
-    auto fi = []{
-        return stlab::make_ready_future<int>(42, stlab::default_executor);
-    };
-    auto fs = []{
+    auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
+    auto fi = [] { return stlab::make_ready_future<int>(42, stlab::default_executor); };
+    auto fs = [] {
         return stlab::make_ready_future<std::string>("Hello, world!", stlab::default_executor);
     };
-    auto fb = []{
-        return stlab::make_ready_future<bool>(true, stlab::default_executor);
-    };
+    auto fb = [] { return stlab::make_ready_future<bool>(true, stlab::default_executor); };
 
-    auto f = when_all(stlab::default_executor, [](auto... args){
-        for_each_argument([](auto x) { cout << x << "\n"; }, args...);
-    }, fi(), fv(), fs(), fv(), fb(), fv());
+    auto f = when_all(
+        stlab::default_executor,
+        [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
+        fv(), fs(), fv(), fb(), fv());
 
-    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (!f.get_try())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(future_when_any_void) {
-    auto fv = []{
-        return stlab::make_ready_future(stlab::default_executor);
-    };
+    auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
 
-    auto f = when_any(stlab::default_executor, [](size_t index){
-        std::cout << "f: " << index << '\n';
-    }, fv(), fv(), fv(), fv(), fv(), fv());
+    auto f =
+        when_any(stlab::default_executor, [](size_t index) { std::cout << "f: " << index << '\n'; },
+                 fv(), fv(), fv(), fv(), fv(), fv());
 
-    while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (!f.get_try())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 /**************************************************************************************************/

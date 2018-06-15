@@ -9,17 +9,28 @@
 #ifndef STLAB_CONCURRENCY_UTILITY_HPP
 #define STLAB_CONCURRENCY_UTILITY_HPP
 
+#include <condition_variable>
+#include <exception>
+#include <mutex>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/concurrency/optional.hpp>
+#include <type_traits>
+
+#include <stlab/memory.hpp>
+
+/**************************************************************************************************/
+
 #if 0
 
 #include <thread>
 
 // usefull makro for debugging
-#define STLAB_TRACE(S) \
-    printf("%s:%d %d %s\n", __FILE__, __LINE__, (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
+#define STLAB_TRACE(S)                          \
+    printf("%s:%d %d %s\n", __FILE__, __LINE__, \
+           (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
 
 #endif
-
-#include <stlab/concurrency/future.hpp>
 
 /**************************************************************************************************/
 
@@ -28,13 +39,27 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+namespace detail {
+
+struct shared_state {
+    bool flag{false};
+    std::condition_variable condition;
+    std::mutex m;
+    std::exception_ptr error{nullptr};
+};
+
+template <typename T>
+struct shared_state_result : shared_state {
+    stlab::optional<T> result;
+};
+} // namespace detail
 
 /**************************************************************************************************/
 
 template <typename T, typename E>
 future<std::decay_t<T>> make_ready_future(T&& x, E executor) {
     auto p = package<std::decay_t<T>(std::decay_t<T>)>(
-            std::move(executor), [](auto&& x) { return std::forward<decltype(x)>(x); });
+        std::move(executor), [](auto&& x) { return std::forward<decltype(x)>(x); });
     p.first(std::forward<T>(x));
     return p.second;
 }
@@ -58,57 +83,124 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
 
 template <typename T>
 T blocking_get(future<T> x) {
-    T result;
-    std::exception_ptr error;
+    stlab::optional<T> result;
+    std::exception_ptr error = nullptr;
 
-    bool set{false};
+    bool flag{false};
     std::condition_variable condition;
     std::mutex m;
-    auto hold = std::move(x).recover([&](auto&& r) {
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error())
+            error = *std::forward<decltype(r)>(r).error();
+        else
+            result = std::move(*std::forward<decltype(r)>(r).get_try());
+
         {
-            std::unique_lock<std::mutex> lock(m);
-            if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
-            else
-                result = std::forward<decltype(r)>(r).get_try().value();
-            set = true;
+            std::unique_lock<std::mutex> lock{m};
+            flag = true;
+            condition.notify_one();
         }
-        condition.notify_one();
     });
-    std::unique_lock<std::mutex> lock(m);
-    while (!set) {
-        condition.wait(lock);
+    {
+        std::unique_lock<std::mutex> lock{m};
+        while (!flag) {
+            condition.wait(lock);
+        }
     }
 
-    if (error)
-        std::rethrow_exception(error);
+    if (error) std::rethrow_exception(error);
 
-    return result;
+    return std::move(*result);
 }
 
-
-inline void blocking_get(future<void> x) {
-    std::exception_ptr error;
-
-    bool set{false};
-    std::condition_variable condition;
-    std::mutex m;
-    auto hold = std::move(x).recover([&](auto&& r) {
-        {
-            std::unique_lock<std::mutex> lock(m);
+template <typename T>
+stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
+    std::exception_ptr error = nullptr;
+    auto state = std::make_shared<detail::shared_state_result<T>>();
+    auto hold =
+        std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
+            auto state = _weak_state.lock();
+            if (!state) {
+                return;
+            }
             if (r.error())
-                error = std::forward<decltype(r)>(r).error().value();
-            set = true;
+                state->error = *std::forward<decltype(r)>(r).error();
+            else
+                state->result = std::move(*std::forward<decltype(r)>(r).get_try());
+            {
+                std::unique_lock<std::mutex> lock{state->m};
+                state->flag = true;
+            }
+            state->condition.notify_one();
+        });
+
+    {
+        std::unique_lock<std::mutex> lock{state->m};
+        while (!state->flag) {
+            if (state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+                hold.reset();
+                return stlab::optional<T>{};
+            }
         }
-        condition.notify_one();
-    });
-    std::unique_lock<std::mutex> lock(m);
-    while (!set) {
-        condition.wait(lock);
     }
 
-    if (error)
-        std::rethrow_exception(error);
+    if (state->error) std::rethrow_exception(state->error);
+
+    return std::move(state->result);
+}
+
+inline void blocking_get(future<void> x) {
+    std::exception_ptr error = nullptr;
+
+    bool flag{false};
+    std::condition_variable condition;
+    std::mutex m;
+    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
+        if (r.error()) error = *std::forward<decltype(r)>(r).error();
+        {
+            std::unique_lock<std::mutex> lock(m);
+            flag = true;
+            condition.notify_one();
+        }
+    });
+    {
+        std::unique_lock<std::mutex> lock(m);
+        while (!flag) {
+            condition.wait(lock);
+        }
+    }
+
+    if (error) std::rethrow_exception(error);
+}
+
+inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout) {
+    auto state = std::make_shared<detail::shared_state>();
+    auto hold =
+        std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
+            auto state = _weak_state.lock();
+            if (!state) {
+                return;
+            }
+            if (r.error()) state->error = *std::forward<decltype(r)>(r).error();
+            {
+                std::unique_lock<std::mutex> lock(state->m);
+                state->flag = true;
+            }
+            state->condition.notify_one();
+        });
+
+    {
+        std::unique_lock<std::mutex> lock(state->m);
+        while (!state->flag) {
+            if (state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
+                hold.reset();
+                return false;
+            }
+        }
+    }
+
+    if (state->error) std::rethrow_exception(state->error);
+    return true;
 }
 
 /**************************************************************************************************/
@@ -119,4 +211,4 @@ inline void blocking_get(future<void> x) {
 
 } // namespace stlab
 
-#endif //SLABFUTURE_UTILITY_HPP
+#endif // SLABFUTURE_UTILITY_HPP

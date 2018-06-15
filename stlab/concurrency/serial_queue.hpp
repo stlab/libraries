@@ -18,6 +18,8 @@
 
 #include <stlab/scope.hpp>
 
+#define STLAB_DISABLE_FUTURE_COROUTINES
+
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/task.hpp>
 
@@ -72,9 +74,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     void all() {
         queue_t local_queue;
 
-        scope<lock_t>(_m, [&]() {
-            std::swap(local_queue, _queue);
-        });
+        scope<lock_t>(_m, [&]() { std::swap(local_queue, _queue); });
 
         while (!local_queue.empty()) {
             pop_front_unsafe(local_queue)();
@@ -86,9 +86,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     void single() {
         task<void()> f;
 
-        scope<lock_t>(_m, [&]() {
-            f = pop_front_unsafe(_queue);
-        });
+        scope<lock_t>(_m, [&]() { f = pop_front_unsafe(_queue); });
 
         f();
 
@@ -131,8 +129,8 @@ public:
         }
     }
 
-    serial_instance_t(executor_t executor, schedule_mode mode)
-        : _executor(std::move(executor)), _kickstart(kickstarter(mode)) {}
+    serial_instance_t(executor_t executor, schedule_mode mode) :
+        _executor(std::move(executor)), _kickstart(kickstarter(mode)) {}
 };
 
 /**************************************************************************************************/
@@ -146,9 +144,9 @@ class serial_queue_t {
 
 public:
     template <typename Executor>
-    explicit serial_queue_t(Executor e, schedule_mode mode = schedule_mode::single)
-        : _impl(std::make_shared<detail::serial_instance_t>(
-              [_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); }, mode)) {}
+    explicit serial_queue_t(Executor e, schedule_mode mode = schedule_mode::single) :
+        _impl(std::make_shared<detail::serial_instance_t>(
+            [_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); }, mode)) {}
 
     auto executor() const {
         return [_impl = _impl](auto&& f) { _impl->enqueue(std::forward<decltype(f)>(f)); };
@@ -174,4 +172,3 @@ public:
 #endif
 
 /**************************************************************************************************/
-

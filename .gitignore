@@ -35,6 +35,12 @@
 # cmake build directory
 build/
 
+# clion build directory
+clion_build/
+
 .idea
-cmake-build-debug
-cmake-build-release
+.vscode
+cmake-*
+clion_*
+
+

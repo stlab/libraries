@@ -28,14 +28,14 @@ BOOST_AUTO_TEST_CASE(task_nullary_tests) {
     }
 
     {
-        task<regular()> x([]{ return regular(42); });
+        task<regular()> x([] { return regular(42); });
         task<regular()> y = std::move(x);
         BOOST_CHECK_EQUAL(y()._x, 42);
     }
 
     {
-        task<regular()> x([]{ return regular(42); });
-        task<regular()> y([]{ return regular(99); });
+        task<regular()> x([] { return regular(42); });
+        task<regular()> y([] { return regular(99); });
         swap(x, y);
         BOOST_CHECK_EQUAL(x()._x, 99);
         BOOST_CHECK_EQUAL(y()._x, 42);
@@ -64,14 +64,14 @@ BOOST_AUTO_TEST_CASE(task_copyable_nullary_tests) {
     }
 
     {
-        task<int()> x([_value = value]{ return _value; });
+        task<int()> x([_value = value] { return _value; });
         task<int()> y = std::move(x);
         BOOST_CHECK_EQUAL(y(), value);
     }
 
     {
-        task<regular()> x([_value = value]{ return regular(_value); });
-        task<regular()> y([_value = 99]{ return regular(_value); });
+        task<regular()> x([_value = value] { return regular(_value); });
+        task<regular()> y([_value = 99] { return regular(_value); });
         swap(x, y);
         BOOST_CHECK_EQUAL(x()._x, 99);
         BOOST_CHECK_EQUAL(y()._x, 42);
@@ -133,25 +133,27 @@ BOOST_AUTO_TEST_CASE(task_moveable_nullary_tests) {
 
 BOOST_AUTO_TEST_CASE(task_n_ary_tests) {
     {
-        task<int(int)> t([](int x){ return x; });
+        task<int(int)> t([](int x) { return x; });
         BOOST_CHECK_EQUAL(t(42), 42);
     }
 
     {
-        task<int(int, float)> t([](int x, float y){ return x + static_cast<int>(y); });
+        task<int(int, float)> t([](int x, float y) { return x + static_cast<int>(y); });
         BOOST_CHECK_EQUAL(t(21, 21.), 42);
     }
 
     {
-        task<int(int, float)> x([](int x, float y){ return x + static_cast<int>(y); });
-        task<int(int, float)> y([](int x, float y){ return x * static_cast<int>(y); });
+        task<int(int, float)> x([](int x, float y) { return x + static_cast<int>(y); });
+        task<int(int, float)> y([](int x, float y) { return x * static_cast<int>(y); });
         swap(x, y);
         BOOST_CHECK_EQUAL(x(10, 10.), 100);
         BOOST_CHECK_EQUAL(y(10, 10.), 20);
     }
 
     {
-        task<int(int, float, std::string)> t([](int x, float y, std::string z){ return x + static_cast<int>(y) + static_cast<int>(z.size()); });
+        task<int(int, float, std::string)> t([](int x, float y, std::string z) {
+            return x + static_cast<int>(y) + static_cast<int>(z.size());
+        });
         BOOST_CHECK_EQUAL(t(20, 20., "00"), 42);
     }
 
@@ -163,9 +165,8 @@ BOOST_AUTO_TEST_CASE(task_n_ary_tests) {
 
 /**************************************************************************************************/
 
-struct large_model
-{
-    char buffer[512] = { 42 };
+struct large_model {
+    char buffer[512] = {42};
     auto operator()() const { return buffer[0]; }
 };
 
@@ -206,21 +207,21 @@ BOOST_AUTO_TEST_CASE(task_type_tests) {
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(task_equality_tests) {
-  {
-      task<void()> a;
-      BOOST_CHECK(a == std::nullptr_t());
-  }
-  {
-    task<void()> a;
-    BOOST_CHECK(std::nullptr_t() == a);
-  }
+    {
+        task<void()> a;
+        BOOST_CHECK(a == std::nullptr_t());
+    }
+    {
+        task<void()> a;
+        BOOST_CHECK(std::nullptr_t() == a);
+    }
 
-  {
-    task<void()> a([]{});
-    BOOST_CHECK(a != std::nullptr_t());
-  }
-  {
-    task<void()> a([] {});
-    BOOST_CHECK(std::nullptr_t() != a);
-  }
+    {
+        task<void()> a([] {});
+        BOOST_CHECK(a != std::nullptr_t());
+    }
+    {
+        task<void()> a([] {});
+        BOOST_CHECK(std::nullptr_t() != a);
+    }
 }

@@ -5,14 +5,16 @@
 
 shallow_clone: true
 
-os:
-  - Visual Studio 2015
+image:
+  - Visual Studio 2017
 
 build:
   verbosity: detailed
 
 configuration:
   - Debug
+platform:
+  - x64
 
 branches:
   except:
@@ -29,21 +31,24 @@ install:
   ############################################################################
   # Install a recent CMake
   ############################################################################
-  - set CMAKE_URL="https://cmake.org/files/v3.8/cmake-3.8.0-win64-x64.zip"
-  - appveyor DownloadFile %CMAKE_URL% -FileName cmake.zip
-  - 7z x cmake.zip -oC:\projects\deps > nul
-  - move C:\projects\deps\cmake-* C:\projects\deps\cmake # Move to a version-agnostic directory
-  - set PATH=C:\projects\deps\cmake\bin;%PATH%
+  # - set CMAKE_URL="https://cmake.org/files/v3.8/cmake-3.8.0-win64-x64.zip"
+  # - appveyor DownloadFile %CMAKE_URL% -FileName cmake.zip
+  # - 7z x cmake.zip -oC:\projects\deps > nul
+  # - move C:\projects\deps\cmake-* C:\projects\deps\cmake # Move to a version-agnostic directory
+  # - set PATH=C:\projects\deps\cmake\bin;%PATH%
   - cmake --version
 
-before_build:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
-  - cd C:\projects\libraries
-
 build_script:
-  - MKDIR build_debug
-  - cd build_debug
-  - cmake -G "Visual Studio 14 Win64" -DBOOST_ROOT=C:/Libraries/boost_1_60_0 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
+  - cd C:\projects\libraries
+  - IF EXIST build RMDIR /S /Q build
+  - MKDIR build
+  - cd build
+  - cmake -G "Visual Studio 15 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON -D coroutine=ON ..
   - cmake  --build .
+  - test\Debug\stlab.test.channel.test --log_level=message
+  - test\Debug\stlab.test.cow.test --log_level=message
   - test\Debug\stlab.test.future.test --log_level=message
   - test\Debug\stlab.test.serial_queue.test.exe
+  - test\Debug\stlab.test.task.test --log_level=message
+  - test\Debug\stlab.test.tuple.test --log_level=message
+  
