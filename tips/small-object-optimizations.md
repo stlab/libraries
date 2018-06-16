@@ -37,7 +37,7 @@ The code to access the `model` does so by casting the address of `_data` to `con
 concept& self() { return *static_cast<concept*>(static_cast<void*>(&_data)); }
 ```
 
-Since a `concept` was not stored at this location, this cast is only allowed if the pointer types `model*` and `concept*` are [_pointer-interconvertible_](http://en.cppreference.com/w/cpp/language/static_cast). Pointer-interconvertible means that a void* which points to an object of one type, also points to an object of the other type. That would only be true if `model` is a [_standard-layout class_](http://en.cppreference.com/w/cpp/concept/StandardLayoutType). Unfortunately, that is not the case for two reasons.
+Since a `concept` was not stored at this location, this cast is only allowed if the pointer types `model*` and `concept*` are [_pointer-interconvertible_](http://en.cppreference.com/w/cpp/language/static_cast). Pointer-interconvertible means that a void* which points to an object of one type, also points to an object of the other type. That would only be true if `model` is a [_standard-layout class_](http://en.cppreference.com/w/cpp/named_req/StandardLayoutType). Unfortunately, that is not the case for two reasons.
 
 - `model` (and `concept`) contain virtual functions.
 - `model` may have a member which is not a `StandardLayoutType` because it holds an arbitrary `Callable` object.

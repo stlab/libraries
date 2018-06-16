@@ -52,7 +52,7 @@ entities:
             pointer to member, or _empty_ `std::function<R(Args...)>`, then `*this` will be _empty_
             after the call. [_To be added for C++17._ This constructor does not participate in
             overload resolution unless `f` is
-            [Callable](http://en.cppreference.com/w/cpp/concept/Callable) for argument types
+            [Callable](http://en.cppreference.com/w/cpp/named_req/Callable) for argument types
             `Args...` and return type `R`.]
   - kind: parameters
     list:
