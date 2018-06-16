@@ -14,7 +14,7 @@ redirect_from: /legacy/index.php/Edge_Interface_For_Forest_Iterators
 
 We can define the concept of the forest iterator in terms of a general graph using the terminology from Boost graph - this is useful because at some point we may wish to generalize these constructs to apply to other graph structures.
 
-A forest is (loosely) a [Bidirectional Graph](http://www.boost.org/doc/libs/1_64_0/libs/graph/doc/BidirectionalGraph.html).
+A forest is (loosely) a [Bidirectional Graph](https://www.boost.org/doc/libs/1_64_0/libs/graph/doc/BidirectionalGraph.html).
 
 A forest iterator consists of the following:
 

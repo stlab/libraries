@@ -388,7 +388,7 @@ pointers to objects.
 In many applications, the set of types stored in a container is known at
 compile-time. In these cases a _variant_ type that is the set-union of all
 potential data types suffices to implement the desired behavior. Hence, variant
-types, such as the [Boost.Variant](http://www.boost.org/doc/libs/1_64_0/doc/html/variant.html)
+types, such as the [Boost.Variant](https://www.boost.org/doc/libs/1_64_0/doc/html/variant.html)
 are similar to discriminated unions but overcome their limitation in regards to
 storing non POD types. A priori information of all involved types enables to
 determine the size of the variant at compile time, thus eliminating the need for
@@ -405,14 +405,14 @@ Since, the actual type of x differs from y, its element has to be destructed
 before the assignment can be carried out. However, when the copy construction
 fails x is left in an undefined state. A detailed discussion of this problem and
 its potential solutions is given by
-[Boost:"Never-Empty" Guarantee](http://www.boost.org/doc/libs/1_64_0/doc/html/variant/design.html#variant.design.never-empty.guarantee)
+[Boost:"Never-Empty" Guarantee](https://www.boost.org/doc/libs/1_64_0/doc/html/variant/design.html#variant.design.never-empty.guarantee)
 
 #### Open
 
 Some application require to store also data-types, for example defined in DLLs,
 that are not statically known at compile- and link-time. Implementations, like
 the presented one, which do not impose such restrictions are called open.
-Other existing designs include [Boost.Any](http://www.boost.org/doc/libs/1_64_0/doc/html/any.html)
+Other existing designs include [Boost.Any](https://www.boost.org/doc/libs/1_64_0/doc/html/any.html)
 and [Dig05]. The boost implementation is similar to ours insofar as it uses
 the virtual functions mechanism and EPP to achieve polymorphism. The operations supported
 include copy-construction, assignment, destruction, safe-, and unsafe cast
