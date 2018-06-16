@@ -11,7 +11,7 @@ int main() {
 
     auto y = x.then([](int x) { printf("Result %d \n", x); });
 
-    // Waiting just for illustrational purpose
+    // Waiting just for illustration purpose
     while (!y.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 

@@ -15,7 +15,7 @@ int main() {
 
     auto r = x.recover([](future<int> f) { 
         try {
-          auto answer = f.get_try().value();
+          auto answer = *f.get_try();
           cout << "The answer is " << answer << '\n';
         }
         catch (const exception& ex) {
@@ -23,7 +23,7 @@ int main() {
         }
       });
 
-    // Waiting just for illustrational purpose
+    // Waiting just for illustration purpose
     while (!r.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }
 

@@ -10,10 +10,10 @@ using namespace stlab;
 int main() {
     auto f = async(default_executor, [] { return 42; });
  
-    // Waiting just for illustrational purpose
+    // Waiting just for illustration purpose
     while (!f.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 
-    cout << "The answer is " << f.get_try().value() << "\n";
+    cout << "The answer is " << *f.get_try() << "\n";
 }
 
 /*

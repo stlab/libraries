@@ -17,13 +17,13 @@ entities:
         declaration: |
             template <typename E, typename F, typename...Ts>
             auto when_all(E e, F f, future<Ts>... args)
-        description: This function create a joining future. When all passed `args` futures are fullfilled, then the continuation tasks defined with `f` is scheduled on the executor `e`.
+        description: This function create a joining future. When all passed `args` futures are fulfilled, then the continuation tasks defined with `f` is scheduled on the executor `e`.
       - name: when_all
         pure-name: when_all
         declaration: |
             template <typename E, typename F, typename I>
-            auto when_all(E e, F f, const std::pair<I,I>& range)
-        description: This function create a joining future
+            auto when_all(E e, F f, std::pair<I,I> range)
+        description: This function create a joining future out of the given range. In case that it is a range of futures of move-only types, the futures are moved internally out of the range into the function.
   - kind: parameters
     list:
       - name: e

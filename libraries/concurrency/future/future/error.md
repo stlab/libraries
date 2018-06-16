@@ -13,8 +13,8 @@ entities:
       - name: stlab::future::error
         pure-name: error
         defined-in-header: stlab/concurrency/future.hpp 
-        declaration: boost::optional<std::exception_ptr> error() const
-        description: In case an error occured, it returns the stored exception pointer.
+        declaration: stlab::optional<std::exception_ptr> error() const
+        description: In case an error occurred, it returns the stored exception pointer.
   - kind: result
     description: an optional that holds the exception pointer if an exception has occurred.
 ---

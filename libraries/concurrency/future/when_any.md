@@ -23,7 +23,7 @@ entities:
         declaration: |
             template <typename E, typename F, typename I> 
             auto when_any(E e, F f, const std::pair<I,I>& range)
-        description: This function create a future that continues whenever the first future within the range succeeds
+        description: This function create a future that continues whenever the first future within the range succeeds. In case that it is a range of futures of move-only types, the futures are moved internally out of the range into the function.
   - kind: parameters
     list:
       - name: e
@@ -33,7 +33,7 @@ entities:
       - name: args
         description: Futures that shall be joined
       - name: range
-        description: This describes the range of futures. If an empty range is provided then a stlab::future_exception with code stlab::future_errc::broken_promise is thrown.
+        description: This describes the range of futures. If an empty range is provided then an stlab::future_exception with code stlab::future_errc::broken_promise is thrown.
   - kind: result
-    description: a future that reduces a number of input futures to the first that successds and passes it to the associated function object
+    description: a future that reduces a number of input futures to the first that succeeds and passes it to the associated function object
 ---
