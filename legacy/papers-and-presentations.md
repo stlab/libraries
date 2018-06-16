@@ -83,7 +83,7 @@ redirect_from: /legacy/index.php/Papers_and_Presentations
 
 * Simulating Partial Specialization (http://www.emarcus.org/papers/PartialSpecialization2000.pdf)\\
   Mat Marcus, Adobe Systems, Inc.<br /> From: the OOPSLA Workshop On Generative Programming 2001. Slides (http://www.emarcus.org/papers/PartialSpecSlides.pdf)\\
-  See also [The Boost Type Traits Library](http://www.boost.org/doc/libs/1_64_0/libs/type_traits/doc/html/index.html)\\
+  See also [The Boost Type Traits Library](https://www.boost.org/doc/libs/1_64_0/libs/type_traits/doc/html/index.html)\\
 
 * [How To Write A Simple Lexical Analyzer or Parser](how-to-write-a-simple-lexical-analyzer-or-parser.html)\\
   Sean Parent, Adobe Systems, Inc.

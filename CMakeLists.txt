@@ -8,7 +8,7 @@ add_subdirectory( stlab )
 
 enable_testing()
 foreach( path IN LISTS examples )
-	if (NOT path MATCHES "operator_co_await_example\.cpp")
+	if (NOT (path MATCHES "operator_co_await_example\.cpp" OR path MATCHES "scope_example_return\.cpp") )
 	  string( FIND "${path}" "." target REVERSE )
 	  string( SUBSTRING "${path}" 0 "${target}" target )
 	  string( REPLACE "/" "." target "${target}" )
