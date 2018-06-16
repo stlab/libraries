@@ -7,6 +7,7 @@
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/utility.hpp>
 
 using namespace stlab;
@@ -27,7 +28,7 @@ auto pop_fn() {
 int main(int, char**) {
     cout << "Number of concurrent threads: " << thread::hardware_concurrency() << '\n';
 
-    executor_t           ioq(serial_queue_t(default_executor).executor());
+    executor_t           ioq(serial_queue_t(immediate_executor).executor());
     vector<future<void>> futures;
     auto                 popper(pop_fn());
 

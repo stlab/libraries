@@ -16,6 +16,8 @@ branches:
 
 addons:
   apt:
+    config:
+      retries: true
     sources:
       - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
         key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
