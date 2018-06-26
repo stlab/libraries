@@ -21,7 +21,6 @@
 #include <utility>
 
 #include <stlab/concurrency/executor_base.hpp>
-#include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
@@ -35,6 +34,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 template <typename, typename = void>
@@ -357,6 +357,8 @@ template <typename P, typename... T>
 void await_variant_args(P& process, std::tuple<variant<T, std::exception_ptr>...>& args) {
     await_variant_args_<P, T...>(process, args, std::make_index_sequence<sizeof...(T)>());
 }
+
+/**************************************************************************************************/
 
 template <typename T>
 stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
@@ -1095,21 +1097,6 @@ struct channel_combiner {
         using type = yield_type<F, receiver_t<R>...>;
     };
 
-//    template <typename S, typename F, typename... R>
-//    static auto zip_view_(S&& s, F&& f, R&&... upstream_receiver) {
-//        using result_t = yield_type<F, receiver_t<R>...>;
-//
-//        auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
-//        auto join_process = std::make_shared<
-//            shared_process<zip_queue_strategy<receiver_t<R>...>, F, result_t, receiver_t<R>...>>(
-//            std::move(s), std::forward<F>(f), upstream_receiver._p...);
-//
-//        map_as_sender<decltype(join_process), decltype(upstream_receiver_processes),
-//                      receiver_t<R>...>(join_process, upstream_receiver_processes);
-//
-//        return receiver<result_t>(std::move(join_process));
-//    }
-
     template <typename M, typename S, typename F, typename... R>
     static auto merge_helper(S&& s, F&& f, R&&... upstream_receiver) {
 
@@ -1124,6 +1111,14 @@ struct channel_combiner {
             receiver_t<R>...>(merge_process, upstream_receiver_processes);
 
         return receiver<result_t>(std::move(merge_process));
+    }
+};
+
+struct zip_helper
+{
+    template <typename... T>
+    auto operator()(T&&... t) const {
+        return std::make_tuple(std::forward<T>(t)...);
     }
 };
 
@@ -1151,16 +1146,19 @@ template <typename S, typename F, typename... R>
 
 /**************************************************************************************************/
 
-namespace detail
-{
-    struct zip_helper
-    {
-        template <typename... T>
-        auto operator()(T&&... t) const {
-            return std::make_tuple(std::forward<T>(t)...);
-        }
-    };
-};
+template <typename S, typename F, typename... R>
+[[deprecated("Use merge_channel<unordered_t>")]] auto merge(S s, F f, R... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<unordered_t, S, F, R...>(
+        std::move(s), std::move(f), std::move(upstream_receiver)...);
+}
+
+/**************************************************************************************************/
+
+template <typename M, typename S, typename F, typename... R>
+auto merge_channel(S s, F f, R... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<M, S, F, R...>(
+        std::move(s), std::move(f), std::move(upstream_receiver)...);
+}
 
 /**************************************************************************************************/
 
@@ -1177,29 +1175,8 @@ auto zip(S s, R... r) {
     return zip_with(std::move(s), detail::zip_helper{}, std::move(r)...);
 }
 
-//template <typename S, typename F, typename... R>
-//[[deprecated("Use merge_channel<round_robin>")]] auto zip(S s, F f, R... upstream_receiver) {
-//    return detail::channel_combiner::merge_helper<
-//        detail::round_robin_queue_strategy<detail::receiver_t<R>...>, S, F, R...>(
-//            std::move(s), std::move(f), std::move(upstream_receiver)...);
-//}
-//
-///**************************************************************************************************/
-
-
-template <typename S, typename F, typename... R>
-[[deprecated("Use merge_channel<unordered_t>")]] auto merge(S s, F f, R... upstream_receiver) {
-    return detail::channel_combiner::merge_helper<unordered_t, S, F, R...>(
-        std::move(s), std::move(f), std::move(upstream_receiver)...);
-}
-
-/**************************************************************************************************/
-
-template <typename M, typename S, typename F, typename... R>
-auto merge_channel(S s, F f, R... upstream_receiver) {
-    return detail::channel_combiner::merge_helper<M, S, F, R...>(
-        std::move(s), std::move(f), std::move(upstream_receiver)...);
-}
+// template <typename S, typename F, typename... R>
+// [[deprecated("Use merge_channel<round_robin>")]] auto zip(S s, F f, R... upstream_receiver);
 
 /**************************************************************************************************/
 
@@ -1356,7 +1333,7 @@ class receiver {
     friend class sender;
 
     template <typename U>
-    friend class receiver; // huh?
+    friend class receiver;
 
     template <typename U, typename V>
     friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
@@ -1480,9 +1457,11 @@ public:
     void swap(sender& x) noexcept { std::swap(*this, x); }
 
     inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
+
     inline friend bool operator==(const sender& x, const sender& y) {
         return x._p.lock() == y._p.lock();
     };
+
     inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {
@@ -1529,9 +1508,11 @@ public:
     void swap(sender& x) noexcept { std::swap(*this, x); }
 
     inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
+
     inline friend bool operator==(const sender& x, const sender& y) {
         return x._p.lock() == y._p.lock();
     };
+
     inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {
