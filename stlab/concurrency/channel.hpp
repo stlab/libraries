@@ -1139,7 +1139,7 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 /**************************************************************************************************/
 
 template <typename S, typename F, typename... R>
-[[deprecated("Use zip_with_t")]] auto join(S s, F f, R... upstream_receiver) {
+[[deprecated("Use zip_with")]] auto join(S s, F f, R... upstream_receiver) {
     return detail::channel_combiner::merge_helper<zip_with_t, S, F, R...>(
             std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
@@ -1176,7 +1176,7 @@ auto zip(S s, R... r) {
 }
 
 // template <typename S, typename F, typename... R>
-// [[deprecated("Use merge_channel<round_robin>")]] auto zip(S s, F f, R... upstream_receiver);
+// [[deprecated("Use merge_channel<round_robin_t>")]] auto zip(S s, F f, R... upstream_receiver);
 
 /**************************************************************************************************/
 
