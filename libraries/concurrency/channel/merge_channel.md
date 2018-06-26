@@ -1,22 +1,22 @@
 ---
 layout: free-function
-title: stlab::merge
+title: stlab::merge_channel
 tags: [library]
 scope: stlab
-pure-name: merge
-brief: Creates a receiver that merges all passed arguments. This function is deprecated and will be removed soon. Please instead `merge_channel<unordered_t>`.
+pure-name: merge_channel
+brief: Creates a channel that merges all passed arguments
 annotation: template function
-example: merge_example.cpp
+example: merge_channel_example.cpp
 defined-in-header: stlab/concurrency/channel.hpp 
 entities:
   - kind: overloads
     list:
-      - name: merge
-        pure-name: merge
+      - name: merge_channel
+        pure-name: merge_channel
         declaration: |
-            template <typename E, typename F, typename...R>
-            [[deprecated]] auto merge(E e, F f, R... upstream_receiver)
-        description: This function creates a process that executes the provided function object whenever an upstream process provides a value. There is no defined order in which the process `f` is called with the incoming upstream values.
+            template <typename M, typename E, typename F, typename...R>
+            auto merge_channel(E e, F f, R... upstream_receiver)
+        description: This function creates a receiver with an attached process that executes the by `M`specified merge strategy whenever an upstream process provides a value. `M` can be of type `round_robin_t`, `unordered_t`, or `zip_with`.
   - kind: parameters
     list:
       - name: e
