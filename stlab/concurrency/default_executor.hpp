@@ -48,7 +48,6 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
 namespace detail {
@@ -129,41 +128,33 @@ struct default_executor_type {
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
 class task_system {
-    PTP_POOL            _pool = nullptr;
+    PTP_POOL _pool = nullptr;
     TP_CALLBACK_ENVIRON _callBackEnvironment;
-    PTP_CLEANUP_GROUP   _cleanupgroup = nullptr;
+    PTP_CLEANUP_GROUP _cleanupgroup = nullptr;
 
 public:
     task_system() {
         InitializeThreadpoolEnvironment(&_callBackEnvironment);
         _pool = CreateThreadpool(nullptr);
-        if (_pool == nullptr)
-            throw std::bad_alloc();
+        if (_pool == nullptr) throw std::bad_alloc();
 
         _cleanupgroup = CreateThreadpoolCleanupGroup();
-        if (_pool == nullptr)
-            throw std::bad_alloc();
+        if (_pool == nullptr) throw std::bad_alloc();
 
         SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
-        SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment,
-                                          _cleanupgroup,
-                                          nullptr);
+        SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
     }
 
     ~task_system() {
-        CloseThreadpoolCleanupGroupMembers(_cleanupgroup,
-                                            FALSE,
-                                            nullptr);
+        CloseThreadpoolCleanupGroupMembers(_cleanupgroup, FALSE, nullptr);
         CloseThreadpoolCleanupGroup(_cleanupgroup);
         CloseThreadpool(_pool);
     }
 
-
     template <typename F>
     void operator()(F&& f) {
-        auto work = CreateThreadpoolWork(&callback_impl<F>,
-            new F(std::forward<F>(f)),
-            &_callBackEnvironment);
+        auto work = CreateThreadpoolWork(&callback_impl<F>, new F(std::forward<F>(f)),
+                                         &_callBackEnvironment);
 
         if (work == nullptr) {
             throw std::bad_alloc();
@@ -180,7 +171,6 @@ private:
         (*f)();
     }
 };
-
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
@@ -291,8 +281,8 @@ public:
 
 #endif
 
-#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) \
-    || (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) || \
+    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
 
 struct default_executor_type {
     using result_type = void;
@@ -324,4 +314,3 @@ constexpr auto default_executor = detail::default_executor_type{};
 /**************************************************************************************************/
 
 #endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
-

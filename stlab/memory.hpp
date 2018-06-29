@@ -20,13 +20,12 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
-    template <typename T>
-    auto make_weak_ptr(const std::shared_ptr<T>& x) {
-        return std::weak_ptr<T>(x);
-    }
+template <typename T>
+auto make_weak_ptr(const std::shared_ptr<T>& x) {
+    return std::weak_ptr<T>(x);
+}
 
 /**************************************************************************************************/
 

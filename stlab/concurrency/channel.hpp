@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <deque>
 #include <memory>
@@ -26,7 +27,6 @@
 #include <stlab/concurrency/variant.hpp>
 #include <stlab/memory.hpp>
 
-
 /**************************************************************************************************/
 
 namespace stlab {
@@ -34,7 +34,6 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
 template <typename, typename = void>
@@ -189,9 +188,7 @@ using avoid = std::conditional_t<std::is_same<void, T>::value, avoid_, T>;
 /**************************************************************************************************/
 
 template <typename F, std::size_t... I, typename... T>
-auto invoke_(F&& f,
-             std::tuple<variant<T, std::exception_ptr>...>& t,
-             std::index_sequence<I...>) {
+auto invoke_(F&& f, std::tuple<variant<T, std::exception_ptr>...>& t, std::index_sequence<I...>) {
     return std::forward<F>(f)(std::move(std::get<I>(t))...);
 }
 
@@ -223,7 +220,8 @@ struct invoke_variant_dispatcher {
 
     template <typename F, typename T, typename... Args>
     static auto invoke(F&& f, T& t) {
-        return invoke_<F, T, Args...>(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
+        return invoke_<F, T, Args...>(std::forward<F>(f), t,
+                                      std::make_index_sequence<sizeof...(Args)>());
     }
 };
 
@@ -321,8 +319,8 @@ auto get_process_state(const stlab::optional<T>& x)
 /**************************************************************************************************/
 
 template <typename P, typename... U>
-using process_set_error_t = decltype(std::declval<P&>().set_error(
-    std::declval<std::tuple<variant<U, std::exception_ptr>...>>()));
+using process_set_error_t = decltype(
+    std::declval<P&>().set_error(std::declval<std::tuple<variant<U, std::exception_ptr>...>>()));
 
 template <typename P, typename... U>
 constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P, U...>;
@@ -368,9 +366,12 @@ stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
     });
 
     if (error_index != std::tuple_size<T>::value) {
-        result = get_i(argument, error_index, [](auto&& elem) {
-            return stlab::get<std::exception_ptr>(std::forward<decltype(elem)>(elem));
-        }, std::exception_ptr{});
+        result =
+            get_i(argument, error_index,
+                  [](auto&& elem) {
+                      return stlab::get<std::exception_ptr>(std::forward<decltype(elem)>(elem));
+                  },
+                  std::exception_ptr{});
     }
 
     return result;
@@ -574,8 +575,8 @@ struct shared_process_sender_indexed : public shared_process_sender<Arg> {
             std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
             _shared_process._queue.template append<I>(
                 std::forward<U>(u)); // TODO (sparent) : overwrite here.
-            do_run = !_shared_process._receiver_count && 
-              (!_shared_process._process_running || _shared_process._timeout_function_active);
+            do_run = !_shared_process._receiver_count && (!_shared_process._process_running ||
+                                                          _shared_process._timeout_function_active);
 
             _shared_process._process_running = _shared_process._process_running || do_run;
         }
@@ -595,8 +596,8 @@ struct shared_process_sender_helper;
 template <typename Q, typename T, typename R, std::size_t... I, typename... Args>
 struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
     : shared_process_sender_indexed<Q, T, R, Args, I, Args...>... {
-    shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp)
-        : shared_process_sender_indexed<Q, T, R, Args, I, Args...>(sp)... {}
+    shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) :
+        shared_process_sender_indexed<Q, T, R, Args, I, Args...>(sp)... {}
 };
 
 /**************************************************************************************************/
@@ -650,10 +651,9 @@ struct downstream<
 
 template <typename Q, typename T, typename R, typename... Args>
 struct shared_process
-    : shared_process_receiver<R>
-    , shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>
-    , std::enable_shared_from_this<shared_process<Q, T, R, Args...>> {
-    
+    : shared_process_receiver<R>,
+      shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>,
+      std::enable_shared_from_this<shared_process<Q, T, R, Args...>> {
     static_assert((has_process_yield_v<T> && has_process_state_v<T>) ||
                       (!has_process_yield_v<T> && !has_process_state_v<T>),
                   "Processes that use .yield() must have .state() const");
@@ -663,54 +663,51 @@ struct shared_process
         on push back - this allows us to make calls while additional inserts happen.
     */
 
-    using result                = R;
-    using queue_strategy        = Q;
-    using process_t             = T;
-    using lock_t                = std::unique_lock<std::mutex>;
+    using result = R;
+    using queue_strategy = Q;
+    using process_t = T;
+    using lock_t = std::unique_lock<std::mutex>;
 
-    std::mutex                  _downstream_mutex;
-    downstream<R>               _downstream;
-    queue_strategy              _queue;
+    std::mutex _downstream_mutex;
+    downstream<R> _downstream;
+    queue_strategy _queue;
 
-    executor_t                  _executor;
-    stlab::optional<process_t>  _process;
+    executor_t _executor;
+    stlab::optional<process_t> _process;
 
-    std::mutex                  _process_mutex;
+    std::mutex _process_mutex;
 
-    bool                        _process_running = false;
-    std::atomic_size_t          _process_suspend_count{0};
-    bool                        _process_close_queue = false;
+    bool _process_running = false;
+    std::atomic_size_t _process_suspend_count{0};
+    bool _process_close_queue = false;
     // REVISIT (sparent) : I'm not certain final needs to be under the mutex
-    bool                        _process_final = false;
+    bool _process_final = false;
 
-    std::mutex                  _timeout_function_control;
-    std::atomic_bool            _timeout_function_active{false};
+    std::mutex _timeout_function_control;
+    std::atomic_bool _timeout_function_active{false};
 
-    std::atomic_size_t          _sender_count{0};
-    std::atomic_size_t          _receiver_count;
+    std::atomic_size_t _sender_count{0};
+    std::atomic_size_t _receiver_count;
 
-    std::atomic_size_t          _process_buffer_size{1};
+    std::atomic_size_t _process_buffer_size{1};
 
     const std::tuple<std::shared_ptr<shared_process_receiver<Args>>...> _upstream;
 
-
-
-
     template <typename E, typename F>
-    shared_process(E&& e, F&& f)
-        : shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
-              *this),
-          _executor(std::forward<E>(e)), _process(std::forward<F>(f)) {
+    shared_process(E&& e, F&& f) :
+        shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
+            *this),
+        _executor(std::forward<E>(e)), _process(std::forward<F>(f)) {
         _sender_count = 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
     template <typename E, typename F, typename... U>
-    shared_process(E&& e, F&& f, U&&... u)
-        : shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
-              *this),
-          _executor(std::forward<E>(e)), _process(std::forward<F>(f)),
-          _upstream(std::forward<U>(u)...) {
+    shared_process(E&& e, F&& f, U&&... u) :
+        shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
+            *this),
+        _executor(std::forward<E>(e)), _process(std::forward<F>(f)),
+        _upstream(std::forward<U>(u)...) {
         _sender_count = sizeof...(Args);
         _receiver_count = !std::is_same<result, void>::value;
     }
@@ -897,7 +894,7 @@ struct shared_process
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
                 execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
-                    auto _this = _weak_this.lock(); 
+                    auto _this = _weak_this.lock();
                     // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
 
@@ -959,8 +956,11 @@ struct shared_process
                 do_close = true;
             } else {
                 try {
-                    // The message cannot be moved because boost::variant supports r-values just since 1.65.
-                    broadcast(avoid_invoke_variant<process_t, queue_t, R, Q::arguments_size, Args...>(std::move(*_process), *message));
+                    // The message cannot be moved because boost::variant supports r-values just
+                    // since 1.65.
+                    broadcast(
+                        avoid_invoke_variant<process_t, queue_t, R, Q::arguments_size, Args...>(
+                            std::move(*_process), *message));
                 } catch (...) {
                     broadcast(std::move(std::current_exception()));
                 }
@@ -1428,7 +1428,9 @@ public:
     void swap(sender& x) noexcept { std::swap(*this, x); }
 
     inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
-    inline friend bool operator==(const sender& x, const sender& y) { return x._p.lock() == y._p.lock(); };
+    inline friend bool operator==(const sender& x, const sender& y) {
+        return x._p.lock() == y._p.lock();
+    };
     inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {
@@ -1475,7 +1477,9 @@ public:
     void swap(sender& x) noexcept { std::swap(*this, x); }
 
     inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
-    inline friend bool operator==(const sender& x, const sender& y) { return x._p.lock() == y._p.lock(); };
+    inline friend bool operator==(const sender& x, const sender& y) {
+        return x._p.lock() == y._p.lock();
+    };
     inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {
@@ -1531,4 +1535,3 @@ struct function_process<R(Args...)> {
 /**************************************************************************************************/
 
 #endif
-

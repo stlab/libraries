@@ -23,7 +23,6 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
 /*
@@ -49,7 +48,7 @@ class task<R(Args...)> {
     }
 
     template <class F>
-    static auto is_empty(const F& f) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
+    static auto is_empty(const F&) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
         return false;
     }
 
@@ -57,7 +56,7 @@ class task<R(Args...)> {
         void (*dtor)(void*);
         void (*move_ctor)(void*, void*) noexcept;
         R (*invoke)(void*, Args&&...);
-        const std::type_info& (*target_type)()noexcept;
+        const std::type_info& (*target_type)() noexcept;
         void* (*pointer)(void*)noexcept;
         const void* (*const_pointer)(const void*)noexcept;
     };
@@ -85,7 +84,7 @@ class task<R(Args...)> {
         }
 
         static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                                target_type, pointer,   const_pointer};
+                                            target_type, pointer,   const_pointer};
 
         F _f;
     };
@@ -112,7 +111,7 @@ class task<R(Args...)> {
         }
 
         static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                                target_type, pointer,   const_pointer};
+                                            target_type, pointer,   const_pointer};
 
         std::unique_ptr<F> _p;
     };
@@ -125,8 +124,8 @@ class task<R(Args...)> {
     static auto pointer(void*) noexcept -> void* { return nullptr; }
     static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
 
-    static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                            target_type_, pointer,   const_pointer};
+    static constexpr concept _vtable = {dtor,         move_ctor, invoke,
+                                        target_type_, pointer,   const_pointer};
 
     const concept* _vtable_ptr = &_vtable;
 

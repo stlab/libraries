@@ -187,147 +187,147 @@ BOOST_AUTO_TEST_CASE(copy_on_write_interface) {
     using namespace stlab;
 
     {
-    // default construction
-    copy_on_write<int> a;
-    copy_on_write<int> b;
+        // default construction
+        copy_on_write<int> a;
+        copy_on_write<int> b;
 
-    BOOST_CHECK_MESSAGE(a.identity(b), "default construction error");
-    BOOST_CHECK_MESSAGE(a == 0, "default construction error");
+        BOOST_CHECK_MESSAGE(a.identity(b), "default construction error");
+        BOOST_CHECK_MESSAGE(a == 0, "default construction error");
     }
 
     {
-    // emplace construction
-    copy_on_write<int> a(10);
-    copy_on_write<std::pair<int, int>> b(10, 20);
-    copy_on_write<std::tuple<int, int, int>> c(10, 20, 30);
+        // emplace construction
+        copy_on_write<int> a(10);
+        copy_on_write<std::pair<int, int>> b(10, 20);
+        copy_on_write<std::tuple<int, int, int>> c(10, 20, 30);
 
-    BOOST_CHECK_MESSAGE(a == 10, "value construction error");
-    BOOST_CHECK_MESSAGE((b == std::make_pair(10, 20)), "value construction error");
-    BOOST_CHECK_MESSAGE((c == std::make_tuple(10, 20, 30)), "value construction error");
+        BOOST_CHECK_MESSAGE(a == 10, "value construction error");
+        BOOST_CHECK_MESSAGE((b == std::make_pair(10, 20)), "value construction error");
+        BOOST_CHECK_MESSAGE((c == std::make_tuple(10, 20, 30)), "value construction error");
     }
 
     {
-    // copy construction
-    copy_on_write<int> a = 3;
-    copy_on_write<int> b = a;
-    BOOST_CHECK_MESSAGE(a.identity(b), "copy construction error");
-    BOOST_CHECK_MESSAGE(b == 3, "copy construction error");
+        // copy construction
+        copy_on_write<int> a = 3;
+        copy_on_write<int> b = a;
+        BOOST_CHECK_MESSAGE(a.identity(b), "copy construction error");
+        BOOST_CHECK_MESSAGE(b == 3, "copy construction error");
     }
 
     {
-    // move construction
-    copy_on_write<int> a = 3;
-    copy_on_write<int> b = std::move(a);
-    a = 0;
-    BOOST_CHECK_MESSAGE(!a.identity(b), "move construction error");
-    BOOST_CHECK_MESSAGE(b == 3, "move construction error");
-    BOOST_CHECK_MESSAGE(a == 0, "move construction error");
+        // move construction
+        copy_on_write<int> a = 3;
+        copy_on_write<int> b = std::move(a);
+        a = 0;
+        BOOST_CHECK_MESSAGE(!a.identity(b), "move construction error");
+        BOOST_CHECK_MESSAGE(b == 3, "move construction error");
+        BOOST_CHECK_MESSAGE(a == 0, "move construction error");
     }
 
     {
-    // copy assignment
-    copy_on_write<int> a = 3;
-    copy_on_write<int> b;
-    b = a;
-    BOOST_CHECK_MESSAGE(a.identity(b), "copy assignment error");
-    BOOST_CHECK_MESSAGE(b == 3, "copy assignment error");
+        // copy assignment
+        copy_on_write<int> a = 3;
+        copy_on_write<int> b;
+        b = a;
+        BOOST_CHECK_MESSAGE(a.identity(b), "copy assignment error");
+        BOOST_CHECK_MESSAGE(b == 3, "copy assignment error");
     }
 
     {
-    // move assignment
-    copy_on_write<int> a = 3;
-    copy_on_write<int> b;
-    b = std::move(a);
-    a = 0;
-    BOOST_CHECK_MESSAGE(!a.identity(b), "move assignment error");
-    BOOST_CHECK_MESSAGE(b == 3, "move assignment error");
-    BOOST_CHECK_MESSAGE(a == 0, "move assignment error");
+        // move assignment
+        copy_on_write<int> a = 3;
+        copy_on_write<int> b;
+        b = std::move(a);
+        a = 0;
+        BOOST_CHECK_MESSAGE(!a.identity(b), "move assignment error");
+        BOOST_CHECK_MESSAGE(b == 3, "move assignment error");
+        BOOST_CHECK_MESSAGE(a == 0, "move assignment error");
     }
 
     {
-    // value assignment
-    copy_on_write<int> a;
-    a = 3;
-    BOOST_CHECK_MESSAGE(a == 3, "value assignment error");
+        // value assignment
+        copy_on_write<int> a;
+        a = 3;
+        BOOST_CHECK_MESSAGE(a == 3, "value assignment error");
     }
 
     {
-    // write
-    copy_on_write<std::pair<int, int>> a(1, 2);
-    copy_on_write<std::pair<int, int>> b = a;
-    BOOST_CHECK(a.identity(b));
-    a.write().first = 3;
-    BOOST_CHECK(!a.identity(b));
-    BOOST_CHECK(a == std::make_pair(3, 2));
-    BOOST_CHECK(b == std::make_pair(1, 2));
+        // write
+        copy_on_write<std::pair<int, int>> a(1, 2);
+        copy_on_write<std::pair<int, int>> b = a;
+        BOOST_CHECK(a.identity(b));
+        a.write().first = 3;
+        BOOST_CHECK(!a.identity(b));
+        BOOST_CHECK(a == std::make_pair(3, 2));
+        BOOST_CHECK(b == std::make_pair(1, 2));
     }
 
     {
-    // read
-    copy_on_write<std::pair<int, int>> a(1, 2);
-    BOOST_CHECK(a.read().first == 1 && a.read().second == 2);
+        // read
+        copy_on_write<std::pair<int, int>> a(1, 2);
+        BOOST_CHECK(a.read().first == 1 && a.read().second == 2);
     }
 
     {
-    // implicit conversion
-    copy_on_write<std::pair<int, int>> a(1, 2);
-    std::pair<int, int> b = a;
-    BOOST_CHECK(b == std::make_pair(1, 2));
+        // implicit conversion
+        copy_on_write<std::pair<int, int>> a(1, 2);
+        std::pair<int, int> b = a;
+        BOOST_CHECK(b == std::make_pair(1, 2));
     }
 
     {
-    // operator * and ->
-    copy_on_write<std::pair<int, int>> a(1, 2);
-    BOOST_CHECK(a->first == 1 && a->second == 2);
-    BOOST_CHECK((*a).first == 1 && (*a).second == 2);
+        // operator * and ->
+        copy_on_write<std::pair<int, int>> a(1, 2);
+        BOOST_CHECK(a->first == 1 && a->second == 2);
+        BOOST_CHECK((*a).first == 1 && (*a).second == 2);
     }
 
     {
-    // unique
-    copy_on_write<std::pair<int, int>> a(1, 2);
-    BOOST_CHECK(a.unique());
-    {
-    auto b = a;
-    BOOST_CHECK(!a.unique());
-    }
-    BOOST_CHECK(a.unique());
+        // unique
+        copy_on_write<std::pair<int, int>> a(1, 2);
+        BOOST_CHECK(a.unique());
+        {
+            auto b = a;
+            BOOST_CHECK(!a.unique());
+        }
+        BOOST_CHECK(a.unique());
     }
 
     // identity (tested above)
 
     // swap
     {
-    copy_on_write<int> a(1);
-    copy_on_write<int> b(2);
-    swap(a, b);
-    BOOST_CHECK((a == 2) && (b == 1));
+        copy_on_write<int> a(1);
+        copy_on_write<int> b(2);
+        swap(a, b);
+        BOOST_CHECK((a == 2) && (b == 1));
     }
 
     // comparisons
     {
-    copy_on_write<int> a(1);
-    copy_on_write<int> b(1);
-    copy_on_write<int> c(2);
-    
-    BOOST_CHECK((a == b) && (a != c) && !(a == c) && !(a != b));
-    BOOST_CHECK((a == 1) && (a != 2) && !(a == 2) && !(a != 1));
-    BOOST_CHECK((1 == b) && (1 != c) && !(1 == c) && !(1 != b));
-    
-    BOOST_CHECK(!(a < b) && (a < c));
-    BOOST_CHECK(!(a < 1) && (a < 2));
-    BOOST_CHECK(!(1 < 1) && (1 < 2));
+        copy_on_write<int> a(1);
+        copy_on_write<int> b(1);
+        copy_on_write<int> c(2);
 
-    BOOST_CHECK(!(a > b) && (c > a));
-    BOOST_CHECK(!(a > 1) && (c > 1));
-    BOOST_CHECK(!(1 > b) && (2 > a));
+        BOOST_CHECK((a == b) && (a != c) && !(a == c) && !(a != b));
+        BOOST_CHECK((a == 1) && (a != 2) && !(a == 2) && !(a != 1));
+        BOOST_CHECK((1 == b) && (1 != c) && !(1 == c) && !(1 != b));
 
-    BOOST_CHECK((a <= b) && !(c <= a));
-    BOOST_CHECK((a <= 1) && !(c <= 1));
-    BOOST_CHECK((1 <= b) && !(2 <= a));
+        BOOST_CHECK(!(a < b) && (a < c));
+        BOOST_CHECK(!(a < 1) && (a < 2));
+        BOOST_CHECK(!(1 < 1) && (1 < 2));
 
-    BOOST_CHECK((a >= b) && !(a >= c));
-    BOOST_CHECK((a >= 1) && !(a >= 2));
-    BOOST_CHECK((1 >= b) && !(1 >= c));
+        BOOST_CHECK(!(a > b) && (c > a));
+        BOOST_CHECK(!(a > 1) && (c > 1));
+        BOOST_CHECK(!(1 > b) && (2 > a));
+
+        BOOST_CHECK((a <= b) && !(c <= a));
+        BOOST_CHECK((a <= 1) && !(c <= 1));
+        BOOST_CHECK((1 <= b) && !(2 <= a));
+
+        BOOST_CHECK((a >= b) && !(a >= c));
+        BOOST_CHECK((a >= 1) && !(a >= 2));
+        BOOST_CHECK((1 >= b) && !(1 >= c));
     }
 }
 

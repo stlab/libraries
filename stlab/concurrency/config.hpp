@@ -11,11 +11,11 @@
 
 /**************************************************************************************************/
 
-#define STLAB_TASK_SYSTEM_PORTABLE      0
-#define STLAB_TASK_SYSTEM_LIBDISPATCH   1
-#define STLAB_TASK_SYSTEM_EMSCRIPTEN    2
-#define STLAB_TASK_SYSTEM_PNACL         3
-#define STLAB_TASK_SYSTEM_WINDOWS       4
+#define STLAB_TASK_SYSTEM_PORTABLE 0
+#define STLAB_TASK_SYSTEM_LIBDISPATCH 1
+#define STLAB_TASK_SYSTEM_EMSCRIPTEN 2
+#define STLAB_TASK_SYSTEM_PNACL 3
+#define STLAB_TASK_SYSTEM_WINDOWS 4
 
 #if __APPLE__
 
@@ -56,6 +56,9 @@
 
 #ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_PORTABLE
+#if __cplusplus >= 201703L
+#define STLAB_CPP_VERSION 17
+#endif
 #endif
 
 #ifndef STLAB_CPP_VERSION

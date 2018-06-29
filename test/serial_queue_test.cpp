@@ -91,20 +91,19 @@ inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
 /**************************************************************************************************/
 
 class test_hash_t {
-    std::string   _name;
+    std::string _name;
     std::uint64_t _h{0};
 
     void confirm(std::uint64_t expected) {
-        if (_h == expected)
-            return;
+        if (_h == expected) return;
 
         static std::mutex m;
         std::lock_guard<std::mutex> l(m);
 
-        std::cout << std::hex << _name
-                  << " need: " << "0x" << expected
-                  << " have: " << "0x" << _h
-                  << "\n" << std::dec;
+        std::cout << std::hex << _name << " need: "
+                  << "0x" << expected << " have: "
+                  << "0x" << _h << "\n"
+                  << std::dec;
     }
 
 public:
@@ -158,10 +157,14 @@ void test1(stlab::schedule_mode mode) {
     a("3", 0xf1a486d58a02a59a);
     d("3", 0xf1a483d58a02ae65);
 
-    while (a._c != 3) rest();
-    while (b._c != 3) rest();
-    while (c._c != 3) rest();
-    while (d._c != 3) rest();
+    while (a._c != 3)
+        rest();
+    while (b._c != 3)
+        rest();
+    while (c._c != 3)
+        rest();
+    while (d._c != 3)
+        rest();
 }
 
 /**************************************************************************************************/
@@ -185,4 +188,3 @@ int main(int argc, const char* argv[]) {
 }
 
 /**************************************************************************************************/
-

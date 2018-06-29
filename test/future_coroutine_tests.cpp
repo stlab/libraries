@@ -96,4 +96,25 @@ BOOST_AUTO_TEST_CASE(future_coroutine_move_only_failure) {
                             }));
 }
 
+future<void> do_it(future<int> x, std::atomic_int& result) {
+    int v = co_await x;
+    result = v;
+    std::cout << v << '\n';
+    co_return;
+}
+
+BOOST_AUTO_TEST_CASE(future_coroutine_combined_void_int) {
+    BOOST_TEST_MESSAGE("future coroutine combination of void and int future");
+    std::atomic_int intCheck{0};
+    std::atomic_bool boolCheck{false};
+
+    auto done = do_it(async(default_executor, [] { return 42; }), intCheck);
+    auto hold = done.then([&boolCheck] { boolCheck = true; });
+
+    blocking_get(hold);
+
+    BOOST_REQUIRE_EQUAL(42, intCheck);
+    BOOST_REQUIRE(boolCheck.load());
+}
+
 #endif
