@@ -43,4 +43,4 @@ clion_build/
 cmake-*
 clion_*
 
-
+.ipynb_checkpoints/
