@@ -134,7 +134,7 @@ public:
     }
 
     friend inline bool operator<(const copy_on_write& x, const copy_on_write& y) noexcept {
-        return *x < *y;
+        return !x.identity(y) && (*x < *y);
     }
 
     friend inline bool operator<(const copy_on_write& x, const element_type& y) noexcept {
@@ -182,7 +182,7 @@ public:
     }
 
     friend inline bool operator==(const copy_on_write& x, const copy_on_write& y) noexcept {
-        return *x == *y;
+        return x.identity(y) || (*x == *y);
     }
 
     friend inline bool operator==(const copy_on_write& x, const element_type& y) noexcept {
