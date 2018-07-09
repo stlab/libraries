@@ -123,7 +123,7 @@ struct main_executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {
@@ -150,7 +150,7 @@ struct main_executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         pp::Module::Get()->core()->CallOnMainThread(0,
@@ -178,7 +178,7 @@ struct main_executor_type {
 
 #if __APPLE__
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         ::dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {
