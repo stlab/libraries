@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
 
 namespace {
 struct process_with_set_error {
-    process_with_set_error(std::atomic_bool& check) : _check(check) {}
+    explicit process_with_set_error(std::atomic_bool& check) : _check(check) {}
 
     std::atomic_bool& _check;
 
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) 
 
 namespace {
 struct process_with_close {
-    process_with_close(std::atomic_bool& check) : _check(check) {}
+    explicit process_with_close(std::atomic_bool& check) : _check(check) {}
 
     std::atomic_bool& _check;
 
