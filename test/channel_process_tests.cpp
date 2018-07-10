@@ -298,3 +298,87 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
 
     BOOST_REQUIRE_EQUAL(85, result);
 }
+
+namespace {
+struct process_with_set_error {
+    explicit process_with_set_error(std::atomic_bool& check) : _check(check) {}
+
+    std::atomic_bool& _check;
+
+    void await(int n) { throw std::runtime_error{""}; }
+
+    void set_error(std::exception_ptr error) { _check = true; }
+
+    int yield() { return 42; }
+
+    auto state() const { return await_forever; }
+};
+} // namespace
+
+BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) {
+    BOOST_TEST_MESSAGE("int channel process set_error is called on upstream error");
+
+    std::atomic_bool check{false};
+    sender<int> send;
+    receiver<int> receive;
+
+    std::tie(send, receive) = channel<int>(default_executor);
+
+    auto result = receive |
+                  [](auto v) {
+                      throw std::runtime_error{""};
+                      return v;
+                  } |
+                  process_with_set_error{check} | [](int x) {};
+
+    receive.set_ready();
+    send(42);
+
+    while (!check) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    BOOST_REQUIRE_EQUAL(true, check.load());
+}
+
+namespace {
+struct process_with_close {
+    explicit process_with_close(std::atomic_bool& check) : _check(check) {}
+
+    std::atomic_bool& _check;
+
+    void await(int n) { throw std::runtime_error{""}; }
+
+    void close() { _check = true; }
+
+    int yield() { return 42; }
+
+    auto state() const { return await_forever; }
+};
+} // namespace
+
+BOOST_AUTO_TEST_CASE(int_channel_process_close_is_called_on_upstream_error) {
+    BOOST_TEST_MESSAGE("int channel process close is called when an upstream eeror happened");
+
+    std::atomic_bool check{false};
+    sender<int> send;
+    receiver<int> receive;
+
+    std::tie(send, receive) = channel<int>(default_executor);
+
+    auto result = receive |
+                  [](auto v) {
+                      throw std::runtime_error{""};
+                      return v;
+                  } |
+                  process_with_close{check} | [](int x) {};
+
+    receive.set_ready();
+    send(42);
+
+    while (!check) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    BOOST_REQUIRE_EQUAL(true, check.load());
+}
