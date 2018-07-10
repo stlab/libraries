@@ -266,6 +266,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
+    void reset() { _then.clear(); }
+
     template <typename F>
     auto then(F f) {
         return then(_executor, std::move(f));
@@ -423,6 +425,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
+    void reset() { _then.second = task<void()>{}; }
+
     template <typename F>
     auto then_r(bool unique, F&& f) {
         return then_r(unique, _executor, std::forward<F>(f));
@@ -512,6 +516,8 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     then_t _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
+
+    void reset() { _then.clear(); }
 
     template <typename F>
     auto then(F&& f) {
@@ -611,19 +617,13 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
         _promise_count = 1;
     }
 
-    /*
-        NOTE (sean.parent) : There is some twisted logic in here. The promise count is used
-        by the packaged task. When it destructs the promise count is artificially decremented, _f
-        is reset which breaks a retain loop on this shared object. Without the optional and reset()
-        we have a memory leak.
-    */
 
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
-            // this safety check is only possible in case of no reduction
             if (--_promise_count == 0) {
                 std::unique_lock<std::mutex> lock(this->_mutex);
                 if (!this->_ready) {
+                    this->reset();
                     _f = function_t();
                     this->_error =
                         std::make_exception_ptr(future_error(future_error_codes::broken_promise));
