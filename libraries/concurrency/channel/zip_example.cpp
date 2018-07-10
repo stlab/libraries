@@ -36,7 +36,7 @@ int main() {
     send2(5.7);
     send1(4);
 
-    while (all_done < 4) {
+    while (all_done < 2) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
