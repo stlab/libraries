@@ -6,7 +6,7 @@ scope: stlab
 pure-name: merge
 brief: Creates a receiver that merges all passed arguments. This function is deprecated and will be removed soon. Please instead `merge_channel<unordered_t>`.
 annotation: template function
-example: merge_example.cpp
+example: merge_channel_example.cpp
 defined-in-header: stlab/concurrency/channel.hpp 
 entities:
   - kind: overloads

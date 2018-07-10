@@ -29,7 +29,7 @@ int main() {
     receive2.set_ready();
 
     // even the values are send in mixed order into the channels, the are passed
-    // in round robin manner into the zipped process
+    // in step order into the zipped process
     send1(1);
     send2(2.5);
     send2(5.7);

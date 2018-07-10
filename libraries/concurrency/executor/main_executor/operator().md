@@ -13,7 +13,7 @@ entities:
         defined-in-header: stlab/concurrency/main_executor.hpp 
         declaration: |
           template <typename F> 
-          void operator()(F&& f) const
+          void operator()(F f) const
         description: This executors executes the given function object on the applications main loop.
   - kind: parameters
     list:
