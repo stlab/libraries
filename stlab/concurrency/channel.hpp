@@ -291,7 +291,7 @@ constexpr bool has_process_close_v = is_detected_v<process_close_t, T>;
 
 template <typename T>
 auto process_close(stlab::optional<T>& x) -> std::enable_if_t<has_process_close_v<T>> {
-    if (x.is_initialized()) (*x).close();
+    if (x) (*x).close();
 }
 
 template <typename T>
@@ -319,22 +319,21 @@ auto get_process_state(const stlab::optional<T>& x)
 
 /**************************************************************************************************/
 
-template <typename P, typename... U>
-using process_set_error_t = decltype(
-    std::declval<P&>().set_error(std::declval<std::tuple<variant<U, std::exception_ptr>...>>()));
+template <typename P>
+using process_set_error_t = decltype(std::declval<P&>().set_error(std::declval<std::exception_ptr>()));
 
-template <typename P, typename... U>
-constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P, U...>;
+template <typename P>
+constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P>;
 
-template <typename P, typename... U>
+template <typename P>
 auto set_process_error(P& process, std::exception_ptr&& error)
-    -> std::enable_if_t<has_set_process_error_v<P, U...>, void> {
+    -> std::enable_if_t<has_set_process_error_v<P>, void> {
     process.set_error(std::move(error));
 }
 
-template <typename P, typename... U>
+template <typename P>
 auto set_process_error(P&, std::exception_ptr&& error)
-    -> std::enable_if_t<!has_set_process_error_v<P, U...>, void> {}
+    -> std::enable_if_t<!has_set_process_error_v<P>, void> {}
 
 /**************************************************************************************************/
 
@@ -830,14 +829,20 @@ struct shared_process
         if (message) {
             auto error = find_argument_error(*message);
             if (error) {
-                if (has_set_process_error_v<T, Args...>)
+                if (has_set_process_error_v<T>)
                     set_process_error(*_process, std::move(*error));
                 else
                     do_close = true;
             } else
                 await_variant_args<process_t, Args...>(*_process, *message);
-        } else if (do_close)
+				}
+				else {
+						do_close = true;
+				}
+				
+				if (do_close)
             process_close(_process);
+
         return bool(message);
     }
 

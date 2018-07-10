@@ -531,3 +531,93 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case_and_timeout) 
         stlab::blocking_get(std::move(f), std::chrono::seconds(500)), test_exception,
         ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
 }
+
+BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
+    BOOST_TEST_MESSAGE("future int detach without execution");
+    annotate_counters counter;
+    bool check = true;
+    {
+        auto p = package<int()>(stlab::immediate_executor, [] { return 42; });
+        p.second.then([a = stlab::annotate(counter), &_check = check](int x) { _check = false; }).detach();
+    }
+    std::cout << counter;
+
+    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE(check);
+}
+
+BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
+    BOOST_TEST_MESSAGE("future move_only detach without execution");
+    annotate_counters counter;
+    bool check = true;
+    {
+        auto p = package<move_only()>(stlab::immediate_executor, [] { return move_only{42}; });
+        auto r = std::move(p.second).then([a = stlab::annotate(counter), &_check = check](auto&& x) { _check = false; });
+        r.detach();
+    }
+    std::cout << counter;
+
+    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE(check);
+}
+
+BOOST_AUTO_TEST_CASE(future_void_detach_without_execution) {
+    BOOST_TEST_MESSAGE("future void detach without execution");
+    annotate_counters counter;
+    bool check = true;
+    {
+        auto p = package<void()>(stlab::immediate_executor, [] {});
+        p.second.then([a = stlab::annotate(counter), &_check = check]() { _check = false; }).detach();
+    }
+    std::cout << counter;
+
+    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE(check);
+}
+
+
+BOOST_AUTO_TEST_CASE(future_int_detach_with_execution) {
+    BOOST_TEST_MESSAGE("future int detach with execution");
+    annotate_counters counter;
+    int result = 0;
+    {
+        auto p = package<int()>(stlab::immediate_executor, [] { return 42; });
+        p.second.then([a = stlab::annotate(counter), &_result = result](int x) { _result = x; }).detach();
+        p.first();
+    }
+    std::cout << counter;
+
+    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE_EQUAL(42, result);
+}
+
+BOOST_AUTO_TEST_CASE(future_void_detach_with_execution) {
+    BOOST_TEST_MESSAGE("future void detach with execution");
+    annotate_counters counter;
+    bool check = false;
+    {
+        auto p = package<void()>(stlab::immediate_executor, [] {});
+        p.second.then([a = stlab::annotate(counter), &_check = check]() { _check = true; }).detach();
+        p.first();
+    }
+    std::cout << counter;
+
+    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE(check);
+}
+
+BOOST_AUTO_TEST_CASE(future_move_only_detach_with_execution) {
+    BOOST_TEST_MESSAGE("future move_only detach with execution");
+    annotate_counters counter;
+    int result = 0;
+    {
+        auto p = package<move_only()>(stlab::immediate_executor, [] { return move_only{42}; });
+        auto r = std::move(p.second).then([a = stlab::annotate(counter), &_result = result](auto&& x) { _result = x.member(); });
+        r.detach();
+        p.first();
+    }
+    std::cout << counter;
+
+    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE_EQUAL(42, result);
+}
