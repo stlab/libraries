@@ -9,9 +9,10 @@ using namespace std;
 using namespace stlab;
 
 int main() {
-    sender<int> send1, send2;
-    receiver<int> receive1, receive2;
-
+    sender<int> send1;
+    receiver<int> receive1;
+    sender<double> send2;
+    receiver<double> receive2;
     tie(send1, receive1) = channel<int>(default_executor);
     tie(send2, receive2) = channel<double>(default_executor);
 
