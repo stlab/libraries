@@ -5,10 +5,9 @@
    - [#156](https://github.com/stlab/libraries/issues/156) : `set_error()` does not get called
    - [#134](https://github.com/stlab/libraries/issues/134) : Using `future<>::detach()` is a possible memory leak
    - [#107](https://github.com/stlab/libraries/issues/107) : Some channel functions have problematic names
-
 - Library Breaking Changes
    - Concurrency Library
-       - The functionality of channel's `zip` has changed. Now it behaves comparable to the ranges zip. The previous functionality is replaced with `zip_with`.
+       - The functionality of channel's `zip` has changed. Now it behaves comparable to the ranges TS zip. The previous functionality is replaced with `zip_with`.
        - The `merge` and `join` functions are now deprecated and are replaced with `merge_channel<unordered_t>`and `merge_channel<round_robin_t>`.
 
 ## v1.2.0 - 15 June 2018
