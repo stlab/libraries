@@ -2,12 +2,12 @@
 
 add_executable( stlab.test.channel.test
         "${CMAKE_CURRENT_SOURCE_DIR}/channel_functor_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_join_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_tests.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_round_robin_tests.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_unordered_tests.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_zip_with_tests.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/channel_process_tests.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/channel_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_zip_tests.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm_test.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.hpp" )

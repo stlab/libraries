@@ -43,4 +43,5 @@ clion_build/
 cmake-*
 clion_*
 
-
+# jupyter backups
+.ipynb_checkpoints/
