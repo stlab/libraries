@@ -1,3 +1,15 @@
+## v1.3.0 - 2018 - July - 15
+
+- Fixed Issues 
+   - [#160](https://github.com/stlab/libraries/issues/160) : main_executor for lib dispatch: `operator()` missing const qualifier
+   - [#156](https://github.com/stlab/libraries/issues/156) : `set_error()` does not get called
+   - [#134](https://github.com/stlab/libraries/issues/134) : Using `future<>::detach()` is a possible memory leak
+   - [#107](https://github.com/stlab/libraries/issues/107) : Some channel functions have problematic names
+- Library Breaking Changes
+   - Concurrency Library
+       - The functionality of channel's `zip` has changed. Now it behaves comparable to the ranges TS zip. The previous functionality is replaced with `zip_with`.
+       - The `merge` and `join` functions are now deprecated and are replaced with `merge_channel<unordered_t>`and `merge_channel<round_robin_t>`.
+
 ## v1.2.0 - 15 June 2018
 
 - Fixed Issues 
@@ -8,7 +20,7 @@
    - Concurrency Library
        - Adding usage of std::optional, std::variant or std::experimental::optional when compiling with C++17 mode. So the dependency to boost.optional is optional.
        - Adding co-routine support for futures. (Only for VS 2017 and clang 5.0)
-	   - Adding main_executor for Qt support
+       - Adding main_executor for Qt support
    
 ## v1.1.1 - 13 December 2017
 
