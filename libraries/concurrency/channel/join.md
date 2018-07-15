@@ -4,9 +4,9 @@ title: stlab::join
 tags: [library]
 scope: stlab
 pure-name: join
-brief: Creates a future that joins all passed arguments
+brief: Creates a future that joins all passed arguments. This function is deprecated and it will soon be removed. Please use instead of `zip_with`
 annotation: template function
-example: join_example.cpp
+example: zip_with_example.cpp
 defined-in-header: stlab/concurrency/channel.hpp
 entities:
   - kind: overloads
@@ -15,7 +15,7 @@ entities:
         pure-name: join
         declaration: |
             template <typename E, typename F, typename...R>
-            auto join(E e, F f, R&&... upstream_receiver)
+            [[deprecated]] auto join(E e, F f, R... upstream_receiver)
         description: This function creates a new receiver and attaches the process `f` to it. The values coming from the upstream receiver are the parameters of `f`. The incoming upstream values are not passed one after the other to this process, but they are passed as a complete set of arguments to the process. So the last incoming upstream value triggers the execution of `f`.
   - kind: parameters
     list:

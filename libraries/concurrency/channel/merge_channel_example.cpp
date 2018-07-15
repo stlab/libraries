@@ -18,7 +18,7 @@ int main() {
 
     std::atomic_int all_done{ 0 };
 
-    auto merged = merge(default_executor, 
+    auto merged = merge_channel<unordered_t>(default_executor, 
                         [](int x) { return x; }, 
                         receive1, 
                         receive2, 
