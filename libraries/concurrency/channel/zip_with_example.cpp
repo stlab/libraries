@@ -17,7 +17,7 @@ int main() {
 
     std::atomic_bool done{ false };
 
-    auto joined = join(default_executor, 
+    auto joined = zip_with(default_executor, 
                       [](int x, int y) { return x + y; }, // x will get 1, y will get 2
                       receive1, 
                       receive2)

@@ -18,7 +18,7 @@
     "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 470
+    "contributions": 495
   },
   {
     "login": "fosterbrereton",
@@ -60,7 +60,7 @@
     "received_events_url": "https://api.github.com/users/sean-parent/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 110
+    "contributions": 113
   },
   {
     "login": "apmccartney",

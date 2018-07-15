@@ -4,7 +4,7 @@ title: stlab::zip
 tags: [library]
 scope: stlab
 pure-name: zip
-brief: It creates a process that zips all passed arguments and returns a receiver.
+brief: It zips the values in step from all upstream receivers. (The functionality has changed after release 1.2.0!)
 annotation: template function
 example: zip_example.cpp
 defined-in-header: stlab/concurrency/channel.hpp  
@@ -14,17 +14,15 @@ entities:
       - name: zip
         pure-name: zip
         declaration: |
-            template <typename E, typename F, typename...R>
-            auto zip(E e, F f, R&&... upstream_receiver)
-        description: This function creates a process that executes the provided function object with the results from the upstream process. The results are passed in a round-robin manner, starting with the result from the first receiver.
+            template <typename E, typename...R>
+            auto zip(E e, R... upstream_receiver)
+        description: This function creates receiver of type `tuple<T...>` where `T...` are the `result_type`s of the passed `upstream_receiver`. Whenever a complete set of values from each upstream receiver has arrived, it passes the tuple with the values downstream.
   - kind: parameters
     list:
       - name: e
         description: Executor which is used to schedule the resulting task
-      - name: f
-        description: Callable object that implements the process. All results from the upstream process must be convertable to the only argument of the provided function object's function operator or the argument of process' await function.
       - name: upstream_receiver
         description: The upstream receiver(s). 
   - kind: result
-    description: a future that zips all passed arguments
+    description: a `tuple<T...>` where `T...` are the `result_types` of all `upstream_receiver`.
 ---

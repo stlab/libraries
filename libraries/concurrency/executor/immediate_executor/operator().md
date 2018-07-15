@@ -14,7 +14,7 @@ entities:
         defined-in-header: stlab/concurrency/immediate_executor.hpp 
         declaration: |
           template <typename F> 
-          void operator()(F&& f) const
+          void operator()(F f) const
         description: Execute the given function object immediately.
   - kind: parameters
     list:
