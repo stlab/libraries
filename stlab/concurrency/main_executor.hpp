@@ -111,7 +111,8 @@ public:
     void operator()(F f) const {
         auto event = std::make_unique<executor_event>();
         event->set_task(std::move(f));
-        QCoreApplication::postEvent(event->receiver(), event.release());
+        auto receiver = event->receiver();
+        QCoreApplication::postEvent(receiver, event.release());
     }
 };
 
