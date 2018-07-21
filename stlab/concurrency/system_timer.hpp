@@ -12,6 +12,7 @@
 /**************************************************************************************************/
 
 #include <stlab/concurrency/config.hpp>
+#include <stlab/concurrency/task.hpp>
 
 #include <chrono>
 #include <functional>

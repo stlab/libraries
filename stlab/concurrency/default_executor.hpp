@@ -10,6 +10,7 @@
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
 #include <stlab/concurrency/config.hpp>
+#include <stlab/concurrency/task.hpp>
 
 #include <chrono>
 #include <functional>
