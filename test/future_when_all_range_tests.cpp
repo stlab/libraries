@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return 42; }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p, &_r = r](std::vector<int> v) {
                        _p = v.size();
                        _r = v[0];
@@ -68,7 +68,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
 
     BOOST_REQUIRE_EQUAL(size_t(1), p);
     BOOST_REQUIRE_EQUAL(size_t(42), r);
-    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
@@ -77,11 +78,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
     size_t r = 0;
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return 1; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return 2; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return 2; }));
     futures.push_back(async(custom_scheduler<0>(), [] { return 3; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return 5; }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p, &_r = r](std::vector<int> v) {
                        _p = v.size();
                        for (auto i : v) {
@@ -95,8 +96,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(size_t(1 + 2 + 3 + 5), r);
-    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 /*
@@ -113,11 +114,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements)
     auto start = async(custom_scheduler<0>(), [] { return 4711; });
     std::vector<stlab::future<void>> futures(4);
     futures[0] = start.then(custom_scheduler<0>(), [& _p = v[0]](auto x) { _p = x + 1; });
-    futures[1] = start.then(custom_scheduler<1>(), [& _p = v[1]](auto x) { _p = x + 2; });
+    futures[1] = start.then(custom_scheduler<0>(), [& _p = v[1]](auto x) { _p = x + 2; });
     futures[2] = start.then(custom_scheduler<0>(), [& _p = v[2]](auto x) { _p = x + 3; });
-    futures[3] = start.then(custom_scheduler<1>(), [& _p = v[3]](auto x) { _p = x + 5; });
+    futures[3] = start.then(custom_scheduler<0>(), [& _p = v[3]](auto x) { _p = x + 5; });
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _r = r, &v]() {
                        for (auto i : v) {
                            _r += i;
@@ -129,10 +130,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements)
     wait_until_future_completed(sut);
 
     BOOST_REQUIRE_EQUAL(4711 + 1 + 4711 + 2 + 4711 + 3 + 4711 + 5, r);
-    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(5, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 BOOST_AUTO_TEST_SUITE_END()
+
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_range_int, test_fixture<int>)
 BOOST_AUTO_TEST_CASE(future_when_all_int_empty_range) {
@@ -156,7 +158,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_one_element) {
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return 42; }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p](std::vector<int> v) {
                        _p = v.size();
                        return v[0];
@@ -169,6 +171,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_one_element) {
     BOOST_REQUIRE_EQUAL(size_t(1), p);
     BOOST_REQUIRE_EQUAL(42, *sut.get_try());
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_many_elements) {
@@ -176,11 +179,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_many_elements) {
     size_t p = 0;
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return 1; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return 2; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return 2; }));
     futures.push_back(async(custom_scheduler<0>(), [] { return 3; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return 5; }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p](std::vector<int> v) {
                        _p = v.size();
                        auto r = 0;
@@ -196,8 +199,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_many_elements) {
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, *sut.get_try());
-    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 /*
@@ -213,11 +216,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_diamond_formation_elements) 
     auto start = async(custom_scheduler<0>(), [] { return 4711; });
     std::vector<stlab::future<int>> futures(4);
     futures[0] = start.then(custom_scheduler<0>(), [](auto x) { return x + 1; });
-    futures[1] = start.then(custom_scheduler<1>(), [](auto x) { return x + 2; });
+    futures[1] = start.then(custom_scheduler<0>(), [](auto x) { return x + 2; });
     futures[2] = start.then(custom_scheduler<0>(), [](auto x) { return x + 3; });
-    futures[3] = start.then(custom_scheduler<1>(), [](auto x) { return x + 5; });
+    futures[3] = start.then(custom_scheduler<0>(), [](auto x) { return x + 5; });
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p](std::vector<int> v) {
                        _p = v.size();
                        auto r = 0;
@@ -233,8 +236,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_diamond_formation_elements) 
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(4711 + 1 + 4711 + 2 + 4711 + 3 + 4711 + 5, *sut.get_try());
-    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -248,11 +251,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_move_range_with_many_elements) {
     size_t p = 0;
     std::vector<stlab::future<stlab::move_only>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return stlab::move_only{1}; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return stlab::move_only{2}; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return stlab::move_only{2}; }));
     futures.push_back(async(custom_scheduler<0>(), [] { return stlab::move_only{3}; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return stlab::move_only{5}; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return stlab::move_only{5}; }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p](std::vector<stlab::move_only> v) {
                        _p = v.size();
                        auto r = 0;
@@ -268,8 +271,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_move_range_with_many_elements) {
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, (*sut.get_try()).member() );
-    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -286,7 +289,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
     futures.push_back(
         async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p, &_r = r](const std::vector<int>& v) {
                        _p = v.size();
                        _r = v[0];
@@ -299,6 +302,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
     BOOST_REQUIRE_EQUAL(size_t(0), p);
     BOOST_REQUIRE_EQUAL(size_t(0), r);
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_one_failing) {
@@ -309,11 +313,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_one_failing) 
     std::vector<stlab::future<int>> futures;
     futures.push_back(
         async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return 2; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return 2; }));
     futures.push_back(async(custom_scheduler<0>(), [] { return 3; }));
-    futures.push_back(async(custom_scheduler<1>(), [] { return 5; }));
+    futures.push_back(async(custom_scheduler<0>(), [] { return 5; }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p, &_r = r](const std::vector<int>& v) {
                        _p = v.size();
                        for (auto i : v) {
@@ -327,7 +331,10 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_one_failing) 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
     BOOST_REQUIRE_EQUAL(size_t(0), r);
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
+
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_all_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with many elements and all failing");
@@ -337,13 +344,13 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_all_failing) 
     futures.push_back(
         async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); }));
     futures.push_back(
-        async(custom_scheduler<1>(), []() -> int { throw test_exception("failure"); }));
+        async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); }));
     futures.push_back(
         async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); }));
     futures.push_back(
-        async(custom_scheduler<1>(), []() -> int { throw test_exception("failure"); }));
+        async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); }));
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _p = p, &_r = r](const std::vector<int>& v) {
                        _p = v.size();
                        for (auto i : v) {
@@ -357,6 +364,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_all_failing) 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
     BOOST_REQUIRE_EQUAL(size_t(0), r);
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 /*
@@ -373,12 +382,12 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
     int r = 0;
     auto start = async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); });
     std::vector<stlab::future<void>> futures(4);
-    futures[0] = start.then(custom_scheduler<1>(), [& _p = v[0]](auto x) { _p = x + 1; });
-    futures[1] = start.then(custom_scheduler<1>(), [& _p = v[1]](auto x) { _p = x + 2; });
-    futures[2] = start.then(custom_scheduler<1>(), [& _p = v[2]](auto x) { _p = x + 3; });
-    futures[3] = start.then(custom_scheduler<1>(), [& _p = v[3]](auto x) { _p = x + 5; });
+    futures[0] = start.then(custom_scheduler<0>(), [& _p = v[0]](auto x) { _p = x + 1; });
+    futures[1] = start.then(custom_scheduler<0>(), [& _p = v[1]](auto x) { _p = x + 2; });
+    futures[2] = start.then(custom_scheduler<0>(), [& _p = v[2]](auto x) { _p = x + 3; });
+    futures[3] = start.then(custom_scheduler<0>(), [& _p = v[3]](auto x) { _p = x + 5; });
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _r = r, &v]() {
                        for (auto i : v) {
                            _r += i;
@@ -393,6 +402,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
     for (auto d : v) {
         BOOST_REQUIRE_EQUAL(0, d);
     }
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(
@@ -403,12 +414,12 @@ BOOST_AUTO_TEST_CASE(
     int r = 0;
     auto start = async(custom_scheduler<0>(), []() -> int { return 42; });
     std::vector<stlab::future<void>> futures(4);
-    futures[0] = start.then(custom_scheduler<1>(), [& _p = v[0]](auto x) { _p = x + 1; });
-    futures[1] = start.then(custom_scheduler<1>(), [](auto) { throw test_exception("failure"); });
-    futures[2] = start.then(custom_scheduler<1>(), [& _p = v[2]](auto x) { _p = x + 3; });
-    futures[3] = start.then(custom_scheduler<1>(), [& _p = v[3]](auto x) { _p = x + 5; });
+    futures[0] = start.then(custom_scheduler<0>(), [& _p = v[0]](auto x) { _p = x + 1; });
+    futures[1] = start.then(custom_scheduler<0>(), [](auto) { throw test_exception("failure"); });
+    futures[2] = start.then(custom_scheduler<0>(), [& _p = v[2]](auto x) { _p = x + 3; });
+    futures[3] = start.then(custom_scheduler<0>(), [& _p = v[3]](auto x) { _p = x + 5; });
 
-    sut = when_all(custom_scheduler<0>(),
+    sut = when_all(custom_scheduler<1>(),
                    [& _r = r, &v]() {
                        for (auto i : v) {
                            _r += i;
@@ -420,6 +431,8 @@ BOOST_AUTO_TEST_CASE(
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_join_failing) {
@@ -429,18 +442,20 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
     int r = 0;
     auto start = async(custom_scheduler<0>(), []() -> int { return 42; });
     std::vector<stlab::future<void>> futures(4);
-    futures[0] = start.then(custom_scheduler<1>(), [& _p = v[0]](auto x) { _p = x + 1; });
-    futures[1] = start.then(custom_scheduler<1>(), [& _p = v[1]](auto x) { _p = x + 2; });
-    futures[2] = start.then(custom_scheduler<1>(), [& _p = v[2]](auto x) { _p = x + 3; });
-    futures[3] = start.then(custom_scheduler<1>(), [& _p = v[3]](auto x) { _p = x + 5; });
+    futures[0] = start.then(custom_scheduler<0>(), [& _p = v[0]](auto x) { _p = x + 1; });
+    futures[1] = start.then(custom_scheduler<0>(), [& _p = v[1]](auto x) { _p = x + 2; });
+    futures[2] = start.then(custom_scheduler<0>(), [& _p = v[2]](auto x) { _p = x + 3; });
+    futures[3] = start.then(custom_scheduler<0>(), [& _p = v[3]](auto x) { _p = x + 5; });
 
-    sut = when_all(custom_scheduler<0>(), []() { throw test_exception("failure"); },
+    sut = when_all(custom_scheduler<1>(), []() { throw test_exception("failure"); },
                    std::make_pair(futures.begin(), futures.end()));
 
     wait_until_future_fails<test_exception>(sut);
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

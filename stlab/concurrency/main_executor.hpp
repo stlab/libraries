@@ -34,7 +34,7 @@
 #endif
 
 #if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
-#include <QApplication>
+#include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
 #include <memory>
@@ -82,7 +82,7 @@ class main_executor_type {
 
     public:
         executor_event() : QEvent(QEvent::User), _receiver(new event_receiver()) {
-            _receiver->moveToThread(QApplication::instance()->thread());
+            _receiver->moveToThread(QCoreApplication::instance()->thread());
         }
 
         template <typename F>
@@ -111,7 +111,8 @@ public:
     void operator()(F f) const {
         auto event = std::make_unique<executor_event>();
         event->set_task(std::move(f));
-        QApplication::postEvent(event->receiver(), event.release());
+        auto receiver = event->receiver();
+        QCoreApplication::postEvent(receiver, event.release());
     }
 };
 

@@ -1,3 +1,11 @@
+## v1.3.1 - 2018 - July - 21
+
+- Fixed Issues 
+   - [#169](https://github.com/stlab/libraries/issues/169) : when_all() appears to ignore the passed-in executor
+   - [#168](https://github.com/stlab/libraries/issues/168) : Main Executor requires "widgets" to be dragged into Qt build
+   - [#167](https://github.com/stlab/libraries/issues/167) : Main Executor has potential segfault
+   - [#166](https://github.com/stlab/libraries/issues/166) : Multiple task_system and system_timer are being created
+
 ## v1.3.0 - 2018 - July - 15
 
 - Fixed Issues 
