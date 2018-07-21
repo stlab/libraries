@@ -10,6 +10,7 @@
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
 #include <stlab/concurrency/config.hpp>
+#include <stlab/concurrency/task.hpp>
 
 #include <chrono>
 #include <functional>
@@ -287,10 +288,9 @@ public:
 struct default_executor_type {
     using result_type = void;
 
-    template <typename F>
-    void operator()(F&& f) const {
+    void operator()(task<void()> f) const {
         static task_system only_task_system;
-        only_task_system(std::forward<F>(f));
+        only_task_system(std::move(f));
     }
 };
 
