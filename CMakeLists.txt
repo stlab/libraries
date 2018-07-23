@@ -5,6 +5,9 @@ project( stlab LANGUAGES C CXX )
 
 option( coverage "Enable binary instrumentation to collect test coverage information in the DEBUG configuration" )
 option( stlab_testing "Compile the stlab tests and integrate with ctest" ${BUILD_TESTING} )
+option( stlab_force_boost_optional "Force use of Boost optional." OFF)
+option( stlab_force_boost_variant "Force use of Boost variant." OFF)
+option( stlab_disable_future_coroutines "Disable use of coroutines." OFF)
 
 set( Boost_MULTITHREADED ON ) 
 set( Boost_USE_STATIC_LIBS ON )
@@ -44,6 +47,19 @@ target_sources( stlab INTERFACE
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/utility.hpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/stlab/concurrency/variant.hpp")
+
+if( ${stlab_disable_future_coroutines} )
+  target_compile_definitions( stlab INTERFACE STLAB_DISABLE_FUTURE_COROUTINES )
+endif()
+
+if( ${Boost_FOUND} )
+  if( ${stlab_force_boost_optional} )
+    target_compile_definitions( stlab INTERFACE STLAB_FORCE_BOOST_OPTIONAL)
+  endif()
+  if( ${stlab_force_boost_variant} )
+    target_compile_definitions( stlab INTERFACE STLAB_FORCE_BOOST_VARIANT)
+  endif()
+endif()
 
 set( flags "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CMAKE_CXX_COMPILER_ID}.cmake" )
 if( EXISTS ${flags} )
