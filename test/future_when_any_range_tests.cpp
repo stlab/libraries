@@ -605,7 +605,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
     sut = when_any(custom_scheduler<1>(),
       [&_i = index](stlab::move_only x, size_t index) {
       _i = index;
-      return std::move(x);
+      return x;
     },
       std::make_pair(futures.begin(), futures.end()));
 
