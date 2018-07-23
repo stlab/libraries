@@ -34,7 +34,7 @@
 #endif
 
 #if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
-#include <QApplication>
+#include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
 #include <memory>
@@ -82,7 +82,7 @@ class main_executor_type {
 
     public:
         executor_event() : QEvent(QEvent::User), _receiver(new event_receiver()) {
-            _receiver->moveToThread(QApplication::instance()->thread());
+            _receiver->moveToThread(QCoreApplication::instance()->thread());
         }
 
         template <typename F>
@@ -111,7 +111,8 @@ public:
     void operator()(F f) const {
         auto event = std::make_unique<executor_event>();
         event->set_task(std::move(f));
-        QApplication::postEvent(event->receiver(), event.release());
+        auto receiver = event->receiver();
+        QCoreApplication::postEvent(receiver, event.release());
     }
 };
 
@@ -123,7 +124,7 @@ struct main_executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {
@@ -150,7 +151,7 @@ struct main_executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         pp::Module::Get()->core()->CallOnMainThread(0,
@@ -178,7 +179,7 @@ struct main_executor_type {
 
 #if __APPLE__
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         ::dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {

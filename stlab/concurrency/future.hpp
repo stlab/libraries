@@ -266,6 +266,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
+    void reset() { _then.clear(); }
+
     template <typename F>
     auto then(F f) {
         return then(_executor, std::move(f));
@@ -423,6 +425,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
+    void reset() { _then.second = task<void()>{}; }
+
     template <typename F>
     auto then_r(bool unique, F&& f) {
         return then_r(unique, _executor, std::forward<F>(f));
@@ -512,6 +516,8 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     then_t _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
+
+    void reset() { _then.clear(); }
 
     template <typename F>
     auto then(F&& f) {
@@ -611,19 +617,13 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
         _promise_count = 1;
     }
 
-    /*
-        NOTE (sean.parent) : There is some twisted logic in here. The promise count is used
-        by the packaged task. When it destructs the promise count is artificially decremented, _f
-        is reset which breaks a retain loop on this shared object. Without the optional and reset()
-        we have a memory leak.
-    */
 
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
-            // this safety check is only possible in case of no reduction
             if (--_promise_count == 0) {
                 std::unique_lock<std::mutex> lock(this->_mutex);
                 if (!this->_ready) {
+                    this->reset();
                     _f = function_t();
                     this->_error =
                         std::make_exception_ptr(future_error(future_error_codes::broken_promise));
@@ -1160,12 +1160,14 @@ auto when_all(E executor, F f, future<Ts>... args) {
     using result_t = decltype(detail::apply_tuple(std::declval<F>(), std::declval<vt_t>()));
 
     auto shared = std::make_shared<detail::when_all_shared<F, opt_t>>();
-    auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
+    auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared] {
         return detail::apply_when_all_args(_f, _p);
     });
     shared->_f = std::move(p.first);
 
     detail::attach_when_args(shared, std::move(args)...);
+
+    executor(std::move(p.first));
 
     return std::move(p.second);
 }
@@ -1179,12 +1181,14 @@ struct make_when_any {
         using result_t = typename std::result_of<F(T, size_t)>::type;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
-        auto p = package<result_t()>(std::move(executor), [_f = std::move(f), _p = shared] {
+        auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared] {
             return detail::apply_when_any_arg(_f, _p);
         });
         shared->_f = std::move(p.first);
 
         detail::attach_when_args(shared, std::move(arg), std::move(args)...);
+
+        executor(std::move(p.first));
 
         return std::move(p.second);
     }
@@ -1199,12 +1203,14 @@ struct make_when_any<void> {
         using result_t = typename std::result_of<F(size_t)>::type;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
-        auto p = package<result_t()>(std::move(executor), [_f = std::forward<F>(f), _p = shared] {
+        auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared] {
             return detail::apply_when_any_arg(_f, _p);
         });
         shared->_f = std::move(p.first);
 
         detail::attach_when_args(shared, std::move(args)...);
+
+        executor(std::move(p.first));
 
         return std::move(p.second);
     }
@@ -1412,12 +1418,12 @@ struct create_range_of_futures;
 template <typename R, typename T, typename C>
 struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
 
-    template <typename S, typename F, typename I>
-    static auto do_it(S&& s, F&& f, I first, I last) {
+    template <typename E, typename F, typename I>
+    static auto do_it(E executor, F&& f, I first, I last) {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
-        auto p = package<R()>(std::forward<S>(s), [_c = context] { return _c->execute(); });
+        auto p = package<R()>(executor, [_c = context] { return _c->execute(); });
 
         context->_f = std::move(p.first);
 
@@ -1426,6 +1432,8 @@ struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
             attach_tasks(index++, context, *first);
         }
 
+        executor(std::move(p.first));
+
         return std::move(p.second);
     }
 };
@@ -1433,24 +1441,25 @@ struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
 template <typename R, typename T, typename C>
 struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
 
-  template <typename S, typename F, typename I>
-  static auto do_it(S&& s, F&& f, I first, I last) {
-    assert(first != last);
+    template <typename E, typename F, typename I>
+    static auto do_it(E executor, F&& f, I first, I last) {
+        assert(first != last);
 
-    auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
-    auto p = package<R()>(std::forward<S>(s), [_c = context] { return _c->execute(); });
+        auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
+        auto p = package<R()>(executor, [_c = context] { return _c->execute(); });
 
-    context->_f = std::move(p.first);
+        context->_f = std::move(p.first);
 
-    size_t index(0);
-    for (; first != last; ++first) {
-      attach_tasks(index++, context, std::forward<decltype(*first)>(*first));
+        size_t index(0);
+        for (; first != last; ++first) {
+            attach_tasks(index++, context, std::forward<decltype(*first)>(*first));
+        }
+
+        executor(std::move(p.first));
+
+        return std::move(p.second);
     }
-
-    return std::move(p.second);
-  }
 };
-
 
 /**************************************************************************************************/
 

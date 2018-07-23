@@ -34,6 +34,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 template <typename, typename = void>
@@ -290,7 +291,7 @@ constexpr bool has_process_close_v = is_detected_v<process_close_t, T>;
 
 template <typename T>
 auto process_close(stlab::optional<T>& x) -> std::enable_if_t<has_process_close_v<T>> {
-    if (x.is_initialized()) (*x).close();
+    if (x) (*x).close();
 }
 
 template <typename T>
@@ -318,22 +319,21 @@ auto get_process_state(const stlab::optional<T>& x)
 
 /**************************************************************************************************/
 
-template <typename P, typename... U>
-using process_set_error_t = decltype(
-    std::declval<P&>().set_error(std::declval<std::tuple<variant<U, std::exception_ptr>...>>()));
+template <typename P>
+using process_set_error_t = decltype(std::declval<P&>().set_error(std::declval<std::exception_ptr>()));
 
-template <typename P, typename... U>
-constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P, U...>;
+template <typename P>
+constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P>;
 
-template <typename P, typename... U>
+template <typename P>
 auto set_process_error(P& process, std::exception_ptr&& error)
-    -> std::enable_if_t<has_set_process_error_v<P, U...>, void> {
+    -> std::enable_if_t<has_set_process_error_v<P>, void> {
     process.set_error(std::move(error));
 }
 
-template <typename P, typename... U>
+template <typename P>
 auto set_process_error(P&, std::exception_ptr&& error)
-    -> std::enable_if_t<!has_set_process_error_v<P, U...>, void> {}
+    -> std::enable_if_t<!has_set_process_error_v<P>, void> {}
 
 /**************************************************************************************************/
 
@@ -356,6 +356,8 @@ template <typename P, typename... T>
 void await_variant_args(P& process, std::tuple<variant<T, std::exception_ptr>...>& args) {
     await_variant_args_<P, T...>(process, args, std::make_index_sequence<sizeof...(T)>());
 }
+
+/**************************************************************************************************/
 
 template <typename T>
 stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
@@ -403,7 +405,7 @@ struct default_queue_strategy {
 /**************************************************************************************************/
 
 template <typename... T>
-struct join_queue_strategy {
+struct zip_with_queue_strategy {
     static const std::size_t Size = sizeof...(T);
     static const std::size_t arguments_size = Size;
     using value_type = std::tuple<variant<T, std::exception_ptr>...>;
@@ -446,7 +448,7 @@ struct join_queue_strategy {
 /**************************************************************************************************/
 
 template <typename... T>
-struct zip_queue_strategy {
+struct round_robin_queue_strategy {
     static const std::size_t Size = sizeof...(T);
     static const std::size_t arguments_size = 1;
     using item_t = variant<first_t<T...>, std::exception_ptr>;
@@ -495,7 +497,7 @@ struct zip_queue_strategy {
 /**************************************************************************************************/
 
 template <typename... T>
-struct merge_queue_strategy {
+struct unordered_queue_strategy {
     static const std::size_t Size = sizeof...(T);
     static const std::size_t arguments_size = 1;
     using item_t = variant<first_t<T...>, std::exception_ptr>;
@@ -827,14 +829,20 @@ struct shared_process
         if (message) {
             auto error = find_argument_error(*message);
             if (error) {
-                if (has_set_process_error_v<T, Args...>)
+                if (has_set_process_error_v<T>)
                     set_process_error(*_process, std::move(*error));
                 else
                     do_close = true;
             } else
                 await_variant_args<process_t, Args...>(*_process, *message);
-        } else if (do_close)
+				}
+				else {
+						do_close = true;
+				}
+				
+				if (do_close)
             process_close(_process);
+
         return bool(message);
     }
 
@@ -1032,6 +1040,31 @@ struct shared_process
 
 /**************************************************************************************************/
 
+} // namespace detail
+
+struct unordered_t
+{
+    template<typename...R>
+    using strategy_type = detail::unordered_queue_strategy<detail::receiver_t<R>...>;
+};
+
+struct round_robin_t
+{
+    template<typename...R>
+    using strategy_type = detail::round_robin_queue_strategy<detail::receiver_t<R>...>;
+};
+
+struct zip_with_t
+{
+    template<typename...R>
+    using strategy_type = detail::zip_with_queue_strategy<detail::receiver_t<R>...>;
+};
+
+
+/**************************************************************************************************/
+
+namespace detail {
+
 // This helper class is necessary to encapsulate the following functions, because Clang
 // currently has a bug in accepting friend functions with auto return type
 struct channel_combiner {
@@ -1057,57 +1090,40 @@ struct channel_combiner {
                                      std::make_index_sequence<sizeof...(R)>());
     }
 
-    template <typename S, typename F, typename... R>
-    static auto join_(S&& s, F&& f, R&&... upstream_receiver) {
-        using result_t = yield_type<F, receiver_t<R>...>;
+    template <typename M, typename F, typename... R>
+    struct merge_result
+    {
+        using type = yield_type<F, receiver_t<first_t<R...>>>;
+    };
 
-        auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
-        auto join_process = std::make_shared<
-            shared_process<join_queue_strategy<receiver_t<R>...>, F, result_t, receiver_t<R>...>>(
-            std::move(s), std::forward<F>(f), upstream_receiver._p...);
+    template <typename F, typename... R>
+    struct merge_result<zip_with_t, F, R...>
+    {
+        using type = yield_type<F, receiver_t<R>...>;
+    };
 
-        map_as_sender<decltype(join_process), decltype(upstream_receiver_processes),
-                      receiver_t<R>...>(join_process, upstream_receiver_processes);
+    template <typename M, typename S, typename F, typename... R>
+    static auto merge_helper(S&& s, F&& f, R&&... upstream_receiver) {
 
-        return receiver<result_t>(std::move(join_process));
-    }
-
-    template <typename S, typename F, typename... R>
-    static auto zip_(S&& s, F&& f, R&&... upstream_receiver) {
-        static_assert(
-            all_true<std::is_convertible<receiver_t<R>, receiver_t<first_t<R...>>>::value...>{},
-            "All receiver types must be convertible to the type of the firsts receiver type!");
-
-        using result_t = yield_type<F, receiver_t<first_t<R...>>>;
-
-        auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
-        auto zip_process = std::make_shared<
-            shared_process<zip_queue_strategy<receiver_t<R>...>, F, result_t, receiver_t<R>...>>(
-            std::move(s), std::forward<F>(f), upstream_receiver._p...);
-
-        map_as_sender<decltype(zip_process), decltype(upstream_receiver_processes),
-                      receiver_t<R>...>(zip_process, upstream_receiver_processes);
-
-        return receiver<result_t>(std::move(zip_process));
-    }
-
-    template <typename S, typename F, typename... R>
-    static auto merge_(S&& s, F&& f, R&&... upstream_receiver) {
-        static_assert(
-            all_true<std::is_convertible<receiver_t<R>, receiver_t<first_t<R...>>>::value...>{},
-            "All receiver types must be convertible to the type of the firsts receiver type!");
-
-        using result_t = yield_type<F, receiver_t<first_t<R...>>>;
+        using result_t = typename merge_result<M, F, R...>::type;
 
         auto upstream_receiver_processes = std::make_tuple(upstream_receiver._p...);
         auto merge_process = std::make_shared<
-            shared_process<merge_queue_strategy<receiver_t<R>...>, F, result_t, receiver_t<R>...>>(
-            std::move(s), std::forward<F>(f), upstream_receiver._p...);
+            shared_process<typename M::template strategy_type<R...>, F, result_t, receiver_t<R>...>>(
+            std::forward<S>(s), std::forward<F>(f), upstream_receiver._p...);
 
         map_as_sender<decltype(merge_process), decltype(upstream_receiver_processes),
-                      receiver_t<R>...>(merge_process, upstream_receiver_processes);
+            receiver_t<R>...>(merge_process, upstream_receiver_processes);
 
         return receiver<result_t>(std::move(merge_process));
+    }
+};
+
+struct zip_helper
+{
+    template <typename... T>
+    auto operator()(T&&... t) const {
+        return std::make_tuple(std::forward<T>(t)...);
     }
 };
 
@@ -1128,26 +1144,44 @@ auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
 /**************************************************************************************************/
 
 template <typename S, typename F, typename... R>
-auto join(S s, F f, R&&... upstream_receiver) {
-    return detail::channel_combiner::join_(std::move(s), std::move(f),
-                                           std::forward<R>(upstream_receiver)...);
+[[deprecated("Use zip_with")]] auto join(S s, F f, R... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<zip_with_t, S, F, R...>(
+            std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename F, typename... R>
-auto zip(S s, F f, R&&... upstream_receiver) {
-    return detail::channel_combiner::zip_(std::move(s), std::move(f),
-                                          std::forward<R>(upstream_receiver)...);
+[[deprecated("Use merge_channel<unordered_t>")]] auto merge(S s, F f, R... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<unordered_t, S, F, R...>(
+        std::move(s), std::move(f), std::move(upstream_receiver)...);
+}
+
+/**************************************************************************************************/
+
+template <typename M, typename S, typename F, typename... R>
+auto merge_channel(S s, F f, R... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<M, S, F, R...>(
+        std::move(s), std::move(f), std::move(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename F, typename... R>
-auto merge(S s, F f, R&&... upstream_receiver) {
-    return detail::channel_combiner::merge_(std::move(s), std::move(f),
-                                            std::forward<R>(upstream_receiver)...);
+auto zip_with(S s, F f, R... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<zip_with_t, S, F, R...>(std::move(s), std::move(f),
+                                               std::forward<R>(upstream_receiver)...);
 }
+
+/**************************************************************************************************/
+
+template <typename S, typename... R>
+auto zip(S s, R... r) {
+    return zip_with(std::move(s), detail::zip_helper{}, std::move(r)...);
+}
+
+// template <typename S, typename F, typename... R>
+// [[deprecated("Use merge_channel<round_robin_t>")]] auto zip(S s, F f, R... upstream_receiver);
 
 /**************************************************************************************************/
 
@@ -1304,7 +1338,7 @@ class receiver {
     friend class sender;
 
     template <typename U>
-    friend class receiver; // huh?
+    friend class receiver;
 
     template <typename U, typename V>
     friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
@@ -1428,9 +1462,11 @@ public:
     void swap(sender& x) noexcept { std::swap(*this, x); }
 
     inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
+
     inline friend bool operator==(const sender& x, const sender& y) {
         return x._p.lock() == y._p.lock();
     };
+
     inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {
@@ -1477,9 +1513,11 @@ public:
     void swap(sender& x) noexcept { std::swap(*this, x); }
 
     inline friend void swap(sender& x, sender& y) noexcept { x.swap(y); }
+
     inline friend bool operator==(const sender& x, const sender& y) {
         return x._p.lock() == y._p.lock();
     };
+
     inline friend bool operator!=(const sender& x, const sender& y) { return !(x == y); };
 
     void close() {

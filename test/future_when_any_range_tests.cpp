@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_void_empty_range) {
     wait_until_future_fails<stlab::future_error>(sut);
 
     BOOST_REQUIRE(!check);
-    BOOST_WARN_EQUAL(0, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_EQUAL(0, custom_scheduler<0>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_empty_range) {
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_empty_range) {
     wait_until_future_fails<stlab::future_error>(sut);
 
     BOOST_REQUIRE(!check);
-    BOOST_WARN_EQUAL(0, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_EQUAL(0, custom_scheduler<0>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_void_void_range_with_one_element) {
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_void_range_with_one_element) {
     int interim_result = 0;
     int result = 0;
     std::vector<stlab::future<void>> futures;
-    futures.push_back(async(custom_scheduler<1>(),
+    futures.push_back(async(custom_scheduler<0>(),
                             [& _interim_result = interim_result] { _interim_result = 42; }));
 
     sut = when_any(custom_scheduler<1>(),
@@ -68,8 +68,9 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_void_range_with_one_element) {
 
     wait_until_future_completed(sut);
 
-    BOOST_WARN_EQUAL(42, result);
-    BOOST_WARN_EQUAL(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(42, result);
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_one_element) {
@@ -79,7 +80,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_one_element) {
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return 42; }));
 
-    sut = when_any(custom_scheduler<0>(),
+    sut = when_any(custom_scheduler<1>(),
                    [& _i = index, &_r = result](int x, size_t index) {
                        _i = index;
                        _r = x;
@@ -89,9 +90,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_one_element) {
     check_valid_future(sut);
     wait_until_future_completed(sut);
 
-    BOOST_WARN_EQUAL(size_t(0), index);
-    BOOST_WARN_EQUAL(size_t(42), result);
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(0), index);
+    BOOST_REQUIRE_EQUAL(size_t(42), result);
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_first_succeeds) {
@@ -110,16 +112,16 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_first_suc
                                                            return 1;
                                                        },
                                                        _task_counter)));
-    futures.push_back(async(custom_scheduler<1>(),
+    futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 2; }, _task_counter, block_context)));
     futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 3; }, _task_counter, block_context)));
-    futures.push_back(async(custom_scheduler<1>(),
+    futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 5; }, _task_counter, block_context)));
     {
         lock_t block(*block_context._mutex);
 
-        sut = when_any(custom_scheduler<0>(),
+        sut = when_any(custom_scheduler<1>(),
                        [& _r = result, &_used_future_index = used_future_index,
                         &_counter = any_task_execution_counter](int x, size_t index) {
                            _used_future_index = index;
@@ -135,11 +137,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_first_suc
     block_context._thread_block.notify_all();
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(0), used_future_index);
-    BOOST_WARN_EQUAL(size_t(1), result);
-    BOOST_WARN_EQUAL(1, any_task_execution_counter.load());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(0), used_future_index);
+    BOOST_REQUIRE_EQUAL(size_t(1), result);
+    BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_middle_succeeds) {
@@ -154,7 +156,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_middle_su
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 1; }, _task_counter, block_context)));
-    futures.push_back(async(custom_scheduler<1>(),
+    futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 2; }, _task_counter, block_context)));
     futures.push_back(async(custom_scheduler<0>(), make_non_blocking_functor(
                                                        [& _context = block_context] {
@@ -162,13 +164,13 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_middle_su
                                                            return 3;
                                                        },
                                                        _task_counter)));
-    futures.push_back(async(custom_scheduler<1>(),
+    futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 5; }, _task_counter, block_context)));
 
     {
         lock_t lock(*block_context._mutex);
 
-        sut = when_any(custom_scheduler<0>(),
+        sut = when_any(custom_scheduler<1>(),
                        [& _r = result, &_used_future_index = used_future_index,
                         &_counter = any_task_execution_counter](int x, size_t index) {
                            _used_future_index = index;
@@ -185,11 +187,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_middle_su
     block_context._thread_block.notify_all();
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(2), used_future_index);
-    BOOST_WARN_EQUAL(size_t(3), result);
-    BOOST_WARN_EQUAL(1, any_task_execution_counter.load());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(2), used_future_index);
+    BOOST_REQUIRE_EQUAL(size_t(3), result);
+    BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_last_succeeds) {
@@ -204,11 +206,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_last_succ
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 1; }, _task_counter, block_context)));
-    futures.push_back(async(custom_scheduler<1>(),
+    futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 2; }, _task_counter, block_context)));
     futures.push_back(async(custom_scheduler<0>(),
                             make_blocking_functor([] { return 3; }, _task_counter, block_context)));
-    futures.push_back(async(custom_scheduler<1>(), make_non_blocking_functor(
+    futures.push_back(async(custom_scheduler<0>(), make_non_blocking_functor(
                                                        [& _context = block_context] {
                                                            _context._may_proceed = true;
                                                            return 5;
@@ -217,7 +219,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_last_succ
     {
         lock_t lock(*block_context._mutex);
 
-        sut = when_any(custom_scheduler<0>(),
+        sut = when_any(custom_scheduler<1>(),
                        [& _r = result, &_used_future_index = used_future_index,
                         &_counter = any_task_execution_counter](int x, size_t index) {
                            _used_future_index = index;
@@ -234,11 +236,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_last_succ
     block_context._thread_block.notify_all();
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(3), used_future_index);
-    BOOST_WARN_EQUAL(size_t(5), result);
-    BOOST_WARN_EQUAL(1, any_task_execution_counter.load());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(3), used_future_index);
+    BOOST_REQUIRE_EQUAL(size_t(5), result);
+    BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(
@@ -252,15 +254,15 @@ BOOST_AUTO_TEST_CASE(
 
     std::vector<stlab::future<int>> futures;
     futures.push_back(
-        async(custom_scheduler<1>(), make_failing_functor([] { return 1; }, _task_counter)));
+        async(custom_scheduler<0>(), make_failing_functor([] { return 1; }, _task_counter)));
     futures.push_back(
         async(custom_scheduler<0>(), make_failing_functor([] { return 1; }, _task_counter)));
     futures.push_back(
-        async(custom_scheduler<1>(), make_non_blocking_functor([] { return 3; }, _task_counter)));
+        async(custom_scheduler<0>(), make_non_blocking_functor([] { return 3; }, _task_counter)));
     futures.push_back(
         async(custom_scheduler<0>(), make_failing_functor([] { return 1; }, _task_counter)));
 
-    sut = when_any(custom_scheduler<0>(),
+    sut = when_any(custom_scheduler<1>(),
                    [& _i = index, &_result = result,
                     &_counter = any_task_execution_counter](int x, size_t index) {
                        ++_counter;
@@ -273,11 +275,11 @@ BOOST_AUTO_TEST_CASE(
     wait_until_future_completed(sut);
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(2), index);
-    BOOST_WARN_EQUAL(3, result);
-    BOOST_WARN_EQUAL(1, any_task_execution_counter.load());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(2), index);
+    BOOST_REQUIRE_EQUAL(3, result);
+    BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_all_fails) {
@@ -288,15 +290,15 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_all_fails
 
     std::vector<stlab::future<int>> futures;
     futures.push_back(
-        async(custom_scheduler<1>(), make_failing_functor([] { return 0; }, _task_counter)));
+        async(custom_scheduler<0>(), make_failing_functor([] { return 0; }, _task_counter)));
     futures.push_back(
         async(custom_scheduler<0>(), make_failing_functor([] { return 0; }, _task_counter)));
     futures.push_back(
-        async(custom_scheduler<1>(), make_failing_functor([] { return 0; }, _task_counter)));
+        async(custom_scheduler<0>(), make_failing_functor([] { return 0; }, _task_counter)));
     futures.push_back(
         async(custom_scheduler<0>(), make_failing_functor([] { return 0; }, _task_counter)));
 
-    sut = when_any(custom_scheduler<0>(),
+    sut = when_any(custom_scheduler<1>(),
                    [& _i = index, &_r = r](int x, size_t index) {
                        _i = index;
                        _r = x;
@@ -306,11 +308,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_all_fails
     wait_until_all_tasks_completed();
     wait_until_future_fails<test_exception>(sut);
 
-    BOOST_WARN_EQUAL(size_t(4711), index);
-    BOOST_WARN_EQUAL(0, r);
+    BOOST_REQUIRE_EQUAL(size_t(4711), index);
+    BOOST_REQUIRE_EQUAL(0, r);
     BOOST_WARN_GE(size_t(4), failures.load());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 /*
@@ -337,7 +339,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements)
             make_blocking_functor([& _result = intrim_results](auto x) { _result[0] = x + 1; },
                                   _task_counter, block_context)));
         futures.push_back(start.then(
-            custom_scheduler<1>(),
+            custom_scheduler<0>(),
             make_blocking_functor([& _result = intrim_results](auto x) { _result[1] = x + 2; },
                                   _task_counter, block_context)));
         futures.push_back(start.then(
@@ -345,7 +347,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements)
             make_blocking_functor([& _result = intrim_results](auto x) { _result[2] = x + 3; },
                                   _task_counter, block_context)));
         futures.push_back(
-            start.then(custom_scheduler<1>(),
+            start.then(custom_scheduler<0>(),
                        make_non_blocking_functor(
                            [& _context = block_context, &_result = intrim_results](auto x) {
                                _result[3] = x;
@@ -353,7 +355,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements)
                            },
                            _task_counter)));
 
-        sut = when_any(custom_scheduler<0>(),
+        sut = when_any(custom_scheduler<1>(),
                        [& _result = result, &_counter = any_task_execution_counter,
                         &_interim_results = intrim_results](size_t index) {
                            _result = _interim_results[index];
@@ -368,10 +370,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements)
     block_context._thread_block.notify_all();
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(4711, result.load());
-    BOOST_WARN_EQUAL(1, any_task_execution_counter.load());
-    BOOST_WARN_LE(1, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(1, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(4711, result.load());
+    BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -391,6 +393,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_empty_range) {
     wait_until_future_fails<stlab::future_error>(sut);
 
     BOOST_REQUIRE(!check);
+    BOOST_REQUIRE_EQUAL(0, custom_scheduler<0>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_one_element) {
@@ -400,7 +403,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_one_element) {
     std::vector<stlab::future<int>> futures;
     futures.push_back(async(custom_scheduler<0>(), [] { return 4711; }));
 
-    sut = when_any(custom_scheduler<0>(),
+    sut = when_any(custom_scheduler<1>(),
                    [& _i = index](int x, size_t index) {
                        _i = index;
                        return x;
@@ -410,9 +413,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_one_element) {
 
     wait_until_future_completed(sut);
 
-    BOOST_WARN_EQUAL(size_t(0), index);
-    BOOST_WARN_EQUAL(4711, *sut.get_try());
-    BOOST_WARN_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(0), index);
+    BOOST_REQUIRE_EQUAL(4711, *sut.get_try());
+    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements) {
@@ -429,12 +434,12 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements) {
         async(custom_scheduler<0>(),
               make_blocking_functor([] { return 42; }, _task_counter, block_context)));
     futures.push_back(
-        async(custom_scheduler<1>(),
+        async(custom_scheduler<0>(),
               make_blocking_functor([] { return 815; }, _task_counter, block_context)));
     futures.push_back(
         async(custom_scheduler<0>(),
               make_blocking_functor([] { return 4711; }, _task_counter, block_context)));
-    futures.push_back(async(custom_scheduler<1>(), make_non_blocking_functor(
+    futures.push_back(async(custom_scheduler<0>(), make_non_blocking_functor(
                                                        [& _context = block_context] {
                                                            _context._may_proceed = true;
                                                            return 5;
@@ -443,7 +448,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements) {
 
     {
         lock_t lock(*block_context._mutex);
-        sut = when_any(custom_scheduler<0>(),
+        sut = when_any(custom_scheduler<1>(),
                        [& _used_future_index = used_future_index,
                         &_counter = any_task_execution_counter](int x, size_t index) {
                            _used_future_index = index;
@@ -458,11 +463,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements) {
     block_context._thread_block.notify_all();
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(3), used_future_index);
-    BOOST_WARN_EQUAL(5, *sut.get_try());
-    BOOST_WARN_EQUAL(1, any_task_execution_counter.load());
-    BOOST_WARN_LE(1, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(3, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(3), used_future_index);
+    BOOST_REQUIRE_EQUAL(5, *sut.get_try());
+    BOOST_REQUIRE_EQUAL(1, any_task_execution_counter.load());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements_all_but_all_one_failing) {
@@ -477,7 +482,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements_all_but_al
                                                            return 0;
                                                        },
                                                        _task_counter)));
-    futures.push_back(async(custom_scheduler<1>(), make_failing_functor(
+    futures.push_back(async(custom_scheduler<0>(), make_failing_functor(
                                                        [& _f = failures]() -> int {
                                                            ++_f;
                                                            return 0;
@@ -485,14 +490,14 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements_all_but_al
                                                        _task_counter)));
     futures.push_back(async(custom_scheduler<0>(),
                             make_non_blocking_functor([]() -> int { return 3; }, _task_counter)));
-    futures.push_back(async(custom_scheduler<1>(), make_failing_functor(
+    futures.push_back(async(custom_scheduler<0>(), make_failing_functor(
                                                        [& _f = failures]() -> int {
                                                            ++_f;
                                                            return 0;
                                                        },
                                                        _task_counter)));
 
-    sut = when_any(custom_scheduler<0>(),
+    sut = when_any(custom_scheduler<1>(),
                    [& _index = index](int x, size_t index) {
                        _index = index;
                        return x;
@@ -503,11 +508,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements_all_but_al
     wait_until_future_completed(sut);
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(2), index);
-    BOOST_WARN_EQUAL(3, *sut.get_try());
+    BOOST_REQUIRE_EQUAL(size_t(2), index);
+    BOOST_REQUIRE_EQUAL(3, *sut.get_try());
     BOOST_WARN_GE(3, failures.load());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 /*
@@ -531,7 +536,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_diamond_formation_elements) 
             start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return x + 1; },
                                                                     _task_counter, block_context)));
         futures.push_back(
-            start.then(custom_scheduler<1>(), make_non_blocking_functor(
+            start.then(custom_scheduler<0>(), make_non_blocking_functor(
                                                   [& _context = block_context](auto x) {
                                                       _context._may_proceed = true;
                                                       return x + 2;
@@ -541,10 +546,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_diamond_formation_elements) 
             start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return x + 3; },
                                                                     _task_counter, block_context)));
         futures.push_back(
-            start.then(custom_scheduler<1>(), make_blocking_functor([](int x) { return x + 5; },
+            start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return x + 5; },
                                                                     _task_counter, block_context)));
 
-        sut = when_any(custom_scheduler<0>(),
+        sut = when_any(custom_scheduler<1>(),
                        [& _i = index](int x, size_t index) {
                            _i = index;
                            return x;
@@ -559,10 +564,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_diamond_formation_elements) 
     block_context._thread_block.notify_all();
     wait_until_all_tasks_completed();
 
-    BOOST_WARN_EQUAL(size_t(1), index);
-    BOOST_WARN_EQUAL(4711 + 2, *sut.get_try());
-    BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-    BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+    BOOST_REQUIRE_EQUAL(size_t(1), index);
+    BOOST_REQUIRE_EQUAL(4711 + 2, *sut.get_try());
+    BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -584,7 +589,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
       start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 1 }; },
         _task_counter, block_context)));
     futures.push_back(
-      start.then(custom_scheduler<1>(), make_non_blocking_functor(
+      start.then(custom_scheduler<0>(), make_non_blocking_functor(
         [&_context = block_context](auto x) {
       _context._may_proceed = true;
       return stlab::move_only{ x + 2 };
@@ -594,10 +599,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
       start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 3 }; },
         _task_counter, block_context)));
     futures.push_back(
-      start.then(custom_scheduler<1>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 5 }; },
+      start.then(custom_scheduler<0>(), make_blocking_functor([](int x) { return stlab::move_only{ x + 5 }; },
         _task_counter, block_context)));
 
-    sut = when_any(custom_scheduler<0>(),
+    sut = when_any(custom_scheduler<1>(),
       [&_i = index](stlab::move_only x, size_t index) {
       _i = index;
       return std::move(x);
@@ -612,10 +617,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
   block_context._thread_block.notify_all();
   wait_until_all_tasks_completed();
 
-  BOOST_WARN_EQUAL(size_t(1), index);
-  BOOST_WARN_EQUAL(4711 + 2, (*sut.get_try()).member());
-  BOOST_WARN_LE(2, custom_scheduler<0>::usage_counter());
-  BOOST_WARN_LE(2, custom_scheduler<1>::usage_counter());
+  BOOST_REQUIRE_EQUAL(size_t(1), index);
+  BOOST_REQUIRE_EQUAL(4711 + 2, (*sut.get_try()).member());
+  BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+  BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

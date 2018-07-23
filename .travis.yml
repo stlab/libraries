@@ -32,6 +32,8 @@ matrix:
       before_install:
         - brew update
         - brew upgrade python
+        - brew uninstall libyaml
+        - pip3 install --no-cache-dir pyyaml
         - pip3 install conan
         - ./enhance_conan.sh
 
@@ -45,6 +47,8 @@ matrix:
       before_install:
         - brew update
         - brew upgrade python
+        - brew uninstall libyaml
+        - pip3 install --no-cache-dir pyyaml
         - pip3 install conan
         - ./enhance_conan.sh
 
