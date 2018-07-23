@@ -13,7 +13,10 @@
 #include <boost/test/unit_test.hpp>
 
 // stlab
+#ifndef STLAB_DISABLE_FUTURE_COROUTINES
 #define STLAB_DISABLE_FUTURE_COROUTINES
+#endif
+
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
