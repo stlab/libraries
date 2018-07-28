@@ -432,9 +432,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return then_r(unique, _executor, std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then_r(bool unique, S&& s, F&& f) {
-        return recover_r(unique, std::forward<S>(s), [_f = std::forward<F>(f)](auto&& x) mutable {
+    template <typename E, typename F>
+    auto then_r(bool unique, E&& executor, F&& f) {
+        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) mutable {
             return std::move(_f)(std::move(*std::forward<decltype(x)>(x).get_try()));
         });
     }
@@ -524,9 +524,9 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         return then(_executor, std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then(S&& s, F&& f) {
-        return recover(std::forward<S>(s), [_f = std::forward<F>(f)](auto x) mutable {
+    template <typename E, typename F>
+    auto then(E&& executor, F&& f) {
+        return recover(std::forward<E>(executor), [_f = std::forward<F>(f)](auto x) mutable {
             x.get_try(); // throw if error
             return std::move(_f)();
         });
@@ -537,9 +537,9 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         return then(_executor, std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then_r(bool, S&& s, F&& f) {
-        return then(std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto then_r(bool, E&& executor, F&& f) {
+        return then(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -547,17 +547,17 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         return recover(_executor, std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover(S s, F&& f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>;
+    template <typename E, typename F>
+    auto recover(E&& executor, F&& f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>;
 
     template <typename F>
     auto recover_r(bool, F&& f) {
         return recover(_executor, std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover_r(bool, S&& s, F&& f) {
-        return recover(std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto recover_r(bool, E&& executor, F&& f) {
+        return recover(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename R>
@@ -746,9 +746,9 @@ public:
         return _p->then(std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then(S&& s, F&& f) const& {
-        return _p->then(std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto then(E&& executor, F&& f) const& {
+        return _p->then(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -756,9 +756,9 @@ public:
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then(S&& s, F&& f) && {
-        return _p->then_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto then(E&& executor, F&& f) && {
+        return _p->then_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -766,9 +766,9 @@ public:
         return _p->recover(std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover(S&& s, F&& f) const& {
-        return _p->recover(std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto recover(E&& executor, F&& f) const& {
+        return _p->recover(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -776,9 +776,9 @@ public:
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover(S&& s, F&& f) && {
-        return _p->recover_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto recover(E&& executor, F&& f) && {
+        return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
     }
 
     void detach() const {
@@ -837,9 +837,9 @@ public:
         return _p->then(std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then(S&& s, F&& f) const& {
-        return _p->then(std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto then(E&& executor, F&& f) const& {
+        return _p->then(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -847,9 +847,9 @@ public:
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then(S&& s, F&& f) && {
-        return _p->then_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto then(E&& executor, F&& f) && {
+        return _p->then_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -857,9 +857,9 @@ public:
         return _p->recover(std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover(S&& s, F&& f) const& {
-        return _p->recover(std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto recover(E&& executor, F&& f) const& {
+        return _p->recover(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -867,9 +867,9 @@ public:
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover(S&& s, F&& f) && {
-        return _p->recover_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto recover(E&& executor, F&& f) && {
+        return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
     }
 
     void detach() const {
@@ -930,9 +930,9 @@ public:
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto then(S&& s, F&& f) && {
-        return _p->then_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto then(E&& executor, F&& f) && {
+        return _p->then_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
@@ -940,9 +940,9 @@ public:
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
-    template <typename S, typename F>
-    auto recover(S&& s, F&& f) && {
-        return _p->recover_r(unique_usage(_p), std::forward<S>(s), std::forward<F>(f));
+    template <typename E, typename F>
+    auto recover(E&& executor, F&& f) && {
+        return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
     }
 
     void detach() const {
@@ -1668,7 +1668,7 @@ void shared_base<void>::set_value(F& f, Args&&... args) {
 /**************************************************************************************************/
 
 template <typename E, typename F>
-auto shared_base<void>::recover(E executor, F&& f)
+auto shared_base<void>::recover(E&& executor, F&& f)
     -> future<reduced_t<std::result_of_t<F(future<void>)>>> {
     auto p = package<std::result_of_t<F(future<void>)>()>(
         executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() mutable {
@@ -1679,7 +1679,7 @@ auto shared_base<void>::recover(E executor, F&& f)
     {
         std::unique_lock<std::mutex> lock(_mutex);
         ready = _ready;
-        if (!ready) _then.emplace_back(std::move(executor), std::move(p.first));
+        if (!ready) _then.emplace_back(std::forward<E>(executor), std::move(p.first));
     }
     if (ready) executor(std::move(p.first));
 
