@@ -25,8 +25,7 @@ template <std::size_t no>
 struct custom_scheduler {
     using result_type = void;
 
-    template <typename F>
-    void operator()(F f) {
+    void operator()(stlab::task<void()> f) const {
         ++counter();
         // The implementation on Windows or the mac uses a scheduler that allows many tasks in the
         // pool in parallel
@@ -49,7 +48,7 @@ struct custom_scheduler {
     }
 
 private:
-    const size_t _id = no; // only used for debugging purpose
+    size_t _id = no; // only used for debugging purpose
 };
 
 class test_exception : public std::exception {
