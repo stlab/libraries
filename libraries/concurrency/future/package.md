@@ -19,7 +19,7 @@ entities:
             auto package(E executor, F f) ->
                 std::pair<detail::packaged_task_from_signature_t<Sig>,
                           future<detail::result_of_t_<Sig>>>
-        description: The template function package creates a pair of a packaged_task and a future.
+        description: The template function package creates a pair of a packaged_task and a future. Calling the packaged_task will be invoked on the calling thread, not on the provided `executor`. The purpose of the passed `executor` is to have already an executor for an attached continuation.
   - kind: parameters
     list:
       - name: executor
