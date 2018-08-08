@@ -130,7 +130,7 @@ class task<R(Args...)> {
     static auto pointer(void*) noexcept -> void* { return nullptr; }
     static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
 
-#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang_)
+#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
     static const concept _vtable;
 #else
     static constexpr concept _vtable = { dtor, move_ctor, invoke,
