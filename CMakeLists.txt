@@ -72,17 +72,24 @@ target_sources( stlab INTERFACE
       include/stlab/concurrency/variant.hpp> )
 
 if ( stlab.testing )
-#  list( APPEND CMAKE_MODULE_DIR "${stlab_SOURCE_DIR}/cmake" )
-#  include( development )
+  list( APPEND CMAKE_MODULE_DIR "${stlab_SOURCE_DIR}/cmake" )
+#   include( development )
 
-  find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
+  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+    include( conanbuildinfo.cmake )
+    conan_basic_setup( TARGETS )
+    add_library( Boost::unit_test_framework ALIAS CONAN_PKG::Boost )
+  else()
+    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
+  endif()
+
+
   add_library( testing INTERFACE )
   target_link_libraries( testing INTERFACE
     Boost::unit_test_framework
-#    stlab::development
+#     stlab::development
     stlab::stlab )
 
-  get_target_property(var Boost::unit_test_framework TYPE)
   target_compile_definitions( testing INTERFACE
     $<$<NOT:$<BOOL:${BOOST_Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK> )
 
