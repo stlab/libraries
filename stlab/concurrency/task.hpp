@@ -83,8 +83,8 @@ class task<R(Args...)> {
             return &static_cast<const model*>(self)->_f;
         }
 
-        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                            target_type, pointer,   const_pointer};
+        static constexpr const concept _vtable = {dtor,        move_ctor, invoke,
+                                                  target_type, pointer,   const_pointer};
 
         F _f;
     };
@@ -110,8 +110,8 @@ class task<R(Args...)> {
             return static_cast<const model*>(self)->_p.get();
         }
 
-        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                            target_type, pointer,   const_pointer};
+        static constexpr const concept _vtable = {dtor,        move_ctor, invoke,
+                                                  target_type, pointer,   const_pointer};
 
         std::unique_ptr<F> _p;
     };
@@ -124,8 +124,8 @@ class task<R(Args...)> {
     static auto pointer(void*) noexcept -> void* { return nullptr; }
     static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
 
-    static constexpr concept _vtable = {dtor,         move_ctor, invoke,
-                                        target_type_, pointer,   const_pointer};
+    static constexpr const concept _vtable = {dtor,         move_ctor, invoke,
+                                              target_type_, pointer,   const_pointer};
 
     const concept* _vtable_ptr = &_vtable;
 
@@ -213,7 +213,7 @@ public:
     friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
 
-#if STLAB_CPP_VERSION < 17
+#if __cplusplus < 201703L
 // In C++17 constexpr implies inline and these definitions are deprecated
 
 template <class R, class... Args>

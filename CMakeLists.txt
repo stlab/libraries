@@ -35,41 +35,9 @@ target_include_directories( stlab INTERFACE
 
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
 find_package( Threads REQUIRED )
-target_link_libraries( stlab INTERFACE Threads::Threads)
+target_link_libraries( stlab INTERFACE Threads::Threads )
 
-target_sources( stlab INTERFACE
-  $<BUILD_INTERFACE:
-      ${stlab_SOURCE_DIR}/stlab/concurrency/channel.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/config.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/default_executor.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/executor_base.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/future.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/immediate_executor.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/main_executor.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/optional.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/progress.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/system_timer.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/task.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/traits.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/tuple_algorithm.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/utility.hpp
-      ${stlab_SOURCE_DIR}/stlab/concurrency/variant.hpp>
-  $<INSTALL_INTERFACE:
-      include/stlab/concurrency/channel.hpp
-      include/stlab/concurrency/config.hpp
-      include/stlab/concurrency/default_executor.hpp
-      include/stlab/concurrency/executor_base.hpp
-      include/stlab/concurrency/future.hpp
-      include/stlab/concurrency/immediate_executor.hpp
-      include/stlab/concurrency/main_executor.hpp
-      include/stlab/concurrency/optional.hpp
-      include/stlab/concurrency/progress.hpp
-      include/stlab/concurrency/system_timer.hpp
-      include/stlab/concurrency/task.hpp
-      include/stlab/concurrency/traits.hpp
-      include/stlab/concurrency/tuple_algorithm.hpp
-      include/stlab/concurrency/utility.hpp
-      include/stlab/concurrency/variant.hpp> )
+add_subdirectory( stlab/concurrency )
 
 if ( stlab.testing )
   list( APPEND CMAKE_MODULE_DIR "${stlab_SOURCE_DIR}/cmake" )
@@ -94,11 +62,7 @@ if ( stlab.testing )
     $<$<NOT:$<BOOL:${BOOST_Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK> )
 
   set_target_properties( testing PROPERTIES
-    INTERFACE_COROUTINES ${stlab.coroutines}
     INTERFACE_CXX_EXTENSIONS OFF )
-
-  set_property( TARGET testing APPEND PROPERTY
-    COMPATIBLE_INTERFACE_BOOL INTERFACE_COROUTINES)
 
   add_library( stlab::testing ALIAS testing )
 
@@ -121,7 +85,7 @@ install( TARGETS stlab
 install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/stlab
   DESTINATION include
   USE_SOURCE_PERMISSIONS
-  FILES_MATCHING PATTERN "*.hpp")
+  FILES_MATCHING PATTERN "*.hpp" )
 
 install( EXPORT stlabTargets
   FILE stlabTargets.cmake
