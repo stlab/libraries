@@ -195,6 +195,11 @@ BOOST_AUTO_TEST_CASE(task_type_tests) {
     }
 
     {
+        task<int()> t(nullptr);
+        BOOST_CHECK(!t);
+    }
+
+    {
         // large model
         task<int()> t = large_model();
         BOOST_CHECK(t);

@@ -216,7 +216,7 @@ public:
 
     R operator()(Args... args) { return _vtable_ptr->invoke(&_model, std::forward<Args>(args)...); }
 
-    friend inline void swap(task& x, task& y) noexcept { return x.swap(y); }
+    friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
     friend inline bool operator==(std::nullptr_t, const task& x) { return !static_cast<bool>(x); }
     friend inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
@@ -256,12 +256,12 @@ const typename task<R(Args...)>::concept task<R(Args...)>::model<F, true>::_vtab
 template <class R, class... Args>
 template <class F>
 const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, false>::_vtable = { dtor, move_ctor, invoke,
-                                                                                                 target_type_, pointer, const_pointer };
+                                                                                                 target_type, pointer, const_pointer };
 
 template <class R, class... Args>
 template <class F>
 const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, true>::_vtable = { dtor, move_ctor, invoke,
-                                                                                                target_type_, pointer, const_pointer };
+                                                                                                target_type, pointer, const_pointer };
 
 #else
 
