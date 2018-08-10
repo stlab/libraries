@@ -46,7 +46,8 @@ cmake_dependent_option( stlab.coverage
 
 option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
-option( stlab.coroutines "Integrate the C++17 coroutines TS in stlab" OFF )
+option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
+
 mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
 
 #
@@ -90,12 +91,7 @@ target_link_libraries( stlab INTERFACE Threads::Threads )
 # + NOMINMAX
 #    disable the `min` and `max` macros defined in the windows.h header
 #
-# In addition, If coroutines are not explicitly enabled, a preprocessor
-# definition is specified to disable their use in the source code.
-#
-target_compile_definitions( stlab INTERFACE
-  $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>
-  $<$<NOT:$<BOOL:stlab.coroutines>>:STLAB_DISABLE_FUTURE_COROUTINES>)
+target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
 
 add_subdirectory( stlab/concurrency )
 
@@ -153,12 +149,15 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   unset( either_generator )
 endif()
 
+list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
+include( stlab/coroutines )
+target_link_libraries( stlab INTERFACE stlab::coroutines )
+
 if ( stlab.testing )
-  list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
   include( stlab/development )
 
   #
-  # Establish a convenience target to encapsulate the properties # common to the
+  # Establish a convenience target to encapsulate the properties common to the
   # stlab tests and establish an alias for uniformity.
   #
   add_library( testing INTERFACE )
@@ -206,7 +205,7 @@ write_basic_package_version_file(
 # generate a CMake configuration file for consumption by CMake's `find_package`
 # intrinsic
 #
-install( TARGETS stlab EXPORT stlabTargets )
+install( TARGETS stlab coroutines EXPORT stlabTargets )
 
 #
 # Non-testing header files (preserving relative paths) are installed to the
