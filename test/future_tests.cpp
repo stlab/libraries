@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
 
         annotate_counters counters;
-        async(immediate_executor, [](annotate x) {}, annotate(counters));
+        async(immediate_executor, [](annotate) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](annotate x) {}, x);
+        async(immediate_executor, [](annotate) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](annotate x) {}, std::ref(x));
+        async(immediate_executor, [](annotate) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](annotate x) {}, std::cref(x));
+        async(immediate_executor, [](annotate) {}, std::cref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &");
 
         annotate_counters counters;
-        async(immediate_executor, [](annotate& x){ }, annotate(counters));
+        async(immediate_executor, [](annotate&){ }, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        async(immediate_executor, [](annotate& x){ }, x);
+        async(immediate_executor, [](annotate&){ }, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
     annotate_counters counters;
     annotate x(counters);
-    async(immediate_executor, [](annotate& x){ }, std::cref(x));
+    async(immediate_executor, [](annotate&){ }, std::cref(x));
     BOOST_REQUIRE(counters.remaining() == 1);
     BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
     annotate_counters counters;
     annotate x(counters);
-    async(immediate_executor, [](annotate&& x){ }, std::ref(x));
+    async(immediate_executor, [](annotate&&){ }, std::ref(x));
     BOOST_REQUIRE(counters.remaining() == 1);
     BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
     annotate_counters counters;
     annotate x(counters);
-    async(immediate_executor, [](annotate&& x){ }, std::cref(x));
+    async(immediate_executor, [](annotate&&){ }, std::cref(x));
     BOOST_REQUIRE(counters.remaining() == 1);
     BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -538,7 +538,7 @@ BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
     bool check = true;
     {
         auto p = package<int()>(stlab::immediate_executor, [] { return 42; });
-        p.second.then([a = stlab::annotate(counter), &_check = check](int x) { _check = false; }).detach();
+        p.second.then([a = stlab::annotate(counter), &_check = check](int) { _check = false; }).detach();
     }
     std::cout << counter;
 
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
     bool check = true;
     {
         auto p = package<move_only()>(stlab::immediate_executor, [] { return move_only{42}; });
-        auto r = std::move(p.second).then([a = stlab::annotate(counter), &_check = check](auto&& x) { _check = false; });
+        auto r = std::move(p.second).then([a = stlab::annotate(counter), &_check = check](auto&&) { _check = false; });
         r.detach();
     }
     std::cout << counter;

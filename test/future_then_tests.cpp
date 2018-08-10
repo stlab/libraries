@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
     stlab::v1::move_only m{42};
 
     sut = async(custom_scheduler<0>(), [] { return stlab::v1::move_only{10}; })
-              .then([& _m = m](auto x) mutable { return std::move(_m); });
+              .then([& _m = m](auto) mutable { return std::move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
     stlab::v1::move_only m{42};
 
     sut = async(custom_scheduler<0>(), []() mutable { return stlab::v1::move_only{10}; })
-              .then([& _m = m](auto x) mutable { return std::move(_m); });
+              .then([& _m = m](auto) mutable { return std::move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
