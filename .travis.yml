@@ -56,7 +56,7 @@ matrix:
         options=""
 
     #
-    # Linux Clang, Debug & Release
+    # Linux Clang, Debug & Release, with and without coroutines
     #
     - os: linux
       compiler: clang
@@ -69,6 +69,18 @@ matrix:
       env:
         build_type=release
         options=""
+
+    - os: linux
+      compiler: clang
+      env:
+        build_type=debug
+        options="-Dstlab.coroutines=ON"
+
+    - os: linux
+      compiler: clang
+      env:
+        build_type=release
+        options="-Dstlab.coroutines=ON"
 
     #
     # Linux GCC, Debug & Release
