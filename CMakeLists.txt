@@ -178,7 +178,7 @@ if ( stlab.testing )
   # provided by a shared library rather than a static library.
   #
   target_compile_definitions( testing INTERFACE
-    $<$<NOT:$<BOOL:${BOOST_Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK>)
+    $<$<NOT:$<BOOL:${Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK>)
 
   add_subdirectory( test )
 endif()
