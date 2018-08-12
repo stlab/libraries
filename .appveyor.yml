@@ -45,6 +45,6 @@ build_script:
   - cd build
   - cmake -G "Visual Studio 15 2017 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug ..
   - cmake --build . --config Release
-  - pathman /au C:/Libraries/boost_1_65_1/lib
+  - setx "%path%;C:/Libraries/boost_1_65_1/lib"
   - ctest -C Release 
   
