@@ -10,8 +10,8 @@ cache:
 addons:
   apt:
     sources:
-      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+      - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
+        key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
       - ubuntu-toolchain-r-test
     packages:
       - g++-5
@@ -158,8 +158,8 @@ matrix:
       addons:
         apt:
           sources:
-            - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-              key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+            - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
+              key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
