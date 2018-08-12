@@ -44,5 +44,6 @@ build_script:
   - MKDIR build
   - cd build
   - cmake -G "Visual Studio 15 2017 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug ..
-  - ctest -D Experimental -C debug
+  - cmake --build . --config release
+  - ctest -C release 
   
