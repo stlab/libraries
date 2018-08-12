@@ -16,17 +16,6 @@ endif()
 
 project( stlab VERSION 1.0 LANGUAGES CXX )
 
-#
-# In it's current form, stlab does not compile on the GCC C++ compiler
-# from versions earlier than 7.1 as a result of a compiler defect. See
-# stlab issue #154 (https://github.com/stlab/libraries/issues/154) for
-# more information.
-#
-if( CMAKE_CXX_COMPILER STREQUAL "GNU"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "7.1" )
-  message(FATAL_ERROR "stlab::libraries require g++ version 7.1 or later")
-endif()
-
 include( CTest )
 include( CMakeDependentOption )
 
