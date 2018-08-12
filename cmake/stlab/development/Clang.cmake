@@ -4,14 +4,14 @@ set( stlab_Clang_coverage_flags --coverage )
 set( stlab_Clang_release_flags )
 
 string(CONCAT generator
-  "${stlab_Clang_base_flags}"
+  "${stlab_Clang_base_flags};"
   "$<$<OR:$<CONFIG:DEBUG>,"
-         "$<CONFIG:RELWITHDEBINFO>>:${stlab_Clang_debug_flags}>"
+         "$<CONFIG:RELWITHDEBINFO>>:${stlab_Clang_debug_flags};>"
   "$<$<OR:$<CONFIG:RELEASE>,"
          "$<CONFIG:RELWITHDEBINFO>,"
-         "$<CONFIG:MINSIZEREL>>:${stlab_Clang_release_flags}>"
+         "$<CONFIG:MINSIZEREL>>:${stlab_Clang_release_flags};>"
   "$<$<AND:$<CONFIG:DEBUG>,"
-          "$<BOOL:${stlab.coverage}>>:${stlab_Clang_debug_flags}>")
+          "$<BOOL:${stlab.coverage}>>:${stlab_Clang_debug_flags};>")
 
 target_compile_options(development INTERFACE
   $<$<CXX_COMPILER_ID:Clang>:${generator}>)

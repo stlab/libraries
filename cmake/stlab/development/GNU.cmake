@@ -4,14 +4,14 @@ set( stlab_GNU_coverage_flags --coverage )
 set( stlab_GNU_release_flags )
 
 string(CONCAT generator
-  "${stlab_GNU_base_flags}"
+  "${stlab_GNU_base_flags};"
   "$<$<OR:$<CONFIG:DEBUG>,"
-         "$<CONFIG:RELWITHDEBINFO>>:${stlab_GNU_debug_flags}>"
+         "$<CONFIG:RELWITHDEBINFO>>:${stlab_GNU_debug_flags};>"
   "$<$<OR:$<CONFIG:RELEASE>,"
          "$<CONFIG:RELWITHDEBINFO>,"
-         "$<CONFIG:MINSIZEREL>>:${stlab_GNU_release_flags}>"
+         "$<CONFIG:MINSIZEREL>>:${stlab_GNU_release_flags};>"
   "$<$<AND:$<CONFIG:DEBUG>,"
-          "$<BOOL:${stlab.coverage}>>:${stlab_GNU_debug_flags}>")
+          "$<BOOL:${stlab.coverage}>>:${stlab_GNU_debug_flags};>")
 
 target_compile_options(development INTERFACE
   $<$<CXX_COMPILER_ID:GNU>:${generator}>)

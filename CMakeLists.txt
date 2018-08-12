@@ -85,7 +85,7 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 add_subdirectory( stlab/concurrency )
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
-  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake AND OFF )
+  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
     include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
 
     #
@@ -99,8 +99,8 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     # We provide aliases to the conan target to mimic the native findBoost
     # functionality
     #
-    add_library( Boost::boost ALIAS CONAN_PKG::Boost )
-    add_library( Boost::unit_test_framework ALIAS CONAN_PKG::Boost )
+    add_library( Boost::boost ALIAS CONAN_PKG::boost )
+    add_library( Boost::unit_test_framework ALIAS CONAN_PKG::boost )
   else()
 
     #
