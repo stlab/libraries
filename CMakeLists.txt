@@ -99,8 +99,10 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     # We provide aliases to the conan target to mimic the native findBoost
     # functionality
     #
-    add_library( Boost::boost ALIAS CONAN_PKG::boost )
-    add_library( Boost::unit_test_framework ALIAS CONAN_PKG::boost )
+    add_library( Boost::boost INTERFACE IMPORTED )
+    add_library( Boost::unit_test_framework INTERFACE IMPORTED )
+	set_property( TARGET Boost::boost Boost::unit_test_framework 
+	  APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
   else()
 
     #
