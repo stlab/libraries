@@ -86,7 +86,7 @@ add_subdirectory( stlab/concurrency )
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-    include( conanbuildinfo.cmake )
+    include( conanbuildinfo )
 
     #
     # using the `TARGETS` keyword in the `conan_basic_setup` invocation

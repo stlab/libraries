@@ -7,7 +7,7 @@
 # yield and await keywords, respectively, used previously in MSVC.
 #
 if( CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2017
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0
     AND stlab.coroutines )
   message( WARNING "${CMAKE_CXX_COMPILER} does not support coroutines (as used by stlab)." )
   message( STATUS "Coroutines will not be used in testing" )
@@ -22,7 +22,7 @@ endif()
 #
 string( CONCAT activate
   "$<AND:$<BOOL:$<TARGET_PROPERTY:COROUTINES>>"
-       ",$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,2017>>>" )
+       ",$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,15.0.0>>>" )
 
 #
 # If using MSVC and active, set the coroutines flag
