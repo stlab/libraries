@@ -1,7 +1,7 @@
 #
 # If the current compiler doesn't support coroutines and coroutine support
-# has been requested, issue a warning indicating the tests will exercise the
-# coroutine integration in the stlab library.
+# has been requested, issue a warning indicating the tests will not exercise
+# the coroutine integration in the stlab library.
 #
 if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0

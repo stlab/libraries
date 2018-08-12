@@ -1,7 +1,7 @@
 #
 # If the current compiler doesn't support coroutines and coroutine support
-# has been requested, issue a warning indicating the tests will exercise the
-# coroutine integration in the stlab library.
+# has been requested, issue a warning indicating the tests will not exercise
+# the coroutine integration in the stlab library.
 #
 # Note that 2017 is required due to the update to co_yield and co_await from
 # yield and await keywords, respectively, used previously in MSVC.
