@@ -41,12 +41,14 @@ install:
 build_script:
   - cd C:\projects\libraries
   - IF EXIST build RMDIR /S /Q build
-  - dir C:\Libraries\boost_1_65_1
+  - dir C:\Libraries\boost_1_65_1\libs
+  - dir C:\Libraries\boost_1_65_1\lib32-msvc-14.1
+  - dir C:\Libraries\boost_1_65_1\lib64-msvc-14.1
   - MKDIR build
   - cd build
   - cmake -G "Visual Studio 15 2017 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug ..
   - cmake --build . --config Release
-  - mklink /d C:\bl "C:/Libraries/boost_1_65_1/lib"
+  - mklink /d C:\bl "C:\Libraries\boost_1_65_1\lib64-msvc-14.1"
   - setx path "C:\bl;%path%"
   - ctest -C Release 
   
