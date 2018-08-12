@@ -86,7 +86,7 @@ inline std::uint64_t str_hash(const std::string& x) {
 
 inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
     return hash ^ (str_hash(x) << 1);
-};
+}
 
 /**************************************************************************************************/
 
