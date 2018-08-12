@@ -15,6 +15,3 @@ string(CONCAT generator
 
 target_compile_options(development INTERFACE
   $<$<CXX_COMPILER_ID:MSVC>:${generator}>)
-
-target_link_libraries(development INTERFACE
-  $<$<CXX_COMPILER_ID:MSVC>:${generator}>)
