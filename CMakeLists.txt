@@ -143,8 +143,7 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   #
   target_compile_definitions( stlab INTERFACE
     $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
-    $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT>
-    $<${either_generator}:BOOST_NO_AUTO_PTR=1> )
+    $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
 
   unset( either_generator )
 endif()
