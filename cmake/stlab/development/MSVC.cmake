@@ -14,7 +14,7 @@ string(CONCAT generator
           "$<BOOL:${stlab.coverage}>>:${stlab_MSVC_debug_flags};>")
 
 target_compile_options(development INTERFACE
-  $<$<CXX_COMPILER_ID:GNU>:${generator}>)
+  $<$<CXX_COMPILER_ID:MSVC>:${generator}>)
 
 target_link_libraries(development INTERFACE
-  $<$<CXX_COMPILER_ID:GNU>:${generator}>)
+  $<$<CXX_COMPILER_ID:MSVC:${generator}>)
