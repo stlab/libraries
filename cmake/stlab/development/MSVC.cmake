@@ -1,4 +1,4 @@
-set( stlab_MSVC_base_flags /W4 /Wx )
+set( stlab_MSVC_base_flags /W4 /WX )
 set( stlab_MSVC_debug_flags )
 set( stlab_MSVC_coverage_flags )
 set( stlab_MSVC_release_flags )
