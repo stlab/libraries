@@ -38,6 +38,8 @@ target_compile_options( coroutines INTERFACE ${flag_generator} )
 #
 string( CONCAT definition_generator
   "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<NOT:${active}>>"
-    ":STLAB_DISABLE_FUTURE_COROUTINES>" )
+    ":STLAB_DISABLE_FUTURE_COROUTINES>"
+  "$<$<AND:$<CXX_COMPILER_ID:MSVC>,${active}>"
+    ":_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS>)	)
 
 target_compile_definitions( coroutines INTERFACE ${definition_generator} )
