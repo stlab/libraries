@@ -30,7 +30,9 @@ endif()
 #
 string( CONCAT activate
   "$<AND:$<BOOL:$<TARGET_PROPERTY:COROUTINES>>"
-       ",$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,15.0.0>>>" )
+       ",$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,15.0.0>"
+         ">"
+   ">" )
 
 #
 # If using MSVC and active, set the coroutines flag
@@ -45,7 +47,7 @@ target_compile_options( coroutines INTERFACE
 string( CONCAT definition_generator
   "$<$<AND:$<CXX_COMPILER_ID:MSVC>,${active}>"
     ":_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;"
-     "STLAB_FUTURE_COROUTINES=1"
+     "STLAB_FUTURE_COROUTINES=1;"
    ">" )
 
 target_compile_definitions( coroutines INTERFACE ${definition_generator} )
