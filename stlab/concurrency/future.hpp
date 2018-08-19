@@ -30,7 +30,7 @@
 // as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
 // support for the channels tests
 #ifdef __has_include
-#if __has_include(<experimental/coroutine>) && STLAB_FUTURE_COROUTINES)
+#if __has_include(<experimental/coroutine>) && STLAB_FUTURE_COROUTINES
 #include <experimental/coroutine>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
