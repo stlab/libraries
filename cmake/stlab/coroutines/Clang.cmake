@@ -35,6 +35,6 @@ target_compile_options( coroutines INTERFACE ${flag_generator} )
 #
 string( CONCAT definition_generator
   "$<$<AND:$<CXX_COMPILER_ID:Clang>,$<NOT:${active}>>"
-    ":STLAB_DISABLE_FUTURE_COROUTINES>" )
+    ":STLAB_FUTURE_COROUTINES=1>" )
 
 target_compile_definitions( coroutines INTERFACE ${definition_generator} )

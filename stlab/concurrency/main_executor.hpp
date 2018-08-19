@@ -9,7 +9,7 @@
 #ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
-#include "config.hpp"
+#include <stlab/concurrency/config.hpp>
 
 #define STLAB_MAIN_EXECUTOR_LIBDISPATCH 1
 #define STLAB_MAIN_EXECUTOR_EMSCRIPTEN 2

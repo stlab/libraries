@@ -65,6 +65,10 @@
 #define STLAB_CPP_VERSION 14
 #endif
 
+#ifndef STLAB_FUTURE_COROUTINES
+#define STLAB_FUTURE_COROUTINES 0
+#endif
+
 /**************************************************************************************************/
 
 #endif

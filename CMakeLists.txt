@@ -101,8 +101,8 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     #
     add_library( Boost::boost INTERFACE IMPORTED )
     add_library( Boost::unit_test_framework INTERFACE IMPORTED )
-	set_property( TARGET Boost::boost Boost::unit_test_framework 
-	  APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
+    set_property( TARGET Boost::boost Boost::unit_test_framework 
+      APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
   else()
 
     #
@@ -115,13 +115,19 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     endif()
   endif()
 
+
+  if(NOT TARGET Boost::unit_test_framework)
+    message(FATAL_ERROR "wtf")
+  endif()
+  
+
   string( APPEND either_generator
     "$<OR:$<BOOL:${stlab.boost_optional}>,"
          "$<BOOL:${stlab.boost_variant}>>" )
 
   #
-  # Link to the Boost::boost target is either `stlab.boost_optional`
-  # or `stlab.boost_variant` are set `ON` which provides the include
+  # Link to the `Boost::boost` target is either `stlab.boost_optional`
+  # or `stlab.boost_variant` are set `ON`, which provides the include
   # directory for the boost header.
   #
   target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
