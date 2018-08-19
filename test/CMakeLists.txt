@@ -33,7 +33,7 @@ add_executable( stlab.test.future
   future_test_helper.hpp )
 
 target_sources( stlab.test.future PUBLIC
-  $<$<TARGET_PROPERTY:COROUTINES>:future_coroutine_tests.cpp> )
+  $<$<BOOL:$<TARGET_PROPERTY:COROUTINES>>:future_coroutine_tests.cpp> )
 target_link_libraries( stlab.test.future PUBLIC stlab::testing )
 add_test( NAME stlab.test.future COMMAND stlab.test.future )
 
