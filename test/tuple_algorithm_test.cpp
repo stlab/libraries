@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE(tuple_find_test)
 
 BOOST_AUTO_TEST_CASE(empty_tuple) {
     std::tuple<> t;
-    BOOST_REQUIRE_EQUAL(std::size_t(1), stlab::tuple_find(t, [](const auto& t) { return false; }));
+    BOOST_REQUIRE_EQUAL(std::size_t(1), stlab::tuple_find(t, [](const auto&) { return false; }));
 }
 
 BOOST_AUTO_TEST_CASE(one_element_tuple_that_fails) {

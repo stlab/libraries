@@ -43,12 +43,7 @@ build_script:
   - IF EXIST build RMDIR /S /Q build
   - MKDIR build
   - cd build
-  - cmake -G "Visual Studio 15 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON -D coroutine=ON ..
-  - cmake  --build .
-  - test\Debug\stlab.test.channel.test --log_level=message
-  - test\Debug\stlab.test.cow.test --log_level=message
-  - test\Debug\stlab.test.future.test --log_level=message
-  - test\Debug\stlab.test.serial_queue.test.exe
-  - test\Debug\stlab.test.task.test --log_level=message
-  - test\Debug\stlab.test.tuple.test --log_level=message
+  - cmake -G "Visual Studio 15 2017 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug -D Boost_USE_STATIC_LIBS=ON ..
+  - cmake --build . --config Release
+  - ctest -C Release 
   

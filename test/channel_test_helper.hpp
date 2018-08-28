@@ -6,10 +6,9 @@
 
 /**************************************************************************************************/
 
-#ifndef CHANNEL_TEST_HELPER_
-#define CHANNEL_TEST_HELPER_
+#ifndef CHANNEL_TEST_HELPER
+#define CHANNEL_TEST_HELPER
 
-#define STLAB_DISABLE_FUTURE_COROUTINES
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/task.hpp>
