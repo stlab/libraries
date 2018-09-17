@@ -1,14 +1,5 @@
-string( CONCAT conditional_exclusion
-  "$<NOT:$<AND:$<CXX_COMPILER_ID:MSVC>"
-             ",$<VERSION_LESS:$<CXX_COMPILER_VERSION>,99>"
-             ",$<BOOL:$<TARGET_PROPERTY:COROUTINES>"
-               ">"
-         ">"
-   ">" )
-
 target_sources( stlab INTERFACE
   $<BUILD_INTERFACE:
-    $<${conditional_exclusion}:${CMAKE_CURRENT_SOURCE_DIR}/channel.hpp>
     ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/default_executor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/executor_base.hpp
@@ -24,7 +15,6 @@ target_sources( stlab INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/utility.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/variant.hpp>
   $<INSTALL_INTERFACE:
-    $<${conditional_exclusion}:include/stlab/concurrency/channel.hpp>
     include/stlab/concurrency/channel.hpp
     include/stlab/concurrency/config.hpp
     include/stlab/concurrency/default_executor.hpp
@@ -39,4 +29,18 @@ target_sources( stlab INTERFACE
     include/stlab/concurrency/traits.hpp
     include/stlab/concurrency/tuple_algorithm.hpp
     include/stlab/concurrency/utility.hpp
-    include/stlab/concurrency/variant.hpp> )
+    include/stlab/concurrency/variant.hpp>)
+
+if(CXX_COMPILER_ID MATCHES MSVC)
+  if(CXX_COMPILER_VERSION VERSION_LESS 99)
+    get_target_property(wants_coroutines stlab COROUTINES)
+    if(wants_coroutines)
+      message(STATUS "Not including concurrency/channel.hpp in the target sources for stlab")
+      return()
+    endif()
+  endif()
+endif()
+
+target_sources(stlab INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/channel.hpp>
+  $<INSTALL_INTERFACE:include/stlab/concurrency/channel.hpp>)
