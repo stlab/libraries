@@ -25,7 +25,7 @@ string( CONCAT active
 # If using Clang and active, set the coroutines flag
 #
 string( CONCAT flag_generator
-  "$<$<AND:$<CXX_COMPILER_ID:Clang>,${active}>:-fcoroutines>" )
+  "$<$<AND:$<CXX_COMPILER_ID:Clang>,${active}>:-fcoroutines-ts>" )
 
 target_compile_options( coroutines INTERFACE ${flag_generator} )
 
