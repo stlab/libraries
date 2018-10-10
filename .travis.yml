@@ -33,7 +33,8 @@ matrix:
         - brew upgrade python
         - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
-        - pip3 install conan
+        - pip3 install --user conan
+        - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
         - ./enhance_conan.sh
 
       env:
@@ -48,7 +49,8 @@ matrix:
         - brew upgrade python
         - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
-        - pip3 install conan
+        - pip3 install --user conan
+        - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
         - ./enhance_conan.sh
 
       env:
