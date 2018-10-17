@@ -17,6 +17,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <tuple>
 #include <utility>
 
@@ -279,6 +280,7 @@ struct shared_process_sender {
     virtual void send(std::exception_ptr) = 0;
     virtual void add_sender() = 0;
     virtual void remove_sender() = 0;
+    virtual std::size_t free_buffer() const = 0;
 };
 
 /**************************************************************************************************/
@@ -396,6 +398,9 @@ struct default_queue_strategy {
 
     auto size() const { return std::array<std::size_t, 1>{{_queue.size()}}; }
 
+    template <std::size_t>
+    auto queue_size() const { return _queue.size(); }
+
     template <std::size_t, typename U>
     void append(U&& u) {
         _queue.emplace_back(std::forward<U>(u));
@@ -438,6 +443,9 @@ struct zip_with_queue_strategy {
         tuple_for_each(_queue, [&i, &result](const auto& c) { result[i++] = c.size(); });
         return result;
     }
+
+    template <std::size_t I>
+    auto queue_size() const { return std::get<I>(_queue).size(); }
 
     template <std::size_t I, typename U>
     void append(U&& u) {
@@ -488,6 +496,9 @@ struct round_robin_queue_strategy {
         return result;
     }
 
+    template <std::size_t I>
+    auto queue_size() const { return std::get<I>(_queue).size(); }
+
     template <std::size_t I, typename U>
     void append(U&& u) {
         std::get<I>(_queue).emplace_back(std::forward<U>(u));
@@ -536,6 +547,9 @@ struct unordered_queue_strategy {
 
         return result;
     }
+
+    template <std::size_t I>
+    auto queue_size() const { return std::get<I>(_queue).size(); }
 
     template <std::size_t I, typename U>
     void append(U&& u) {
@@ -588,6 +602,14 @@ struct shared_process_sender_indexed : public shared_process_sender<Arg> {
     void send(std::exception_ptr error) override { enqueue(std::move(error)); }
 
     void send(Arg arg) override { enqueue(std::move(arg)); }
+
+    std::size_t free_buffer() const override {
+        std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
+        return _shared_process._process_buffer_size == 0 ?
+                   std::numeric_limits<std::size_t>::max() :
+                   (_shared_process._process_buffer_size -
+                    _shared_process._queue.template queue_size<I>());
+    }
 };
 
 /**************************************************************************************************/
@@ -626,6 +648,15 @@ struct downstream<
     void send(std::size_t n, Args... args) {
         stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
     }
+
+    std::size_t minimum_free_buffer() const {
+        if (size() == 0) return 0;
+        // std::reduce with C++17
+        return std::accumulate(_data.cbegin(), _data.cend(), std::numeric_limits<std::size_t>::max(),
+            [](auto val, const auto& e) {
+            return std::min(val, e.free_buffer());
+        });
+    }
 };
 
 template <typename R>
@@ -646,6 +677,11 @@ struct downstream<
     template <typename... Args>
     void send(std::size_t, Args&&... args) {
         if (_data) (*_data)(std::forward<Args>(args)...);
+    }
+
+    std::size_t minimum_free_buffer() const {
+        if (_data) return (*_data).free_buffer();
+        return 0;
     }
 };
 
@@ -774,9 +810,10 @@ struct shared_process
         {
             const auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
-            assert(_process_suspend_count > 0 && "Error: Try to unsuspend, but not suspended!");
-            --_process_suspend_count; // could be atomic?
-            assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
+            //assert(_process_suspend_count > 0 && "Error: Try to unsuspend, but not suspended!");
+            if (_process_suspend_count>0)
+                --_process_suspend_count; // could be atomic?
+            //assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
             if (!_process_suspend_count) {
                 if (ps.first == process_state::yield || !_queue.empty() || _process_close_queue) {
                     do_run = true;
@@ -803,11 +840,8 @@ struct shared_process
             message = std::move(_queue.front());
             _queue.pop_front();
             auto queue_size = _queue.size();
-            std::size_t i{0};
-            std::for_each(queue_size.begin(), queue_size.end(), [&do_cts, &i, this](auto size) {
-                do_cts[i] = size <= (_process_buffer_size - 1);
-                ++i;
-            });
+            for (auto index = 0u; index < queue_size.size(); ++index)
+                do_cts[index] = queue_size[index] <= (_process_buffer_size - 1);
         }
         return std::make_tuple(std::move(message), do_cts, do_close);
     }
@@ -835,12 +869,12 @@ struct shared_process
                     do_close = true;
             } else
                 await_variant_args<process_t, Args...>(*_process, *message);
-				}
-				else {
-						do_close = true;
-				}
-				
-				if (do_close)
+        }
+        else {
+            do_close = true;
+        }
+
+        if (do_close)
             process_close(_process);
 
         return bool(message);
@@ -991,27 +1025,35 @@ struct shared_process
         */
 
         std::size_t n;
+        bool suspend_process;
         {
             std::unique_lock<std::mutex> lock(_downstream_mutex);
             n = _downstream.size();
+            suspend_process = _downstream.minimum_free_buffer() <= 1;
         }
 
         /*
+            // TODO Fp Fix comment
             There is no need for a lock here because the other processes that could change
             _process_suspend_count must all be ready (and not running).
 
             But we'll assert that to be sure!
         */
-        // std::unique_lock<std::mutex> lock(_process_mutex);
-        assert(_process_suspend_count == 0 && "broadcasting while suspended");
+        {
+            std::unique_lock<std::mutex> lock(_process_mutex);
+            //assert(_process_suspend_count == 0 && "broadcasting while suspended");
 
-        /*
-            Suspend for however many downstream processes we have + 1 for this process - that
-            ensures that we are not kicked to run while still broadcasting.
-        */
+            /*
+                // TODO Fp Fix comment
+                Suspend for however many downstream processes we have + 1 for this process - that
+                ensures that we are not kicked to run while still broadcasting.
+            */
 
-        _process_suspend_count = n + 1;
-
+            if (suspend_process)
+                _process_suspend_count = n + 1;
+            else
+                _process_suspend_count = 0;
+        }
         /*
             There is no lock on _downstream here. We only ever append to this deque so the first
             n elements are good.
@@ -1480,6 +1522,11 @@ public:
         auto p = _p.lock();
         if (p) p->send(std::forward<A>(args)...);
     }
+
+    std::size_t free_buffer() const {
+        auto p = _p.lock();
+        return (p)? p->free_buffer() : 0;
+    }
 };
 
 template <typename T>
@@ -1530,6 +1577,11 @@ public:
     void operator()(A&&... args) const {
         auto p = _p.lock();
         if (p) p->send(std::forward<A>(args)...);
+    }
+
+    std::size_t free_buffer() const {
+        auto p = _p.lock();
+        return (p)? p->free_buffer() : 0;
     }
 };
 
