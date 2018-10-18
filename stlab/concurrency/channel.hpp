@@ -1052,7 +1052,7 @@ struct shared_process
             if (suspend_process)
                 _process_suspend_count = n + 1;
             else
-                _process_suspend_count = 0;
+                _process_suspend_count = 1;
         }
         /*
             There is no lock on _downstream here. We only ever append to this deque so the first
