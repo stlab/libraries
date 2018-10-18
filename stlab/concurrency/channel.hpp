@@ -654,7 +654,7 @@ struct downstream<
         // std::reduce with C++17
         return std::accumulate(_data.cbegin(), _data.cend(), std::numeric_limits<std::size_t>::max(),
             [](auto val, const auto& e) {
-            return std::min(val, e.free_buffer());
+            return std::min(val, e.free_buffer()? *e.free_buffer() : val);
         });
     }
 };
@@ -680,7 +680,7 @@ struct downstream<
     }
 
     std::size_t minimum_free_buffer() const {
-        if (_data) return (*_data).free_buffer();
+        if (_data && (*_data).free_buffer()) return *(*_data).free_buffer();
         return 0;
     }
 };
@@ -942,15 +942,10 @@ struct shared_process
 
                     // try_lock can fail spuriously
                     while (true) {
-                        // we were cancelled
-                        // if (!_this->_timeout_function_active) return;
-
                         lock_t lock(_this->_timeout_function_control, std::try_to_lock);
                         if (!lock) continue;
 
                         // we were cancelled
-                        // if (!_this->_timeout_function_active) return;
-
                         if (get_process_state(_this->_process).first != process_state::yield) {
                             _this->try_broadcast();
                             _this->_timeout_function_active = false;
@@ -1523,9 +1518,11 @@ public:
         if (p) p->send(std::forward<A>(args)...);
     }
 
-    std::size_t free_buffer() const {
+    optional<std::size_t> free_buffer() const {
+        optional<std::size_t> result;
         auto p = _p.lock();
-        return (p)? p->free_buffer() : 0;
+        if (p) result = p->free_buffer();
+        return result;
     }
 };
 
@@ -1579,9 +1576,11 @@ public:
         if (p) p->send(std::forward<A>(args)...);
     }
 
-    std::size_t free_buffer() const {
+    optional<std::size_t> free_buffer() const {
+        optional<std::size_t> result;
         auto p = _p.lock();
-        return (p)? p->free_buffer() : 0;
+        if (p) result = p->free_buffer();
+        return result;
     }
 };
 
