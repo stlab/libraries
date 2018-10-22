@@ -79,7 +79,8 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
         scope<lock_t>(_m, [&]() { std::swap(local_queue, _queue); });
 
         while (!local_queue.empty()) {
-            pop_front_unsafe(local_queue)();
+            auto f = pop_front_unsafe(local_queue)();
+            f();
         }
 
         if (!empty()) _executor([_this(shared_from_this())]() { _this->all(); });
