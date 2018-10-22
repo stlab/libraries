@@ -1,10 +1,9 @@
 ---
 layout: library
 title: API Documentation
-owner: __MISSING__
-brief: __MISSING__
+owner: fbrereto
+brief: The stlab libraries
 library-type: library
-description: The stlab libraries
 tab: Libraries
 ---
 
@@ -13,4 +12,5 @@ tab: Libraries
 The source code is hosted on [github](https://github.com/stlab/libraries).
 
 ### License ###
+
 [Boost Software License, Version 1.0](https://www.boost.org/LICENSE_1_0.txt)
