@@ -2,7 +2,7 @@
 layout: function
 title: __builtin_expect
 owner: sparent
-brief: __MISSING__
+brief: TODO(fbrereto)
 tags:
   - function
 defined-in-file: stlab/copy_on_write.hpp
@@ -17,7 +17,7 @@ overloads:
         name: unnamed-1
         type: long
         unnamed: true
-    description: __MISSING__
+    description: TODO(fbrereto)
     return: __OPTIONAL__
     signature_with_names: extern long __builtin_expect(long, long)
 ---
