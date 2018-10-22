@@ -1,0 +1,33 @@
+---
+layout: default
+---
+
+{% include derive_family.html %}
+
+{% assign pages = siblings | where_exp:"p","p.layout == 'page'" | sort:"title" %}
+{% assign subdocs = siblings | where_exp:"p","p.layout == 'eng_index'" | sort:"title" %}
+
+{{content}}
+
+<table class='directory-table'>
+    {% for p in subdocs %}
+    <tr>
+        <td>
+            <i class="fa fa-folder"></i>
+        </td>
+        <td>
+            <a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title | markdownify }}</a></li>
+        </td>
+    </tr>
+    {% endfor %}
+    {% for p in pages %}
+    <tr>
+        <td>
+            <i class="fa fa-book"></i>
+        </td>
+        <td>
+            <a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title | markdownify }}</a></li>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

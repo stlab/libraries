@@ -1,0 +1,35 @@
+---
+layout: default
+---
+<div class="post">
+  <header class="post-header">
+      <h1 class='code'>{{ page.title | escape }}</h1>
+  </header>
+
+  <article class="post-content">
+    {{page.description}}
+
+    {% include defined_in_header.html %}
+
+    {% highlight c++ %}{{ page.declaration }}{% endhighlight %}
+
+    {{page.brief | markdownify}}
+
+    {{page.description | markdownify}}
+
+    <h2>Values</h2>
+
+    <table class='definition-table'>
+      {% for value in page.values %}
+        <tr>
+          <td class='decl'>{{ value.name }}</td>
+          <td class='defn'>{{ value.description | markdownify }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+
+    {{ content }}
+
+    {% include external_examples.html name=page.example header="Example" %}
+  </article>
+</div>

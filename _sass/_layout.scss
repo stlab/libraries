@@ -2,9 +2,12 @@
  * Site header
  */
 .site-header {
-    border-top: 5px solid $grey-color-dark;
-    border-bottom: 1px solid $grey-color-light;
-    min-height: $title-height;
+    background-color: $header-background-color;
+    border-bottom: 1px solid $header-border-color;
+    min-height: $header-height;
+    margin-bottom: 10px;
+    padding-bottom: 14px;
+    padding-top: 16px;
 
     // Positioning context for the mobile navigation icon
     position: relative;
@@ -24,7 +27,7 @@
     width: 50%;
     margin-top: 3px;
     margin-bottom: 3px;
-    min-height: $title-height;
+    min-height: $header-height;
 
     /*
     position: absolute;
@@ -34,26 +37,22 @@
     bottom: 0;
     */
 
-    background-image: url("/images/site/stlab-logo-long.svg");
+    background-image: $header-image;
     background-repeat: no-repeat;
     background-size: contain;
-
-    &,
-    &:visited {
-        color: $grey-color-dark;
-    }
 }
 
 .site-nav {
     float: right;
-    line-height: $title-height;
+    line-height: $header-height;
+    margin-top: 3px;
 
     .menu-icon {
         display: none;
     }
 
     .page-link {
-        color: $text-color;
+        color: $site-nav-link-color;
         line-height: $base-line-height;
 
         // Gaps between nav items, but not on the last one
@@ -64,10 +63,10 @@
 
     @include media-query($on-palm) {
         position: absolute;
-        top: 9px;
-        right: $spacing-unit / 2;
-        background-color: $background-color;
-        border: 1px solid $grey-color-light;
+        top: 12px;
+        right: 12px;
+        background-color: $site-menu-background-color;
+        border: 1px solid $site-menu-border-color;
         border-radius: 5px;
         text-align: right;
 
@@ -85,7 +84,7 @@
                 height: 15px;
 
                 path {
-                    fill: $grey-color-dark;
+                    fill: $site-menu-fill-color;
                 }
             }
         }
@@ -118,13 +117,14 @@
  * Site footer
  */
 .site-footer {
-    border-top: 1px solid $grey-color-light;
-    padding: $spacing-unit 0;
+    border-top: 1px solid $footer-border-color;
+    padding: 20px 0;
+    background-color: $footer-background-color;
 }
 
 .footer-heading {
-    font-size: 18px;
-    margin-bottom: $spacing-unit / 2;
+    font-size: $base-font-size;
+    margin-bottom: 0;
 }
 
 .contact-list,
@@ -133,69 +133,114 @@
     margin-left: 0;
 }
 
-.footer-col-wrapper {
-    font-size: 15px;
-    color: $grey-color;
-    margin-left: -$spacing-unit / 2;
-    @extend %clearfix;
-}
+.footer-table {
+    font-size: $small-font-size;
+    color: $footer-text-color;
+    width: 100%;
 
-.footer-col {
-    float: left;
-    margin-bottom: $spacing-unit / 2;
-    padding-left: $spacing-unit / 2;
-}
-
-.footer-col-1 {
-    width: -webkit-calc(35% - (#{$spacing-unit} / 2));
-    width:         calc(35% - (#{$spacing-unit} / 2));
-}
-
-.footer-col-2 {
-    width: -webkit-calc(20% - (#{$spacing-unit} / 2));
-    width:         calc(20% - (#{$spacing-unit} / 2));
-}
-
-.footer-col-3 {
-    width: -webkit-calc(45% - (#{$spacing-unit} / 2));
-    width:         calc(45% - (#{$spacing-unit} / 2));
-}
-
-@include media-query($on-laptop) {
-    .footer-col-1,
-    .footer-col-2 {
-        width: -webkit-calc(50% - (#{$spacing-unit} / 2));
-        width:         calc(50% - (#{$spacing-unit} / 2));
-    }
-
-    .footer-col-3 {
-        width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-        width:         calc(100% - (#{$spacing-unit} / 2));
+    > tbody {
+        > tr {
+            > td {
+                > a {
+                    color: $footer-link-color;
+                }
+            }
+        }
     }
 }
 
-@include media-query($on-palm) {
-    .footer-col {
-        float: none;
-        width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-        width:         calc(100% - (#{$spacing-unit} / 2));
+.footer-left {
+    text-align: left;
+    vertical-align: top;
+    width: 33%;
+}
+
+.footer-center {
+    text-align: center;
+    vertical-align: top;
+    width: 34%;
+}
+
+.footer-right {
+    text-align: right;
+    vertical-align: top;
+    width: 33%;
+}
+
+
+/**
+ * Main content
+ */
+// Make footer "sticky". I.e., push to bottom of page when there is little content,
+// and push to the end of content otherwise.
+.main-content {
+    min-height: 100%;
+    margin-bottom: -$footer-height; 
+    background-color: $background-color;
+}
+
+.main-content:after {
+    content: "";
+    display: block;
+}
+
+.site-footer, .main-content:after {
+    height: $footer-height;
+    box-sizing: border-box;
+}
+
+
+/**
+ * Top bar
+ */
+ .top-bar {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+
+    @include media-query($on-palm) {
+        flex-direction: column;
     }
 }
 
-.example_box {
-  border: 1px solid silver;
-  border-radius: 5px;
-  padding: 1em;
-  margin: 1em 0;
-  width: 55em;
-  overflow: auto;
+.top-bar-breadcrumb {
+    flex:0 0 auto;
 }
+
+.top-bar-spacer {
+    flex: 1 1 auto;
+}
+
+.top-bar-theme {
+    flex:0 0 auto;
+}
+
+
+/**
+ * Breadcrumbs
+ */
+.breadcrumb {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    > li {
+        display: inline;
+    }
+    > li.active {
+        font-style: oblique;
+    }
+    > li.crumb:before {
+        content: "\2009|\a0";
+    }
+}
+
 
 /**
  * Page content
  */
 .page-content {
-    padding: $spacing-unit / 2 0;
+    padding: $spacing-unit / 2 0; 
 }
 
 .post-list {
@@ -209,15 +254,13 @@
 
 .post-meta {
     font-size: $small-font-size;
-    color: $grey-color;
+    color: $post-meta-text-color;
 }
 
 .post-link {
     display: block;
     font-size: 24px;
 }
-
-
 
 /**
  * Posts
@@ -243,6 +286,8 @@
 
     h1 {
         font-size: 2em;
+        margin-top: 30px;
+        margin-bottom: 10px;
 
         @include media-query($on-laptop) {
             font-size: 1.8em;
@@ -272,6 +317,14 @@
             font-size: 1.2em;
         }
     }
+
+    h5 {
+        font-size: 1.2em;
+
+        @include media-query($on-laptop) {
+            font-size: 1.0em;
+        }
+    }
 }
 
 /**
@@ -282,6 +335,10 @@ table {
     border-collapse: collapse;
 }
 
+.indent {
+    margin-left: $spacing-unit / 2;
+}
+
 /**
  * Definition tables are indented on the left, and have horizontal lines between
  * every row.
@@ -289,13 +346,62 @@ table {
 .definition-table {
     margin-left: $spacing-unit / 2;
     margin-bottom: $spacing-unit / 2;
-    border-bottom: 1px solid $grey-color;
-    border-top: 1px solid $grey-color;
+    border-bottom: 1px solid $table-separator-color;
+    border-top: 1px solid $table-separator-color;
     width: 100%;
 
     > tbody {
         > tr {
-            border-top: 1px solid $grey-color;
+            border-top: 1px solid $table-separator-color;
+
+            > th {
+                text-align: left;
+            }
+            > td {
+                > p {
+                    margin: 0;
+                    display: inline;
+                }
+                padding-right: 1.5em;
+                vertical-align: top;
+            }
+            > td.type {
+                font-family: $code-font-family;
+                white-space: nowrap;
+                vertical-align: top;
+            }
+            > td.field {
+                font-family: $code-font-family;
+                white-space: nowrap;
+                vertical-align: top;
+            }
+            > td.decl {
+                text-indent: -3em;
+                padding-left: 3em;
+                font-family: $code-font-family;
+                vertical-align: top;
+            }
+            > td.defn {
+                padding-right: 0;
+            }
+        }
+    }
+}
+
+/**
+ * Associated tables are those that enumerate library subcomponents and
+ * associated elements.
+ */
+ .associated-table {
+    margin-left: $spacing-unit / 2;
+    margin-bottom: $spacing-unit / 2;
+    border-bottom: 1px solid $table-separator-color;
+    border-top: 1px solid $table-separator-color;
+    width: 100%;
+
+    > tbody {
+        > tr {
+            border-top: 1px solid $table-separator-color;
 
             > th {
                 text-align: left;
@@ -306,11 +412,15 @@ table {
                     display: inline;
                 }
             }
-            > td.decl {
+            > td.name {
+                text-indent: -3em;
+                padding-left: 3em;
                 font-family: $code-font-family;
+                // white-space: nowrap;
+                vertical-align: top;
+                padding-right: 1.5em;
             }
-            > td.defn {
-                padding-left: 1.5em;
+            > td.brief {
             }
         }
     }
@@ -320,15 +430,15 @@ table {
  * Declaration tables are identical to definition tables, but without the
  * indent.
  */
-.declaration-table {
+ .declaration-table {
     margin-bottom: $spacing-unit / 2;
-    border-bottom: 1px solid $grey-color;
-    border-top: 1px solid $grey-color;
+    border-bottom: 1px solid $table-separator-color;
+    border-top: 1px solid $table-separator-color;
     width: 100%;
 
     > tbody {
         > tr {
-            border-top: 1px solid $grey-color;
+            border-top: 1px solid $table-separator-color;
 
             > th {
                 text-align: left;
@@ -341,9 +451,84 @@ table {
             }
             > td.decl {
                 font-family: $code-font-family;
+                white-space: nowrap;
+                vertical-align: top;
+                padding-right: 1.5em;
             }
             > td.defn {
-                padding-left: 1.5em;
+            }
+        }
+    }
+}
+
+/**
+ * State transition tables, like the one in the transaction docs.
+ */
+ .state-transition {
+    margin-bottom: $spacing-unit / 2;
+    border-bottom: 1px solid $table-separator-color;
+    border-top: 1px solid $table-separator-color;
+    width: 100%;
+
+    > thead {
+     > tr {
+        border-bottom: 1px solid $table-separator-color;
+     }
+    }
+
+    > tbody {
+        > tr {
+            border-top: 1px solid $table-separator-color;
+            > td {
+            }
+        }
+    }
+}
+
+/**
+ * Parameter Notes, like the one in the collection connect_insert docs.
+ */
+ .parameter-table {
+    margin-bottom: $spacing-unit / 2;
+    border-bottom: 1px solid $table-separator-color;
+    border-top: 1px solid $table-separator-color;
+    width: 100%;
+
+    > thead {
+        > tr {
+            border-bottom: 1px solid $table-separator-color;
+
+            > th {
+                font-weight: bold;
+                text-align: left;
+            }
+        }
+    }
+
+    > tbody {
+        > tr {
+            border-top: 1px solid $table-separator-color;
+            border-spacing: 0.1em;
+            > td {
+                vertical-align: top;
+                padding-right: 0.5em;
+            }
+        }
+    }
+}
+
+/**
+ * Directory tables, like the ones that structure the `eng` folder.
+ */
+ .directory-table {
+    margin-left: 1em;
+
+    > tbody {
+        > tr {
+            > td {
+                padding-right: 0.2em;
+                line-height: 1.0;
+                vertical-align: top;
             }
         }
     }
@@ -394,9 +579,9 @@ span.annotation {
             }
             > td.decl {
                 font-family: $code-font-family;
+                padding-right: 1.5em;
             }
             > td.defn {
-                padding-left: 1.5em;
             }
         }
     }
@@ -408,13 +593,13 @@ span.annotation {
  */
 .example-table {
     margin-bottom: $spacing-unit / 2;
-    border-bottom: 1px solid $grey-color;
-    border-top: 1px solid $grey-color;
+    border-bottom: 1px solid $table-separator-color;
+    border-top: 1px solid $table-separator-color;
     width: 100%;
 
     > tbody {
         > tr {
-            border-top: 1px solid $grey-color;
+            border-top: 1px solid $table-separator-color;
 
             > th {
                 text-align: left;
@@ -478,13 +663,25 @@ span.annotation {
     border-collapse: separate;
     border-spacing: 3em 0;
 
+        > tbody {
+        > tr {
+        > td {
+        > a {
+            text-decoration: none;
+        }
+        }
+        }
+        }
+
+
     @include media-query($on-palm) {
         border-spacing: 1em 0;
     }
 }
 
 .icon-box {
-    background: $stlab-purple;
+    background: $icon-primary-color;
+    color: $icon-text-color;
     border-radius: 1em;
     @include media-query($on-palm) {
         border-radius: .3em;
@@ -497,9 +694,9 @@ span.annotation {
         }
         > .fa {
             display: inline-block;
-            width: 2em;
+            width: 1.7em;
             text-align: center;
-            line-height: 1.6em;
+            line-height: 1.4em;
             font-size: 5em;
             vertical-align: middle;
 
@@ -509,11 +706,11 @@ span.annotation {
         }
     }
     > .bottom {
-        background: white;
+        background: $icon-secondary-color;
         border-radius: 0 0 1em 1em;
-        border-left: 1px solid $grey-color;
-        border-right: 1px solid $grey-color;
-        border-bottom: 1px solid $grey-color;
+        border-left: 1px solid $icon-border-color;
+        border-right: 1px solid $icon-border-color;
+        border-bottom: 1px solid $icon-border-color;
         font-weight: bold;
         text-align: center;
         padding-top: .7em;
@@ -525,9 +722,22 @@ span.annotation {
             border-radius: 0 0 .3em .3em;
         }
     }
+
     &:hover {
-        background: $stlab-grey;
+        background: $icon-hover-primary-color;
+        color: $icon-hover-text-color;
+
+        > .bottom {
+            background: $icon-hover-secondary-color;
+            border-left: 1px solid $icon-hover-border-color;
+            border-right: 1px solid $icon-hover-border-color;
+            border-bottom: 1px solid $icon-hover-border-color;
+        }
     }
+}
+
+.rss-subscribe {
+    text-align: right;
 }
 
 /**

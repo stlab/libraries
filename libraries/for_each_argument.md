@@ -1,10 +1,10 @@
 ---
-layout: free-function
+layout: function
 title: stlab::for_each_argument
 tags: [library]
 scope: stlab
 pure-name: for_each_argument
-brief: Explicitly scope the lifetime of an object
+brief: Execute a function for each passed argument
 annotation: template function
 example: [ for_each_argument_example.cpp ]
 defined-in-header: stlab/utility.hpp

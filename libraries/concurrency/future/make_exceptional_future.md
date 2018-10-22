@@ -1,5 +1,5 @@
 ---
-layout: free-function
+layout: function
 title: stlab::make_exceptional_future
 tags: [library]
 pure-name: make_exceptional_future

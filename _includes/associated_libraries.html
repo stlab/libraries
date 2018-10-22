@@ -1,14 +1,20 @@
 {% include derive_family.html %}
 
-{% assign libraries = siblings | where_exp:"p","p.layout == 'library'" %}
+{% assign sub_libs = siblings | where_exp:"p","p.layout == 'library'" %}
 
-{% if libraries.size > 0 %}
-<ul>
-    {% for p in libraries %}
-        {% assign short_url = p.url | remove_first: page.url %}
-        <li class='declaration-list'>
-            <code><a href="{{short_url}}index.html">{{ p.title }}</a></code>
-            &mdash;
+{% assign libraries = sub_libs | where_exp:"p","p.library-type == 'library'" | sort:"title" %}
+
+{% assign sourcefiles = sub_libs | where_exp:"p","p.library-type == 'sourcefile'" | sort:"title" %}
+
+{% if sourcefiles.size > 0 %}
+<h3>Sources</h3>
+<table class='associated-table'>
+  {% for p in sourcefiles %}
+    <tr>
+        <td class='name'>
+          <div><a href="{{p.url}}"><code>{{ p.title | escape }}</code></a></div>
+        </td>
+        <td class='brief'>
             {% if p.brief %}
                 {{ p.brief | markdownify }}
             {% elsif p.description %}
@@ -17,9 +23,35 @@
                 {{ '_No details given_' | markdownify }}
             {% endif %}
             {% if p.annotation %}
-                <span class='annotation'>({{p.annotation}})</span>
+                <span class='annotation'>({{p.annotation | join: ", "}})</span>
             {% endif %}
-        </li>
-    {% endfor %}
-</ul>
+        </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if libraries.size > 0 %}
+<h3>Subcomponents</h3>
+<table class='associated-table'>
+  {% for p in libraries %}
+    <tr>
+        <td class='name'>
+          <div><a href="{{p.url}}">{{ p.title | escape }}</a></div>
+        </td>
+        <td class='brief'>
+            {% if p.brief %}
+                {{ p.brief | markdownify }}
+            {% elsif p.description %}
+                {{ p.description | markdownify }}
+            {% else %}
+                {{ '_No details given_' | markdownify }}
+            {% endif %}
+            {% if p.annotation %}
+                <span class='annotation'>({{p.annotation | join: ", "}})</span>
+            {% endif %}
+        </td>
+    </tr>
+  {% endfor %}
+</table>
 {% endif %}

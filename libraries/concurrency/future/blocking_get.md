@@ -1,5 +1,5 @@
 ---
-layout: free-function
+layout: function
 title: stlab::blocking_get
 tags: [library]
 pure-name: blocking_get
