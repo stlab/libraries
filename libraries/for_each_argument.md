@@ -1,5 +1,5 @@
 ---
-layout: free-function
+layout: function
 title: stlab::for_each_argument
 tags: [library]
 scope: stlab

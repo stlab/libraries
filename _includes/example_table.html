@@ -13,15 +13,7 @@
 {% for p in examples %}
   <tr>
       <td class='decl_func'>
-      {% if p.scope %}
-        {% assign label = p.scope | append: "::" | append: p.pure-name %}
-      {% elsif p.pure-name %}
-        {% assign label = p.pure-name %}
-      {% else %}
-        {% assign label = p.title %}
-      {% endif %}
-
-      <a href='{{p.url}}'><code>{{label}}</code></a>
+        <a href='{{p.url}}'><code>{{p.title}}</code></a>
       </td>
       <td class='decl_link'>
         {% for e in p.example %}

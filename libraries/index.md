@@ -1,8 +1,11 @@
 ---
 layout: library
-title: Libraries
-tab: Libraries
+title: API Documentation
+owner: __MISSING__
+brief: __MISSING__
+library-type: library
 description: The stlab libraries
+tab: Libraries
 ---
 
 ### Source Code

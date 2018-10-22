@@ -1,5 +1,5 @@
 ---
-layout: free-function
+layout: function
 title: stlab::merge_channel
 tags: [library]
 scope: stlab

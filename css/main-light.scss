@@ -1,0 +1,63 @@
+---
+# Only the main Sass file needs front matter (the dashes are enough)
+---
+@charset "utf-8";
+
+// Our variables
+$stlab-purple: #652f8e; // color pulled from the logo SVG
+$site-grey-color: #949597; // color pulled from the logo SVG
+$site-grey-color-light: lighten($site-grey-color, 35%);
+$site-grey-color-dark: darken($site-grey-color, 25%);
+$text-color: #333;
+$background-color: white;
+$link-color: $stlab-purple;
+
+$site-menu-background-color: inherit;
+$site-menu-border-color: transparent;
+$site-menu-fill-color: $site-grey-color-dark;
+$site-nav-link-color: $stlab-purple;
+
+$header-image: url("/images/site/stlab-logo-long.svg");
+$header-background-color: #e4e4e4;
+$header-border-color: transparent;
+
+$footer-background-color: #e4e4e4;
+$footer-border-color: transparent;
+
+$icon-fill-color: $stlab-purple;
+$icon-primary-color: $stlab-purple;
+$icon-text-color: $stlab-purple;
+$icon-secondary-color: white;
+$icon-border-color: $site-grey-color;
+$icon-hover-primary-color: $site-grey-color;
+$icon-hover-text-color: $site-grey-color;
+$icon-hover-secondary-color: white;
+$icon-hover-border-color: $site-grey-color;
+
+$footer-text-color: $site-grey-color;
+$footer-link-color: $site-grey-color;
+
+$post-meta-text-color: $site-grey-color;
+
+$table-separator-color: $site-grey-color-light;
+
+$highlight-background-color: #f0f0f0;
+$highlight-accent-color: #dbdbdb;
+
+$quote-accent-color: $highlight-accent-color;
+$quote-text-color: $text-color;
+$quote-background-color: $highlight-background-color;
+
+$inline-code-accent-color: $highlight-background-color;
+$inline-code-text-color: $text-color;
+$inline-code-background-color: $highlight-background-color;
+
+$embedded-code-accent-color: $highlight-background-color;
+$embedded-code-text-color: $text-color;
+$embedded-code-background-color: $highlight-background-color;
+
+// Import partials from `sass_dir` (defaults to `_sass`)
+@import
+        "main",
+        "syntax-highlighting-light"
+;

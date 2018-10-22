@@ -1,5 +1,5 @@
 ---
-layout: free-function
+layout: function
 title: stlab::merge
 tags: [library]
 scope: stlab
