@@ -1,0 +1,49 @@
+{% if page.overloads %}
+  <table class='declaration-table'>
+  {% for entity in page.overloads %}
+      <tr>
+        <td>
+          {% highlight c++ %}{{ entity[1].signature_with_names }}{% endhighlight %}
+        </td>
+        <td>({{ forloop.index }})</td>
+      </tr>
+  {% endfor %}
+  </table>
+
+  {{ page.description | markdownify }}
+
+  <ol>
+  {% for entity in page.overloads %}
+    <li>
+      {% if entity[1].annotation %}
+        <span class='annotation'>({{entity[1].annotation | join: ", "}})</span>
+      {% endif %}
+      {{entity[1].description}}
+      {% if entity[1].arguments or entity[1].return %}
+        <br/>
+      {% endif %}
+      {% if entity[1].arguments %}
+        <b>Parameters:</b>
+        <ul>
+          {% for arg in entity[1].arguments %}
+            <li>
+              <code>{{arg.type | escape}}</code>
+              {% if (arg.name != "") and (arg.unnamed == false) %}
+                <code>{{arg.name | escape}}</code>
+              {% else %}
+                <i>unnamed</i>
+              {% endif %}
+              {% if arg.description and (arg.description != "__OPTIONAL__") %}
+                : {{arg.description | escape}}
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if entity[1].return and (entity[1].return != "__OPTIONAL__") %}
+        <b>Returns:</b> {{entity[1].return | escape}}
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ol>
+{% endif %}

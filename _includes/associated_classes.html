@@ -1,29 +1,28 @@
 {% include derive_family.html %}
 
-{% assign classes = siblings | where_exp:"p","p.layout == 'class'" %}
+{% assign classes = siblings | where_exp:"p","p.layout == 'class'" | sort: "title" %}
 
 {% if classes.size > 0 %}
-<h3>Associated Classes</h3>
-<table class='definition-table'>
-  {% for p in classes %}
-    {% assign short_url = p.url | remove_first: page.url %}
-    <tr>
-        <td class='decl'>
-          <div><a href="{{short_url}}index.html">{{ p.pure-name }}</a></div>
+  <h3>Classes</h3>
+  <table class='associated-table'>
+    {% for p in classes %}
+      <tr>
+        <td class='name'>
+          <div><a href="{{p.url}}">{{ p.title | escape }}</a></div>
         </td>
-        <td class='defn'>
-            {% if p.brief %}
-                {{ p.brief | markdownify }}
-            {% elsif p.description %}
-                {{ p.description | markdownify }}
-            {% else %}
-                {{ '_No details given_' | markdownify }}
-            {% endif %}
-            {% if p.annotation %}
-                <span class='annotation'>({{p.annotation}})</span>
-            {% endif %}
+        <td class='brief'>
+          {% if p.brief %}
+            {{ p.brief | markdownify }}
+          {% elsif p.description %}
+            {{ p.description | markdownify }}
+          {% else %}
+            {{ '_No details given_' | markdownify }}
+          {% endif %}
+          {% if p.annotation %}
+            <span class='annotation'>({{p.annotation | join: ", "}})</span>
+          {% endif %}
         </td>
-    </tr>
-  {% endfor %}
-</table>
+      </tr>
+    {% endfor %}
+  </table>
 {% endif %}

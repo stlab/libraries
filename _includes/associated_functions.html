@@ -1,17 +1,16 @@
 {% include derive_family.html %}
 
-{% assign functions = siblings | where_exp:"p","p.layout == 'free-function'" %}
+{% assign functions = siblings | where_exp:"p","p.layout == 'function'" | sort: "title" %}
 
 {% if functions.size > 0 %}
-<h3>Associated Functions</h3>
-<table class='definition-table'>
+<h3>Functions</h3>
+<table class='associated-table'>
   {% for p in functions %}
-    {% assign short_url = p.url | remove_first: page.url %}
     <tr>
-        <td class='decl'>
-          <div><a href="{{short_url}}">{{ p.pure-name }}</a></div>
+        <td class='name'>
+          <div><a href="{{p.url}}">{{ p.title | escape }}</a></div>
         </td>
-        <td class='defn'>
+        <td class='brief'>
             {% if p.brief %}
                 {{ p.brief | markdownify }}
             {% elsif p.description %}
@@ -20,7 +19,7 @@
                 {{ '_No details given_' | markdownify }}
             {% endif %}
             {% if p.annotation %}
-                <span class='annotation'>({{p.annotation}})</span>
+                <span class='annotation'>({{p.annotation | join: ", "}})</span>
             {% endif %}
         </td>
     </tr>
