@@ -23,10 +23,10 @@ fields:
     annotation:
       - private
     description: Pimpl-idiom instance for this class
-    type: struct stlab::copy_on_write::model *
+    type: stlab::copy_on_write::model *
   default_s:
     description: Shared, empty model instance.
-    type: struct stlab::copy_on_write::model
+    type: stlab::copy_on_write::model
 namespace:
   - stlab
 ---

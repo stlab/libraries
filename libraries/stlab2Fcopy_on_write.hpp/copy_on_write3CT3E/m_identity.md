@@ -7,7 +7,7 @@ tags:
   - method
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
-  _Bool identity(const copy_on_write<T> &) const:
+  bool identity(const copy_on_write<T> &) const:
     annotation:
       - public
     arguments:
@@ -16,5 +16,5 @@ overloads:
         type: const copy_on_write<T> &
     description: Singular variant
     return: "`true` iff the underlying object instance is shared by both objects. `false` otherwise."
-    signature_with_names: _Bool identity(const copy_on_write<T> & x) const
+    signature_with_names: bool identity(const copy_on_write<T> & x) const
 ---
