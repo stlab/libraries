@@ -7,11 +7,11 @@ tags:
   - method
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
-  _Bool unique_instance() const:
+  bool unique_instance() const:
     annotation:
       - public
       - deprecated ()
     description: Singular variant
     return: "`true` iff the object instance reference count is one. `false` otherwise."
-    signature_with_names: _Bool unique_instance() const
+    signature_with_names: bool unique_instance() const
 ---
