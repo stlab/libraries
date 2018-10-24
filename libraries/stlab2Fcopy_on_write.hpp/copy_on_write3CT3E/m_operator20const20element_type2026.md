@@ -1,6 +1,6 @@
 ---
 layout: method
-title: operator const type-parameter-0-0 &
+title: operator const element_type &
 owner: sparent
 brief: Obtain a `const` reference to the underlying object.
 tags:
