@@ -1,3 +1,12 @@
+## v1.3.3 - 2018 - October - 25
+
+- Fixed Issues 
+   - [#154](https://github.com/stlab/libraries/issues/154) : 
+   - Race condition in blockin_get(future<T>, const std::chrono::nanoseconds&)
+   
+- Enhancedments
+   - The library can now be included as cmake dependency (Many thanks to Austin McCartney)  
+    
 ## v1.3.2 - 2018 - July - 28
 
 - Fixed Issues 
