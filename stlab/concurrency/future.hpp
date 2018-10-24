@@ -218,7 +218,7 @@ struct value_setter;
 /**************************************************************************************************/
 
 template <typename Sig, typename E, typename F>
-auto package(E&&, F &&)
+auto package(E, F&&)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>>;
 
 /**************************************************************************************************/
@@ -664,11 +664,11 @@ class packaged_task {
     explicit packaged_task(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                                future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                              future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F&&)
+    friend auto package_with_broken_promise(E, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -715,11 +715,11 @@ class future<T, enable_if_copyable<T>> {
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                                future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                             future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F &&)
+    friend auto package_with_broken_promise(E, F &&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -806,11 +806,11 @@ class future<void, void> {
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                                future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                              future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F &&)
+    friend auto package_with_broken_promise(E, F &&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -896,11 +896,11 @@ class future<T, enable_if_not_copyable<T>> {
     future(const future&) = default;
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                           future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                              future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F &&)
+    friend auto package_with_broken_promise(E, F &&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -961,17 +961,17 @@ public:
 };
 
 template <typename Sig, typename E, typename F>
-auto package(E&& executor, F&& f)
+auto package(E executor, F&& f)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<Sig>>(std::forward<E>(executor), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::move(executor), std::forward<F>(f));
     return std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
                           future<detail::result_of_t_<Sig>>(p));
 }
 
 template <typename Sig, typename E, typename F>
-auto package_with_broken_promise(E&& executor, F&& f)
+auto package_with_broken_promise(E executor, F&& f)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<Sig>>(std::forward<E>(executor), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::move(executor), std::forward<F>(f));
     auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
                                  future<detail::result_of_t_<Sig>>(p));
     result.second._p->_error =
