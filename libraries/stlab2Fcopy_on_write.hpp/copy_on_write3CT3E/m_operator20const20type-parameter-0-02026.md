@@ -7,10 +7,10 @@ tags:
   - method
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
-  operator const type-parameter-0-0 &() const:
+  operator const stlab::copy_on_write::element_type &() const:
     annotation:
       - public
-    description: Singular variant
-    return: A const reference to the element type
-    signature_with_names: operator const type-parameter-0-0 &() const
+    description: __MISSING__
+    return: __OPTIONAL__
+    signature_with_names: operator const stlab::copy_on_write::element_type &() const
 ---
