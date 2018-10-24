@@ -1165,7 +1165,7 @@ auto when_all(E executor, F f, future<Ts>... args) {
     });
     shared->_f = std::move(p.first);
 
-    detail::attach_when_args(std::move(executor), shared, std::move(args)...);
+    detail::attach_when_args(executor, shared, std::move(args)...);
 
     return std::move(p.second);
 }
@@ -1184,7 +1184,7 @@ struct make_when_any {
         });
         shared->_f = std::move(p.first);
 
-        detail::attach_when_args(std::move(executor), shared, std::move(arg), std::move(args)...);
+        detail::attach_when_args(executor, shared, std::move(arg), std::move(args)...);
 
         return std::move(p.second);
     }
@@ -1204,7 +1204,7 @@ struct make_when_any<void> {
         });
         shared->_f = std::move(p.first);
 
-        detail::attach_when_args(std::move(executor), shared, std::move(args)...);
+        detail::attach_when_args(executor, shared, std::move(args)...);
 
         return std::move(p.second);
     }

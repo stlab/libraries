@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(future_void_single_task) {
 
     int p = 0;
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; });
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; });
 
     check_valid_future(sut);
     wait_until_future_completed(sut);
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(future_void_single_task_detached) {
 
     std::atomic_int p{0};
     {
-        auto detached = async(custom_scheduler<0>(), [& _p = p] { _p = 42; });
+        auto detached = async(make_executor<0>(), [& _p = p] { _p = 42; });
         detached.detach();
     }
     while (p.load() != 42) {
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_rvalue) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; }).then([& _p = p] { _p += 42; });
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] { _p += 42; });
 
     check_valid_future(sut);
     wait_until_future_completed(sut);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_lvalue) {
     BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on l-value");
 
     std::atomic_int p{0};
-    auto interim = async(custom_scheduler<0>(), [& _p = p] { _p = 42; });
+    auto interim = async(make_executor<0>(), [& _p = p] { _p = 42; });
 
     sut = interim.then([& _p = p] { _p += 42; });
 
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_same_scheduler) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [] { return 42; }).then([& _p = p](auto x) { _p = x + 42; });
+    sut = async(make_executor<0>(), [] { return 42; }).then([& _p = p](auto x) { _p = x + 42; });
     check_valid_future(sut);
 
     wait_until_future_completed(sut);
@@ -94,8 +94,8 @@ BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_different_scheduler) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [] { return 42; })
-              .then(custom_scheduler<1>(), [& _p = p](auto x) { _p = x + 42; });
+    sut = async(make_executor<0>(), [] { return 42; })
+              .then(make_executor<1>(), [& _p = p](auto x) { _p = x + 42; });
     check_valid_future(sut);
 
     wait_until_future_completed(sut);
@@ -110,8 +110,8 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_different_scheduler) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; })
-              .then(custom_scheduler<1>(), [& _p = p] { _p += 42; });
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; })
+              .then(make_executor<1>(), [& _p = p] { _p += 42; });
     check_valid_future(sut);
 
     wait_until_future_completed(sut);
@@ -135,9 +135,9 @@ BOOST_AUTO_TEST_CASE(future_void_Y_formation_tasks_with_same_scheduler) {
     int r1 = 0;
     int r2 = 0;
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; });
-    auto f1 = sut.then(custom_scheduler<0>(), [& _p = p, &_r = r1] { _r = 42 + _p; });
-    auto f2 = sut.then(custom_scheduler<0>(), [& _p = p, &_r = r2] { _r = 4711 + _p; });
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; });
+    auto f1 = sut.then(make_executor<0>(), [& _p = p, &_r = r1] { _r = 42 + _p; });
+    auto f2 = sut.then(make_executor<0>(), [& _p = p, &_r = r2] { _r = 4711 + _p; });
 
     check_valid_future(sut, f1, f2);
     wait_until_future_completed(f1, f2);
@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<stlab::move_only
 BOOST_AUTO_TEST_CASE(future_non_copyable_single_task) {
     BOOST_TEST_MESSAGE("running future non copyable single task");
 
-    sut = async(custom_scheduler<0>(), [] { return move_only(42); });
+    sut = async(make_executor<0>(), [] { return move_only(42); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(future_then_non_copyable_detach) {
     BOOST_TEST_MESSAGE("running future non copyable, detached");
     std::atomic_bool check{false};
     {
-        async(custom_scheduler<0>(),
+        async(make_executor<0>(),
               [& _check = check] {
                   _check = true;
                   return move_only(42);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_capture) {
 
     stlab::v1::move_only m{42};
 
-    sut = async(custom_scheduler<0>(), [& _m = m] { return move_only(_m.member()); });
+    sut = async(make_executor<0>(), [& _m = m] { return move_only(_m.member()); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with same scheduler, then on r-value");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) { return move_only(x); });
+    sut = async(make_executor<0>(), [] { return 42; }).then([](auto x) { return move_only(x); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with different scheduler, then on r-value");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; }).then(custom_scheduler<1>(), [](auto x) {
+    sut = async(make_executor<0>(), [] { return 42; }).then(make_executor<1>(), [](auto x) {
         return move_only(x);
     });
 
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with same scheduler, then on l-value");
 
-    auto interim = async(custom_scheduler<0>(), [] { return 42; });
+    auto interim = async(make_executor<0>(), [] { return 42; });
 
     sut = interim.then([](auto x) { return move_only(x); });
 
@@ -287,9 +287,9 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with different scheduler, then on l-value");
 
-    auto interim = async(custom_scheduler<0>(), [] { return 42; });
+    auto interim = async(make_executor<0>(), [] { return 42; });
 
-    sut = interim.then(custom_scheduler<1>(), [](auto x) { return move_only(x); });
+    sut = interim.then(make_executor<1>(), [](auto x) { return move_only(x); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_the
     BOOST_TEST_MESSAGE(
         "running future non copyable as contination with same scheduler, then on r-value");
 
-    sut = async(custom_scheduler<0>(), [] { return move_only(42); }).then([](auto x) {
+    sut = async(make_executor<0>(), [] { return move_only(42); }).then([](auto x) {
         return move_only(x.member() * 2);
     });
 
@@ -318,8 +318,8 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_schedule
     BOOST_TEST_MESSAGE(
         "running future non copyable as contination with different scheduler, then on r-value");
 
-    sut = async(custom_scheduler<0>(), [] { return move_only(42); })
-              .then(custom_scheduler<1>(), [](auto x) { return move_only(x.member() * 2); });
+    sut = async(make_executor<0>(), [] { return move_only(42); })
+              .then(make_executor<1>(), [](auto x) { return move_only(x.member() * 2); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -336,7 +336,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_move_only, test_fixture<stlab::v1::move_onl
 BOOST_AUTO_TEST_CASE(future_async_move_only_move_captured_to_result) {
     BOOST_TEST_MESSAGE("running future move only move to result");
 
-    sut = async(custom_scheduler<0>(), [] { return move_only{42}; }).then([](auto x) {
+    sut = async(make_executor<0>(), [] { return move_only{42}; }).then([](auto x) {
         return std::move(x);
     });
 
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(future_async_moving_move_only_capture_to_result) {
 
     stlab::v1::move_only m{42};
 
-    sut = async(custom_scheduler<0>(), [& _m = m] { return std::move(_m); });
+    sut = async(make_executor<0>(), [& _m = m] { return std::move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(future_async_mutable_move_move_only_capture_to_result) {
 
     stlab::v1::move_only m{42};
 
-    sut = async(custom_scheduler<0>(), [& _m = m]() mutable { return std::move(_m); });
+    sut = async(make_executor<0>(), [& _m = m]() mutable { return std::move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 
     stlab::v1::move_only m{42};
 
-    sut = async(custom_scheduler<0>(), [] { return stlab::v1::move_only{10}; })
+    sut = async(make_executor<0>(), [] { return stlab::v1::move_only{10}; })
               .then([& _m = m](auto) mutable { return std::move(_m); });
 
     check_valid_future(sut);
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
 
     stlab::v1::move_only m{42};
 
-    sut = async(custom_scheduler<0>(), []() mutable { return stlab::v1::move_only{10}; })
+    sut = async(make_executor<0>(), []() mutable { return stlab::v1::move_only{10}; })
               .then([& _m = m](auto) mutable { return std::move(_m); });
 
     check_valid_future(sut);
@@ -412,7 +412,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 BOOST_AUTO_TEST_CASE(future_int_single_task) {
     BOOST_TEST_MESSAGE("running future int single tasks");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; });
+    sut = async(make_executor<0>(), [] { return 42; });
 
     check_valid_future(sut);
     wait_until_future_completed(sut);
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(future_int_single_task) {
 BOOST_AUTO_TEST_CASE(future_int_single_task_get_try_on_rvalue) {
     BOOST_TEST_MESSAGE("running future int single tasks, get_try on r-value");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; });
+    sut = async(make_executor<0>(), [] { return 42; });
 
     auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
     (void)test_result_1;
@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
     BOOST_TEST_MESSAGE("running future int single tasks, detached");
     std::atomic_bool check{false};
     {
-        auto detached = async(custom_scheduler<0>(), [& _check = check] {
+        auto detached = async(make_executor<0>(), [& _check = check] {
             _check = true;
             return 42;
         });
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on r-value");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; }).then([](auto x) { return x + 42; });
+    sut = async(make_executor<0>(), [] { return 42; }).then([](auto x) { return x + 42; });
 
     check_valid_future(sut);
     wait_until_future_completed(sut);
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_lvalue) {
     BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on l-value");
 
-    auto interim = async(custom_scheduler<0>(), [] { return 42; });
+    auto interim = async(make_executor<0>(), [] { return 42; });
 
     sut = interim.then([](auto x) { return x + 42; });
 
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_lvalue) {
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_different_scheduler) {
     BOOST_TEST_MESSAGE("running future int two tasks with different scheduler");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; }).then(custom_scheduler<1>(), [](auto x) {
+    sut = async(make_executor<0>(), [] { return 42; }).then(make_executor<1>(), [](auto x) {
         return x + 42;
     });
 
@@ -497,7 +497,7 @@ BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_same_scheduler) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
         _p += 42;
         return _p.load();
     });
@@ -514,8 +514,8 @@ BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_different_scheduler) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; })
-              .then(custom_scheduler<1>(), [& _p = p] {
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; })
+              .then(make_executor<1>(), [& _p = p] {
                   _p += 42;
                   return _p.load();
               });
@@ -534,9 +534,9 @@ BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_different_scheduler) {
 BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int with three tasks with same scheduler");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; })
-              .then(custom_scheduler<0>(), [](auto x) { return x + 42; })
-              .then(custom_scheduler<0>(), [](auto x) { return x + 42; });
+    sut = async(make_executor<0>(), [] { return 42; })
+              .then(make_executor<0>(), [](auto x) { return x + 42; })
+              .then(make_executor<0>(), [](auto x) { return x + 42; });
 
     check_valid_future(sut);
     wait_until_future_completed(sut);
@@ -555,9 +555,9 @@ BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
 BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int Y formation tasks with same scheduler");
 
-    sut = async(custom_scheduler<0>(), [] { return 42; });
-    auto f1 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 42; });
-    auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 4177; });
+    sut = async(make_executor<0>(), [] { return 42; });
+    auto f1 = sut.then(make_executor<0>(), [](auto x) -> int { return x + 42; });
+    auto f2 = sut.then(make_executor<0>(), [](auto x) -> int { return x + 4177; });
 
     check_valid_future(sut, f1, f2);
     wait_until_future_completed(f1, f2);
@@ -621,7 +621,7 @@ BOOST_FIXTURE_TEST_SUITE(future_void_then_error, test_fixture<void>)
 BOOST_AUTO_TEST_CASE(future_void_single_task_error) {
     BOOST_TEST_MESSAGE("running future void with single tasks that fails");
 
-    sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); });
+    sut = async(make_executor<0>(), [] { throw test_exception("failure"); });
 
     wait_until_future_fails<test_exception>(sut);
     check_failure<test_exception>(sut, "failure");
@@ -633,7 +633,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_1st_task_with_same_scheduler
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); }).then([& _p = p] {
+    sut = async(make_executor<0>(), [] { throw test_exception("failure"); }).then([& _p = p] {
         _p = 42;
     });
 
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_2nd_task_with_same_scheduler
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
         throw test_exception("failure");
     });
 
@@ -684,7 +684,7 @@ BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
 BOOST_AUTO_TEST_CASE(future_int_single_task_error) {
     BOOST_TEST_MESSAGE("running future int with single tasks that fails");
 
-    sut = async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); });
+    sut = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
     wait_until_future_fails<test_exception>(sut);
 
     check_failure<test_exception>(sut, "failure");
@@ -694,7 +694,7 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_error) {
     BOOST_AUTO_TEST_CASE(future_int_single_task_with_error_get_try_on_rvalue) {
         BOOST_TEST_MESSAGE("running future int single tasks, with error on get_try on r-value");
 
-        sut = async(custom_scheduler<0>(), []()->int { throw test_exception("failure"); });
+        sut = async(make_executor<0>(), []()->int { throw test_exception("failure"); });
         auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
         wait_until_future_fails<test_exception>(sut);
         check_failure<test_exception>(std::move(sut), "failure");
@@ -705,7 +705,7 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler)
     BOOST_TEST_MESSAGE("running future int with two tasks which first fails");
     int p = 0;
 
-    sut = async(custom_scheduler<0>(), [] { throw test_exception("failure"); })
+    sut = async(make_executor<0>(), [] { throw test_exception("failure"); })
               .then([& _p = p]() -> int {
                   _p = 42;
                   return _p;
@@ -723,7 +723,7 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_2nd_task_with_same_scheduler)
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), [& _p = p] { _p = 42; }).then([]() -> int {
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([]() -> int {
         throw test_exception("failure");
     });
 
@@ -739,12 +739,12 @@ BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_failing_1st_task) {
 
     std::atomic_int p{0};
 
-    sut = async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); });
-    auto f1 = sut.then(custom_scheduler<0>(), [& _p = p](auto x) -> int {
+    sut = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
+    auto f1 = sut.then(make_executor<0>(), [& _p = p](auto x) -> int {
         _p += 1;
         return x + 42;
     });
-    auto f2 = sut.then(custom_scheduler<0>(), [& _p = p](auto x) -> int {
+    auto f2 = sut.then(make_executor<0>(), [& _p = p](auto x) -> int {
         _p += 1;
         return x + 4177;
     });
@@ -760,9 +760,9 @@ BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_failing_1st_task) {
 BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_where_one_of_the_2nd_task_failing) {
     BOOST_TEST_MESSAGE("running future int Y formation tasks where one of the 2nd tasks fails");
 
-    sut = async(custom_scheduler<0>(), []() -> int { return 42; });
-    auto f1 = sut.then(custom_scheduler<0>(), [](auto) -> int { throw test_exception("failure"); });
-    auto f2 = sut.then(custom_scheduler<0>(), [](auto x) -> int { return x + 4711; });
+    sut = async(make_executor<0>(), []() -> int { return 42; });
+    auto f1 = sut.then(make_executor<0>(), [](auto) -> int { throw test_exception("failure"); });
+    auto f2 = sut.then(make_executor<0>(), [](auto x) -> int { return x + 4711; });
 
     wait_until_future_completed(f2);
     wait_until_future_fails<test_exception>(f1);
@@ -775,9 +775,9 @@ BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_where_one_of_the_2nd_task_fail
 BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_where_both_of_the_2nd_task_failing) {
     BOOST_TEST_MESSAGE("running future int Y formation tasks where both of the 2nd tasks fails");
 
-    sut = async(custom_scheduler<0>(), []() -> int { return 42; });
-    auto f1 = sut.then(custom_scheduler<0>(), [](auto) -> int { throw test_exception("failure"); });
-    auto f2 = sut.then(custom_scheduler<0>(), [](auto) -> int { throw test_exception("failure"); });
+    sut = async(make_executor<0>(), []() -> int { return 42; });
+    auto f1 = sut.then(make_executor<0>(), [](auto) -> int { throw test_exception("failure"); });
+    auto f2 = sut.then(make_executor<0>(), [](auto) -> int { throw test_exception("failure"); });
 
     wait_until_future_fails<test_exception>(f1, f2);
 

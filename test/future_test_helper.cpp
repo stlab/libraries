@@ -17,3 +17,5 @@ test_exception::test_exception(const char* error) : _error(error) {}
 const char* test_exception::what() const noexcept { return _error.c_str(); }
 
 } // namespace future_test_helper
+
+std::vector<std::string> payloadHolder;

@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
 
     auto error = false;
 
-    sut = async(custom_scheduler<0>(),
+    sut = async(make_executor<0>(),
                 [& _error = error] {
                     _error = true;
                     throw test_exception("failure");
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_lvalue
     BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on l-value");
 
     auto error = false;
-    auto interim = async(custom_scheduler<0>(), [& _error = error] {
+    auto interim = async(make_executor<0>(), [& _error = error] {
         _error = true;
         throw test_exception("failure");
     });
@@ -66,12 +66,12 @@ BOOST_AUTO_TEST_CASE(
 
     auto error = false;
 
-    sut = async(custom_scheduler<0>(),
+    sut = async(make_executor<0>(),
                 [& _error = error] {
                     _error = true;
                     throw test_exception("failure");
                 })
-              .recover(custom_scheduler<1>(), [](auto failedFuture) {
+              .recover(make_executor<1>(), [](auto failedFuture) {
                   check_failure<test_exception>(failedFuture, "failure");
               });
 
@@ -88,14 +88,14 @@ BOOST_AUTO_TEST_CASE(
         "running future recover, failure before recover initialized, with custom scheduler on l-value");
 
     auto error = false;
-    auto interim = async(custom_scheduler<0>(), [& _error = error] {
+    auto interim = async(make_executor<0>(), [& _error = error] {
         _error = true;
         throw test_exception("failure");
     });
 
     wait_until_future_fails<test_exception>(interim);
 
-    sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
+    sut = interim.recover(make_executor<1>(), [](auto failedFuture) {
         check_failure<test_exception>(failedFuture, "failure");
     });
 
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_rvalue)
 
     {
         lock_t hold(block);
-        sut = async(custom_scheduler<0>(),
+        sut = async(make_executor<0>(),
                     [& _error = error, &_block = block] {
                         lock_t lock(_block);
                         _error = true;
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_lvalue)
 
     {
         lock_t hold(block);
-        auto interim = async(custom_scheduler<0>(), [& _error = error, &_block = block] {
+        auto interim = async(make_executor<0>(), [& _error = error, &_block = block] {
             lock_t lock(_block);
             _error = true;
             throw test_exception("failure");
@@ -165,13 +165,13 @@ BOOST_AUTO_TEST_CASE(
 
     {
         lock_t hold(block);
-        sut = async(custom_scheduler<0>(),
+        sut = async(make_executor<0>(),
                     [& _error = error, &_block = block] {
                         lock_t lock(_block);
                         _error = true;
                         throw test_exception("failure");
                     })
-                  .recover(custom_scheduler<1>(), [](auto failedFuture) {
+                  .recover(make_executor<1>(), [](auto failedFuture) {
                       check_failure<test_exception>(failedFuture, "failure");
                   });
     }
@@ -193,13 +193,13 @@ BOOST_AUTO_TEST_CASE(
 
     {
         lock_t hold(block);
-        auto interim = async(custom_scheduler<0>(), [& _error = error, &_block = block] {
+        auto interim = async(make_executor<0>(), [& _error = error, &_block = block] {
             lock_t lock(_block);
             _error = true;
             throw test_exception("failure");
         });
 
-        sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
+        sut = interim.recover(make_executor<1>(), [](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
         });
     }
@@ -215,10 +215,10 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
     BOOST_TEST_MESSAGE("running future recover while failed when_all on l-value");
 
     int result{0};
-    auto f1 = async(custom_scheduler<0>(), []() -> int { throw test_exception("failure"); });
-    auto f2 = async(custom_scheduler<1>(), [] { return 42; });
+    auto f1 = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
+    auto f2 = async(make_executor<1>(), [] { return 42; });
 
-    sut = when_all(custom_scheduler<0>(), [](int x, int y) { return x + y; }, f1, f2)
+    sut = when_all(make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2)
               .recover([](auto error) {
                   if (error.error())
                       return 815;
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(
 
     auto error = false;
 
-    sut = async(custom_scheduler<0>(),
+    sut = async(make_executor<0>(),
                 [& _error = error]() -> int {
                     _error = true;
                     throw test_exception("failure");
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE("running future int recover, failure before recover initialized on l-value");
 
     auto error = false;
-    auto interim = async(custom_scheduler<0>(), [& _error = error]() -> int {
+    auto interim = async(make_executor<0>(), [& _error = error]() -> int {
         _error = true;
         throw test_exception("failure");
     });
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(
     {
         lock_t hold(block);
 
-        sut = async(custom_scheduler<0>(),
+        sut = async(make_executor<0>(),
                     [& _error = error, &_block = block]() -> int {
                         lock_t lock(_block);
                         _error = true;
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(
     {
         lock_t hold(block);
 
-        auto interim = async(custom_scheduler<0>(), [& _error = error, &_block = block]() -> int {
+        auto interim = async(make_executor<0>(), [& _error = error, &_block = block]() -> int {
             lock_t lock(_block);
             _error = true;
             throw test_exception("failure");
@@ -339,12 +339,12 @@ BOOST_AUTO_TEST_CASE(
 
     auto error = false;
 
-    sut = async(custom_scheduler<0>(),
+    sut = async(make_executor<0>(),
                 [& _error = error]() -> int {
                     _error = true;
                     throw test_exception("failure");
                 })
-              .recover(custom_scheduler<1>(), [](auto failedFuture) {
+              .recover(make_executor<1>(), [](auto failedFuture) {
                   check_failure<test_exception>(failedFuture, "failure");
                   return 42;
               });
@@ -363,14 +363,14 @@ BOOST_AUTO_TEST_CASE(
         "running future int recover, failure before recover initialized with custom scheduler on l-value");
 
     auto error = false;
-    auto interim = async(custom_scheduler<0>(), [& _error = error]() -> int {
+    auto interim = async(make_executor<0>(), [& _error = error]() -> int {
         _error = true;
         throw test_exception("failure");
     });
 
     wait_until_future_fails<test_exception>(interim);
 
-    sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
+    sut = interim.recover(make_executor<1>(), [](auto failedFuture) {
         check_failure<test_exception>(failedFuture, "failure");
         return 42;
     });
@@ -394,13 +394,13 @@ BOOST_AUTO_TEST_CASE(
     {
         lock_t hold(block);
 
-        sut = async(custom_scheduler<0>(),
+        sut = async(make_executor<0>(),
                     [& _error = error, &_block = block]() -> int {
                         lock_t lock(_block);
                         _error = true;
                         throw test_exception("failure");
                     })
-                  .recover(custom_scheduler<1>(), [](auto failedFuture) {
+                  .recover(make_executor<1>(), [](auto failedFuture) {
                       check_failure<test_exception>(failedFuture, "failure");
                       return 42;
                   });
@@ -424,13 +424,13 @@ BOOST_AUTO_TEST_CASE(
 
     {
         lock_t hold(block);
-        auto interim = async(custom_scheduler<0>(), [& _error = error, &_block = block]() -> int {
+        auto interim = async(make_executor<0>(), [& _error = error, &_block = block]() -> int {
             lock_t lock(_block);
             _error = true;
             throw test_exception("failure");
         });
 
-        sut = interim.recover(custom_scheduler<1>(), [](auto failedFuture) {
+        sut = interim.recover(make_executor<1>(), [](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
             return 42;
         });
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE(
 
     auto error = false;
 
-    sut = async(custom_scheduler<0>(),
+    sut = async(make_executor<0>(),
                 [& _error = error]() -> move_only {
                     _error = true;
                     throw test_exception("failure");
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
     {
         lock_t hold(block);
 
-        sut = async(custom_scheduler<0>(),
+        sut = async(make_executor<0>(),
                     [& _error = error, &_block = block]() -> move_only {
                         lock_t lock(_block);
                         _error = true;
@@ -503,12 +503,12 @@ BOOST_AUTO_TEST_CASE(
 
     auto error = false;
 
-    sut = async(custom_scheduler<0>(),
+    sut = async(make_executor<0>(),
                 [& _error = error]() -> move_only {
                     _error = true;
                     throw test_exception("failure");
                 })
-              .recover(custom_scheduler<1>(), [](auto failedFuture) {
+              .recover(make_executor<1>(), [](auto failedFuture) {
                   check_failure<test_exception>(failedFuture, "failure");
                   return move_only(42);
               });
@@ -530,13 +530,13 @@ BOOST_AUTO_TEST_CASE(
     std::mutex block;
     {
         lock_t hold(block);
-        sut = async(custom_scheduler<0>(),
+        sut = async(make_executor<0>(),
                     [& _error = error, &_block = block]() -> move_only {
                         lock_t lock(_block);
                         _error = true;
                         throw test_exception("failure");
                     })
-                  .recover(custom_scheduler<1>(), [](auto failedFuture) {
+                  .recover(make_executor<1>(), [](auto failedFuture) {
                       check_failure<test_exception>(failedFuture, "failure");
                       return move_only(42);
                   });
