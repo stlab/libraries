@@ -19,6 +19,7 @@
 #include <thread>
 
 using lock_t = std::unique_lock<std::mutex>;
+extern std::mutex payloadHolderMutex;
 extern std::vector<std::string> payloadHolder;
 
 namespace future_test_helper {
@@ -30,7 +31,11 @@ struct custom_scheduler {
         ++counter();
         // The implementation on Windows or the mac uses a scheduler that allows many tasks in the
         // pool in parallel
-        payloadHolder.push_back(_payload);
+        {
+            lock_t lock(payloadHolderMutex);
+            payloadHolder.push_back(_payload);
+        }
+
 #if defined(WIN32) || defined(__APPLE__)
         stlab::default_executor(std::move(f));
 #else
@@ -44,7 +49,10 @@ struct custom_scheduler {
 
     static void reset() {
         counter() = 0;
-        payloadHolder.resize(0);
+        {
+            lock_t lock(payloadHolderMutex);
+            payloadHolder.resize(0);
+        }
     }
 
     static std::atomic_int& counter() {
