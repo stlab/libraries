@@ -4,9 +4,9 @@
    - [#154](https://github.com/stlab/libraries/issues/154) : Compilation error with gcc
    - Race condition in timed blocking_get
 
-- Enhancements:
-   - Add cmake support as library (Many thanks to Austin McCartney!)
- 
+- Enhancements
+   - The library can now be included as cmake dependency (Many thanks to Austin McCartney)  
+    
 ## v1.3.2 - 2018 - July - 28
 
 - Fixed Issues 
