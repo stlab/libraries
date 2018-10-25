@@ -10,17 +10,16 @@ cache:
 addons:
   apt:
     sources:
-      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+      - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
+        key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
       - ubuntu-toolchain-r-test
-#      - george-edison55-precise-backports
     packages:
       - g++-5
       - clang-3.8
 
 branches:
   except: /pr\/.*/
-  
+
 matrix:
   include:
     #
@@ -34,13 +33,14 @@ matrix:
         - brew upgrade python
         - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
-        - pip3 install conan
+        - pip3 install --user conan
+        - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
         - ./enhance_conan.sh
 
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
-        
+        options=""
+
     - os: osx
       compiler: clang
       osx_image: xcode9
@@ -49,27 +49,40 @@ matrix:
         - brew upgrade python
         - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
-        - pip3 install conan
+        - pip3 install --user conan
+        - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
         - ./enhance_conan.sh
 
       env:
         build_type=release
-        options="-D stlab_testing=ON"
+        options=""
 
     #
-    # Linux Clang, Debug & Release
+    # Linux Clang, Debug & Release, with and without coroutines
     #
     - os: linux
       compiler: clang
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
-        
+        options=""
+
     - os: linux
       compiler: clang
       env:
         build_type=release
-        options="-D stlab_testing=ON"
+        options=""
+
+#    - os: linux
+#      compiler: clang
+#      env:
+#        build_type=debug
+#        options="-Dstlab.coroutines=ON"
+#
+#    - os: linux
+#      compiler: clang
+#      env:
+#        build_type=release
+#        options="-Dstlab.coroutines=ON"
 
     #
     # Linux GCC, Debug & Release
@@ -78,13 +91,13 @@ matrix:
       compiler: gcc
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
+        options=""
 
     - os: linux
       compiler: gcc
       env:
         build_type=release
-        options="-D stlab_testing=ON"
+        options=""
 
     #
     # Address sanitizer
@@ -93,8 +106,8 @@ matrix:
       compiler: clang
       env:
         build_type=debug
-        flags="-fsanitize=address;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
+        flags="-fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all"
+        options=""
 
     #
     # Undefined behavior sanitizer
@@ -103,8 +116,8 @@ matrix:
       compiler: clang
       env:
         build_type=debug
-        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
+        flags="-fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
+        options=""
 
     #
     # Thread sanitizer
@@ -114,8 +127,8 @@ matrix:
       env:
         build_type=debug
         TSAN_OPTIONS="suppressions=${TRAVIS_BUILD_DIR}/test/sanitizer_suppressions"
-        flags="-fsanitize=thread;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
+        flags="-fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all"
+        options=""
 
     #
     # Coverage
@@ -125,7 +138,7 @@ matrix:
       env:
         build_type=debug
         coverage=TRUE
-        options="-D stlab_testing=ON -D coverage=ON"
+        options="-D stlab.coverage=ON"
       packages:
         - lcov
       after_success:
@@ -139,7 +152,7 @@ matrix:
       compiler: clang
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
+        options=""
       before_install:
         - pip install --user conan
         - ./enhance_conan.sh
@@ -147,10 +160,9 @@ matrix:
       addons:
         apt:
           sources:
-            - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-              key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
+            - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
+              key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
             - ubuntu-toolchain-r-test
-#            - george-edison55-precise-backports
           packages:
             - g++-5
             - clang-3.8
@@ -166,9 +178,9 @@ matrix:
 
 before_install:
   - pip install --user conan
-  - ./enhance_conan.sh  
-  
-  
+  - ./enhance_conan.sh
+
+
 install:
   ############################################################################
   # All the dependencies are installed in ${HOME}/deps/
@@ -188,17 +200,17 @@ install:
       brew install cmake || brew upgrade cmake
     fi
   - cmake --version
-  
+
   ############################################################################
   # Go back to the root of the project and setup the build directory
   ############################################################################  
   - cd "${TRAVIS_BUILD_DIR}"
-  
-  
+
+
 script:
   - .travis/build.sh
 
-  
+
 notifications:
   recipients:
     - felix@petriconi.net

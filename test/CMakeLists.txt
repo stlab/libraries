@@ -1,251 +1,112 @@
-####################################################################################################
+if( NOT ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC"
+      AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "99.99.99"
+      AND stlab.coroutines ) )
+  add_executable( stlab.test.channel
+    channel_functor_tests.cpp
+    channel_merge_round_robin_tests.cpp
+    channel_merge_unordered_tests.cpp
+    channel_merge_zip_with_tests.cpp
+    channel_process_tests.cpp
+    channel_test_helper.cpp
+    channel_tests.cpp
+    tuple_algorithm_test.cpp
+    main.cpp
+    channel_test_helper.hpp )
+endif()
 
-add_executable( stlab.test.channel.test
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_functor_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_round_robin_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_unordered_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_merge_zip_with_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_process_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_tests.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm_test.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/channel_test_helper.hpp" )
+target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
+add_test( NAME stlab.test.channel COMMAND stlab.test.channel )
 
-# This syntax is a CMake generator expression.
+################################################################################
+
+add_executable( stlab.test.future
+  future_recover_tests.cpp
+  future_test_helper.cpp
+  future_tests.cpp
+  future_then_tests.cpp
+  future_when_all_arguments_tests.cpp
+  future_when_all_range_tests.cpp
+  future_when_any_arguments_tests.cpp
+  future_when_any_range_tests.cpp
+  tuple_algorithm_test.cpp
+  main.cpp
+  future_test_helper.hpp )
+
+target_sources( stlab.test.future PUBLIC
+  $<$<BOOL:$<TARGET_PROPERTY:COROUTINES>>:future_coroutine_tests.cpp> )
+target_link_libraries( stlab.test.future PUBLIC stlab::testing )
+add_test( NAME stlab.test.future COMMAND stlab.test.future )
+
+################################################################################
+
+add_executable( stlab.test.serial_queue
+  serial_queue_test.cpp )
+
+target_link_libraries( stlab.test.serial_queue PUBLIC stlab::testing )
+add_test( NAME stlab.test.serial_queue COMMAND stlab.test.serial_queue )
+
+################################################################################
+
+add_executable( stlab.test.cow
+  cow_test.cpp
+  main.cpp )
+
+target_link_libraries( stlab.test.cow PUBLIC stlab::testing )
+add_test( NAME stlab.test.cow COMMAND stlab.test.cow )
+
+################################################################################
+
+add_executable( stlab.test.task
+  task_test.cpp
+  main.cpp )
+
+target_link_libraries( stlab.test.task PUBLIC stlab::testing )
+add_test( NAME stlab.test.task COMMAND stlab.test.task )
+
+################################################################################
+
+add_executable( stlab.test.tuple
+  tuple_test.cpp
+  main.cpp )
+
+target_link_libraries( stlab.test.tuple PUBLIC stlab::testing )
+add_test( NAME stlab.test.tuple COMMAND stlab.test.tuple )
+
+################################################################################
+
 #
-# Here we defer the compiler flags decision-making to generation time
-# (for tools which support distinct configuration and generation steps)
-# based on a generation time configuration.
+# tests are compiled without compiler extensions to ensure the stlab headers
+# are not dependent upon any such extension.
 #
-# Here, we provide support for a DEBUG and RELEASE configurations, line 32
-# providing the former and line 33 providing the latter.
-target_compile_options( stlab.test.channel.test
-        PUBLIC ${stlab_base_flags}
-        $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-        $<$<CONFIG:RELEASE>:${stlab_release_flags}>
-        ${stlab_appended_flags} )
+set_target_properties(
+  stlab.test.channel
+  stlab.test.future
+  stlab.test.serial_queue
+  stlab.test.cow
+  stlab.test.task
+  stlab.test.tuple
+  PROPERTIES CXX_EXTENSIONS OFF )
 
-target_link_libraries( stlab.test.channel.test
-        PUBLIC ${Boost_LIBRARIES}
-        PUBLIC stlab )
-
-target_link_libraries( stlab.test.channel.test PUBLIC
-        "${stlab_base_flags}" )
-
-target_link_libraries( stlab.test.channel.test PUBLIC
-        "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
-
-target_link_libraries( stlab.test.channel.test PUBLIC
-        "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
-
-target_link_libraries( stlab.test.channel.test PUBLIC
-        "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" )
-
-target_link_libraries( stlab.test.channel.test PUBLIC
-        "${stlab_appended_flags}" )
-
-set_property(TARGET stlab.test.channel.test PROPERTY CXX_STANDARD 14)
-set_property(TARGET stlab.test.channel.test PROPERTY CXX_STANDARD_REQUIRED ON)
-
-add_test( NAME stlab.test.channel COMMAND stlab.test.channel.test )
-
-
-####################################################################################################
-
-add_executable( stlab.test.future.test
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_coroutine_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_recover_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_test_helper.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_then_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_arguments_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_all_range_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_arguments_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_when_any_range_tests.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm_test.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/future_test_helper.hpp" )
-
-# This syntax is a CMake generator expression.
 #
-# Here we defer the compiler flags decision-making to generation time
-# (for tools which support distinct configuration and generation steps)
-# based on a generation time configuration.
+# Many of the stlab tests are executed using the system executor which defaults
+# to a number of threads equal to the system parallelism.
 #
-# Here, we provide support for a DEBUG and RELEASE configurations, line 32
-# providing the former and line 33 providing the latter.
-target_compile_options( stlab.test.future.test
-                        PUBLIC ${stlab_base_flags}
-                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                               $<$<BOOL:${coroutine}>:${stlab_coroutine_flags}>
-                               $<$<CONFIG:RELEASE>:${stlab_release_flags}> 
-                               ${stlab_appended_flags} )
+# Here we (attempt to) query the system processor count and store the value in
+# the `nProcessors` variable, where a non-zeros value indicates success.
+#
+# Provided the query was successful, we inform ctest of the test parallism.
+#
 
-target_link_libraries( stlab.test.future.test
-                       PUBLIC ${Boost_LIBRARIES} 
-                       PUBLIC stlab )
-                     
-target_link_libraries( stlab.test.future.test PUBLIC
-                       "${stlab_base_flags}" )
+include(ProcessorCount)
+ProcessorCount(nProcessors)
 
-target_link_libraries( stlab.test.future.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
-
-target_link_libraries( stlab.test.future.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
-
-target_link_libraries( stlab.test.future.test PUBLIC
-                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
-                             
-target_link_libraries( stlab.test.future.test PUBLIC
-                       "${stlab_appended_flags}" )
-
-set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD 14)
-set_property(TARGET stlab.test.future.test PROPERTY CXX_STANDARD_REQUIRED ON)
-                     
-add_test( NAME stlab.test.future COMMAND stlab.test.future.test )
-
-####################################################################################################
-
-add_executable( stlab.test.serial_queue.test
-                "${CMAKE_CURRENT_SOURCE_DIR}/serial_queue_test.cpp" )
-
-target_compile_options( stlab.test.serial_queue.test
-                        PUBLIC "${stlab_base_flags}"
-                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                               $<$<CONFIG:RELEASE>:${stlab_release_flags}> 
-                               ${stlab_appended_flags} )
-
-target_link_libraries( stlab.test.serial_queue.test
-                       PUBLIC ${Boost_LIBRARIES} 
-                       PUBLIC stlab )
-                             
-target_link_libraries( stlab.test.serial_queue.test PUBLIC
-                       "${stlab_base_flags}" )
-
-target_link_libraries( stlab.test.serial_queue.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
-
-target_link_libraries( stlab.test.serial_queue.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
-
-target_link_libraries( stlab.test.serial_queue.test PUBLIC
-                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
-                             
-target_link_libraries( stlab.test.serial_queue.test PUBLIC
-                       "${stlab_appended_flags}" )
-                             
-set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD 14)
-set_property(TARGET stlab.test.serial_queue.test PROPERTY CXX_STANDARD_REQUIRED ON)
-                     
-add_test( NAME stlab.test.serial_queue COMMAND stlab.test.serial_queue.test )
-
-####################################################################################################
-
-add_executable( stlab.test.cow.test 
-                "${CMAKE_CURRENT_SOURCE_DIR}/cow_test.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
-
-target_compile_options( stlab.test.cow.test
-                        PUBLIC "${stlab_base_flags}"
-                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                               $<$<CONFIG:RELEASE>:${stlab_release_flags}>
-                               ${stlab_appended_flags} )
-
-target_link_libraries( stlab.test.cow.test 
-                       PUBLIC ${Boost_LIBRARIES} 
-                       PUBLIC stlab )
-                             
-target_link_libraries( stlab.test.cow.test PUBLIC
-                       "${stlab_base_flags}" )
-
-target_link_libraries( stlab.test.cow.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
-
-target_link_libraries( stlab.test.cow.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
-
-target_link_libraries( stlab.test.cow.test PUBLIC
-                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
-                             
-target_link_libraries( stlab.test.cow.test PUBLIC
-                       "${stlab_appended_flags}" )
-                             
-set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD 14)
-set_property(TARGET stlab.test.cow.test PROPERTY CXX_STANDARD_REQUIRED ON)
-
-add_test( NAME stlab.test.cow COMMAND stlab.test.cow.test )
-
-####################################################################################################
-
-add_executable( stlab.test.task.test 
-                "${CMAKE_CURRENT_SOURCE_DIR}/task_test.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
-
-target_compile_options( stlab.test.task.test
-                        PUBLIC "${stlab_base_flags}"
-                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                               $<$<CONFIG:RELEASE>:${stlab_release_flags}>
-                               ${stlab_appended_flags} )
-
-target_link_libraries( stlab.test.task.test 
-                       PUBLIC ${Boost_LIBRARIES} 
-                       PUBLIC stlab )
-                             
-target_link_libraries( stlab.test.task.test PUBLIC
-                       "${stlab_base_flags}" )
-
-target_link_libraries( stlab.test.task.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
-
-target_link_libraries( stlab.test.task.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
-
-target_link_libraries( stlab.test.task.test PUBLIC
-                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
-                             
-target_link_libraries( stlab.test.task.test PUBLIC
-                       "${stlab_appended_flags}" )
-                             
-set_property(TARGET stlab.test.task.test PROPERTY CXX_STANDARD 14)
-set_property(TARGET stlab.test.task.test PROPERTY CXX_STANDARD_REQUIRED ON)
-
-add_test( NAME stlab.test.task COMMAND stlab.test.task.test )
-
-####################################################################################################
-
-add_executable( stlab.test.tuple.test 
-                "${CMAKE_CURRENT_SOURCE_DIR}/tuple_test.cpp"
-                "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" )
-
-target_compile_options( stlab.test.tuple.test
-                        PUBLIC "${stlab_base_flags}"
-                               $<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>${stlab_debug_flags}>
-                               $<$<CONFIG:RELEASE>:${stlab_release_flags}>
-                               ${stlab_appended_flags} )
-
-target_link_libraries( stlab.test.tuple.test 
-                       PUBLIC ${Boost_LIBRARIES} 
-                       PUBLIC stlab )
-                             
-target_link_libraries( stlab.test.tuple.test PUBLIC
-                       "${stlab_base_flags}" )
-
-target_link_libraries( stlab.test.tuple.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:${stlab_debug_flags}>" )
-
-target_link_libraries( stlab.test.tuple.test PUBLIC
-                       "$<$<CONFIG:DEBUG>:$<$<BOOL:${coverage}>:${stlab_coverage_flags}>>" )
-
-target_link_libraries( stlab.test.tuple.test PUBLIC
-                       "$<$<CONFIG:RELEASE>:${stlab_release_flags}>" ) 
-                             
-target_link_libraries( stlab.test.tuple.test PUBLIC
-                       "${stlab_appended_flags}" )
-                             
-set_property(TARGET stlab.test.tuple.test PROPERTY CXX_STANDARD 14)
-set_property(TARGET stlab.test.tuple.test PROPERTY CXX_STANDARD_REQUIRED ON)
-
-add_test( NAME stlab.test.tuple COMMAND stlab.test.tuple.test )
-
+if(nProcessors)
+  set_tests_properties(
+    stlab.test.channel
+    stlab.test.future
+    stlab.test.serial_queue
+    stlab.test.cow
+    stlab.test.task
+    stlab.test.tuple
+    PROPERTIES PROCESSORS ${nProcessors})
+endif()

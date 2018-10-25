@@ -30,11 +30,11 @@
 // as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
 // support for the channels tests
 #ifdef __has_include
-#if __has_include(<experimental/coroutine>) && !defined(STLAB_DISABLE_FUTURE_COROUTINES)
+#if __has_include(<experimental/coroutine>) && STLAB_FUTURE_COROUTINES
+#define STLAB_FUTURE_COROUTINES_SUPPORT
 #include <experimental/coroutine>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
-#define STLAB_FUTURE_COROUTINE_SUPPORT
 #endif
 #endif
 
@@ -782,7 +782,7 @@ public:
     }
 
     void detach() const {
-        then([_hold = _p](auto f) {}, [](const auto&) {});
+        then([_hold = _p](auto) {}, [](const auto&) {});
     }
 
     void reset() { _p.reset(); }
@@ -873,7 +873,7 @@ public:
     }
 
     void detach() const {
-        then([_hold = _p](auto f) {}, []() {});
+        then([_hold = _p](auto) {}, []() {});
     }
 
     void reset() { _p.reset(); }
@@ -946,7 +946,7 @@ public:
     }
 
     void detach() const {
-        _p->then_r(unique_usage(_p), [_hold = _p](auto f) {}, [](auto&&) {});
+        _p->then_r(unique_usage(_p), [_hold = _p](auto) {}, [](auto&&) {});
     }
 
     void reset() { _p.reset(); }
@@ -995,7 +995,7 @@ struct assign_ready_future {
 template <>
 struct assign_ready_future<future<void>> {
     template <typename T>
-    static void assign(T& x, future<void>& f) {
+    static void assign(T& x, future<void>&) {
         x = std::move(typename T::value_type()); // to set the optional
     }
 };
@@ -1081,7 +1081,7 @@ struct when_any_shared<S, void> {
     }
 
     template <size_t index, typename FF>
-    void done(FF&& f) {
+    void done(FF&&) {
         auto before = _value_received.test_and_set();
         if (before == false) {
             _index = index;
@@ -1690,7 +1690,7 @@ auto shared_base<void>::recover(E&& executor, F&& f)
 
 template <typename T>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then([](auto f) {});
+    return std::move(r).then([](auto) {});
 }
 
 template <typename T>
@@ -1710,7 +1710,7 @@ auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) ->
 /**************************************************************************************************/
 
 inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then([](auto f) {});
+    return std::move(r).then([](auto) {});
 }
 
 template <typename R>
@@ -1732,7 +1732,7 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
 
 /**************************************************************************************************/
 
-#ifdef STLAB_FUTURE_COROUTINE_SUPPORT
+#if STLAB_FUTURE_COROUTINES_SUPPORT
 
 template <typename T, typename... Args>
 struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {

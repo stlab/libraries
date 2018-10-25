@@ -130,8 +130,8 @@ stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
             {
                 std::unique_lock<std::mutex> lock{state->m};
                 state->flag = true;
+                state->condition.notify_one();
             }
-            state->condition.notify_one();
         });
 
     {
@@ -185,8 +185,8 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
             {
                 std::unique_lock<std::mutex> lock(state->m);
                 state->flag = true;
+                state->condition.notify_one();
             }
-            state->condition.notify_one();
         });
 
     {

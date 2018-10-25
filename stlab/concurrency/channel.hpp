@@ -312,7 +312,7 @@ auto get_process_state(const stlab::optional<T>& x)
 }
 
 template <typename T>
-auto get_process_state(const stlab::optional<T>& x)
+auto get_process_state(const stlab::optional<T>&)
     -> std::enable_if_t<!has_process_state_v<T>, process_state_scheduled> {
     return await_forever;
 }
@@ -332,7 +332,7 @@ auto set_process_error(P& process, std::exception_ptr&& error)
 }
 
 template <typename P>
-auto set_process_error(P&, std::exception_ptr&& error)
+auto set_process_error(P&, std::exception_ptr&&)
     -> std::enable_if_t<!has_set_process_error_v<P>, void> {}
 
 /**************************************************************************************************/
