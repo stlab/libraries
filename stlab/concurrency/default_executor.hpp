@@ -284,9 +284,8 @@ class task_system {
     
 public:
     
-    template <typename F>
-    void operator()(F&& f) {
-        (*_self)(std::forward<F>(f));
+    void operator()(task<void()> f) {
+        (*_self)([f = std::move(f), retain = _self]() mutable { f(); });
     }
 };
 
@@ -300,7 +299,7 @@ struct default_executor_type {
 
     void operator()(task<void()> f) const {
         static task_system only_task_system;
-        only_task_system([f = std::move(f), retain = only_task_system]() mutable { f(); });
+        only_task_system(std::move(f));
     }
 };
 
