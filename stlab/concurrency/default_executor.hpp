@@ -235,48 +235,58 @@ public:
 /**************************************************************************************************/
 
 class task_system {
-    const unsigned _count{std::thread::hardware_concurrency()};
-    std::vector<std::thread> _threads;
-    std::vector<notification_queue> _q{_count};
-    std::atomic<unsigned> _index{0};
-
-    void run(unsigned i) {
-        while (true) {
-            task<void()> f;
-
-            for (unsigned n = 0; n != _count * 32; ++n) {
-                if (_q[(i + n) % _count].try_pop(f)) break;
+    struct model {
+        const unsigned _count{std::thread::hardware_concurrency()};
+        std::vector<std::thread> _threads;
+        std::vector<notification_queue> _q{_count};
+        std::atomic<unsigned> _index{0};
+        
+        void run(unsigned i) {
+            while (true) {
+                task<void()> f;
+                
+                for (unsigned n = 0; n != _count * 32; ++n) {
+                    if (_q[(i + n) % _count].try_pop(f)) break;
+                }
+                if (!f && !_q[i].pop(f)) break;
+                
+                f();
             }
-            if (!f && !_q[i].pop(f)) break;
-
-            f();
         }
-    }
-
+        
+        model() {
+            for (unsigned n = 0; n != _count; ++n) {
+                _threads.emplace_back([&, n] { run(n); });
+            }
+        }
+        
+        ~model() {
+            for (auto& e : _q)
+                e.done();
+            
+            for (auto& e : _threads)
+                e.join();
+        }
+        
+        template <typename F>
+        void operator()(F&& f) {
+            auto i = _index++;
+            
+            for (unsigned n = 0; n != _count; ++n) {
+                if (_q[(i + n) % _count].try_push(std::forward<F>(f))) return;
+            }
+            
+            _q[i % _count].push(std::forward<F>(f));
+        }
+    };
+    
+    std::shared_ptr<model> _self{std::make_shared<model>()};
+    
 public:
-    task_system() {
-        for (unsigned n = 0; n != _count; ++n) {
-            _threads.emplace_back([&, n] { run(n); });
-        }
-    }
-
-    ~task_system() {
-        for (auto& e : _q)
-            e.done();
-
-        for (auto& e : _threads)
-            e.join();
-    }
-
+    
     template <typename F>
     void operator()(F&& f) {
-        auto i = _index++;
-
-        for (unsigned n = 0; n != _count; ++n) {
-            if (_q[(i + n) % _count].try_push(std::forward<F>(f))) return;
-        }
-
-        _q[i % _count].push(std::forward<F>(f));
+        (*_self)(std::forward<F>(f));
     }
 };
 
@@ -290,7 +300,7 @@ struct default_executor_type {
 
     void operator()(task<void()> f) const {
         static task_system only_task_system;
-        only_task_system(std::move(f));
+        only_task_system([f = std::move(f), retain = only_task_system]() mutable { f(); });
     }
 };
 
