@@ -73,7 +73,7 @@ class task_system {
                                    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
                                    new f_t(std::move(f)), [](void* f_) {
                                        auto f = static_cast<f_t*>(f_);
-                                       (*f)();
+                                       try { (*f)(); } catch (...) {}
                                        delete f;
                                    });
         }
@@ -102,7 +102,7 @@ struct default_executor_type {
         emscripten_async_call(
             [](void* f_) {
                 auto f = static_cast<f_t*>(f_);
-                (*f)();
+                try { (*f)(); } catch (...) {}
                 delete f;
             },
             new f_t(std::move(f)), 0);
@@ -122,7 +122,7 @@ struct default_executor_type {
                                                     pp::CompletionCallback(
                                                         [](void* f_, int32_t) {
                                                             auto f = static_cast<f_t*>(f_);
-                                                            (*f)();
+                                                            try { (*f)(); } catch (...) {}
                                                             delete f;
                                                         },
                                                         new f_t(std::move(f))),
@@ -175,7 +175,7 @@ class task_system {
                                            PVOID parameter,
                                            PTP_WORK /*Work*/) {
             std::unique_ptr<F> f(static_cast<F*>(parameter));
-            (*f)();
+            try { (*f)(); } catch (...) {}
         }
     };
     
@@ -265,7 +265,7 @@ class task_system {
                 }
                 if (!f && !_q[i].pop(f)) break;
                 
-                f();
+                try { f(); } catch (...) {}
             }
         }
         
