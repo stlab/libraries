@@ -62,7 +62,9 @@ class task_system {
         dispatch_group_t _group = dispatch_group_create();
         ~model() {
             dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+#if !__has_feature(objc_arc)
             dispatch_release(_group);
+#endif
         }
         
         template <typename F>
