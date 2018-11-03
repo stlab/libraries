@@ -17,6 +17,7 @@
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 #include <dispatch/dispatch.h>
+#include <stlab/concurrency/task.hpp>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 #include <emscripten.h>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
@@ -26,6 +27,7 @@
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 #include <Windows.h>
 #include <memory>
+#include <stlab/concurrency/task.hpp>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 #include <algorithm>
 #include <atomic>
