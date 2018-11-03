@@ -129,6 +129,7 @@ matrix:
         TSAN_OPTIONS="suppressions=${TRAVIS_BUILD_DIR}/test/sanitizer_suppressions"
         flags="-fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all"
         options=""
+      sudo: true
 
     #
     # Coverage
