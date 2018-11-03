@@ -57,32 +57,36 @@ namespace detail {
 
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 
-struct default_executor_type {
-private:
-    struct group {
+class task_system {
+    struct model {
         dispatch_group_t _group = dispatch_group_create();
-        ~group() {
+        ~model() {
             dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
             dispatch_release(_group);
         }
+        
+        template <typename F>
+        void operator()(F f) const {
+            using f_t = decltype(f);
+            
+            dispatch_group_async_f(_group,
+                                   dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                                   new f_t(std::move(f)), [](void* f_) {
+                                       auto f = static_cast<f_t*>(f_);
+                                       (*f)();
+                                       delete f;
+                                   });
+        }
     };
-
+    
+    std::shared_ptr<const model> _self{std::make_shared<const model>()};
+    
 public:
-    using result_type = void;
-    template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        static group g;
-
-        dispatch_group_async_f(g._group,
-                               dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                               new f_t(std::move(f)), [](void* f_) {
-                                   auto f = static_cast<f_t*>(f_);
-                                   (*f)();
-                                   delete f;
-                               });
+    
+    void operator()(task<void()> f) {
+        (*_self)([f = std::move(f), retain = _self]() mutable { f(); });
     }
+    
 };
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
@@ -129,47 +133,55 @@ struct default_executor_type {
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
 class task_system {
-    PTP_POOL _pool = nullptr;
-    TP_CALLBACK_ENVIRON _callBackEnvironment;
-    PTP_CLEANUP_GROUP _cleanupgroup = nullptr;
-
-public:
-    task_system() {
-        InitializeThreadpoolEnvironment(&_callBackEnvironment);
-        _pool = CreateThreadpool(nullptr);
-        if (_pool == nullptr) throw std::bad_alloc();
-
-        _cleanupgroup = CreateThreadpoolCleanupGroup();
-        if (_pool == nullptr) throw std::bad_alloc();
-
-        SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
-        SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
-    }
-
-    ~task_system() {
-        CloseThreadpoolCleanupGroupMembers(_cleanupgroup, FALSE, nullptr);
-        CloseThreadpoolCleanupGroup(_cleanupgroup);
-        CloseThreadpool(_pool);
-    }
-
-    template <typename F>
-    void operator()(F&& f) {
-        auto work = CreateThreadpoolWork(&callback_impl<F>, new F(std::forward<F>(f)),
-                                         &_callBackEnvironment);
-
-        if (work == nullptr) {
-            throw std::bad_alloc();
+    struct model {
+        PTP_POOL _pool = nullptr;
+        TP_CALLBACK_ENVIRON _callBackEnvironment;
+        PTP_CLEANUP_GROUP _cleanupgroup = nullptr;
+        
+        model() {
+            InitializeThreadpoolEnvironment(&_callBackEnvironment);
+            _pool = CreateThreadpool(nullptr);
+            if (_pool == nullptr) throw std::bad_alloc();
+            
+            _cleanupgroup = CreateThreadpoolCleanupGroup();
+            if (_pool == nullptr) throw std::bad_alloc();
+            
+            SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
+            SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
         }
-        SubmitThreadpoolWork(work);
-    }
-
-private:
-    template <typename F>
-    static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
-                                       PVOID parameter,
-                                       PTP_WORK /*Work*/) {
-        std::unique_ptr<F> f(static_cast<F*>(parameter));
-        (*f)();
+        
+        ~model() {
+            CloseThreadpoolCleanupGroupMembers(_cleanupgroup, FALSE, nullptr);
+            CloseThreadpoolCleanupGroup(_cleanupgroup);
+            CloseThreadpool(_pool);
+        }
+        
+        template <typename F>
+        void operator()(F&& f) {
+            auto work = CreateThreadpoolWork(&callback_impl<F>, new F(std::forward<F>(f)),
+                                             &_callBackEnvironment);
+            
+            if (work == nullptr) {
+                throw std::bad_alloc();
+            }
+            SubmitThreadpoolWork(work);
+        }
+        
+        template <typename F>
+        static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
+                                           PVOID parameter,
+                                           PTP_WORK /*Work*/) {
+            std::unique_ptr<F> f(static_cast<F*>(parameter));
+            (*f)();
+        }
+    };
+    
+    std::shared_ptr<model> _self{std::make_shared<model>()};
+    
+public:
+    
+    void operator()(task<void()> f) {
+        (*_self)([f = std::move(f), retain = _self]() mutable { f(); });
     }
 };
 
@@ -291,8 +303,9 @@ public:
 
 #endif
 
-#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) || \
-    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE)    || \
+    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)     || \
+    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH)
 
 struct default_executor_type {
     using result_type = void;
