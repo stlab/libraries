@@ -1732,7 +1732,7 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
 
 /**************************************************************************************************/
 
-#if STLAB_FUTURE_COROUTINES_SUPPORT
+#ifdef STLAB_FUTURE_COROUTINES_SUPPORT
 
 template <typename T, typename... Args>
 struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
