@@ -15,7 +15,7 @@ overloads:
     description: Default constructor
     return: __OPTIONAL__
     signature_with_names: model()
-  template <class... Args> model(Args &&...):
+  template <class... Args> explicit model(Args &&...):
     annotation:
       - public
     arguments:
@@ -24,5 +24,5 @@ overloads:
         type: Args &&...
     description: Variadic constructor
     return: __OPTIONAL__
-    signature_with_names: template <class... Args> model(Args &&... args)
+    signature_with_names: template <class... Args> explicit model(Args &&... args)
 ---

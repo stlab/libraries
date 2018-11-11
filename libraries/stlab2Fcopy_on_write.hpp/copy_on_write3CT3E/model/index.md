@@ -1,12 +1,12 @@
 ---
 layout: class
-title: stlab::copy_on_write<T>::model
+title: stlab::copy_on_write::model
 owner: sparent
 brief: Underlying model instance
 tags:
   - class
 defined-in-file: stlab/copy_on_write.hpp
-declaration: "\nstruct stlab::copy_on_write<T>::model;"
+declaration: "\nstruct stlab::copy_on_write::model;"
 annotation:
   - private
 dtor: unspecified

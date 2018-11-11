@@ -1,12 +1,12 @@
 ---
 layout: class
-title: stlab::copy_on_write<T>
+title: stlab::copy_on_write
 owner: sparent
 brief: A copy-on-write wrapper for any type that models `RegularType`.
 tags:
   - class
 defined-in-file: stlab/copy_on_write.hpp
-declaration: "template <typename T>\nclass stlab::copy_on_write<T>;"
+declaration: "template <typename T>\nclass stlab::copy_on_write;"
 typedefs:
   element_type:
     annotation:
