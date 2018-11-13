@@ -52,16 +52,30 @@ BOOST_AUTO_TEST_CASE(future_void_single_task_detached) {
 BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on r-value");
 
+    /* because of a gcc version < 6 bug, it is not possible to use the following 
     using task_t = function<void()>;
     using op_t = future<void>(future<void>::*)(task_t&&)&&;
 
     op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
                   static_cast<op_t>(&future<void>::operator|<task_t>)};
 
-    for (const auto& op : ops) {
+    for (const auto& op : ops)
+    */
+    {
         atomic_int p{0};
 
-        sut = (async(make_executor<0>(), [& _p = p] { _p = 42; }).*op)([& _p = p] { _p += 42; });
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] { _p += 42; });
+
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) | [& _p = p] { _p += 42; };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -74,17 +88,23 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_rvalue) {
 BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_lvalue) {
     BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on l-value");
 
-    using task_t = function<void()>;
-    using op_t = future<void>(future<void>::*)(task_t&&)const&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_int p{0};
         auto interim = async(make_executor<0>(), [& _p = p] { _p = 42; });
 
-        sut = (interim.*op)([& _p = p] { _p += 42; });
+        sut = interim.then([& _p = p] { _p += 42; });
+
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+        auto interim = async(make_executor<0>(), [& _p = p] { _p = 42; });
+
+        sut = interim | [& _p = p] { _p += 42; };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -97,16 +117,21 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_lvalue) {
 BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int void tasks with same scheduler");
 
-    using task_t = function<void(int)>;
-    using op_t = future<void>(future<int>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_int p{0};
 
-        sut = (async(make_executor<0>(), [] { return 42; }).*op)([& _p = p](auto x) { _p = x + 42; });
+        sut = async(make_executor<0>(), [] { return 42; }).then([& _p = p](auto x) { _p = x + 42; });
+        check_valid_future(sut);
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [] { return 42; }) | [& _p = p](auto x) { _p = x + 42; };
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -158,20 +183,30 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_different_scheduler) {
 BOOST_AUTO_TEST_CASE(future_void_Y_formation_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future void with Y formation with same scheduler");
 
-    using task_t = function<void()>;
-    using op_t = future<void>(future<void>::*)(task_t&&)const&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_int p{0};
         int r1 = 0;
         int r2 = 0;
 
         sut = async(make_executor<0>(), [& _p = p] { _p = 42; });
-        auto f1 = (sut.*op)([& _p = p, &_r = r1] { _r = 42 + _p; });
-        auto f2 = (sut.*op)([& _p = p, &_r = r2] { _r = 4711 + _p; });
+        auto f1 = sut.then([& _p = p, &_r = r1] { _r = 42 + _p; });
+        auto f2 = sut.then([& _p = p, &_r = r2] { _r = 4711 + _p; });
+
+        check_valid_future(sut, f1, f2);
+        wait_until_future_completed(f1, f2);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, r1);
+        BOOST_REQUIRE_EQUAL(42 + 4711, r2);
+        BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+        int r1 = 0;
+        int r2 = 0;
+
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; });
+        auto f1 = sut | [& _p = p, &_r = r1] { _r = 42 + _p; };
+        auto f2 = sut | [& _p = p, &_r = r2] { _r = 4711 + _p; };
 
         check_valid_future(sut, f1, f2);
         wait_until_future_completed(f1, f2);
@@ -185,19 +220,27 @@ BOOST_AUTO_TEST_CASE(future_void_Y_formation_tasks_with_same_scheduler) {
 BOOST_AUTO_TEST_CASE(reduction_future_void) {
     BOOST_TEST_MESSAGE("running future reduction void to void");
 
-    using task_t = function<future<void>()>;
-    using op_t = future<void>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         bool first{false};
         bool second{false};
 
-        sut = (async(make_executor<0>(), [&] { first = true; }).*op)([&] {
+        sut = async(make_executor<0>(), [&] { first = true; }).then([&] {
             return async(make_executor<0>(), [&] { second = true; });
         });
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+    }
+    {
+        bool first{false};
+        bool second{false};
+
+        sut = async(make_executor<0>(), [&] { first = true; }) |
+            [&] {
+                return async(make_executor<0>(), [&] { second = true; });
+            };
 
         wait_until_future_completed(sut);
 
@@ -209,23 +252,17 @@ BOOST_AUTO_TEST_CASE(reduction_future_void) {
 BOOST_AUTO_TEST_CASE(reduction_future_int_to_void) {
     BOOST_TEST_MESSAGE("running future reduction int to void");
 
-    using task_t = function<future<void>(int)>;
-    using op_t = future<void>(future<int>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_bool first{false};
         atomic_bool second{false};
         atomic_int result{0};
 
-        sut = (async(default_executor,
+        sut = async(default_executor,
                     [& _flag = first] {
                         _flag = true;
                         return 42;
                     })
-            .*op)([& _flag = second, &_result = result](auto x) {
+            .then([& _flag = second, &_result = result](auto x) {
                 return async(default_executor,
                              [&_flag, &_result](auto x) {
                                  _flag = true;
@@ -233,6 +270,31 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_void) {
                              },
                              x);
             });
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(84, result);
+    }
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+        atomic_int result{0};
+
+        sut = async(default_executor,
+                     [& _flag = first] {
+                         _flag = true;
+                         return 42;
+                     })
+               | [& _flag = second, &_result = result](auto x) {
+            return async(default_executor,
+                         [&_flag, &_result](auto x) {
+                             _flag = true;
+                             _result = x + 42;
+                         },
+                         x);
+            };
 
         wait_until_future_completed(sut);
 
@@ -294,14 +356,18 @@ BOOST_AUTO_TEST_CASE(
     future_copyable_with_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with same scheduler, then on r-value");
-    using task_t = function<move_only(int)>;
-    using op_t = future<move_only>(future<int>::*)(task_t&&)&&;
 
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
+    {
+        sut = async(make_executor<0>(), [] { return 42; }).then([](auto x) { return move_only(x); });
 
-    for (const auto& op : ops) {
-        sut = (async(make_executor<0>(), [] { return 42; }).*op)([](auto x) { return move_only(x); });
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), [] { return 42; }) | [](auto x) { return move_only(x); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -333,16 +399,21 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with same scheduler, then on l-value");
 
-    using task_t = function<move_only(int)>;
-    using op_t = future<move_only>(future<int>::*)(task_t&&)const&;
-
-    op_t ops[] = {&future<int>::then<task_t>,
-                  &future<int>::operator|<task_t>};
-
-    for (const auto& op : ops) {
+    {
         auto interim = async(make_executor<0>(), [] { return 42; });
 
-        sut = (interim.*op)([](auto x) { return move_only(x); });
+        sut = interim.then([](auto x) { return move_only(x); });
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        auto interim = async(make_executor<0>(), [] { return 42; });
+
+        sut = interim | [](auto x) { return move_only(x); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -374,16 +445,21 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_the
     BOOST_TEST_MESSAGE(
         "running future non copyable as contination with same scheduler, then on r-value");
 
-    using task_t = task<move_only(move_only)>;
-    using op_t = future<move_only>(future<move_only>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<move_only>::then<task_t>),
-                  static_cast<op_t>(&future<move_only>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
-        sut = (async(make_executor<0>(), [] { return move_only(42); }).*op)([](auto&& x) {
+    {
+        sut = async(make_executor<0>(), [] { return move_only(42); }).then([](auto&& x) {
             return move_only(x.member() * 2);
         });
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 * 2, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), [] { return move_only(42); }) | [](auto&& x) {
+            return move_only(x.member() * 2);
+        };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -417,17 +493,21 @@ BOOST_FIXTURE_TEST_SUITE(future_then_move_only, test_fixture<move_only>)
 BOOST_AUTO_TEST_CASE(future_async_move_only_move_captured_to_result) {
     BOOST_TEST_MESSAGE("running future move only move to result");
 
-    using task_t = task<move_only(move_only)>;
-
-    using op_t = future<move_only>(future<move_only>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<move_only>::then<task_t>),
-                  static_cast<op_t>(&future<move_only>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
-        sut = (async(make_executor<0>(), [] { return move_only{42}; }).*op)([](auto x) {
+    {
+        sut = async(make_executor<0>(), [] { return move_only{42}; }).then([](auto x) {
             return move(x);
         });
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), [] { return move_only{42}; }) | [](auto x) {
+            return move(x);
+        };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -483,18 +563,23 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to_result) {
     BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
 
-    using task_t = task<move_only(move_only)>;
-
-    using op_t = future<move_only>(future<move_only>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<move_only>::then<task_t>),
-                  static_cast<op_t>(&future<move_only>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         move_only m{42};
 
-        sut = (async(make_executor<0>(), []() mutable {
-            return move_only{10}; }).*op)([& _m = m](auto) mutable { return move(_m); });
+        sut = async(make_executor<0>(), []() mutable {
+            return move_only{10}; }).then([& _m = m](auto) mutable { return move(_m); });
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        move_only m{42};
+
+        sut = async(make_executor<0>(), []() mutable {
+            return move_only{10}; }) | [& _m = m](auto) mutable { return move(_m); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -553,14 +638,17 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on r-value");
 
-    using task_t = function<int(int)>;
-    using op_t = future<int>(future<int>::*)(task_t&&)&&;
+    {
+        sut = async(make_executor<0>(), [] { return 42; }).then([](auto x) { return x + 42; });
 
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
 
-    for (const auto& op : ops) {
-        sut = (async(make_executor<0>(), [] { return 42; }).*op)([](auto x) { return x + 42; });
+        BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), [] { return 42; }) | [](auto x) { return x + 42; };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -573,16 +661,21 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_rvalue) {
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_same_scheduler_then_on_lvalue) {
     BOOST_TEST_MESSAGE("running future int two tasks with same scheduler, then on l-value");
 
-    using task_t = function<int(int)>;
-    using op_t = future<int>(future<int>::*)(task_t&&)const&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         auto interim = async(make_executor<0>(), [] { return 42; });
 
-        sut = (interim.*op)([](auto x) { return x + 42; });
+        sut = interim.then([](auto x) { return x + 42; });
+
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, *sut.get_try());
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        auto interim = async(make_executor<0>(), [] { return 42; });
+
+        sut = interim | [](auto x) { return x + 42; };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -610,19 +703,27 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_with_different_scheduler) {
 BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future void int tasks with same scheduler");
 
-    using task_t = function<int()>;
-    using op_t = future<int>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_int p{0};
 
-        sut = (async(make_executor<0>(), [& _p = p] { _p = 42; }).*op)([& _p = p] {
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
             _p += 42;
             return _p.load();
         });
+
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) | [& _p = p] {
+            _p += 42;
+            return _p.load();
+        };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -657,17 +758,21 @@ BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_different_scheduler) {
 BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int with three tasks with same scheduler");
 
-    using task_t = function<int(int)>;
-    using op_t = future<int>(future<int>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
-
-        sut = ((async(make_executor<0>(), [] { return 42; }).*op)
-            ([](auto x) { return x + 42; }).*op)
+    {
+        sut = async(make_executor<0>(), [] { return 42; }).then
+            ([](auto x) { return x + 42; }).then
             ([](auto x) { return x + 42; });
+
+        check_valid_future(sut);
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42 + 42, *sut.get_try());
+        BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), [] { return 42; }) |
+                    [](auto x) { return x + 42; } |
+                    [](auto x) { return x + 42; };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -687,16 +792,22 @@ BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
 BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int Y formation tasks with same scheduler");
 
-    using task_t = function<int(int)>;
-    using op_t = future<int>(future<int>::*)(task_t&&)const&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         sut = async(make_executor<0>(), [] { return 42; });
-        auto f1 = (sut.*op)([](auto x) { return x + 42; });
-        auto f2 = (sut.*op)([](auto x) { return x + 4177; });
+        auto f1 = sut.then([](auto x) { return x + 42; });
+        auto f2 = sut.then([](auto x) { return x + 4177; });
+
+        check_valid_future(sut, f1, f2);
+        wait_until_future_completed(f1, f2);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, *f1.get_try());
+        BOOST_REQUIRE_EQUAL(42 + 4177, *f2.get_try());
+        BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), [] { return 42; });
+        auto f1 = sut | [](auto x) { return x + 42; };
+        auto f2 = sut | [](auto x) { return x + 4177; };
 
         check_valid_future(sut, f1, f2);
         wait_until_future_completed(f1, f2);
@@ -709,17 +820,12 @@ BOOST_AUTO_TEST_CASE(future_int_Y_formation_tasks_with_same_scheduler) {
 
 BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
     BOOST_TEST_MESSAGE("running future reduction void to int");
-    using task_t = function<future<int>()>;
-    using op_t = future<int>(future<void>::*)(task_t&&)&&;
 
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        sut = (async(default_executor, [& _flag = first] { _flag = true; }).*op)([& _flag = second] {
+        sut = async(default_executor, [& _flag = first] { _flag = true; }).then([& _flag = second] {
             return async(default_executor, [&_flag] {
                 _flag = true;
                 return 42;
@@ -732,27 +838,38 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_int) {
         BOOST_REQUIRE(second);
         BOOST_REQUIRE_EQUAL(42, *sut.get_try());
     }
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+
+        sut = async(default_executor, [& _flag = first] { _flag = true; }) | [& _flag = second] {
+            return async(default_executor, [&_flag] {
+                _flag = true;
+                return 42;
+            });
+        };
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
     BOOST_TEST_MESSAGE("running future reduction int to int");
 
-    using task_t = function<future<int>(int)>;
-    using op_t = future<int>(future<int>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        sut = (async(default_executor,
+        sut = async(default_executor,
                     [& _flag = first] {
                         _flag = true;
                         return 42;
                     })
-            .*op)([& _flag = second](auto x) {
+            .then([& _flag = second](auto x) {
                 return async(default_executor,
                              [&_flag](auto x) {
                                  _flag = true;
@@ -760,6 +877,30 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
                              },
                              x);
             });
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(84, *sut.get_try());
+    }
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+
+        sut = async(default_executor,
+                     [& _flag = first] {
+                         _flag = true;
+                         return 42;
+                     }) |
+               [& _flag = second](auto x) {
+            return async(default_executor,
+                         [&_flag](auto x) {
+                             _flag = true;
+                             return x + 42;
+                         },
+                         x);
+        };
 
         wait_until_future_completed(sut);
 
@@ -789,18 +930,24 @@ BOOST_AUTO_TEST_CASE(future_void_single_task_error) {
 BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_1st_task_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future void with two tasks which first fails");
 
-    using task_t = function<void()>;
-    using op_t = future<void>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_int p{0};
 
-        sut = (async(make_executor<0>(), [] { throw test_exception("failure"); }).*op)([& _p = p] {
+        sut = async(make_executor<0>(), [] { throw test_exception("failure"); }).then([& _p = p] {
             _p = 42;
         });
+
+        wait_until_future_fails<test_exception>(sut);
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(0, p);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [] { throw test_exception("failure"); }) | [& _p = p] {
+            _p = 42;
+        };
 
         wait_until_future_fails<test_exception>(sut);
         check_failure<test_exception>(sut, "failure");
@@ -812,18 +959,25 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_1st_task_with_same_scheduler
 BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_2nd_task_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future void with two tasks which second fails");
 
-    using task_t = function<void()>;
-    using op_t = future<void>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_int p{0};
 
-        sut = (async(make_executor<0>(), [& _p = p] { _p = 42; }).*op)([& _p = p] {
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
             throw test_exception("failure");
         });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) | [& _p = p] {
+            throw test_exception("failure");
+        };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -836,22 +990,32 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_2nd_task_with_same_scheduler
 BOOST_AUTO_TEST_CASE(reduction_future_void_to_void_error) {
     BOOST_TEST_MESSAGE("running future reduction void to void where the inner future fails");
 
-    using task_t = function<future<void>()>;
-    using op_t = future<void>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        sut = (async(default_executor, [& _flag = first] { _flag = true; }).*op)([& _flag = second] {
+        sut = async(default_executor, [& _flag = first] { _flag = true; }).then([& _flag = second] {
             return async(default_executor, [&_flag] {
                 _flag = true;
                 throw test_exception("failure");
             });
         });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+    }
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+
+        sut = async(default_executor, [& _flag = first] { _flag = true; }) | [& _flag = second] {
+            return async(default_executor, [&_flag] {
+                _flag = true;
+                throw test_exception("failure");
+            });
+        };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -891,21 +1055,31 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_error) {
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int with two tasks which first fails");
 
-    using task_t = function<int()>;
-    using op_t = future<int>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         custom_scheduler<0>::reset();
         int p = 0;
 
-        sut = (async(make_executor<0>(), [] { throw test_exception("failure"); })
-            .*op)([& _p = p]() -> int {
+        sut = async(make_executor<0>(), [] { throw test_exception("failure"); })
+               .then([& _p = p]() -> int {
+            _p = 42;
+            return _p;
+        });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(0, p);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        custom_scheduler<0>::reset();
+        int p = 0;
+
+        sut = async(make_executor<0>(), [] { throw test_exception("failure"); }) |
+            [& _p = p]() -> int {
                 _p = 42;
                 return _p;
-            });
+            };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -918,19 +1092,27 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler)
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_2nd_task_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future void with two tasks which second fails");
 
-    using task_t = function<int()>;
-    using op_t = future<int>(future<void>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<void>::then<task_t>),
-                  static_cast<op_t>(&future<void>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         custom_scheduler<0>::reset();
         atomic_int p{0};
 
-        sut = (async(make_executor<0>(), [& _p = p] { _p = 42; }).*op)([]() -> int {
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([]() -> int {
             throw test_exception("failure");
         });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        check_failure<test_exception>(sut, "failure");
+        BOOST_REQUIRE_EQUAL(42, p);
+        BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
+    }
+    {
+        custom_scheduler<0>::reset();
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) | []() -> int {
+            throw test_exception("failure");
+        };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -1009,22 +1191,16 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_int_error) {
 BOOST_AUTO_TEST_CASE(reduction_future_int_to_int_error) {
     BOOST_TEST_MESSAGE("running future reduction int to int where the inner future fails");
 
-    using task_t = function<future<int>(int)>;
-    using op_t = future<int>(future<int>::*)(task_t&&)&&;
-
-    op_t ops[] = {static_cast<op_t>(&future<int>::then<task_t>),
-                  static_cast<op_t>(&future<int>::operator|<task_t>)};
-
-    for (const auto& op : ops) {
+    {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        sut = (async(default_executor,
+        sut = async(default_executor,
                     [& _flag = first] {
                         _flag = true;
                         return 42;
                     })
-            .*op)([& _flag = second](auto x) {
+            .then([& _flag = second](auto x) {
                 return async(default_executor,
                              [&_flag](auto) -> int {
                                  _flag = true;
@@ -1032,6 +1208,29 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int_error) {
                              },
                              x);
             });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+    }
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+
+        sut = async(default_executor,
+                    [& _flag = first] {
+                        _flag = true;
+                        return 42;
+                    }) |
+            [& _flag = second](auto x) {
+                return async(default_executor,
+                             [&_flag](auto) -> int {
+                                 _flag = true;
+                                 throw test_exception("failure");
+                             },
+                             x);
+            };
 
         wait_until_future_fails<test_exception>(sut);
 
