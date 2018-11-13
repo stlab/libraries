@@ -746,6 +746,11 @@ public:
         return _p->then(std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator|(F&& f) const& {
+        return then(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return _p->then(std::forward<E>(executor), std::forward<F>(f));
@@ -754,6 +759,11 @@ public:
     template <typename F>
     auto then(F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator|(F&& f) && {
+        return std::move(*this).then(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -766,6 +776,12 @@ public:
         return _p->recover(std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator^(F&& f) const& {
+        return recover(std::forward<F>(f));
+    }
+
+
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) const& {
         return _p->recover(std::forward<E>(executor), std::forward<F>(f));
@@ -774,6 +790,11 @@ public:
     template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) && {
+        return std::move(*this).recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -837,6 +858,11 @@ public:
         return _p->then(std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator|(F&& f) const& {
+        return then(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return _p->then(std::forward<E>(executor), std::forward<F>(f));
@@ -845,6 +871,11 @@ public:
     template <typename F>
     auto then(F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator|(F&& f) && {
+        return std::move(*this).then(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -857,6 +888,11 @@ public:
         return _p->recover(std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator^(F&& f) const& {
+        return recover(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) const& {
         return _p->recover(std::forward<E>(executor), std::forward<F>(f));
@@ -865,6 +901,11 @@ public:
     template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) && {
+        return std::move(*this).recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -930,6 +971,11 @@ public:
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator|(F&& f) && {
+        return std::move(*this).then(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto then(E&& executor, F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
@@ -938,6 +984,11 @@ public:
     template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) && {
+        return std::move(*this).recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
