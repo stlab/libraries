@@ -1191,12 +1191,6 @@ struct buffer_size {
     explicit buffer_size(std::size_t v) : _value(v) {}
 };
 
-struct executor {
-    executor_t _e;
-
-    explicit executor(executor_t e) : _e(std::move(e)) {}
-};
-
 /**************************************************************************************************/
 
 namespace detail {
@@ -1216,10 +1210,10 @@ struct annotated_process {
     F _f;
     annotations _annotations;
 
-    annotated_process(F f, const executor& e) : _f(std::move(f)), _annotations(e._e) {}
+    annotated_process(F f, const executor& e) : _f(std::move(f)), _annotations(e._executor) {}
     annotated_process(F f, const buffer_size& bs) : _f(std::move(f)), _annotations(bs._value) {}
 
-    annotated_process(F f, executor&& e) : _f(std::move(f)), _annotations(std::move(e._e)) {}
+    annotated_process(F f, executor&& e) : _f(std::move(f)), _annotations(std::move(e._executor)) {}
     annotated_process(F f, buffer_size&& bs) : _f(std::move(f)), _annotations(bs._value) {}
     annotated_process(F f, annotations&& a) : _f(std::move(f)), _annotations(std::move(a)) {}
 };
@@ -1227,7 +1221,7 @@ struct annotated_process {
 template <typename B, typename E>
 detail::annotations combine_bs_executor(B&& b, E&& e) {
     detail::annotations result{b._value};
-    result._executor = std::forward<E>(e)._e;
+    result._executor = std::forward<E>(e)._executor;
     return result;
 }
 
@@ -1314,7 +1308,7 @@ detail::annotated_process<F> operator&(F&& f, detail::annotations&& a) {
 template <typename F>
 detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, executor&& e) {
     auto result{std::move(a)};
-    a._annotations._executor = std::move(e._e);
+    a._annotations._executor = std::move(e._executor);
     return result;
 }
 

@@ -144,33 +144,69 @@ BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_same_scheduler) {
 BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_different_scheduler) {
     BOOST_TEST_MESSAGE("running future int void tasks with different schedulers");
 
-    atomic_int p{0};
+    {
+        atomic_int p{0};
 
-    sut = async(make_executor<0>(), [] { return 42; })
-              .then(make_executor<1>(), [& _p = p](auto x) { _p = x + 42; });
-    check_valid_future(sut);
+        sut = async(make_executor<0>(), [] { return 42; })
+            .then(make_executor<1>(), [& _p = p](auto x) { _p = x + 42; });
+        check_valid_future(sut);
 
-    wait_until_future_completed(sut);
+        wait_until_future_completed(sut);
 
-    BOOST_REQUIRE_EQUAL(42 + 42, p);
-    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+    }
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [] { return 42; }) |
+            ( executor{make_executor<1>()} & [& _p = p](auto x) { _p = x + 42; } );
+
+        check_valid_future(sut);
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_different_scheduler) {
     BOOST_TEST_MESSAGE("running future void two tasks with different schedulers");
 
-    atomic_int p{0};
+    {
+        atomic_int p{0};
 
-    sut = async(make_executor<0>(), [& _p = p] { _p = 42; })
-              .then(make_executor<1>(), [& _p = p] { _p += 42; });
-    check_valid_future(sut);
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; })
+            .then(make_executor<1>(), [& _p = p] { _p += 42; });
+        check_valid_future(sut);
 
-    wait_until_future_completed(sut);
+        wait_until_future_completed(sut);
 
-    BOOST_REQUIRE_EQUAL(42 + 42, p);
-    BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+    }
+
+    custom_scheduler<0>::reset();
+    custom_scheduler<1>::reset();
+
+    {
+        atomic_int p{0};
+
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) |
+            ( executor{make_executor<1>()} & [& _p = p] { _p += 42; } );
+
+        check_valid_future(sut);
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 + 42, p);
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+    }
 }
 
 /*
@@ -382,16 +418,33 @@ BOOST_AUTO_TEST_CASE(
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with different scheduler, then on r-value");
 
-    sut = async(make_executor<0>(), [] { return 42; }).then(make_executor<1>(), [](auto x) {
-        return move_only(x);
-    });
+    {
+        sut = async(make_executor<0>(), [] { return 42; }).then(make_executor<1>(), [](auto x) {
+            return move_only(x);
+        });
 
-    check_valid_future(sut);
-    auto result = wait_until_future_r_completed(sut);
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
 
-    BOOST_REQUIRE_EQUAL(42, result->member());
-    BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
+
+    custom_scheduler<0>::reset();
+    custom_scheduler<1>::reset();
+
+    {
+        sut = async(make_executor<0>(), [] { return 42; }) |
+            ( executor{make_executor<1>()} & [](auto x) { return move_only(x); } );
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(
@@ -427,17 +480,32 @@ BOOST_AUTO_TEST_CASE(
     future_copyable_with_non_copyable_as_continuation_with_different_scheduler_then_on_lvalue) {
     BOOST_TEST_MESSAGE(
         "running future copyable with non copyable as contination with different scheduler, then on l-value");
+    {
+        auto interim = async(make_executor<0>(), [] { return 42; });
 
-    auto interim = async(make_executor<0>(), [] { return 42; });
+        sut = interim.then(make_executor<1>(), [](auto x) { return move_only(x); });
 
-    sut = interim.then(make_executor<1>(), [](auto x) { return move_only(x); });
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
 
-    check_valid_future(sut);
-    auto result = wait_until_future_r_completed(sut);
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
+    custom_scheduler<0>::reset();
+    custom_scheduler<1>::reset();
+    {
+        auto interim = async(make_executor<0>(), [] { return 42; });
 
-    BOOST_REQUIRE_EQUAL(42, result->member());
-    BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+        sut = interim | ( executor{make_executor<1>()} & [](auto x) { return move_only(x); } );
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
 }
 
 
@@ -472,16 +540,32 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_the
 BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE(
         "running future non copyable as contination with different scheduler, then on r-value");
+    {
+        sut = async(make_executor<0>(), [] { return move_only(42); })
+            .then(make_executor<1>(), [](auto x) { return move_only(x.member() * 2); });
 
-    sut = async(make_executor<0>(), [] { return move_only(42); })
-              .then(make_executor<1>(), [](auto x) { return move_only(x.member() * 2); });
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
 
-    check_valid_future(sut);
-    auto result = wait_until_future_r_completed(sut);
+        BOOST_REQUIRE_EQUAL(42 * 2, result->member());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
 
-    BOOST_REQUIRE_EQUAL(42 * 2, result->member());
-    BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
-    BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    custom_scheduler<0>::reset();
+    custom_scheduler<1>::reset();
+
+    {
+        sut = async(make_executor<0>(), [] { return move_only(42); }) |
+            ( executor{make_executor<1>()} & [](auto x) { return move_only(x.member() * 2); } );
+
+        check_valid_future(sut);
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE_EQUAL(42 * 2, result->member());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
+        BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
