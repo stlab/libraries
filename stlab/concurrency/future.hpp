@@ -757,6 +757,11 @@ public:
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) const& {
+        return then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto then(F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
@@ -772,6 +777,11 @@ public:
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) && {
+        return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) const& {
         return _p->recover(std::forward<F>(f));
     }
@@ -781,10 +791,14 @@ public:
         return recover(std::forward<F>(f));
     }
 
-
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) const& {
         return _p->recover(std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) const& {
+        return recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     template <typename F>
@@ -800,6 +814,11 @@ public:
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) && {
+        return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     void detach() const {
@@ -869,6 +888,11 @@ public:
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) const& {
+        return then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto then(F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
@@ -881,6 +905,11 @@ public:
     template <typename E, typename F>
     auto then(E&& executor, F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator|(executor_task_pair<F> etp) && {
+        return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
     }
 
     template <typename F>
@@ -899,6 +928,11 @@ public:
     }
 
     template <typename F>
+    auto operator^(executor_task_pair<F> etp) const& {
+        return recover(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
@@ -911,6 +945,11 @@ public:
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) && {
+        return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     void detach() const {
@@ -982,6 +1021,11 @@ public:
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) && {
+        return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
@@ -994,6 +1038,11 @@ public:
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) && {
+        return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     void detach() const {
