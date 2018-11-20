@@ -792,7 +792,7 @@ struct shared_process
         if (do_run) run();
         if (do_final) {
             std::unique_lock<std::mutex> lock(_downstream_mutex);
-            _downstream.clear(); // This will propogate the close to anything downstream
+            _downstream.clear(); // This will propagate the close to anything downstream
             _process = nullopt;
         }
     }
@@ -800,7 +800,6 @@ struct shared_process
     void clear_to_send() override {
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
-            // TODO FP I am not sure if this is the correct way to handle an closed upstream
             if (_process_final) {
                 return;
             }
@@ -810,10 +809,9 @@ struct shared_process
         {
             const auto ps = get_process_state(_process);
             std::unique_lock<std::mutex> lock(_process_mutex);
-            //assert(_process_suspend_count > 0 && "Error: Try to unsuspend, but not suspended!");
             if (_process_suspend_count>0)
                 --_process_suspend_count; // could be atomic?
-            //assert(_process_running && "ERROR (sparent) : clear_to_send but not running!");
+
             if (!_process_suspend_count) {
                 if (ps.first == process_state::yield || !_queue.empty() || _process_close_queue) {
                     do_run = true;
@@ -1027,26 +1025,15 @@ struct shared_process
             suspend_process = _downstream.minimum_free_buffer() <= 1;
         }
 
-        /*
-            // TODO Fp Fix comment
-            There is no need for a lock here because the other processes that could change
-            _process_suspend_count must all be ready (and not running).
-
-            But we'll assert that to be sure!
-        */
         {
             std::unique_lock<std::mutex> lock(_process_mutex);
-            //assert(_process_suspend_count == 0 && "broadcasting while suspended");
-
-            /*
-                // TODO Fp Fix comment
-                Suspend for however many downstream processes we have + 1 for this process - that
-                ensures that we are not kicked to run while still broadcasting.
-            */
-
-            if (suspend_process)
+            if (suspend_process) {
+                /*
+                    Suspend for however many downstream processes we have + 1 for this process -
+                   that ensures that we are not kicked to run while still broadcasting.
+                */
                 _process_suspend_count = n + 1;
-            else
+            } else
                 _process_suspend_count = 1;
         }
         /*
@@ -1056,7 +1043,7 @@ struct shared_process
 
         _downstream.send(n, std::forward<A>(args)...);
 
-        clear_to_send(); // unsuspend this process
+        clear_to_send(); // unsuspend this process and decrement the _process_suspend_count immediately by 1
     }
 
     void map(sender<result> f) override {
