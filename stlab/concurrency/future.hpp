@@ -218,7 +218,7 @@ struct value_setter;
 /**************************************************************************************************/
 
 template <typename Sig, typename E, typename F>
-auto package(E&&, F &&)
+auto package(E, F&&)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>>;
 
 /**************************************************************************************************/
@@ -664,11 +664,11 @@ class packaged_task {
     explicit packaged_task(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                                future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                              future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F&&)
+    friend auto package_with_broken_promise(E, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -715,11 +715,11 @@ class future<T, enable_if_copyable<T>> {
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                                future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                             future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F &&)
+    friend auto package_with_broken_promise(E, F &&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -746,14 +746,29 @@ public:
         return _p->then(std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator|(F&& f) const& {
+        return then(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return _p->then(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) const& {
+        return then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto then(F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator|(F&& f) && {
+        return std::move(*this).then(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -762,8 +777,18 @@ public:
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) && {
+        return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) const& {
         return _p->recover(std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) const& {
+        return recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -772,13 +797,28 @@ public:
     }
 
     template <typename F>
+    auto operator^(executor_task_pair<F> etp) const& {
+        return recover(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) && {
+        return std::move(*this).recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) && {
+        return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     void detach() const {
@@ -806,11 +846,11 @@ class future<void, void> {
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                                future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                              future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F &&)
+    friend auto package_with_broken_promise(E, F &&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -837,14 +877,29 @@ public:
         return _p->then(std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator|(F&& f) const& {
+        return then(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return _p->then(std::forward<E>(executor), std::forward<F>(f));
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) const& {
+        return then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto then(F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator|(F&& f) && {
+        return std::move(*this).then(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -853,8 +908,18 @@ public:
     }
 
     template <typename F>
+    auto operator|(executor_task_pair<F> etp) && {
+        return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) const& {
         return _p->recover(std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) const& {
+        return recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
@@ -863,13 +928,28 @@ public:
     }
 
     template <typename F>
+    auto operator^(executor_task_pair<F> etp) const& {
+        return recover(std::move(etp)._executor, std::move(etp)._f);
+    }
+
+    template <typename F>
     auto recover(F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(F&& f) && {
+        return std::move(*this).recover(std::forward<F>(f));
     }
 
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) && {
+        return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     void detach() const {
@@ -896,11 +976,11 @@ class future<T, enable_if_not_copyable<T>> {
     future(const future&) = default;
 
     template <typename Signature, typename E, typename F>
-    friend auto package(E&&, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
-                                           future<detail::result_of_t_<Signature>>>;
+    friend auto package(E, F &&) -> std::pair<detail::packaged_task_from_signature_t<Signature>,
+                                              future<detail::result_of_t_<Signature>>>;
 
     template <typename Signature, typename E, typename F>
-    friend auto package_with_broken_promise(E&&, F &&)
+    friend auto package_with_broken_promise(E, F &&)
         -> std::pair<detail::packaged_task_from_signature_t<Signature>,
                      future<detail::result_of_t_<Signature>>>;
 
@@ -930,9 +1010,19 @@ public:
         return _p->then_r(unique_usage(_p), std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator|(F&& f) && {
+        return std::move(*this).then(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto then(E&& executor, F&& f) && {
         return _p->then_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator|(executor_task_pair<F> etp) && {
+        return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
     }
 
     template <typename F>
@@ -940,9 +1030,19 @@ public:
         return _p->recover_r(unique_usage(_p), std::forward<F>(f));
     }
 
+    template <typename F>
+    auto operator^(F&& f) && {
+        return std::move(*this).recover(std::forward<F>(f));
+    }
+
     template <typename E, typename F>
     auto recover(E&& executor, F&& f) && {
         return _p->recover_r(unique_usage(_p), std::forward<E>(executor), std::forward<F>(f));
+    }
+
+    template <typename F>
+    auto operator^(executor_task_pair<F> etp) && {
+        return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
     void detach() const {
@@ -961,17 +1061,17 @@ public:
 };
 
 template <typename Sig, typename E, typename F>
-auto package(E&& executor, F&& f)
+auto package(E executor, F&& f)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<Sig>>(std::forward<E>(executor), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::move(executor), std::forward<F>(f));
     return std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
                           future<detail::result_of_t_<Sig>>(p));
 }
 
 template <typename Sig, typename E, typename F>
-auto package_with_broken_promise(E&& executor, F&& f)
+auto package_with_broken_promise(E executor, F&& f)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, future<detail::result_of_t_<Sig>>> {
-    auto p = std::make_shared<detail::shared<Sig>>(std::forward<E>(executor), std::forward<F>(f));
+    auto p = std::make_shared<detail::shared<Sig>>(std::move(executor), std::forward<F>(f));
     auto result = std::make_pair(detail::packaged_task_from_signature_t<Sig>(p),
                                  future<detail::result_of_t_<Sig>>(p));
     result.second._p->_error =
@@ -1165,7 +1265,7 @@ auto when_all(E executor, F f, future<Ts>... args) {
     });
     shared->_f = std::move(p.first);
 
-    detail::attach_when_args(std::move(executor), shared, std::move(args)...);
+    detail::attach_when_args(executor, shared, std::move(args)...);
 
     return std::move(p.second);
 }
@@ -1184,7 +1284,7 @@ struct make_when_any {
         });
         shared->_f = std::move(p.first);
 
-        detail::attach_when_args(std::move(executor), shared, std::move(arg), std::move(args)...);
+        detail::attach_when_args(executor, shared, std::move(arg), std::move(args)...);
 
         return std::move(p.second);
     }
@@ -1204,7 +1304,7 @@ struct make_when_any<void> {
         });
         shared->_f = std::move(p.first);
 
-        detail::attach_when_args(std::move(executor), shared, std::move(args)...);
+        detail::attach_when_args(executor, shared, std::move(args)...);
 
         return std::move(p.second);
     }
@@ -1392,9 +1492,9 @@ struct common_context : CR {
 /**************************************************************************************************/
 
 template <typename C, typename E, typename T>
-void attach_tasks(size_t index, E&& executor, const std::shared_ptr<C>& context, T&& a) {
+void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
     context->_holds[index] =
-        std::move(a).recover(std::forward<E>(executor), [_context = std::weak_ptr<C>(context), _i = index](auto x) {
+        std::move(a).recover(std::move(executor), [_context = std::weak_ptr<C>(context), _i = index](auto x) {
             auto p = _context.lock();
             if (!p) return;
             auto error = x.error();
@@ -1477,7 +1577,7 @@ auto when_all(E executor, F f, std::pair<I, I> range) {
     }
 
     return detail::create_range_of_futures<result_t, param_t, context_t>::do_it(
-        std::move(executor), std::move(f), range.first, range.second);
+        executor, std::move(f), range.first, range.second);
 }
 
 /**************************************************************************************************/
@@ -1732,7 +1832,7 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
 
 /**************************************************************************************************/
 
-#if STLAB_FUTURE_COROUTINES_SUPPORT
+#ifdef STLAB_FUTURE_COROUTINES_SUPPORT
 
 template <typename T, typename... Args>
 struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {

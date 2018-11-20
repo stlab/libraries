@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
 
     test_setup setup;
     {
-        auto sut = async(custom_scheduler<0>(), []() -> T { return T(0); });
+        auto sut = async(make_executor<0>(), []() -> T { return T(0); });
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.error());
 
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters,
 
     test_setup setup;
     {
-        auto sut = async(custom_scheduler<0>(), [](auto x) -> T { return x + T(0); }, T(42));
+        auto sut = async(make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.error());
 
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
     test_setup setup;
     {
         auto sut =
-            async(custom_scheduler<0>(), []() -> v1::move_only { return v1::move_only{42}; });
+            async(make_executor<0>(), []() -> v1::move_only { return v1::move_only{42}; });
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.error());
 
