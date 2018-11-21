@@ -11,11 +11,11 @@ HYDE_DST_ROOT="${CUR_DIR}/libraries"
 # Whole-directory documentation (when the time is right)
 #SRC_FILE_SET=${SRC_ROOT}/stlab/*.hpp
 # Per-file documentation, separated by spaces (during piecemeal migration)
-SRC_FILE_SET="${SRC_ROOT}/stlab/copy_on_write.hpp" # ${SRC_ROOT}/stlab/utility.hpp
+SRC_FILE_SET="${SRC_ROOT}/stlab/copy_on_write.hpp ${SRC_ROOT}/stlab/concurrency/future.hpp" # ${SRC_ROOT}/stlab/utility.hpp
 
 for CUR_FILE in ${SRC_FILE_SET}; do
     echo "Processing $CUR_FILE"
-    CUR_COMMAND="hyde -hyde-src-root=${SRC_ROOT} -hyde-yaml-dir=${HYDE_DST_ROOT} -hyde-update \"${CUR_FILE}\" -- " # -I${APOLLO_PATH_INCLUDE} -I${APOLLO_ASL}
+    CUR_COMMAND="hyde -access-filter-protected -namespace-blacklist=detail -hyde-src-root=${SRC_ROOT} -hyde-yaml-dir=${HYDE_DST_ROOT} -hyde-update \"${CUR_FILE}\" -- -I${SRC_ROOT} -Wno-everything"
     echo $CUR_COMMAND
     eval $CUR_COMMAND
 done

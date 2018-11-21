@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   bool operator!=(const copy_on_write<T> &, const copy_on_write<T> &):
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -21,8 +19,6 @@ overloads:
     return: __OPTIONAL__
     signature_with_names: bool operator!=(const copy_on_write<T> & x, const copy_on_write<T> & y)
   bool operator!=(const copy_on_write<T> &, const stlab::copy_on_write::element_type &):
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -34,8 +30,6 @@ overloads:
     return: __OPTIONAL__
     signature_with_names: bool operator!=(const copy_on_write<T> & x, const stlab::copy_on_write::element_type & y)
   bool operator!=(const stlab::copy_on_write::element_type &, const copy_on_write<T> &):
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x
