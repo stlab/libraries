@@ -1,6 +1,6 @@
 ---
 layout: class
-title: stlab::copy_on_write
+title: copy_on_write<T>
 owner: sparent
 brief: A copy-on-write wrapper for any type that models `RegularType`.
 tags:
