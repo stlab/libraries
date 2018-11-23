@@ -242,10 +242,16 @@ public:
     }
 
     void run() {
-        while (!_q.empty()) {
+        while (execute_next_task()) {}
+    }
+
+    bool execute_next_task() {
+        if (!_q.empty()) {
             _q.front()();
             _q.pop_front();
+            return true;
         }
+        return false;
     }
 };
 
@@ -274,11 +280,9 @@ struct echo
 
 struct generator
 {
-    process_state_scheduled _state = yield_immediate;
+    const process_state_scheduled _state = yield_immediate;
 
     int _value = 0;
-
-    //void await(int) { } // Should not be necessary
 
     int yield() {
         return _value++;
@@ -292,36 +296,176 @@ struct generator
 };
 
 }
-/*
-BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
+
+BOOST_AUTO_TEST_CASE(int_channel_with_2_sized_buffer) {
     main_queue q;
+    size_t counter = 0;
 
-    std::atomic_size_t counter = 0;
+    auto receive = channel<void>(q.executor());
 
-    counter = 0;
-    {
-      auto receive = channel<void>(q.executor()); // Should be channel<void> - no sender
-
-      auto r2 = std::move(receive) |
-        (stlab::buffer_size{ 2 } &generator()) |
+    auto r2 = std::move(receive) |
+        generator() |
+        (stlab::buffer_size{ 2 } & echo()) |
         [&counter](auto x) {
-        std::cout << x << std::endl;
-        ++counter;
-      };
+            std::cout << x << std::endl;
+            ++counter;
+        };
 
-      r2.set_ready();
+    r2.set_ready();
 
-      q.run();
-
-      while (counter < 3)
-      {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      }
-    }
+    BOOST_REQUIRE_EQUAL(0, counter);
+    q.execute_next_task(); // generate value(0)
+    q.execute_next_task(); // await and yield value(0) by echo
+    q.execute_next_task(); // generate value(1)
+    q.execute_next_task(); // generate value(2)
+    q.execute_next_task(); // print value (0)
+    BOOST_REQUIRE_EQUAL(1, counter);
+    q.execute_next_task(); // generate value(3)
+    q.execute_next_task(); // await and yield value(1) by echo
+    q.execute_next_task(); // print value (1)
+    BOOST_REQUIRE_EQUAL(2, counter);
+    q.execute_next_task(); // await and yield value(2) by echo
+    q.execute_next_task(); // generate value(4)
+    q.execute_next_task(); // print value (2)
+    BOOST_REQUIRE_EQUAL(3, counter);
+    q.execute_next_task(); // await and yield value(3) by echo
+    q.execute_next_task(); // generate value(5)
+    q.execute_next_task(); // print value (3)
+    BOOST_REQUIRE_EQUAL(4, counter);
 }
-*/
 
+BOOST_AUTO_TEST_CASE(int_channel_with_3_sized_buffer) {
+    main_queue q;
+    size_t counter = 0;
 
+    auto receive = channel<void>(q.executor());
+
+    auto r2 = std::move(receive) |
+        generator() |
+        (stlab::buffer_size{ 3 } & echo()) |
+        [&counter](auto x) {
+            std::cout << x << std::endl;
+            ++counter;
+        };
+
+    r2.set_ready();
+
+    BOOST_REQUIRE_EQUAL(0, counter);
+    q.execute_next_task(); // generate value(0)
+    q.execute_next_task(); // await and yield value(0) by echo
+    q.execute_next_task(); // generate value(1)
+    q.execute_next_task(); // generate value(2)
+    q.execute_next_task(); // print value (0)
+    BOOST_REQUIRE_EQUAL(1, counter);
+    q.execute_next_task(); // generate value(3)
+    q.execute_next_task(); // generate value(4)
+    q.execute_next_task(); // await and yield value(1) by echo
+    q.execute_next_task(); // print value (1)
+    BOOST_REQUIRE_EQUAL(2, counter);
+    q.execute_next_task(); // await and yield value(2) by echo
+    q.execute_next_task(); // generate value(5)
+    q.execute_next_task(); // print value (2)
+    BOOST_REQUIRE_EQUAL(3, counter);
+    q.execute_next_task(); // await and yield value(3) by echo
+    q.execute_next_task(); // generate value(6)
+    q.execute_next_task(); // print value (3)
+    BOOST_REQUIRE_EQUAL(4, counter);
+}
+
+BOOST_AUTO_TEST_CASE(int_channel_with_split_one_sized_buffer) {
+    main_queue q;
+    size_t counter1 = 0;
+    size_t counter2 = 0;
+
+    auto receive = channel<void>(q.executor());
+
+    auto g = std::move(receive) |
+        generator();
+    
+    auto r1 = g |
+        echo() |
+        [&counter1](auto x) {
+        std::cout << x << std::endl;
+        ++counter1;
+    };
+    auto r2 = g |
+        echo() |
+        [&counter2](auto x) {
+        std::cout << x << std::endl;
+        ++counter2;
+    };
+
+    g.set_ready();
+    r1.set_ready();
+    r2.set_ready();
+
+    BOOST_REQUIRE_EQUAL(0, counter1);
+    BOOST_REQUIRE_EQUAL(0, counter2);
+    q.execute_next_task(); // generate value(0)
+    q.execute_next_task(); // await and yield value(0) by echo1
+    q.execute_next_task(); // await and yield value(0) by echo2
+    q.execute_next_task(); // print1 value (0)
+    BOOST_REQUIRE_EQUAL(1, counter1);
+    q.execute_next_task(); // generate value(1)
+    q.execute_next_task(); // print2 value (0)
+    BOOST_REQUIRE_EQUAL(1, counter2);
+    q.execute_next_task(); // await and yield value(1) by echo1
+    q.execute_next_task(); // await and yield value(1) by echo2
+    q.execute_next_task(); // print1 value (1)
+    BOOST_REQUIRE_EQUAL(2, counter1);
+    q.execute_next_task(); // generate value(1)
+    q.execute_next_task(); // print2 value (1)
+    BOOST_REQUIRE_EQUAL(2, counter2);
+}
+
+BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
+
+    // Here the bigger buffer size must not steer the upstream, but the 
+    // Smaller size
+    main_queue q;
+    size_t counter1 = 0;
+    size_t counter2 = 0;
+
+    auto receive = channel<void>(q.executor());
+
+    auto g = std::move(receive) |
+        generator();
+
+    auto r1 = g |
+        (buffer_size(1) & echo()) |
+        [&counter1](auto x) {
+        std::cout << x << std::endl;
+        ++counter1;
+    };
+    auto r2 = g |
+        (buffer_size(2) & echo()) |
+        [&counter2](auto x) {
+        std::cout << x << std::endl;
+        ++counter2;
+    };
+
+    g.set_ready();
+    r1.set_ready();
+    r2.set_ready();
+
+    BOOST_REQUIRE_EQUAL(0, counter1);
+    BOOST_REQUIRE_EQUAL(0, counter2);
+    q.execute_next_task(); // generate value(0)
+    q.execute_next_task(); // await and yield value(0) by echo1
+    q.execute_next_task(); // await and yield value(0) by echo2
+    q.execute_next_task(); // print1 value (0)
+    BOOST_REQUIRE_EQUAL(1, counter1);
+    q.execute_next_task(); // generate value(1)
+    q.execute_next_task(); // print2 value (0)
+    BOOST_REQUIRE_EQUAL(1, counter2);
+    q.execute_next_task(); // await and yield value(1) by echo1
+    q.execute_next_task(); // await and yield value(1) by echo2
+    q.execute_next_task(); // print1 value (1)
+    BOOST_REQUIRE_EQUAL(2, counter1);
+    q.execute_next_task(); // generate value(1)
+    q.execute_next_task(); // print2 value (1)
+    BOOST_REQUIRE_EQUAL(2, counter2);
+}
 
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
