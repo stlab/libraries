@@ -227,11 +227,38 @@ struct invoke_variant_dispatcher {
     }
 };
 
+template <typename Arg>
+struct invoke_one_arg
+{
+    template <typename F, typename T>
+    static auto now(F&& f, T& t) {
+        return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
+    }
+};
+
+template <>
+struct invoke_one_arg<void>
+{
+    template <typename F, typename T>
+    static void now(F&&, T&) {
+    }
+};
+
+template <>
+struct invoke_one_arg<detail::avoid_>
+{
+    template <typename F, typename T>
+    static auto now(F&& f, T&) {
+        return std::forward<F>(f)();
+    }
+};
+
+
 template <>
 struct invoke_variant_dispatcher<1> {
     template <typename F, typename T, typename Arg>
     static auto invoke_(F&& f, T& t) {
-        return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
+        return invoke_one_arg<Arg>::now(std::forward<F>(f), t);
     }
     template <typename F, typename T, typename... Args>
     static auto invoke(F&& f, T& t) {
@@ -347,15 +374,23 @@ constexpr bool has_process_yield_v = is_detected_v<process_yield_t, T>;
 
 /**************************************************************************************************/
 
+template <typename T, typename... Args>
+using process_await_t = decltype(std::declval<T&>().await(std::declval<Args>()...));
+
+template <typename T, typename... Args>
+constexpr bool has_process_await_v = is_detected_v<process_await_t, T, Args...>;
+
+/**************************************************************************************************/
+
 template <typename P, typename... T, std::size_t... I>
 void await_variant_args_(P& process,
-                         std::tuple<variant<T, std::exception_ptr>...>& args,
+                         std::tuple<variant<detail::avoid<T>, std::exception_ptr>...>& args,
                          std::index_sequence<I...>) {
     process.await(std::move(stlab::get<T>(std::get<I>(args)))...);
 }
 
 template <typename P, typename... T>
-void await_variant_args(P& process, std::tuple<variant<T, std::exception_ptr>...>& args) {
+void await_variant_args(P& process, std::tuple<variant<detail::avoid<T>, std::exception_ptr>...>& args) {
     await_variant_args_<P, T...>(process, args, std::make_index_sequence<sizeof...(T)>());
 }
 
@@ -386,9 +421,9 @@ stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
 template <typename T>
 struct default_queue_strategy {
     static const std::size_t arguments_size = 1;
-    using value_type = std::tuple<variant<T, std::exception_ptr>>;
+    using value_type = std::tuple<variant<avoid<T>, std::exception_ptr>>;
 
-    std::deque<variant<T, std::exception_ptr>> _queue;
+    std::deque<variant<avoid<T>, std::exception_ptr>> _queue;
 
     bool empty() const { return _queue.empty(); }
 
@@ -407,6 +442,32 @@ struct default_queue_strategy {
     }
 };
 
+/**************************************************************************************************/
+/*
+template <>
+struct default_queue_strategy<void> {
+    static const std::size_t arguments_size = 1;
+    using value_type = std::tuple<variant<detail::avoid_, std::exception_ptr>>;
+
+    std::deque<variant<detail::avoid_, std::exception_ptr>> _queue;
+
+    bool empty() const { return _queue.empty(); }
+
+    auto front() { return std::make_tuple(std::move(_queue.front())); }
+
+    void pop_front() { _queue.pop_front(); }
+
+    auto size() const { return std::array<std::size_t, 1>{{_queue.size()}}; }
+
+    template <std::size_t>
+    auto queue_size() const { return _queue.size(); }
+
+    template <std::size_t, typename U>
+    void append(U&& u) {
+        _queue.emplace_back(std::forward<U>(u));
+    }
+};
+*/
 /**************************************************************************************************/
 
 template <typename... T>
@@ -601,7 +662,7 @@ struct shared_process_sender_indexed : public shared_process_sender<Arg> {
 
     void send(std::exception_ptr error) override { enqueue(std::move(error)); }
 
-    void send(Arg arg) override { enqueue(std::move(arg)); }
+    void send(avoid<Arg> arg) override { enqueue(std::move(arg)); }
 
     std::size_t free_buffer() const override {
         std::unique_lock<std::mutex> lock(_shared_process._process_mutex);
@@ -647,6 +708,10 @@ struct downstream<
     template <typename... Args>
     void send(std::size_t n, Args... args) {
         stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
+    }
+
+    void send(std::size_t n, detail::avoid_) {
+        stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(detail::avoid_{}); });
     }
 
     std::size_t minimum_free_buffer() const {
@@ -736,7 +801,7 @@ struct shared_process
         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
             *this),
         _executor(std::forward<E>(e)), _process(std::forward<F>(f)) {
-        _sender_count = 1;
+        _sender_count = std::is_same_v<result, void>? 0 : 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
@@ -762,12 +827,14 @@ struct shared_process
             send before we can get to the check - so we need to see if we are already running
             before starting again.
         */
+        if (_receiver_count == 0) return;
         assert(_receiver_count > 0);
         if (--_receiver_count == 0) {
             bool do_run;
             {
                 std::unique_lock<std::mutex> lock(_process_mutex);
-                do_run = (!_queue.empty() || _process_close_queue) && !_process_running;
+                do_run = ((!_queue.empty() || std::is_same_v<first_t<Args...>, void>) || 
+                  _process_close_queue) && !_process_running;
                 _process_running = _process_running || do_run;
             }
             if (do_run) run();
@@ -894,10 +961,14 @@ struct shared_process
             is done on yield()
         */
         try {
-            while (get_process_state(_process).first == process_state::await) {
-                if (!dequeue()) break;
+            if constexpr (has_process_await_v<T, Args...>) {
+                while (get_process_state(_process).first == process_state::await) {
+                    if (!dequeue()) break;
+                }
+            } else {
+                if (get_process_state(_process).first == process_state::await)
+                    return;
             }
-
             auto now = std::chrono::steady_clock::now();
             process_state state;
             std::chrono::steady_clock::time_point when;
@@ -1151,18 +1222,37 @@ struct zip_helper
     }
 };
 
+template <typename E, typename T>
+struct channel_
+{
+    static auto create(E executor) {
+        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, identity, T, T>>(
+                std::move(executor), identity());
+
+        return std::make_pair(sender<T>(p), receiver<T>(p));
+    }
+};
+
+template <typename E>
+struct channel_<E, void>
+{
+    static auto create(E executor) {
+        auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<void>, identity, void, void>>(
+            std::move(executor), identity());
+
+        return receiver<void>(p);
+    }
+};
+
 /**************************************************************************************************/
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-template <typename T, typename S>
-auto channel(S s) -> std::pair<sender<T>, receiver<T>> {
-    auto p =
-        std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, identity, T, T>>(
-            std::move(s), identity());
-    return std::make_pair(sender<T>(p), receiver<T>(p));
+template <typename T, typename E>
+auto channel(E executor) {
+    return detail::channel_<E, T>::create(std::move(executor));
 }
 
 /**************************************************************************************************/
@@ -1359,7 +1449,7 @@ class receiver {
     friend class receiver;
 
     template <typename U, typename V>
-    friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
+    friend struct detail::channel_;
 
     friend struct detail::channel_combiner;
 
@@ -1415,7 +1505,7 @@ public:
     }
 
     template <typename F>
-    auto operator|(detail::annotated_process<F>&& ap) {
+    auto operator|(detail::annotated_process<F> ap) {
         if (!_p) throw channel_error(channel_error_codes::broken_channel);
 
         if (_ready) throw channel_error(channel_error_codes::process_already_running);
@@ -1423,7 +1513,7 @@ public:
         auto executor = ap._annotations._executor.value_or(_p->executor());
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, F,
                                                          detail::yield_type<F, T>, T>>(
-            executor, std::move(ap._f), _p);
+            executor, std::move(ap)._f, _p);
 
         _p->map(sender<T>(p));
 
@@ -1432,8 +1522,8 @@ public:
         return receiver<detail::yield_type<F, T>>(std::move(p));
     }
 
-    auto operator|(sender<T> send) const {
-        return operator|([send](auto&& x) { send(std::forward<decltype(x)>(x)); });
+    auto operator|(sender<T> send) {
+        return operator|([_send = std::move(send)](auto&& x) { _send(std::forward<decltype(x)>(x)); });
     }
 };
 
@@ -1448,7 +1538,7 @@ class sender<T, enable_if_copyable<T>> {
     friend class receiver;
 
     template <typename U, typename V>
-    friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
+    friend struct detail::channel_;
 
     friend struct detail::channel_combiner;
 
@@ -1516,7 +1606,7 @@ class sender<T, enable_if_not_copyable<T>> {
     friend class receiver;
 
     template <typename U, typename V>
-    friend auto channel(V) -> std::pair<sender<U>, receiver<U>>;
+    friend struct detail::channel_;
 
     friend struct detail::channel_combiner;
 

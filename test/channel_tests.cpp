@@ -229,6 +229,100 @@ BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+namespace
+{
+
+class main_queue {
+    std::deque<task<void()>> _q;
+public:
+    auto executor() {
+        return [this](auto&& task) {
+            _q.emplace_back(std::forward<decltype(task)>(task));
+        };
+    }
+
+    void run() {
+        while (!_q.empty()) {
+            _q.front()();
+            _q.pop_front();
+        }
+    }
+};
+
+
+struct echo
+{
+    process_state_scheduled _state = await_forever;
+    int _result = 0;
+
+    void await(int x) {
+        _result = x;
+        _state = yield_immediate;
+    }
+
+    int yield() {
+        _state = await_forever;
+        return _result;
+    }
+
+    void close() {}
+
+    const auto &state() const {
+        return _state;
+    }
+};
+
+struct generator
+{
+    process_state_scheduled _state = yield_immediate;
+
+    int _value = 0;
+
+    //void await(int) { } // Should not be necessary
+
+    int yield() {
+        return _value++;
+    }
+
+    void close() {}
+
+    const auto &state() const {
+        return _state;
+    }
+};
+
+}
+/*
+BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
+    main_queue q;
+
+    std::atomic_size_t counter = 0;
+
+    counter = 0;
+    {
+      auto receive = channel<void>(q.executor()); // Should be channel<void> - no sender
+
+      auto r2 = std::move(receive) |
+        (stlab::buffer_size{ 2 } &generator()) |
+        [&counter](auto x) {
+        std::cout << x << std::endl;
+        ++counter;
+      };
+
+      r2.set_ready();
+
+      q.run();
+
+      while (counter < 3)
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+    }
+}
+*/
+
+
+
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
 
