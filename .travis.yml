@@ -31,7 +31,6 @@ matrix:
       before_install:
         - brew update
         - brew upgrade python
-        - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
         - pip3 install --user conan
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
@@ -47,7 +46,6 @@ matrix:
       before_install:
         - brew update
         - brew upgrade python
-        - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
         - pip3 install --user conan
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
