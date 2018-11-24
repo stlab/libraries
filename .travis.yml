@@ -157,16 +157,8 @@ matrix:
         - pip install --user conan
         - ./enhance_conan.sh
         - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-#      addons:
-#        apt:
-#          sources:
-#            - sourceline: deb http://apt.llvm.org/xenial/ llvm-toolchain-precise-7.0 main
-#              key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
-#            - ubuntu-toolchain-r-test
-#          packages:
-#            - g++-5.4
-#            - clang-7.0
-        coverity_scan:
+
+      coverity_scan:
           project:
             name: "stlab/libraries"
             description: "Build submitted via Travis CI"
