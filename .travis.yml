@@ -10,12 +10,12 @@ cache:
 addons:
   apt:
     sources:
-      - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
+      - sourceline: deb http://apt.llvm.org/xenial/ llvm-toolchain-precise-7.0 main
         key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
       - ubuntu-toolchain-r-test
     packages:
-      - g++-5
-      - clang-7
+      - g++-5.4
+      - clang-7.0
 
 branches:
   except: /pr\/.*/
@@ -160,12 +160,12 @@ matrix:
       addons:
         apt:
           sources:
-            - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
+            - sourceline: deb http://apt.llvm.org/xenial/ llvm-toolchain-precise-7.0 main
               key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
             - ubuntu-toolchain-r-test
           packages:
-            - g++-5
-            - clang-7
+            - g++-5.4
+            - clang-7.0
         coverity_scan:
           project:
             name: "stlab/libraries"
