@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 #group: deprecated-2017Q4
 language: cpp
 
@@ -15,7 +15,7 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - g++-5
-      - clang-3.8
+      - clang-7
 
 branches:
   except: /pr\/.*/
@@ -27,7 +27,7 @@ matrix:
     #
     - os: osx
       compiler: clang
-      osx_image: xcode9
+      osx_image: xcode10
       before_install:
         - brew update
         - brew upgrade python
@@ -43,7 +43,7 @@ matrix:
 
     - os: osx
       compiler: clang
-      osx_image: xcode9
+      osx_image: xcode10
       before_install:
         - brew update
         - brew upgrade python
@@ -165,7 +165,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-            - clang-3.8
+            - clang-7
         coverity_scan:
           project:
             name: "stlab/libraries"

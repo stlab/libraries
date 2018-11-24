@@ -210,9 +210,6 @@ auto avoid_invoke(F&& f, std::tuple<variant<Args, std::exception_ptr>...>& t)
 
 /**************************************************************************************************/
 
-// The following can be much simplified with if constexpr() in C++17 and w/o a bug in clang and VS
-// TODO std::variant make T a forwarding ref when the dependency to boost is gone.
-
 template <std::size_t S>
 struct invoke_variant_dispatcher {
     template <typename F, typename T, typename... Args, std::size_t... I>
@@ -227,38 +224,17 @@ struct invoke_variant_dispatcher {
     }
 };
 
-template <typename Arg>
-struct invoke_one_arg
-{
-    template <typename F, typename T>
-    static auto now(F&& f, T& t) {
-        return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
-    }
-};
-
-template <>
-struct invoke_one_arg<void>
-{
-    template <typename F, typename T>
-    static void now(F&&, T&) {
-    }
-};
-
-template <>
-struct invoke_one_arg<detail::avoid_>
-{
-    template <typename F, typename T>
-    static auto now(F&& f, T&) {
-        return std::forward<F>(f)();
-    }
-};
-
-
 template <>
 struct invoke_variant_dispatcher<1> {
     template <typename F, typename T, typename Arg>
     static auto invoke_(F&& f, T& t) {
-        return invoke_one_arg<Arg>::now(std::forward<F>(f), t);
+        if constexpr (std::is_same_v<Arg, void>) {
+            return;
+        } else if constexpr (std::is_same_v<Arg, detail::avoid_>) {
+            return std::forward<F>(f)();
+        } else {
+            return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
+        }
     }
     template <typename F, typename T, typename... Args>
     static auto invoke(F&& f, T& t) {
@@ -442,32 +418,6 @@ struct default_queue_strategy {
     }
 };
 
-/**************************************************************************************************/
-/*
-template <>
-struct default_queue_strategy<void> {
-    static const std::size_t arguments_size = 1;
-    using value_type = std::tuple<variant<detail::avoid_, std::exception_ptr>>;
-
-    std::deque<variant<detail::avoid_, std::exception_ptr>> _queue;
-
-    bool empty() const { return _queue.empty(); }
-
-    auto front() { return std::make_tuple(std::move(_queue.front())); }
-
-    void pop_front() { _queue.pop_front(); }
-
-    auto size() const { return std::array<std::size_t, 1>{{_queue.size()}}; }
-
-    template <std::size_t>
-    auto queue_size() const { return _queue.size(); }
-
-    template <std::size_t, typename U>
-    void append(U&& u) {
-        _queue.emplace_back(std::forward<U>(u));
-    }
-};
-*/
 /**************************************************************************************************/
 
 template <typename... T>
@@ -710,10 +660,6 @@ struct downstream<
         stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(args...); });
     }
 
-    void send(std::size_t n, detail::avoid_) {
-        stlab::for_each_n(begin(_data), n, [&](const auto& e) { e(detail::avoid_{}); });
-    }
-
     std::size_t minimum_free_buffer() const {
         if (size() == 0) return 0;
         // std::reduce with C++17
@@ -827,7 +773,6 @@ struct shared_process
             send before we can get to the check - so we need to see if we are already running
             before starting again.
         */
-        if (_receiver_count == 0) return;
         assert(_receiver_count > 0);
         if (--_receiver_count == 0) {
             bool do_run;

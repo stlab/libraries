@@ -372,101 +372,122 @@ BOOST_AUTO_TEST_CASE(int_channel_with_3_sized_buffer) {
     BOOST_REQUIRE_EQUAL(4, counter);
 }
 
-BOOST_AUTO_TEST_CASE(int_channel_with_split_one_sized_buffer) {
-    main_queue q;
-    size_t counter1 = 0;
-    size_t counter2 = 0;
-
-    auto receive = channel<void>(q.executor());
-
-    auto g = std::move(receive) |
-        generator();
-    
-    auto r1 = g |
-        echo() |
-        [&counter1](auto x) {
-        std::cout << x << std::endl;
-        ++counter1;
-    };
-    auto r2 = g |
-        echo() |
-        [&counter2](auto x) {
-        std::cout << x << std::endl;
-        ++counter2;
-    };
-
-    g.set_ready();
-    r1.set_ready();
-    r2.set_ready();
-
-    BOOST_REQUIRE_EQUAL(0, counter1);
-    BOOST_REQUIRE_EQUAL(0, counter2);
-    q.execute_next_task(); // generate value(0)
-    q.execute_next_task(); // await and yield value(0) by echo1
-    q.execute_next_task(); // await and yield value(0) by echo2
-    q.execute_next_task(); // print1 value (0)
-    BOOST_REQUIRE_EQUAL(1, counter1);
-    q.execute_next_task(); // generate value(1)
-    q.execute_next_task(); // print2 value (0)
-    BOOST_REQUIRE_EQUAL(1, counter2);
-    q.execute_next_task(); // await and yield value(1) by echo1
-    q.execute_next_task(); // await and yield value(1) by echo2
-    q.execute_next_task(); // print1 value (1)
-    BOOST_REQUIRE_EQUAL(2, counter1);
-    q.execute_next_task(); // generate value(1)
-    q.execute_next_task(); // print2 value (1)
-    BOOST_REQUIRE_EQUAL(2, counter2);
-}
 
 BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
 
     // Here the bigger buffer size must not steer the upstream, but the 
-    // Smaller size
+    // smaller size
+    std::vector<std::pair<std::size_t, std::size_t>> bufferSizes = {{1,2}, {1,2}, {1,3}, {3,1}, {2,1}};
+    for (const auto& bs : bufferSizes) {
+        main_queue q;
+        size_t counter1 = 0;
+        size_t counter2 = 0;
+
+        auto receive = channel<void>(q.executor());
+
+        auto g = std::move(receive) | generator();
+
+        auto r1 = g |
+                  (buffer_size(bs.first) & echo()) |
+                  [&counter1](auto x) {
+                      std::cout << x << std::endl;
+                      ++counter1;
+                  };
+        auto r2 = g |
+                  (buffer_size(bs.second) & echo()) |
+                  [&counter2](auto x) {
+                      std::cout << x << std::endl;
+                      ++counter2;
+                  };
+
+        g.set_ready();
+        r1.set_ready();
+        r2.set_ready();
+
+        BOOST_REQUIRE_EQUAL(0, counter1);
+        BOOST_REQUIRE_EQUAL(0, counter2);
+        q.execute_next_task(); // generate value(0)
+        q.execute_next_task(); // await and yield value(0) by echo1
+        q.execute_next_task(); // await and yield value(0) by echo2
+        q.execute_next_task(); // print1 value (0)
+        BOOST_REQUIRE_EQUAL(1, counter1);
+        q.execute_next_task(); // generate value(1)
+        q.execute_next_task(); // print2 value (0)
+        BOOST_REQUIRE_EQUAL(1, counter2);
+        q.execute_next_task(); // await and yield value(1) by echo1
+        q.execute_next_task(); // await and yield value(1) by echo2
+        q.execute_next_task(); // print1 value (1)
+        BOOST_REQUIRE_EQUAL(2, counter1);
+        q.execute_next_task(); // generate value(1)
+        q.execute_next_task(); // print2 value (1)
+        BOOST_REQUIRE_EQUAL(2, counter2);
+    }
+}
+/*
+BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffers_where_one_receiver_is_dropped) {
+
     main_queue q;
     size_t counter1 = 0;
     size_t counter2 = 0;
+    size_t counter3 = 0;
 
     auto receive = channel<void>(q.executor());
 
-    auto g = std::move(receive) |
-        generator();
+    auto g = std::move(receive) | generator();
 
     auto r1 = g |
-        (buffer_size(1) & echo()) |
-        [&counter1](auto x) {
-        std::cout << x << std::endl;
-        ++counter1;
-    };
+              (buffer_size(3) & echo()) |
+              [&counter1](auto x) {
+                  std::cout << x << std::endl;
+                  ++counter1;
+              };
     auto r2 = g |
-        (buffer_size(2) & echo()) |
-        [&counter2](auto x) {
-        std::cout << x << std::endl;
-        ++counter2;
-    };
+              (buffer_size(3) & echo()) |
+              [&counter2](auto x) {
+                  std::cout << x << std::endl;
+                  ++counter2;
+              };
+
+    auto r3 = g |
+              (buffer_size(1) & echo()) |
+              [&counter3](auto x) {
+                  std::cout << x << std::endl;
+                  ++counter3;
+              };
 
     g.set_ready();
     r1.set_ready();
     r2.set_ready();
+    r3.set_ready();
 
     BOOST_REQUIRE_EQUAL(0, counter1);
     BOOST_REQUIRE_EQUAL(0, counter2);
+    BOOST_REQUIRE_EQUAL(0, counter3);
     q.execute_next_task(); // generate value(0)
     q.execute_next_task(); // await and yield value(0) by echo1
     q.execute_next_task(); // await and yield value(0) by echo2
+    q.execute_next_task(); // await and yield value(0) by echo3
     q.execute_next_task(); // print1 value (0)
     BOOST_REQUIRE_EQUAL(1, counter1);
-    q.execute_next_task(); // generate value(1)
     q.execute_next_task(); // print2 value (0)
+    q.execute_next_task(); // generate value(1)
     BOOST_REQUIRE_EQUAL(1, counter2);
+    q.execute_next_task(); // print3 value (0)
+    BOOST_REQUIRE_EQUAL(1, counter3);
+    r3 = receiver<void>();
+
     q.execute_next_task(); // await and yield value(1) by echo1
     q.execute_next_task(); // await and yield value(1) by echo2
+    q.execute_next_task(); // generate value(2) ->
     q.execute_next_task(); // print1 value (1)
     BOOST_REQUIRE_EQUAL(2, counter1);
-    q.execute_next_task(); // generate value(1)
     q.execute_next_task(); // print2 value (1)
+    BOOST_REQUIRE_EQUAL(2, counter1);
+    q.execute_next_task(); // print1 value (1)
+    q.execute_next_task(); // print1 value (1)
     BOOST_REQUIRE_EQUAL(2, counter2);
 }
-
+*/
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
 
