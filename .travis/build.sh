@@ -3,9 +3,9 @@ set -x
 
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
   sudo update-alternatives \
-    --install /usr/bin/gcc gcc /usr/bin/gcc-5.5 90 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-5.5 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-5.5
+    --install /usr/bin/gcc gcc /usr/bin/gcc-5.4 90 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-5.4 \
+    --slave /usr/bin/gcov gcov /usr/bin/gcov-5.4
   sudo update-alternatives \
     --install /usr/bin/clang clang /usr/bin/clang-7.0 90 \
     --slave /usr/bin/clang++ clang++ /usr/bin/clang++-7.0
