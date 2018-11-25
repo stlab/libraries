@@ -228,9 +228,9 @@ template <>
 struct invoke_variant_dispatcher<1> {
     template <typename F, typename T, typename Arg>
     static auto invoke_(F&& f, T& t) {
-        if constexpr (std::is_same_v<Arg, void>) {
+        if constexpr (std::is_same<Arg, void>::value) {
             return;
-        } else if constexpr (std::is_same_v<Arg, detail::avoid_>) {
+        } else if constexpr (std::is_same<Arg, detail::avoid_>::value) {
             return std::forward<F>(f)();
         } else {
             return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
@@ -747,7 +747,7 @@ struct shared_process
         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
             *this),
         _executor(std::forward<E>(e)), _process(std::forward<F>(f)) {
-        _sender_count = std::is_same_v<result, void>? 0 : 1;
+        _sender_count = std::is_same<result, void>::value? 0 : 1;
         _receiver_count = !std::is_same<result, void>::value;
     }
 
@@ -778,7 +778,7 @@ struct shared_process
             bool do_run;
             {
                 std::unique_lock<std::mutex> lock(_process_mutex);
-                do_run = ((!_queue.empty() || std::is_same_v<first_t<Args...>, void>) || 
+                do_run = ((!_queue.empty() || std::is_same<first_t<Args...>::value, void>) ||
                   _process_close_queue) && !_process_running;
                 _process_running = _process_running || do_run;
             }
