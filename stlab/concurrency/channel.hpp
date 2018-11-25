@@ -778,7 +778,7 @@ struct shared_process
             bool do_run;
             {
                 std::unique_lock<std::mutex> lock(_process_mutex);
-                do_run = ((!_queue.empty() || std::is_same<first_t<Args...>::value, void>) ||
+                do_run = ((!_queue.empty() || std::is_same<first_t<Args...>, void>::value) ||
                   _process_close_queue) && !_process_running;
                 _process_running = _process_running || do_run;
             }
