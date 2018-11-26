@@ -65,16 +65,16 @@ struct tuple_min_element_impl {
 template <std::size_t I, std::size_t L>
 struct get_i_impl {
     template <typename T, typename F, typename D>
-    static auto go(T& t, std::size_t index, F&& f, D&& default_v) {
-        if (index == I) return std::forward<F>(f)(std::get<I>(t));
-        return get_i_impl<I + 1, L>::go(t, index, std::forward<F>(f), std::forward<D>(default_v));
+    static auto go(T& t, std::size_t index, F& f, D&& default_v) {
+        if (index == I) return f(std::get<I>(t));
+        return get_i_impl<I + 1, L>::go(t, index, f, std::forward<D>(default_v));
     }
 };
 
 template <std::size_t L>
 struct get_i_impl<L, L> {
     template <typename T, typename F, typename D>
-    static auto go(T&, std::size_t, F&&, D&& default_v) {
+    static auto go(T&, std::size_t, F&, D&& default_v) {
         return std::forward<D>(default_v);
     }
 };
@@ -124,9 +124,8 @@ void tuple_for_each(T& t, Op op) {
  * The default value is returned, if the index is equal or greater to tuple_size
  */
 template <typename T, typename F, typename D>
-auto get_i(T& t, std::size_t index, F&& f, D&& default_v) {
-    return detail::get_i_impl<0, std::tuple_size<T>::value>::go(t, index, std::forward<F>(f),
-                                                                std::forward<D>(default_v));
+auto get_i(T& t, std::size_t index, F f, D&& default_v) {
+    return detail::get_i_impl<0, std::tuple_size<T>::value>::go(t, index, f, std::forward<D>(default_v));
 }
 
 /*

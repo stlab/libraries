@@ -37,6 +37,14 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
+#
+# On apple we have to force the usage of boost.varianr, because Apple's
+# implementation of C++17 is not complete
+#
+if(APPLE)
+  set( stlab.boost_variant ON )
+endif()
+
 mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
 
 #
