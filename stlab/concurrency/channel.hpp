@@ -383,8 +383,8 @@ stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
     if (error_index != std::tuple_size<T>::value) {
         result =
             get_i(argument, error_index,
-                  [](auto&& elem) {
-                      return stlab::get<std::exception_ptr>(std::forward<decltype(elem)>(elem));
+                  [](auto& elem) {
+                      return std::move(stlab::get<std::exception_ptr>(elem));
                   },
                   std::exception_ptr{});
     }
@@ -537,7 +537,7 @@ struct unordered_queue_strategy {
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
         _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
-        return std::make_tuple(get_i(_queue, _index, [](auto& c) { return c.front(); }, item_t{}));
+        return std::make_tuple(get_i(_queue, _index, [](auto& c) { return std::move(c.front()); }, item_t{}));
     }
 
     void pop_front() {
