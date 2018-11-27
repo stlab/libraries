@@ -1087,15 +1087,15 @@ namespace detail {
 template <typename F>
 struct assign_ready_future {
     template <typename T>
-    static void assign(T& x, F& f) {
-        x = *(std::move(f).get_try());
+    static void assign(T& x, F f) {
+        x = std::move(*(std::move(f).get_try()));
     }
 };
 
 template <>
 struct assign_ready_future<future<void>> {
     template <typename T>
-    static void assign(T& x, future<void>&) {
+    static void assign(T& x, future<void>) {
         x = std::move(typename T::value_type()); // to set the optional
     }
 };
@@ -1111,8 +1111,8 @@ struct when_all_shared {
     packaged_task<> _f;
 
     template <std::size_t index, typename FF>
-    void done(FF& f) {
-        assign_ready_future<FF>::assign(std::get<index>(_args), f);
+    void done(FF&& f) {
+        assign_ready_future<FF>::assign(std::get<index>(_args), std::forward<FF>(f));
         if (--_remaining == 0) _f();
     }
 
@@ -1225,7 +1225,7 @@ auto apply_when_any_arg(F& f, P& p) {
 }
 
 template <std::size_t i, typename E, typename P, typename T>
-void attach_when_arg_(E&& executor, const std::shared_ptr<P>& p, T a) {
+void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
     p->_holds[i] = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
         auto p = _w.lock();
         if (!p) return;
@@ -1234,18 +1234,18 @@ void attach_when_arg_(E&& executor, const std::shared_ptr<P>& p, T a) {
         if (error) {
             p->failure(*error);
         } else {
-            p->template done<i>(x);
+            p->template done<i>(std::move(x));
         }
     });
 }
 
 template <typename E, typename P, typename... Ts, std::size_t... I>
-void attach_when_args_(std::index_sequence<I...>, E&& executor, const std::shared_ptr<P>& p, Ts... a) {
-    (void)std::initializer_list<int>{(attach_when_arg_<I>(std::forward<E>(executor), p, a), 0)...};
+void attach_when_args_(std::index_sequence<I...>, E&& executor, std::shared_ptr<P>& p, Ts... a) {
+    (void)std::initializer_list<int>{(attach_when_arg_<I>(std::forward<E>(executor), p, std::move(a)), 0)...};
 }
 
 template <typename E, typename P, typename... Ts>
-void attach_when_args(E&& executor, const std::shared_ptr<P>& p, Ts... a) {
+void attach_when_args(E&& executor, std::shared_ptr<P>& p, Ts... a) {
     attach_when_args_(std::make_index_sequence<sizeof...(Ts)>(), std::forward<E>(executor), p, std::move(a)...);
 }
 
