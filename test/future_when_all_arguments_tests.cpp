@@ -15,6 +15,7 @@
 #include <string>
 
 #include "future_test_helper.hpp"
+#include <stlab/test/model.hpp>
 
 using namespace stlab;
 using namespace future_test_helper;
@@ -110,6 +111,45 @@ BOOST_AUTO_TEST_CASE(future_when_all_args) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(future_when_all_args_move_only, test_fixture<move_only>)
+BOOST_AUTO_TEST_CASE(future_when_all_args_move_only_with_one_element) {
+  BOOST_TEST_MESSAGE("running future when_all move_only with one element");
+
+  auto f1 = async(make_executor<0>(), [] { return move_only(42); });
+  sut = when_all(make_executor<1>(), [](auto x) { return move_only(x.member() + x.member()); }, std::move(f1));
+
+  check_valid_future(sut);
+  wait_until_future_completed(sut);
+
+  BOOST_REQUIRE_EQUAL(42 + 42, (*sut.get_try()).member());
+  BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+  BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+}
+
+BOOST_AUTO_TEST_CASE(future_when_all_args_move_only_with_many_elements) {
+  BOOST_TEST_MESSAGE("running future when_all args move_only with many elements");
+
+  auto f1 = async(make_executor<0>(), [] { return move_only(1); });
+  auto f2 = async(make_executor<0>(), [] { return move_only(2); });
+  auto f3 = async(make_executor<0>(), [] { return move_only(3); });
+  auto f4 = async(make_executor<0>(), [] { return move_only(5); });
+
+  sut = when_all(
+    make_executor<1>(),
+    [](auto x1, auto x2, auto x3, auto x4) { return move_only(7 * x1.member() + 11 * x2.member() + 13 * x3.member() + 17 * x4.member()); }, 
+    std::move(f1), std::move(f2), std::move(f3), std::move(f4));
+
+  check_valid_future(sut);
+  wait_until_future_completed(sut);
+
+  BOOST_REQUIRE_EQUAL(1 * 7 + 2 * 11 + 3 * 13 + 5 * 17, (*sut.get_try()).member());
+  BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
+  BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_args_string, test_fixture<std::string>)
 BOOST_AUTO_TEST_CASE(future_when_all_args_with_different_types) {

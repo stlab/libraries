@@ -1241,7 +1241,7 @@ void attach_when_arg_(E&& executor, const std::shared_ptr<P>& p, T a) {
 
 template <typename E, typename P, typename... Ts, std::size_t... I>
 void attach_when_args_(std::index_sequence<I...>, E&& executor, const std::shared_ptr<P>& p, Ts... a) {
-    (void)std::initializer_list<int>{(attach_when_arg_<I>(std::forward<E>(executor), p, a), 0)...};
+    (void)std::initializer_list<int>{(attach_when_arg_<I>(std::forward<E>(executor), p, std::move(a)), 0)...};
 }
 
 template <typename E, typename P, typename... Ts>
