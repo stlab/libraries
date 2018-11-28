@@ -26,6 +26,7 @@
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
 #include <stlab/concurrency/variant.hpp>
+#include <stlab/functional.hpp>
 #include <stlab/memory.hpp>
 
 /**************************************************************************************************/
@@ -369,6 +370,18 @@ template <typename P, typename... T>
 void await_variant_args(P& process, std::tuple<variant<detail::avoid<T>, std::exception_ptr>...>& args) {
     await_variant_args_<P, T...>(process, args, std::make_index_sequence<sizeof...(T)>());
 }
+
+/**************************************************************************************************/
+
+template <typename P>
+auto process_yield(P& process) -> std::enable_if_t<!is_reference_wrapper_v<P>, process_yield_t<P>> {
+    return process.yield();
+}
+template <typename P>
+auto process_yield(P& process) -> std::enable_if_t<is_reference_wrapper_v<P>, process_yield_t<unwrap_reference_t<P>>> {
+    return process.get().yield();
+}
+
 
 /**************************************************************************************************/
 
@@ -891,7 +904,7 @@ struct shared_process
     }
 
     template <typename U>
-    auto step() -> std::enable_if_t<has_process_yield_v<U>> {
+    auto step() -> std::enable_if_t<has_process_yield_v<unwrap_reference_t<U>>> {
         // in case that the timeout function is just been executed then we have to re-schedule
         // the current run
         lock_t lock(_timeout_function_control, std::try_to_lock);
@@ -925,7 +938,7 @@ struct shared_process
             */
             if (state == process_state::yield) {
                 if (when <= now)
-                    broadcast((*_process).yield());
+                    broadcast(process_yield(*_process));
                 else
                     execute_at(when,
                                _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
@@ -945,7 +958,7 @@ struct shared_process
             else if (when == std::chrono::steady_clock::time_point::max()) {
                 task_done();
             } else if (when <= now) {
-                broadcast((*_process).yield());
+                broadcast(process_yield(*_process));
             } else {
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
@@ -975,7 +988,7 @@ struct shared_process
 
     void try_broadcast() {
         try {
-            if (_process) broadcast((*_process).yield());
+            if (_process) broadcast(process_yield(*_process));
         } catch (...) {
             broadcast(std::move(std::current_exception()));
         }
@@ -987,7 +1000,7 @@ struct shared_process
     */
 
     template <typename U>
-    auto step() -> std::enable_if_t<!has_process_yield_v<U>> {
+    auto step() -> std::enable_if_t<!has_process_yield_v<unwrap_reference_t<U>>> {
         using queue_t = typename Q::value_type;
         stlab::optional<queue_t> message;
         std::array<bool, sizeof...(Args)> do_cts;
@@ -1443,10 +1456,10 @@ public:
         if (_ready) throw channel_error(channel_error_codes::process_already_running);
 
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, F,
-                                                         detail::yield_type<F, T>, T>>(
+                                                         detail::yield_type<unwrap_reference_t<F>, T>, T>>(
             _p->executor(), std::forward<F>(f), _p);
         _p->map(sender<T>(p));
-        return receiver<detail::yield_type<F, T>>(std::move(p));
+        return receiver<detail::yield_type<unwrap_reference_t<F>, T>>(std::move(p));
     }
 
     template <typename F>
@@ -1457,14 +1470,14 @@ public:
 
         auto executor = ap._annotations._executor.value_or(_p->executor());
         auto p = std::make_shared<detail::shared_process<detail::default_queue_strategy<T>, F,
-                                                         detail::yield_type<F, T>, T>>(
+                                                         detail::yield_type<unwrap_reference_t<F>, T>, T>>(
             executor, std::move(ap)._f, _p);
 
         _p->map(sender<T>(p));
 
         if (ap._annotations._buffer_size) p->set_buffer_size(*ap._annotations._buffer_size);
 
-        return receiver<detail::yield_type<F, T>>(std::move(p));
+        return receiver<detail::yield_type<unwrap_reference_t<F>, T>>(std::move(p));
     }
 
     auto operator|(sender<T> send) {
