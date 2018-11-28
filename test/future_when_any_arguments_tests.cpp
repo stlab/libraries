@@ -11,7 +11,7 @@
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/utility.hpp>
-
+#include <stlab/test/model.hpp>
 #include <array>
 
 #include "future_test_helper.hpp"
@@ -420,6 +420,32 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_arguments_with_diamond_formation_argume
     BOOST_REQUIRE_EQUAL(4711 + 2, *sut.get_try());
     BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(future_when_any_argument_move_only, test_fixture<move_only>)
+BOOST_AUTO_TEST_CASE(future_when_any_move_only_argument_with_one_argument) {
+  BOOST_TEST_MESSAGE("running future when_any move_only arguments of one argument");
+  size_t index = 42;
+
+  auto a1 = async(make_executor<0>(), [] { return move_only(4711); });
+
+  sut = when_any(make_executor<1>(),
+    [&_i = index](move_only(x), size_t index) {
+    _i = index;
+    return x;
+  },
+    std::move(a1));
+
+  check_valid_future(sut);
+
+  wait_until_future_completed(sut);
+
+  BOOST_REQUIRE_EQUAL(size_t(0), index);
+  BOOST_REQUIRE_EQUAL(4711, (*sut.get_try()).member());
+  BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+  BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
