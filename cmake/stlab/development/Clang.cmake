@@ -1,4 +1,4 @@
-set( stlab_Clang_base_flags -Wall -Wextra -Wpedantic -Werror -ftemplate-backtrace-limit=0 -DBOOST_NO_AUTO_PTR=1)
+set( stlab_Clang_base_flags -Wall -Wextra -Wpedantic -Werror -ftemplate-backtrace-limit=0 -DBOOST_NO_AUTO_PTR=1 -D_GLIBCXX_USE_CXX11_ABI=0)
 set( stlab_Clang_debug_flags -gdwarf-3 )
 set( stlab_Clang_coverage_flags --coverage )
 set( stlab_Clang_release_flags )

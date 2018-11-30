@@ -37,6 +37,14 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
+#
+# On apple we have to force the usage of boost.varianr, because Apple's
+# implementation of C++17 is not complete
+#
+if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  set( stlab.boost_variant ON )
+endif()
+
 mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
 
 #
@@ -53,7 +61,7 @@ add_library( stlab::stlab ALIAS stlab )
 # features ensures that the corresponding C++ standard flag is populated in
 # targets linking to stlab.
 #
-target_compile_features( stlab INTERFACE cxx_std_14 )
+target_compile_features( stlab INTERFACE cxx_std_17 )
 
 #
 # The include directory for stlab can be expected to vary between build

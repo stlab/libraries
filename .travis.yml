@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 #group: deprecated-2017Q4
 language: cpp
 
@@ -10,12 +10,12 @@ cache:
 addons:
   apt:
     sources:
-      - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
-        key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
       - ubuntu-toolchain-r-test
+#      - sourceline: deb http://apt.llvm.org/xenial/ llvm-toolchain-precise-7.0 main
+#        key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
     packages:
-      - g++-5
-      - clang-3.8
+      - g++-7
+#      - clang-7.0
 
 branches:
   except: /pr\/.*/
@@ -27,11 +27,10 @@ matrix:
     #
     - os: osx
       compiler: clang
-      osx_image: xcode9
+      osx_image: xcode10.1
       before_install:
         - brew update
         - brew upgrade python
-        - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
         - pip3 install --user conan
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
@@ -43,11 +42,10 @@ matrix:
 
     - os: osx
       compiler: clang
-      osx_image: xcode9
+      osx_image: xcode10.1
       before_install:
         - brew update
         - brew upgrade python
-        - brew uninstall libyaml
         - pip3 install --no-cache-dir pyyaml
         - pip3 install --user conan
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
@@ -157,16 +155,8 @@ matrix:
         - pip install --user conan
         - ./enhance_conan.sh
         - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-      addons:
-        apt:
-          sources:
-            - sourceline: deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main
-              key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-            - clang-3.8
-        coverity_scan:
+
+      coverity_scan:
           project:
             name: "stlab/libraries"
             description: "Build submitted via Travis CI"

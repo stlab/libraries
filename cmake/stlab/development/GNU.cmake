@@ -1,4 +1,4 @@
-set( stlab_GNU_base_flags -Wall -Wextra -Wpedantic -Werror -ftemplate-backtrace-limit=0 )
+set( stlab_GNU_base_flags -Wall -Wextra -Wpedantic -Werror -ftemplate-backtrace-limit=0 -D_GLIBCXX_USE_CXX11_ABI=0)
 set( stlab_GNU_debug_flags -gdwarf-3 )
 set( stlab_GNU_coverage_flags --coverage )
 set( stlab_GNU_release_flags )
