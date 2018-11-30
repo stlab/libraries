@@ -2,6 +2,12 @@
 set -x
 
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+  #
+  # It is nevessary to patch gcc std.variant because of a clang bug which is fixed in clang 8.0
+  # further details are here: https://stackoverflow.com/questions/21872229/how-to-edit-and-re-build-the-gcc-libstdc-c-standard-library-source
+  #
+  sudo patches/patch_std_variant.sh
+
   sudo update-alternatives \
     --install /usr/bin/gcc gcc /usr/bin/gcc-7 90 \
     --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
