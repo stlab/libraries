@@ -6,7 +6,7 @@ if [ "$TRAVIS_OS_NAME" = "linux" ]; then
   # It is nevessary to patch gcc std.variant because of a clang bug which is fixed in clang 8.0
   # further details are here: https://stackoverflow.com/questions/46506387/getstring-for-variants-fail-under-clang-but-not-g
   #
-  sudo patches/patch_std_variant.sh
+  sudo .travis/patches/patch_std_variant.sh
 
   sudo update-alternatives \
     --install /usr/bin/gcc gcc /usr/bin/gcc-7 90 \
