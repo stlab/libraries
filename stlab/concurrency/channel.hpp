@@ -386,7 +386,7 @@ stlab::optional<std::exception_ptr> find_argument_error(T& argument) {
         result =
             get_i(argument, error_index,
                   [](auto& elem) {
-                      return std::move(stlab::get<std::exception_ptr>(elem));
+                      return stlab::get<std::exception_ptr>(std::move(elem));
                   },
                   std::exception_ptr{});
     }
