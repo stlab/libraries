@@ -197,14 +197,14 @@ auto invoke_(F&& f, std::tuple<variant<T, std::exception_ptr>...>& t, std::index
 
 template <typename F, typename... Args>
 auto avoid_invoke(F&& f, std::tuple<variant<Args, std::exception_ptr>...>& t)
-    -> std::enable_if_t<!std::is_same<void, yield_type<F, Args...>>::value,
-                        yield_type<F, Args...>> {
+    -> std::enable_if_t<!std::is_same<void, yield_type<unwrap_reference_t<F>, Args...>>::value,
+                        yield_type<unwrap_reference_t<F>, Args...>> {
     return invoke_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
 }
 
 template <typename F, typename... Args>
 auto avoid_invoke(F&& f, std::tuple<variant<Args, std::exception_ptr>...>& t)
-    -> std::enable_if_t<std::is_same<void, yield_type<F, Args...>>::value, avoid_> {
+    -> std::enable_if_t<std::is_same<void, yield_type<unwrap_reference_t<F>, Args...>>::value, avoid_> {
     invoke_(std::forward<F>(f), t, std::make_index_sequence<sizeof...(Args)>());
     return avoid_();
 }
@@ -296,12 +296,19 @@ template <typename T>
 constexpr bool has_process_close_v = is_detected_v<process_close_t, T>;
 
 template <typename T>
-auto process_close(stlab::optional<T>& x) -> std::enable_if_t<has_process_close_v<T>> {
+auto process_close(stlab::optional<T>& x) -> 
+    std::enable_if_t<has_process_close_v<unwrap_reference_t<T>> && is_reference_wrapper_v<T>> {
+    if (x) (*x).get().close();
+}
+
+template <typename T>
+auto process_close(stlab::optional<T>& x) -> 
+    std::enable_if_t<has_process_close_v<unwrap_reference_t<T>>  && !is_reference_wrapper_v<T>> {
     if (x) (*x).close();
 }
 
 template <typename T>
-auto process_close(stlab::optional<T>&) -> std::enable_if_t<!has_process_close_v<T>> {}
+auto process_close(stlab::optional<T>&) -> std::enable_if_t<!has_process_close_v<unwrap_reference_t<T>>> {}
 
 /**************************************************************************************************/
 
@@ -313,13 +320,19 @@ constexpr bool has_process_state_v = is_detected_v<process_state_t, T>;
 
 template <typename T>
 auto get_process_state(const stlab::optional<T>& x)
-    -> std::enable_if_t<has_process_state_v<T>, process_state_scheduled> {
+    -> std::enable_if_t<has_process_state_v<unwrap_reference_t<T>> && is_reference_wrapper_v<T>, process_state_scheduled> {
+    return (*x).get().state();
+}
+
+template <typename T>
+auto get_process_state(const stlab::optional<T>& x)
+-> std::enable_if_t<has_process_state_v<unwrap_reference_t<T>> && !is_reference_wrapper_v<T>, process_state_scheduled> {
     return (*x).state();
 }
 
 template <typename T>
 auto get_process_state(const stlab::optional<T>&)
-    -> std::enable_if_t<!has_process_state_v<T>, process_state_scheduled> {
+    -> std::enable_if_t<!has_process_state_v<unwrap_reference_t<T>>, process_state_scheduled> {
     return await_forever;
 }
 
@@ -333,13 +346,19 @@ constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P>;
 
 template <typename P>
 auto set_process_error(P& process, std::exception_ptr&& error)
-    -> std::enable_if_t<has_set_process_error_v<P>, void> {
+    -> std::enable_if_t<has_set_process_error_v<unwrap_reference_t<P>> && is_reference_wrapper_v<P>, void> {
+    process.get().set_error(std::move(error));
+}
+
+template <typename P>
+auto set_process_error(P& process, std::exception_ptr&& error)
+-> std::enable_if_t<has_set_process_error_v<unwrap_reference_t<P>> && !is_reference_wrapper_v<P>, void> {
     process.set_error(std::move(error));
 }
 
 template <typename P>
 auto set_process_error(P&, std::exception_ptr&&)
-    -> std::enable_if_t<!has_set_process_error_v<P>, void> {}
+    -> std::enable_if_t<!has_set_process_error_v<unwrap_reference_t<P>>, void> {}
 
 /**************************************************************************************************/
 
@@ -363,7 +382,7 @@ template <typename P, typename... T, std::size_t... I>
 void await_variant_args_(P& process,
                          std::tuple<variant<detail::avoid<T>, std::exception_ptr>...>& args,
                          std::index_sequence<I...>) {
-    process.await(std::move(stlab::get<T>(std::get<I>(args)))...);
+    unwrap(process).await(std::move(stlab::get<T>(std::get<I>(args)))...);
 }
 
 template <typename P, typename... T>
@@ -716,8 +735,8 @@ struct shared_process
     : shared_process_receiver<R>,
       shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>,
       std::enable_shared_from_this<shared_process<Q, T, R, Args...>> {
-    static_assert((has_process_yield_v<T> && has_process_state_v<T>) ||
-                      (!has_process_yield_v<T> && !has_process_state_v<T>),
+    static_assert((has_process_yield_v<unwrap_reference_t<T>> && has_process_state_v<unwrap_reference_t<T>>) ||
+                      (!has_process_yield_v<unwrap_reference_t<T>> && !has_process_state_v<unwrap_reference_t<T>>),
                   "Processes that use .yield() must have .state() const");
 
     /*
@@ -919,7 +938,7 @@ struct shared_process
             is done on yield()
         */
         try {
-            if constexpr (has_process_await_v<T, Args...>) {
+            if constexpr (has_process_await_v<unwrap_reference_t<T>, Args...>) {
                 while (get_process_state(_process).first == process_state::await) {
                     if (!dequeue()) break;
                 }
@@ -1146,13 +1165,13 @@ struct channel_combiner {
     template <typename M, typename F, typename... R>
     struct merge_result
     {
-        using type = yield_type<F, receiver_t<first_t<R...>>>;
+        using type = yield_type<unwrap_reference_t<F>, receiver_t<first_t<R...>>>;
     };
 
     template <typename F, typename... R>
     struct merge_result<zip_with_t, F, R...>
     {
-        using type = yield_type<F, receiver_t<R>...>;
+        using type = yield_type<unwrap_reference_t<F>, receiver_t<R>...>;
     };
 
     template <typename M, typename S, typename F, typename... R>

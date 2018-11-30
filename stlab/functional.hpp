@@ -48,6 +48,18 @@ constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 
 /**************************************************************************************************/
 
+template <typename T>
+T& unwrap(T& val) {
+    return val;
+}
+
+template <typename T>
+T& unwrap(std::reference_wrapper<T>& val) {
+    return val.get();
+}
+
+/**************************************************************************************************/
+
 } // namespace v1
 
 /**************************************************************************************************/

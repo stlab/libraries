@@ -303,9 +303,10 @@ BOOST_AUTO_TEST_CASE(int_channel_with_2_sized_buffer) {
 
     auto receive = channel<void>(q.executor());
 
+    echo myEcho;
     auto r2 = std::move(receive) |
         generator() |
-        (stlab::buffer_size{ 2 } & echo()) |
+        (stlab::buffer_size{ 2 } & std::ref(myEcho)) |
         [&counter](auto x) {
             std::cout << x << std::endl;
             ++counter;
