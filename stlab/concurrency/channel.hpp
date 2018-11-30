@@ -297,14 +297,8 @@ constexpr bool has_process_close_v = is_detected_v<process_close_t, T>;
 
 template <typename T>
 auto process_close(stlab::optional<T>& x) -> 
-    std::enable_if_t<has_process_close_v<unwrap_reference_t<T>> && is_reference_wrapper_v<T>> {
-    if (x) (*x).get().close();
-}
-
-template <typename T>
-auto process_close(stlab::optional<T>& x) -> 
-    std::enable_if_t<has_process_close_v<unwrap_reference_t<T>>  && !is_reference_wrapper_v<T>> {
-    if (x) (*x).close();
+    std::enable_if_t<has_process_close_v<unwrap_reference_t<T>>> {
+    if (x) unwrap(*x).close();
 }
 
 template <typename T>
@@ -320,14 +314,8 @@ constexpr bool has_process_state_v = is_detected_v<process_state_t, T>;
 
 template <typename T>
 auto get_process_state(const stlab::optional<T>& x)
-    -> std::enable_if_t<has_process_state_v<unwrap_reference_t<T>> && is_reference_wrapper_v<T>, process_state_scheduled> {
-    return (*x).get().state();
-}
-
-template <typename T>
-auto get_process_state(const stlab::optional<T>& x)
--> std::enable_if_t<has_process_state_v<unwrap_reference_t<T>> && !is_reference_wrapper_v<T>, process_state_scheduled> {
-    return (*x).state();
+    -> std::enable_if_t<has_process_state_v<unwrap_reference_t<T>>, process_state_scheduled> {
+    return unwrap(*x).state();
 }
 
 template <typename T>
@@ -346,14 +334,8 @@ constexpr bool has_set_process_error_v = is_detected_v<process_set_error_t, P>;
 
 template <typename P>
 auto set_process_error(P& process, std::exception_ptr&& error)
-    -> std::enable_if_t<has_set_process_error_v<unwrap_reference_t<P>> && is_reference_wrapper_v<P>, void> {
-    process.get().set_error(std::move(error));
-}
-
-template <typename P>
-auto set_process_error(P& process, std::exception_ptr&& error)
--> std::enable_if_t<has_set_process_error_v<unwrap_reference_t<P>> && !is_reference_wrapper_v<P>, void> {
-    process.set_error(std::move(error));
+    -> std::enable_if_t<has_set_process_error_v<unwrap_reference_t<P>>, void> {
+    unwrap(process).set_error(std::move(error));
 }
 
 template <typename P>
@@ -389,18 +371,6 @@ template <typename P, typename... T>
 void await_variant_args(P& process, std::tuple<variant<detail::avoid<T>, std::exception_ptr>...>& args) {
     await_variant_args_<P, T...>(process, args, std::make_index_sequence<sizeof...(T)>());
 }
-
-/**************************************************************************************************/
-
-template <typename P>
-auto process_yield(P& process) -> std::enable_if_t<!is_reference_wrapper_v<P>, process_yield_t<P>> {
-    return process.yield();
-}
-template <typename P>
-auto process_yield(P& process) -> std::enable_if_t<is_reference_wrapper_v<P>, process_yield_t<unwrap_reference_t<P>>> {
-    return process.get().yield();
-}
-
 
 /**************************************************************************************************/
 
@@ -957,7 +927,7 @@ struct shared_process
             */
             if (state == process_state::yield) {
                 if (when <= now)
-                    broadcast(process_yield(*_process));
+                    broadcast(unwrap(*_process).yield());
                 else
                     execute_at(when,
                                _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
@@ -977,7 +947,7 @@ struct shared_process
             else if (when == std::chrono::steady_clock::time_point::max()) {
                 task_done();
             } else if (when <= now) {
-                broadcast(process_yield(*_process));
+                broadcast(unwrap(*_process).yield());
             } else {
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
@@ -1007,7 +977,7 @@ struct shared_process
 
     void try_broadcast() {
         try {
-            if (_process) broadcast(process_yield(*_process));
+            if (_process) broadcast(unwrap(*_process).yield());
         } catch (...) {
             broadcast(std::move(std::current_exception()));
         }
