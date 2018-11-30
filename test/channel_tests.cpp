@@ -12,6 +12,7 @@
 #define STLAB_DISABLE_FUTURE_COROUTINES
 #endif
 
+#include <queue>
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
@@ -229,20 +230,19 @@ BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-namespace
-{
+namespace {
 
 class main_queue {
     std::deque<task<void()>> _q;
+
 public:
     auto executor() {
-        return [this](auto&& task) {
-            _q.emplace_back(std::forward<decltype(task)>(task));
-        };
+        return [this](auto&& task) { _q.emplace_back(std::forward<decltype(task)>(task)); };
     }
 
     void run() {
-        while (execute_next_task()) {}
+        while (execute_next_task()) {
+        }
     }
 
     bool execute_next_task() {
@@ -255,11 +255,9 @@ public:
     }
 };
 
-
-struct echo
-{
+struct echo {
     process_state_scheduled _state = await_forever;
-    int _result = 0;
+    int _result = -1;
 
     void await(int x) {
         _result = x;
@@ -273,222 +271,214 @@ struct echo
 
     void close() {}
 
-    const auto &state() const {
-        return _state;
-    }
+    const auto& state() const { return _state; }
 };
 
-struct generator
-{
+template <typename... T>
+struct generator {
     const process_state_scheduled _state = yield_immediate;
 
     int _value = 0;
+    std::tuple<T&...> _queues;
+
+    generator(T&... q) : _queues(q...) {}
+
+    template <std::size_t... I>
+    void push_values(int value, std::index_sequence<I...>) {
+        (void)std::initializer_list<int>{(std::get<I>(_queues).push(value), 0)...};
+    }
 
     int yield() {
+        push_values(_value, std::make_index_sequence<sizeof...(T)>());
         return _value++;
     }
 
     void close() {}
 
-    const auto &state() const {
-        return _state;
-    }
+    const auto& state() const { return _state; }
 };
 
+void RequireInClosedRange(std::size_t minValue, std::size_t test, std::size_t maxValue) {
+    BOOST_REQUIRE_LE(minValue, test);
+    BOOST_REQUIRE_LE(test, maxValue);
 }
+
+} // namespace
 
 BOOST_AUTO_TEST_CASE(int_channel_with_2_sized_buffer) {
     main_queue q;
-    size_t counter = 0;
 
     auto receive = channel<void>(q.executor());
+    std::queue<int> valuesInFlight;
 
+    generator myGenerator(valuesInFlight);
     echo myEcho;
-    auto r2 = std::move(receive) |
-        generator() |
-        (stlab::buffer_size{ 2 } & std::ref(myEcho)) |
-        [&counter](auto x) {
-            std::cout << x << std::endl;
-            ++counter;
-        };
+
+    auto r2 = std::move(receive) | std::ref(myGenerator) |
+              (stlab::buffer_size{2} & std::ref(myEcho)) | [&valuesInFlight](auto x) {
+                  BOOST_REQUIRE_EQUAL(x, valuesInFlight.front());
+                  valuesInFlight.pop();
+                  std::cout << x << std::endl;
+              };
 
     r2.set_ready();
 
-    BOOST_REQUIRE_EQUAL(0, counter);
+    // The first buffer has size 2 and the next process has per default size 1,
+    // so there can be max 2 + 1 values in flight
     q.execute_next_task(); // generate value(0)
+    BOOST_REQUIRE_GE(3u, valuesInFlight.size());
     q.execute_next_task(); // await and yield value(0) by echo
+    BOOST_REQUIRE_GE(3u, valuesInFlight.size());
+
     q.execute_next_task(); // generate value(1)
+    BOOST_REQUIRE_GE(3u, valuesInFlight.size());
     q.execute_next_task(); // generate value(2)
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
+
     q.execute_next_task(); // print value (0)
-    BOOST_REQUIRE_EQUAL(1, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // generate value(3)
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // await and yield value(1) by echo
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // print value (1)
-    BOOST_REQUIRE_EQUAL(2, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // await and yield value(2) by echo
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // generate value(4)
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // print value (2)
-    BOOST_REQUIRE_EQUAL(3, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // await and yield value(3) by echo
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // generate value(5)
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
     q.execute_next_task(); // print value (3)
-    BOOST_REQUIRE_EQUAL(4, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 3u);
 }
 
 BOOST_AUTO_TEST_CASE(int_channel_with_3_sized_buffer) {
     main_queue q;
-    size_t counter = 0;
 
     auto receive = channel<void>(q.executor());
+    std::queue<int> valuesInFlight;
 
-    auto r2 = std::move(receive) |
-        generator() |
-        (stlab::buffer_size{ 3 } & echo()) |
-        [&counter](auto x) {
-            std::cout << x << std::endl;
-            ++counter;
-        };
+    generator myGenerator(valuesInFlight);
+    echo myEcho;
+
+    auto r2 = std::move(receive) | std::ref(myGenerator) |
+              (stlab::buffer_size{3} & std::ref(myEcho)) | [&valuesInFlight](auto x) {
+                  BOOST_REQUIRE_EQUAL(x, valuesInFlight.front());
+                  valuesInFlight.pop();
+              };
 
     r2.set_ready();
 
-    BOOST_REQUIRE_EQUAL(0, counter);
+    // The first buffer has size 3 and the next process has per default size 1,
+    // so there can be max 3 + 1 values in flight
+
     q.execute_next_task(); // generate value(0)
+    BOOST_REQUIRE_GE(4u, valuesInFlight.size());
     q.execute_next_task(); // await and yield value(0) by echo
+    BOOST_REQUIRE_GE(3u, valuesInFlight.size());
     q.execute_next_task(); // generate value(1)
+    BOOST_REQUIRE_GE(3u, valuesInFlight.size());
     q.execute_next_task(); // generate value(2)
+
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // print value (0)
-    BOOST_REQUIRE_EQUAL(1, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // generate value(3)
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // generate value(4)
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // await and yield value(1) by echo
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // print value (1)
-    BOOST_REQUIRE_EQUAL(2, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // await and yield value(2) by echo
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // generate value(5)
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // print value (2)
-    BOOST_REQUIRE_EQUAL(3, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // await and yield value(3) by echo
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // generate value(6)
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
     q.execute_next_task(); // print value (3)
-    BOOST_REQUIRE_EQUAL(4, counter);
+    RequireInClosedRange(2u, valuesInFlight.size(), 4u);
 }
 
-
 BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
-
-    // Here the bigger buffer size must not steer the upstream, but the 
+    // Here the bigger buffer size must not steer the upstream, but the
     // smaller size
-    std::vector<std::pair<std::size_t, std::size_t>> bufferSizes = {{1,2}, {1,2}, {1,3}, {3,1}, {2,1}};
+    std::vector<std::pair<std::size_t, std::size_t>> bufferSizes = {
+        {1, 2}, {1, 2}, {1, 3}, {3, 1}, {2, 1}};
+
     for (const auto& bs : bufferSizes) {
         main_queue q;
-        size_t counter1 = 0;
-        size_t counter2 = 0;
+
+        std::queue<int> valuesInFlight1;
+        std::queue<int> valuesInFlight2;
+
+        generator myGenerator1(valuesInFlight1);
+        generator myGenerator2(valuesInFlight2);
 
         auto receive = channel<void>(q.executor());
 
-        auto g = std::move(receive) | generator();
+        auto g = std::move(receive) | generator(valuesInFlight1, valuesInFlight2);
 
-        auto r1 = g |
-                  (buffer_size(bs.first) & echo()) |
-                  [&counter1](auto x) {
-                      std::cout << x << std::endl;
-                      ++counter1;
-                  };
-        auto r2 = g |
-                  (buffer_size(bs.second) & echo()) |
-                  [&counter2](auto x) {
-                      std::cout << x << std::endl;
-                      ++counter2;
-                  };
+        auto r1 = g | (buffer_size(bs.first) & echo()) | [&valuesInFlight1](auto x) {
+            BOOST_REQUIRE_EQUAL(x, valuesInFlight1.front());
+            valuesInFlight1.pop();
+        };
+        auto r2 = g | (buffer_size(bs.second) & echo()) | [&valuesInFlight2](auto x) {
+            BOOST_REQUIRE_EQUAL(x, valuesInFlight2.front());
+            valuesInFlight2.pop();
+        };
 
         g.set_ready();
         r1.set_ready();
         r2.set_ready();
 
-        BOOST_REQUIRE_EQUAL(0, counter1);
-        BOOST_REQUIRE_EQUAL(0, counter2);
+        // In all cases one buffer has just the size of 1 so the overall number of values
+        // in flight can only be 1 + 1
+
         q.execute_next_task(); // generate value(0)
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // await and yield value(0) by echo1
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // await and yield value(0) by echo2
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // print1 value (0)
-        BOOST_REQUIRE_EQUAL(1, counter1);
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // generate value(1)
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // print2 value (0)
-        BOOST_REQUIRE_EQUAL(1, counter2);
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // await and yield value(1) by echo1
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // await and yield value(1) by echo2
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // print1 value (1)
-        BOOST_REQUIRE_EQUAL(2, counter1);
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
         q.execute_next_task(); // generate value(1)
         q.execute_next_task(); // print2 value (1)
-        BOOST_REQUIRE_EQUAL(2, counter2);
+        RequireInClosedRange(0, valuesInFlight1.size(), 2u);
+        RequireInClosedRange(0, valuesInFlight2.size(), 2u);
     }
 }
-/*
-BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffers_where_one_receiver_is_dropped) {
 
-    main_queue q;
-    size_t counter1 = 0;
-    size_t counter2 = 0;
-    size_t counter3 = 0;
-
-    auto receive = channel<void>(q.executor());
-
-    auto g = std::move(receive) | generator();
-
-    auto r1 = g |
-              (buffer_size(3) & echo()) |
-              [&counter1](auto x) {
-                  std::cout << x << std::endl;
-                  ++counter1;
-              };
-    auto r2 = g |
-              (buffer_size(3) & echo()) |
-              [&counter2](auto x) {
-                  std::cout << x << std::endl;
-                  ++counter2;
-              };
-
-    auto r3 = g |
-              (buffer_size(1) & echo()) |
-              [&counter3](auto x) {
-                  std::cout << x << std::endl;
-                  ++counter3;
-              };
-
-    g.set_ready();
-    r1.set_ready();
-    r2.set_ready();
-    r3.set_ready();
-
-    BOOST_REQUIRE_EQUAL(0, counter1);
-    BOOST_REQUIRE_EQUAL(0, counter2);
-    BOOST_REQUIRE_EQUAL(0, counter3);
-    q.execute_next_task(); // generate value(0)
-    q.execute_next_task(); // await and yield value(0) by echo1
-    q.execute_next_task(); // await and yield value(0) by echo2
-    q.execute_next_task(); // await and yield value(0) by echo3
-    q.execute_next_task(); // print1 value (0)
-    BOOST_REQUIRE_EQUAL(1, counter1);
-    q.execute_next_task(); // print2 value (0)
-    q.execute_next_task(); // generate value(1)
-    BOOST_REQUIRE_EQUAL(1, counter2);
-    q.execute_next_task(); // print3 value (0)
-    BOOST_REQUIRE_EQUAL(1, counter3);
-    r3 = receiver<void>();
-
-    q.execute_next_task(); // await and yield value(1) by echo1
-    q.execute_next_task(); // await and yield value(1) by echo2
-    q.execute_next_task(); // generate value(2) ->
-    q.execute_next_task(); // print1 value (1)
-    BOOST_REQUIRE_EQUAL(2, counter1);
-    q.execute_next_task(); // print2 value (1)
-    BOOST_REQUIRE_EQUAL(2, counter1);
-    q.execute_next_task(); // print1 value (1)
-    q.execute_next_task(); // print1 value (1)
-    BOOST_REQUIRE_EQUAL(2, counter2);
-}
-*/
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
 

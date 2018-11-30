@@ -1,3 +1,19 @@
+## v1.4.0 - 2018 - December - 
+- Fixed Issues
+    - [#206](https://github.com/stlab/libraries/issues/206): channels does not allow processes as lvalues, only as rvalue
+    - [#204](https://github.com/stlab/libraries/issues/204): when_all does not support move-only types
+    - [#192](https://github.com/stlab/libraries/issues/192): Issues with executor_t and when_all()
+
+- Enhancements
+    - [#199](https://github.com/stlab/libraries/issues/199): add operator|() as continuable operator
+    - It is now possible to create with channel<void>() a receiver<void> (not a pair<sender<void>, receiver<void>>)
+
+- Library Changes
+    - Now C++17 is required to use the channels (This change was necessary, because the code became really messy to dispatch between copyable, move-only and void types)
+
+- Additional Comments
+    - It is necessary to patch std::variant for the combination of clang version <= 7 and stdlibc++. For further details see https://stackoverflow.com/questions/46506387/getstring-for-variants-fail-under-clang-but-not-g and ./travis/patches/patch_std_variant.sh. This is because the clang bug https://bugs.llvm.org/show_bug.cgi?id=31852
+
 ## v1.3.3 - 2018 - October - 25
 
 - Fixed Issues 
