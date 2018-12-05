@@ -65,7 +65,7 @@ stlab::executor_t make_executor() {
 
 
 class test_exception : public std::exception {
-    const std::string _error;
+    std::string _error;
 
 public:
     test_exception() {}
