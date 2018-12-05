@@ -41,7 +41,7 @@ option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 # On apple we have to force the usage of boost.varianr, because Apple's
 # implementation of C++17 is not complete
 #
-if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
   set( stlab.boost_variant ON )
 endif()
 

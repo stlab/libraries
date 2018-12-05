@@ -1047,6 +1047,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_2nd_task_with_same_scheduler
         atomic_int p{0};
 
         sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then([& _p = p] {
+            (void)_p;
             throw test_exception("failure");
         });
 
@@ -1060,6 +1061,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_2nd_task_with_same_scheduler
         atomic_int p{0};
 
         sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) | [& _p = p] {
+            (void)_p;
             throw test_exception("failure");
         };
 
@@ -1263,8 +1265,12 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_int_error) {
     atomic_bool first{false};
     atomic_bool second{false};
 
-    sut = async(default_executor, [& _flag = first] { _flag = true; })
-              .then([& _flag = second]() -> future<int> { throw test_exception("failure"); });
+    sut = async(default_executor, [& _flag = first] {
+              _flag = true;
+          }).then([& _flag = second]() -> future<int> {
+        (void)_flag;
+        throw test_exception("failure");
+    });
 
     wait_until_future_fails<test_exception>(sut);
 
