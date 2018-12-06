@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   bool unique() const:
-    annotation:
-      - public
     description: Singular variant
     return: "`true` iff the object instance reference count is one. `false` otherwise."
     signature_with_names: bool unique() const

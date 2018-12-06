@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   operator const stlab::copy_on_write::element_type &() const:
-    annotation:
-      - public
     description: __MISSING__
     return: __OPTIONAL__
     signature_with_names: operator const stlab::copy_on_write::element_type &() const

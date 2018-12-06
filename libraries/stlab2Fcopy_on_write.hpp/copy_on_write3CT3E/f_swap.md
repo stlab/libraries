@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   void swap(copy_on_write<T> &, copy_on_write<T> &):
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x

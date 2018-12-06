@@ -23,7 +23,7 @@
       {% endfor %}
       <li> |
         {% if crumbpage %}
-          <a href='{{crumb}}'>{{crumbpage.title}}</a>
+          <a href='{{crumb}}'>{{crumbpage.title|escape}}</a>
         {% else %}
           ?????
         {% endif %}
