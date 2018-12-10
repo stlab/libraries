@@ -211,7 +211,7 @@ struct reduction_helper;
 /**************************************************************************************************/
 
 template <typename T, typename = void>
-struct value_setter;
+struct value_;
 
 } // namespace detail
 
@@ -471,6 +471,8 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename R>
     auto reduce(future<future<R>>&& r) -> future<R>;
 
+    auto reduce(future<future<void>>&& r)->future<void>;
+
     void set_exception(std::exception_ptr error) {
         _error = std::move(error);
         then_t then;
@@ -642,7 +644,7 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
                 this->set_value(_f, std::move(args)...);
             } catch (...) {
                 this->set_exception(std::current_exception());
-            }
+        }
         _f = function_t();
     }
 
@@ -726,7 +728,7 @@ class future<T, enable_if_copyable<T>> {
     friend struct detail::shared_base<T>;
 
     template <typename, typename>
-    friend struct detail::value_setter;
+    friend struct detail::value_;
 
 public:
     using result_type = T;
@@ -855,7 +857,7 @@ class future<void, void> {
                      future<detail::result_of_t_<Signature>>>;
 
     template <typename, typename>
-    friend struct detail::value_setter;
+    friend struct detail::value_;
 
     friend struct detail::shared_base<void>;
 
@@ -987,7 +989,7 @@ class future<T, enable_if_not_copyable<T>> {
     friend struct detail::shared_base<T>;
 
     template <typename, typename>
-    friend struct detail::value_setter;
+    friend struct detail::value_;
 
 public:
     using result_type = T;
@@ -1644,7 +1646,7 @@ struct reduction_helper<future<void>> {
 /**************************************************************************************************/
 
 template <typename T>
-struct value_setter<T, enable_if_copyable<T>> {
+struct value_<T, enable_if_copyable<T>> {
     template <typename C>
     static void proceed(C& sb) {
         typename C::then_t then;
@@ -1671,12 +1673,12 @@ struct value_setter<T, enable_if_copyable<T>> {
                 .recover([_p = sb.shared_from_this()](future<R> f) {
                     if (f.error()) {
                         _p->_error = std::move(*f.error());
-                        value_setter::proceed(*_p);
+                        proceed(*_p);
                         throw future_error(future_error_codes::reduction_failed);
                     }
                     return *f.get_try();
                 })
-                .then([_p = sb.shared_from_this()](auto) { value_setter::proceed(*_p); });
+                .then([_p = sb.shared_from_this()](auto) { proceed(*_p); });
     }
 
     template <typename F, typename... Args>
@@ -1685,7 +1687,7 @@ struct value_setter<T, enable_if_copyable<T>> {
                          .recover([_p = sb.shared_from_this()](future<void> f) {
                              if (f.error()) {
                                  _p->_error = std::move(*f.error());
-                                 value_setter::proceed(*_p);
+                                 value_::proceed(*_p);
                                  throw future_error(future_error_codes::reduction_failed);
                              }
                              return;
@@ -1695,7 +1697,7 @@ struct value_setter<T, enable_if_copyable<T>> {
 };
 
 template <typename T>
-struct value_setter<T, enable_if_not_copyable<T>> {
+struct value_<T, enable_if_not_copyable<T>> {
     template <typename C>
     static void proceed(C& sb) {
         typename C::then_t then;
@@ -1715,18 +1717,23 @@ struct value_setter<T, enable_if_not_copyable<T>> {
 
     template <typename R, typename F, typename... Args>
     static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        // On VS a static_assert works, on MAC not.
-        assert(!"Reduction on move-only types is not supported so far");
         sb._result = f(std::forward<Args>(args)...);
         sb._reduction_helper.value =
-            (*sb._result)
-                .then([](auto&& f) { return std::forward<decltype(f)>(f); })
-                .then([_p = sb.shared_from_this()](auto&) { proceed(*_p); });
+            std::move(*sb._result)
+                .recover([_p = sb.shared_from_this()](future<R> f) {
+                    if (f.error()) {
+                        _p->_error = std::move(*f.error());
+                        proceed(*_p);
+                        throw future_error(future_error_codes::reduction_failed);
+                    }
+                    return *f.get_try();
+                })
+                .then([_p = sb.shared_from_this()](auto) { proceed(*_p); });
     }
 };
 
 template <>
-struct value_setter<void> {
+struct value_<void> {
     template <typename C>
     static void proceed(C& sb) {
         typename C::then_t then;
@@ -1751,18 +1758,18 @@ struct value_setter<void> {
 template <typename T>
 template <typename F, typename... Args>
 void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
-    value_setter<T>::set(*this, f, std::forward<Args>(args)...);
+    value_<T>::set(*this, f, std::forward<Args>(args)...);
 }
 
 template <typename T>
 template <typename F, typename... Args>
 void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) {
-    value_setter<T>::set(*this, f, std::forward<Args>(args)...);
+    value_<T>::set(*this, f, std::forward<Args>(args)...);
 }
 
 template <typename F, typename... Args>
 void shared_base<void>::set_value(F& f, Args&&... args) {
-    value_setter<void>::set(*this, f, std::forward<Args>(args)...);
+    value_<void>::set(*this, f, std::forward<Args>(args)...);
 }
 
 /**************************************************************************************************/
@@ -1802,9 +1809,14 @@ auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> fut
 /**************************************************************************************************/
 
 template <typename T>
+auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
+    return std::move(r).then([](auto&&){});
+}
+
+template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto f) { return *f.get_try(); });
+    return std::move(r).then([](auto&& f) { return *std::forward<future<R>>(f).get_try(); });
 }
 
 /**************************************************************************************************/
