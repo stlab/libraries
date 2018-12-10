@@ -1644,125 +1644,105 @@ struct reduction_helper<future<void>> {
 /**************************************************************************************************/
 
 template <typename T>
-struct value_setter<T, enable_if_copyable<T>> {
-    template <typename C>
-    static void proceed(C& sb) {
-        typename C::then_t then;
-        {
-            std::unique_lock<std::mutex> lock(sb._mutex);
-            sb._ready = true;
-            then = std::move(sb._then);
-        }
-        for (auto& e : then)
-            e.first(std::move(e.second));
-    }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<R>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
-        proceed(sb);
-    }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
-        sb._reduction_helper.value =
-            (*sb._result)
-                .recover([_p = sb.shared_from_this()](future<R> f) {
-                    if (f.error()) {
-                        _p->_error = std::move(*f.error());
-                        value_setter::proceed(*_p);
-                        throw future_error(future_error_codes::reduction_failed);
-                    }
-                    return *f.get_try();
-                })
-                .then([_p = sb.shared_from_this()](auto) { value_setter::proceed(*_p); });
-    }
-
-    template <typename F, typename... Args>
-    static void set(shared_base<future<void>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...)
-                         .recover([_p = sb.shared_from_this()](future<void> f) {
-                             if (f.error()) {
-                                 _p->_error = std::move(*f.error());
-                                 value_setter::proceed(*_p);
-                                 throw future_error(future_error_codes::reduction_failed);
-                             }
-                             return;
-                         })
-                         .then([_p = sb.shared_from_this()]() { proceed(*_p); });
-    }
-};
-
-template <typename T>
-struct value_setter<T, enable_if_not_copyable<T>> {
-    template <typename C>
-    static void proceed(C& sb) {
-        typename C::then_t then;
-        {
-            std::unique_lock<std::mutex> lock(sb._mutex);
-            sb._ready = true;
-            then = std::move(sb._then);
-        }
-        if (then.first) then.first(std::move(then.second));
-    }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<R>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
-        proceed(sb);
-    }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        // On VS a static_assert works, on MAC not.
-        assert(!"Reduction on move-only types is not supported so far");
-        sb._result = f(std::forward<Args>(args)...);
-        sb._reduction_helper.value =
-            (*sb._result)
-                .then([](auto&& f) { return std::forward<decltype(f)>(f); })
-                .then([_p = sb.shared_from_this()](auto&) { proceed(*_p); });
-    }
-};
-
-template <>
-struct value_setter<void> {
-    template <typename C>
-    static void proceed(C& sb) {
-        typename C::then_t then;
-        {
-            std::unique_lock<std::mutex> lock(sb._mutex);
-            sb._ready = true;
-            then = std::move(sb._then);
-        }
-        for (auto& e : then)
-            e.first(std::move(e.second));
-    }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<R>& sb, F& f, Args&&... args) {
-        f(std::forward<Args>(args)...);
-        proceed(sb);
-    }
-};
-
-/**************************************************************************************************/
-
-template <typename T>
 template <typename F, typename... Args>
 void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
-    value_setter<T>::set(*this, f, std::forward<Args>(args)...);
+    auto proceed = [](auto _this) {
+        then_t then;
+        {
+            std::unique_lock<std::mutex> lock(_this->_mutex);
+            _this->_ready = true;
+            then = std::move(_this->_then);
+        }
+        for (auto& e : then)
+            e.first(std::move(e.second));
+    };
+
+    if constexpr (!std::is_same_v<shared_base<T>, shared_base<future<T>>> &&
+        !std::is_same_v<shared_base<T>, shared_base<future<void>>>) {
+        _result = f(std::forward<Args>(args)...);
+        proceed(this->shared_from_this());
+    } else if constexpr (std::is_same_v<shared_base<T>, shared_base<future<T>>> &&
+        !std::is_same_v<shared_base<T>, shared_base<future<void>>>) {
+        _result = f(std::forward<Args>(args)...);
+        _reduction_helper.value =
+            (*_result)
+                .recover([_p = make_weak_ptr(this->shared_from_this()),proceed](future<T> f) {
+                    auto _this = _p.lock();
+                    if (_this && f.error()) {
+                        _this->_error = std::move(*f.error());
+                        proceed(_this);
+                        throw future_error(future_error_codes::reduction_failed);
+                    }
+                    return *(f.get_try());
+                })
+                .then([_p = make_weak_ptr(this->shared_from_this()), proceed](auto) {
+                    auto _this = _p.lock();
+                    if (_this) proceed(_this);
+                });
+    } else {
+        _result = f(std::forward<Args>(args)...)
+                      .recover([_p = make_weak_ptr(this->shared_from_this()), proceed](future<void> f) {
+                          auto _this = _p.lock();
+                          if (_this && f.error()) {
+                              _this->_error = std::move(*f.error());
+                              proceed(_this);
+                              throw future_error(future_error_codes::reduction_failed);
+                          }
+                          return;
+                      })
+                      .then([_p = make_weak_ptr(this->shared_from_this()), proceed]() {
+                          auto _this = _p.lock();
+                          if (_this) proceed(_this);
+                      });
+    }
 }
 
 template <typename T>
 template <typename F, typename... Args>
 void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) {
-    value_setter<T>::set(*this, f, std::forward<Args>(args)...);
+    auto proceed = [](auto _this) {
+        then_t then;
+        {
+            std::unique_lock<std::mutex> lock(_this->_mutex);
+            _this->_ready = true;
+            then = std::move(_this->_then);
+        }
+        if (then.first) then.first(std::move(then.second));
+    };
+
+    if constexpr (!std::is_same_v<shared_base<T>, shared_base<future<T>>>) {
+        _result = std::move(f)(std::forward<Args>(args)...);
+        proceed(this->shared_from_this());
+    } else {
+        _result = f(std::forward<Args>(args)...);
+        _reduction_helper.value =
+            (*_result)
+                .recover([_p = make_weak_ptr(this->shared_from_this())](future<void> f) {
+                    auto _this = _p.lock();
+                    if (_this && f.error()) {
+                        _this->_error = std::move(*f.error());
+                        proceed(_this);
+                        throw future_error(future_error_codes::reduction_failed);
+                    }
+                })
+                .then([_p = make_weak_ptr(this->shared_from_this())]() {
+                    auto _this = _p.lock();
+                    if (_this) proceed(_this);
+                });
+    }
 }
 
 template <typename F, typename... Args>
 void shared_base<void>::set_value(F& f, Args&&... args) {
-    value_setter<void>::set(*this, f, std::forward<Args>(args)...);
+    f(std::forward<Args>(args)...);
+    then_t then;
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _ready = true;
+        then = std::move(_then);
+    }
+    for (auto& e : then)
+        e.first(std::move(e.second));
 }
 
 /**************************************************************************************************/

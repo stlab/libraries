@@ -1331,16 +1331,24 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int_error) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#if 0 // not implemented yet
 BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
     BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
-    atomic_bool first{ false };
-    atomic_bool second{ false };
+    atomic_bool first{false};
+    atomic_bool second{false};
 
-    future<move_only> a = async(default_executor, [&_flag = first] {
-        _flag = true; cout << 1 << endl; return move_only(42); }).then([&_flag = second] (auto&& x) {
-        return async(default_executor, [&_flag] (auto&& x) {
-            _flag = true; cout << 2 << endl; return forward<move_only>(x); }, forward<move_only>(x));
+    future<move_only> a = async(default_executor, [& _flag = first] {
+                              _flag = true;
+                              cout << 1 << endl;
+                              return move_only(42);
+                          }).then([& _flag = second](auto&& x) {
+        return async(
+            default_executor,
+            [&_flag](auto&& x) {
+                _flag = true;
+                cout << 2 << x.member() << endl;
+                return forward<move_only>(x);
+            },
+            forward<move_only>(x));
     });
 
     while (!a.get_try()) {
@@ -1349,6 +1357,5 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
 
     BOOST_REQUIRE(first);
     BOOST_REQUIRE(second);
-    BOOST_REQUIRE_EQUAL(42, a.get_try().value().member());
+    BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
 }
-#endif
