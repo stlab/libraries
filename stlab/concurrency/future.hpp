@@ -1666,33 +1666,29 @@ void shared_base<T, enable_if_copyable<T>>::set_value(F& f, Args&&... args) {
         _result = f(std::forward<Args>(args)...);
         _reduction_helper.value =
             (*_result)
-                .recover([_p = make_weak_ptr(this->shared_from_this()),proceed](future<T> f) {
-                    auto _this = _p.lock();
-                    if (_this && f.error()) {
+                .recover([_this = this->shared_from_this(), proceed](future<T> f) {
+                    if (f.error()) {
                         _this->_error = std::move(*f.error());
                         proceed(_this);
                         throw future_error(future_error_codes::reduction_failed);
                     }
                     return *(f.get_try());
                 })
-                .then([_p = make_weak_ptr(this->shared_from_this()), proceed](auto) {
-                    auto _this = _p.lock();
-                    if (_this) proceed(_this);
+                .then([_this = this->shared_from_this(), proceed](auto) {
+                    proceed(_this);
                 });
     } else {
         _result = f(std::forward<Args>(args)...)
-                      .recover([_p = make_weak_ptr(this->shared_from_this()), proceed](future<void> f) {
-                          auto _this = _p.lock();
-                          if (_this && f.error()) {
+                      .recover([_this = this->shared_from_this(), proceed](future<void> f) {
+                          if (f.error()) {
                               _this->_error = std::move(*f.error());
                               proceed(_this);
                               throw future_error(future_error_codes::reduction_failed);
                           }
                           return;
                       })
-                      .then([_p = make_weak_ptr(this->shared_from_this()), proceed]() {
-                          auto _this = _p.lock();
-                          if (_this) proceed(_this);
+                      .then([_this = this->shared_from_this(), proceed]() {
+                          proceed(_this);
                       });
     }
 }
@@ -1717,17 +1713,15 @@ void shared_base<T, enable_if_not_copyable<T>>::set_value(F& f, Args&&... args) 
         _result = f(std::forward<Args>(args)...);
         _reduction_helper.value =
             (*_result)
-                .recover([_p = make_weak_ptr(this->shared_from_this())](future<void> f) {
-                    auto _this = _p.lock();
-                    if (_this && f.error()) {
+                .recover([_this = this->shared_from_this(), proceed](future<void> f) {
+                    if (f.error()) {
                         _this->_error = std::move(*f.error());
                         proceed(_this);
                         throw future_error(future_error_codes::reduction_failed);
                     }
                 })
-                .then([_p = make_weak_ptr(this->shared_from_this())]() {
-                    auto _this = _p.lock();
-                    if (_this) proceed(_this);
+                .then([_this = this->shared_from_this(), proceed]() {
+                    proceed(_this);
                 });
     }
 }
