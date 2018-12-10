@@ -1333,54 +1333,100 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
     BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
-    atomic_bool first{false};
-    atomic_bool second{false};
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
 
-    future<move_only> a = async(default_executor, [& _flag = first] {
-                              _flag = true;
-                              cout << 1 << endl;
-                              return move_only(42);
-                          }).then([& _flag = second](auto&& x) {
-        return async(
-            default_executor,
-            [&_flag](auto&& x) {
-                _flag = true;
-                cout << 2 << x.member() << endl;
-                return forward<move_only>(x);
-            },
-            forward<move_only>(x));
-    });
+        future<move_only> a = async(default_executor, [&_flag = first] {
+            _flag = true;
+            return move_only(42);
+        }).then([&_flag = second](auto &&x) {
+            return async(
+                default_executor,
+                [&_flag](auto &&x) {
+                    _flag = true;
+                    return forward<move_only>(x);
+                },
+                forward<move_only>(x));
+        });
 
-    while (!a.get_try()) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        while (!a.get_try()) {
+            this_thread::sleep_for(chrono::milliseconds(1));
+        }
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
     }
+    {
+        bool first{false};
+        bool second{false};
 
-    BOOST_REQUIRE(first);
-    BOOST_REQUIRE(second);
-    BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
+        future<move_only> a = async(immediate_executor, [&_flag = first] {
+            _flag = true;
+            return move_only(42);
+        }).then([&_flag = second](auto&& x) {
+            return async(
+                immediate_executor,
+                [&_flag](auto &&x) {
+                    _flag = true;
+                    return forward<move_only>(x);
+                },
+                forward<move_only>(x));
+        });
+
+        BOOST_REQUIRE(a.get_try());
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
     BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
-    atomic_bool first{false};
-    move_only result;
+    {
+        atomic_bool first{false};
+        move_only result;
 
-    future<void> a = async(default_executor, [& _flag = first] {
-        _flag = true;
-        return move_only(42);
-    }).then([&_result = result](auto&& x) {
-        return async(
-            default_executor,
-            [&_result](auto&& x) {
-                _result = std::move(x);
-            },
-            forward<move_only>(x));
-    });
+        future<void> a = async(default_executor, [&_flag = first] {
+            _flag = true;
+            return move_only(42);
+        }).then([&_result = result](auto&& x) {
+            return async(
+                default_executor,
+                [&_result](auto&& x) {
+                    _result = std::move(x);
+                },
+                forward<move_only>(x));
+        });
 
-    while (!a.get_try()) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        while (!a.get_try()) {
+            this_thread::sleep_for(chrono::milliseconds(1));
+        }
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE_EQUAL(42, result.member());
     }
+    {
+        bool first{false};
+        move_only result;
 
-    BOOST_REQUIRE(first);
-    BOOST_REQUIRE_EQUAL(42, result.member());
+        future<void> a = async(immediate_executor, [&_flag = first] {
+            _flag = true;
+            return move_only(42);
+        }).then([&_result = result](auto&& x) {
+            return async(
+                immediate_executor,
+                [&_result](auto&& x) {
+                    _result = std::move(x);
+                },
+                forward<move_only>(x));
+        });
+
+        BOOST_REQUIRE(a.get_try());
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE_EQUAL(42, result.member());
+    }
 }
