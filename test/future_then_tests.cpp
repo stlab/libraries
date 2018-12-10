@@ -1359,3 +1359,28 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
     BOOST_REQUIRE(second);
     BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
 }
+
+BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
+    BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
+    atomic_bool first{false};
+    move_only result;
+
+    future<void> a = async(default_executor, [& _flag = first] {
+        _flag = true;
+        return move_only(42);
+    }).then([&_result = result](auto&& x) {
+        return async(
+            default_executor,
+            [&_result](auto&& x) {
+                _result = std::move(x);
+            },
+            forward<move_only>(x));
+    });
+
+    while (!a.get_try()) {
+        this_thread::sleep_for(chrono::milliseconds(1));
+    }
+
+    BOOST_REQUIRE(first);
+    BOOST_REQUIRE_EQUAL(42, result.member());
+}
