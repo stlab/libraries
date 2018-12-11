@@ -1,10 +1,13 @@
 ## v1.4.0 - 2018 - December - 
 - Fixed Issues
+    - [#208](https://github.com/stlab/libraries/issues/208): g++8.2.0 compiling error
     - [#206](https://github.com/stlab/libraries/issues/206): channels does not allow processes as lvalues, only as rvalue
     - [#204](https://github.com/stlab/libraries/issues/204): when_all does not support move-only types
     - [#192](https://github.com/stlab/libraries/issues/192): Issues with executor_t and when_all()
+    - [#188](https://github.com/stlab/libraries/issues/188): question: channels and slow processes
 
 - Enhancements
+    - [#212](https://github.com/stlab/libraries/issues/212): Join of future with move only type is missing
     - [#199](https://github.com/stlab/libraries/issues/199): add operator|() as continuable operator
     - It is now possible to create with channel<void>() a receiver<void> (not a pair<sender<void>, receiver<void>>)
 
