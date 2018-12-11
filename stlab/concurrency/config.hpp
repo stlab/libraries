@@ -11,6 +11,12 @@
 
 /**************************************************************************************************/
 
+#define STLAB_FEATURE_PRIVATE_OBJC_ARC() 0
+
+#define STLAB_FEATURE(X) (STLAB_FEATURE_PRIVATE_##X())
+
+/**************************************************************************************************/
+
 #define STLAB_TASK_SYSTEM_PORTABLE      0
 #define STLAB_TASK_SYSTEM_LIBDISPATCH   1
 #define STLAB_TASK_SYSTEM_EMSCRIPTEN    2
@@ -21,6 +27,11 @@
 
 #ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_LIBDISPATCH
+#endif
+
+#if __has_feature(objc_arc)
+    #undef STLAB_FEATURE_PRIVATE_OBJC_ARC
+    #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
 #endif
 
 #elif __EMSCRIPTEN__

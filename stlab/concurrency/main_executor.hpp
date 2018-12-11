@@ -52,7 +52,7 @@ struct main_executor_type
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) {
+    void operator()(F f) const {
         using f_t = decltype(f);
 
         dispatch_async_f(dispatch_get_main_queue(),
