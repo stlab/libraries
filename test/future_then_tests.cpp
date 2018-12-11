@@ -1205,7 +1205,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void_when_inner_future_fails)
               }).then([& _check = second](auto&& x) {
             return async(
                 default_executor,
-                [&_check](auto&& x) {
+                [&_check](auto&&) {
                     _check = true;
                     throw test_exception("failure");
                 },
@@ -1227,7 +1227,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void_when_inner_future_fails)
               }).then([& _check = second](auto&& x) {
             return async(
                 immediate_executor,
-                [&_check](auto&& x) {
+                [&_check](auto&&) {
                     _check = true;
                     throw test_exception("failure");
                 },
@@ -1462,7 +1462,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only_when_inner_future_f
               }).then([& _flag = second](auto&& x) {
             return async(
                 default_executor,
-                [&_flag](auto&& x) -> move_only {
+                [&_flag](auto&&) -> move_only {
                     _flag = true;
                     throw test_exception("failure");
                 },
@@ -1484,7 +1484,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only_when_inner_future_f
               }).then([& _flag = second](auto&& x) {
             return async(
                 immediate_executor,
-                [&_flag](auto&& x) -> move_only {
+                [&_flag](auto&&) -> move_only {
                     _flag = true;
                     throw test_exception("failure");
                 },
