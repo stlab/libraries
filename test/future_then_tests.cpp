@@ -48,11 +48,10 @@ BOOST_AUTO_TEST_CASE(future_void_single_task_detached) {
     }
 }
 
-
 BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_same_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE("running future void with two task on same scheduler, then on r-value");
 
-    /* because of a gcc version < 6 bug, it is not possible to use the following 
+    /* because of a gcc version < 6 bug, it is not possible to use the following
     using task_t = function<void()>;
     using op_t = future<void>(future<void>::*)(task_t&&)&&;
 
@@ -120,7 +119,8 @@ BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_same_scheduler) {
     {
         atomic_int p{0};
 
-        sut = async(make_executor<0>(), [] { return 42; }).then([& _p = p](auto x) { _p = x + 42; });
+        sut =
+            async(make_executor<0>(), [] { return 42; }).then([& _p = p](auto x) { _p = x + 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -147,8 +147,9 @@ BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_different_scheduler) {
     {
         atomic_int p{0};
 
-        sut = async(make_executor<0>(), [] { return 42; })
-            .then(make_executor<1>(), [& _p = p](auto x) { _p = x + 42; });
+        sut = async(make_executor<0>(), [] {
+                  return 42;
+              }).then(make_executor<1>(), [& _p = p](auto x) { _p = x + 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -161,7 +162,7 @@ BOOST_AUTO_TEST_CASE(future_int_void_two_tasks_with_different_scheduler) {
         atomic_int p{0};
 
         sut = async(make_executor<0>(), [] { return 42; }) |
-            ( executor{make_executor<1>()} & [& _p = p](auto x) { _p = x + 42; } );
+              (executor{make_executor<1>()} & [& _p = p](auto x) { _p = x + 42; });
 
         check_valid_future(sut);
 
@@ -179,8 +180,9 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_different_scheduler) {
     {
         atomic_int p{0};
 
-        sut = async(make_executor<0>(), [& _p = p] { _p = 42; })
-            .then(make_executor<1>(), [& _p = p] { _p += 42; });
+        sut = async(make_executor<0>(), [& _p = p] {
+                  _p = 42;
+              }).then(make_executor<1>(), [& _p = p] { _p += 42; });
         check_valid_future(sut);
 
         wait_until_future_completed(sut);
@@ -197,7 +199,7 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_with_different_scheduler) {
         atomic_int p{0};
 
         sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) |
-            ( executor{make_executor<1>()} & [& _p = p] { _p += 42; } );
+              (executor{make_executor<1>()} & [& _p = p] { _p += 42; });
 
         check_valid_future(sut);
 
@@ -274,9 +276,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_void) {
         bool second{false};
 
         sut = async(make_executor<0>(), [&] { first = true; }) |
-            [&] {
-                return async(make_executor<0>(), [&] { second = true; });
-            };
+              [&] { return async(make_executor<0>(), [&] { second = true; }); };
 
         wait_until_future_completed(sut);
 
@@ -293,19 +293,18 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_void) {
         atomic_bool second{false};
         atomic_int result{0};
 
-        sut = async(default_executor,
-                    [& _flag = first] {
-                        _flag = true;
-                        return 42;
-                    })
-            .then([& _flag = second, &_result = result](auto x) {
-                return async(default_executor,
-                             [&_flag, &_result](auto x) {
-                                 _flag = true;
-                                 _result = x + 42;
-                             },
-                             x);
-            });
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return 42;
+              }).then([& _flag = second, &_result = result](auto x) {
+            return async(
+                default_executor,
+                [&_flag, &_result](auto x) {
+                    _flag = true;
+                    _result = x + 42;
+                },
+                x);
+        });
 
         wait_until_future_completed(sut);
 
@@ -319,18 +318,19 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_void) {
         atomic_int result{0};
 
         sut = async(default_executor,
-                     [& _flag = first] {
-                         _flag = true;
-                         return 42;
-                     })
-               | [& _flag = second, &_result = result](auto x) {
-            return async(default_executor,
-                         [&_flag, &_result](auto x) {
-                             _flag = true;
-                             _result = x + 42;
-                         },
-                         x);
-            };
+                    [& _flag = first] {
+                        _flag = true;
+                        return 42;
+                    }) |
+              [& _flag = second, &_result = result](auto x) {
+                  return async(
+                      default_executor,
+                      [&_flag, &_result](auto x) {
+                          _flag = true;
+                          _result = x + 42;
+                      },
+                      x);
+              };
 
         wait_until_future_completed(sut);
 
@@ -340,10 +340,47 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_void) {
     }
 }
 
+BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
+    BOOST_TEST_MESSAGE("running future reduction move-only to void");
+    {
+        atomic_bool first{false};
+        move_only result;
+
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _result = result](auto&& x) {
+            return async(
+                default_executor, [&_result](auto&& x) { _result = std::move(x); },
+                forward<move_only>(x));
+        });
+
+        wait_until_future_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE_EQUAL(42, result.member());
+    }
+    {
+        bool first{false};
+        move_only result;
+
+        sut = async(immediate_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _result = result](auto&& x) {
+            return async(
+                immediate_executor, [&_result](auto&& x) { _result = std::move(x); },
+                forward<move_only>(x));
+        });
+
+        BOOST_REQUIRE(sut.get_try());
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE_EQUAL(42, result.member());
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
-
-
-
 
 BOOST_FIXTURE_TEST_SUITE(future_then_non_copyable, test_fixture<move_only>)
 BOOST_AUTO_TEST_CASE(future_non_copyable_single_task) {
@@ -362,12 +399,10 @@ BOOST_AUTO_TEST_CASE(future_then_non_copyable_detach) {
     BOOST_TEST_MESSAGE("running future non copyable, detached");
     atomic_bool check{false};
     {
-        async(make_executor<0>(),
-              [& _check = check] {
-                  _check = true;
-                  return move_only(42);
-              })
-            .detach();
+        async(make_executor<0>(), [& _check = check] {
+            _check = true;
+            return move_only(42);
+        }).detach();
     }
     while (!check) {
         this_thread::sleep_for(chrono::milliseconds(1));
@@ -394,7 +429,8 @@ BOOST_AUTO_TEST_CASE(
         "running future copyable with non copyable as contination with same scheduler, then on r-value");
 
     {
-        sut = async(make_executor<0>(), [] { return 42; }).then([](auto x) { return move_only(x); });
+        sut =
+            async(make_executor<0>(), [] { return 42; }).then([](auto x) { return move_only(x); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -436,7 +472,7 @@ BOOST_AUTO_TEST_CASE(
 
     {
         sut = async(make_executor<0>(), [] { return 42; }) |
-            ( executor{make_executor<1>()} & [](auto x) { return move_only(x); } );
+              (executor{make_executor<1>()} & [](auto x) { return move_only(x); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -497,7 +533,7 @@ BOOST_AUTO_TEST_CASE(
     {
         auto interim = async(make_executor<0>(), [] { return 42; });
 
-        sut = interim | ( executor{make_executor<1>()} & [](auto x) { return move_only(x); } );
+        sut = interim | (executor{make_executor<1>()} & [](auto x) { return move_only(x); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -507,7 +543,6 @@ BOOST_AUTO_TEST_CASE(
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
     }
 }
-
 
 BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_then_on_rvalue) {
     BOOST_TEST_MESSAGE(
@@ -525,9 +560,8 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_same_scheduler_the
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
     {
-        sut = async(make_executor<0>(), [] { return move_only(42); }) | [](auto&& x) {
-            return move_only(x.member() * 2);
-        };
+        sut = async(make_executor<0>(), [] { return move_only(42); }) |
+              [](auto&& x) { return move_only(x.member() * 2); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -541,8 +575,9 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_schedule
     BOOST_TEST_MESSAGE(
         "running future non copyable as contination with different scheduler, then on r-value");
     {
-        sut = async(make_executor<0>(), [] { return move_only(42); })
-            .then(make_executor<1>(), [](auto x) { return move_only(x.member() * 2); });
+        sut = async(make_executor<0>(), [] {
+                  return move_only(42);
+              }).then(make_executor<1>(), [](auto x) { return move_only(x.member() * 2); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -557,7 +592,7 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_schedule
 
     {
         sut = async(make_executor<0>(), [] { return move_only(42); }) |
-            ( executor{make_executor<1>()} & [](auto x) { return move_only(x.member() * 2); } );
+              (executor{make_executor<1>()} & [](auto x) { return move_only(x.member() * 2); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -569,8 +604,6 @@ BOOST_AUTO_TEST_CASE(future_non_copyable_as_continuation_with_different_schedule
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-
 
 BOOST_FIXTURE_TEST_SUITE(future_then_move_only, test_fixture<move_only>)
 
@@ -589,9 +622,8 @@ BOOST_AUTO_TEST_CASE(future_async_move_only_move_captured_to_result) {
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     }
     {
-        sut = async(make_executor<0>(), [] { return move_only{42}; }) | [](auto x) {
-            return move(x);
-        };
+        sut = async(make_executor<0>(), [] { return move_only{42}; }) |
+              [](auto x) { return move(x); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -634,8 +666,9 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [] { return move_only{10}; })
-              .then([& _m = m](auto) mutable { return move(_m); });
+    sut = async(make_executor<0>(), [] { return move_only{10}; }).then([& _m = m](auto) mutable {
+        return move(_m);
+    });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -651,7 +684,8 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
         move_only m{42};
 
         sut = async(make_executor<0>(), []() mutable {
-            return move_only{10}; }).then([& _m = m](auto) mutable { return move(_m); });
+                  return move_only{10};
+              }).then([& _m = m](auto) mutable { return move(_m); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -662,14 +696,64 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
     {
         move_only m{42};
 
-        sut = async(make_executor<0>(), []() mutable {
-            return move_only{10}; }) | [& _m = m](auto) mutable { return move(_m); };
+        sut = async(make_executor<0>(), []() mutable { return move_only{10}; }) |
+              [& _m = m](auto) mutable { return move(_m); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
 
         BOOST_REQUIRE_EQUAL(42, result->member());
         BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
+    BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _flag = second](auto&& x) {
+            return async(
+                default_executor,
+                [&_flag](auto&& x) {
+                    _flag = true;
+                    return forward<move_only>(x);
+                },
+                forward<move_only>(x));
+        });
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(42, (*result).member());
+    }
+    {
+        bool first{false};
+        bool second{false};
+
+        sut = async(immediate_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _flag = second](auto&& x) {
+            return async(
+                immediate_executor,
+                [&_flag](auto&& x) {
+                    _flag = true;
+                    return forward<move_only>(x);
+                },
+                forward<move_only>(x));
+        });
+
+        auto result = wait_until_future_r_completed(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+        BOOST_REQUIRE_EQUAL(42, (*result).member());
     }
 }
 
@@ -822,11 +906,10 @@ BOOST_AUTO_TEST_CASE(future_void_int_two_tasks_with_different_scheduler) {
 
     atomic_int p{0};
 
-    sut = async(make_executor<0>(), [& _p = p] { _p = 42; })
-              .then(make_executor<1>(), [& _p = p] {
-                  _p += 42;
-                  return _p.load();
-              });
+    sut = async(make_executor<0>(), [& _p = p] { _p = 42; }).then(make_executor<1>(), [& _p = p] {
+        _p += 42;
+        return _p.load();
+    });
 
     check_valid_future(sut);
     wait_until_future_completed(sut);
@@ -843,9 +926,11 @@ BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int with three tasks with same scheduler");
 
     {
-        sut = async(make_executor<0>(), [] { return 42; }).then
-            ([](auto x) { return x + 42; }).then
-            ([](auto x) { return x + 42; });
+        sut = async(make_executor<0>(), [] {
+                  return 42;
+              }).then([](auto x) {
+                    return x + 42;
+                }).then([](auto x) { return x + 42; });
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -854,9 +939,8 @@ BOOST_AUTO_TEST_CASE(future_int_three_tasks_with_same_scheduler) {
         BOOST_REQUIRE_LE(3, custom_scheduler<0>::usage_counter());
     }
     {
-        sut = async(make_executor<0>(), [] { return 42; }) |
-                    [](auto x) { return x + 42; } |
-                    [](auto x) { return x + 42; };
+        sut = async(make_executor<0>(), [] { return 42; }) | [](auto x) { return x + 42; } |
+              [](auto x) { return x + 42; };
 
         check_valid_future(sut);
         wait_until_future_completed(sut);
@@ -948,19 +1032,18 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        sut = async(default_executor,
-                    [& _flag = first] {
-                        _flag = true;
-                        return 42;
-                    })
-            .then([& _flag = second](auto x) {
-                return async(default_executor,
-                             [&_flag](auto x) {
-                                 _flag = true;
-                                 return x + 42;
-                             },
-                             x);
-            });
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return 42;
+              }).then([& _flag = second](auto x) {
+            return async(
+                default_executor,
+                [&_flag](auto x) {
+                    _flag = true;
+                    return x + 42;
+                },
+                x);
+        });
 
         wait_until_future_completed(sut);
 
@@ -973,18 +1056,19 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int) {
         atomic_bool second{false};
 
         sut = async(default_executor,
-                     [& _flag = first] {
-                         _flag = true;
-                         return 42;
-                     }) |
-               [& _flag = second](auto x) {
-            return async(default_executor,
-                         [&_flag](auto x) {
-                             _flag = true;
-                             return x + 42;
-                         },
-                         x);
-        };
+                    [& _flag = first] {
+                        _flag = true;
+                        return 42;
+                    }) |
+              [& _flag = second](auto x) {
+                  return async(
+                      default_executor,
+                      [&_flag](auto x) {
+                          _flag = true;
+                          return x + 42;
+                      },
+                      x);
+              };
 
         wait_until_future_completed(sut);
 
@@ -1029,9 +1113,8 @@ BOOST_AUTO_TEST_CASE(future_void_two_tasks_error_in_1st_task_with_same_scheduler
     {
         atomic_int p{0};
 
-        sut = async(make_executor<0>(), [] { throw test_exception("failure"); }) | [& _p = p] {
-            _p = 42;
-        };
+        sut = async(make_executor<0>(), [] { throw test_exception("failure"); }) |
+              [& _p = p] { _p = 42; };
 
         wait_until_future_fails<test_exception>(sut);
         check_failure<test_exception>(sut, "failure");
@@ -1110,6 +1193,54 @@ BOOST_AUTO_TEST_CASE(reduction_future_void_to_void_error) {
     }
 }
 
+BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void_when_inner_future_fails) {
+    BOOST_TEST_MESSAGE("running future reduction move-only to void when inner future fails");
+    {
+        atomic_bool first{false};
+        atomic_bool second{false};
+
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _check = second](auto&& x) {
+            return async(
+                default_executor,
+                [&_check](auto&& x) {
+                    _check = true;
+                    throw test_exception("failure");
+                },
+                forward<move_only>(x));
+        });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+    }
+    {
+        bool first{false};
+        bool second{false};
+
+        sut = async(immediate_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _check = second](auto&& x) {
+            return async(
+                immediate_executor,
+                [&_check](auto&& x) {
+                    _check = true;
+                    throw test_exception("failure");
+                },
+                forward<move_only>(x));
+        });
+
+        wait_until_future_fails<test_exception>(sut);
+
+        BOOST_REQUIRE(first);
+        BOOST_REQUIRE(second);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(future_then_int_error, test_fixture<int>)
@@ -1124,20 +1255,6 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_error) {
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
 }
 
-
-#if 0 // currently disabled, because I have doubts that get_try on an r-value makes any sense at al
-    BOOST_AUTO_TEST_CASE(future_int_single_task_with_error_get_try_on_rvalue) {
-        BOOST_TEST_MESSAGE("running future int single tasks, with error on get_try on r-value");
-
-        sut = async(make_executor<0>(), []()->int { throw test_exception("failure"); });
-        auto test_result_1 = move(sut).get_try(); // test for r-value implementation
-        wait_until_future_fails<test_exception>(sut);
-        check_failure<test_exception>(move(sut), "failure");
-        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
-    }
-#endif
-
-
 BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler) {
     BOOST_TEST_MESSAGE("running future int with two tasks which first fails");
 
@@ -1145,8 +1262,9 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler)
         custom_scheduler<0>::reset();
         int p = 0;
 
-        sut = async(make_executor<0>(), [] { throw test_exception("failure"); })
-               .then([& _p = p]() -> int {
+        sut = async(make_executor<0>(), [] {
+                  throw test_exception("failure");
+              }).then([& _p = p]() -> int {
             _p = 42;
             return _p;
         });
@@ -1162,10 +1280,10 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_1st_task_with_same_scheduler)
         int p = 0;
 
         sut = async(make_executor<0>(), [] { throw test_exception("failure"); }) |
-            [& _p = p]() -> int {
-                _p = 42;
-                return _p;
-            };
+              [& _p = p]() -> int {
+            _p = 42;
+            return _p;
+        };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -1196,9 +1314,8 @@ BOOST_AUTO_TEST_CASE(future_int_two_tasks_error_in_2nd_task_with_same_scheduler)
         custom_scheduler<0>::reset();
         atomic_int p{0};
 
-        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) | []() -> int {
-            throw test_exception("failure");
-        };
+        sut = async(make_executor<0>(), [& _p = p] { _p = 42; }) |
+              []() -> int { throw test_exception("failure"); };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -1285,19 +1402,18 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int_error) {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        sut = async(default_executor,
-                    [& _flag = first] {
-                        _flag = true;
-                        return 42;
-                    })
-            .then([& _flag = second](auto x) {
-                return async(default_executor,
-                             [&_flag](auto) -> int {
-                                 _flag = true;
-                                 throw test_exception("failure");
-                             },
-                             x);
-            });
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return 42;
+              }).then([& _flag = second](auto x) {
+            return async(
+                default_executor,
+                [&_flag](auto) -> int {
+                    _flag = true;
+                    throw test_exception("failure");
+                },
+                x);
+        });
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -1313,14 +1429,15 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int_error) {
                         _flag = true;
                         return 42;
                     }) |
-            [& _flag = second](auto x) {
-                return async(default_executor,
-                             [&_flag](auto) -> int {
-                                 _flag = true;
-                                 throw test_exception("failure");
-                             },
-                             x);
-            };
+              [& _flag = second](auto x) {
+                  return async(
+                      default_executor,
+                      [&_flag](auto) -> int {
+                          _flag = true;
+                          throw test_exception("failure");
+                      },
+                      x);
+              };
 
         wait_until_future_fails<test_exception>(sut);
 
@@ -1331,102 +1448,54 @@ BOOST_AUTO_TEST_CASE(reduction_future_int_to_int_error) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
-    BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
+BOOST_FIXTURE_TEST_SUITE(future_then_move_only_error, test_fixture<move_only>)
+
+BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only_when_inner_future_fails) {
+    BOOST_TEST_MESSAGE("running future reduction move-only to move-only when inner future fails");
     {
         atomic_bool first{false};
         atomic_bool second{false};
 
-        future<move_only> a = async(default_executor, [&_flag = first] {
-            _flag = true;
-            return move_only(42);
-        }).then([&_flag = second](auto &&x) {
+        sut = async(default_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _flag = second](auto&& x) {
             return async(
                 default_executor,
-                [&_flag](auto &&x) {
+                [&_flag](auto&& x) -> move_only {
                     _flag = true;
-                    return forward<move_only>(x);
+                    throw test_exception("failure");
                 },
                 forward<move_only>(x));
         });
 
-        while (!a.get_try()) {
-            this_thread::sleep_for(chrono::milliseconds(1));
-        }
+        wait_until_future_fails<test_exception>(sut);
 
         BOOST_REQUIRE(first);
         BOOST_REQUIRE(second);
-        BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
     }
     {
         bool first{false};
         bool second{false};
 
-        future<move_only> a = async(immediate_executor, [&_flag = first] {
-            _flag = true;
-            return move_only(42);
-        }).then([&_flag = second](auto&& x) {
+        sut = async(immediate_executor, [& _flag = first] {
+                  _flag = true;
+                  return move_only(42);
+              }).then([& _flag = second](auto&& x) {
             return async(
                 immediate_executor,
-                [&_flag](auto &&x) {
+                [&_flag](auto&& x) -> move_only {
                     _flag = true;
-                    return forward<move_only>(x);
+                    throw test_exception("failure");
                 },
                 forward<move_only>(x));
         });
 
-        BOOST_REQUIRE(a.get_try());
+        wait_until_future_fails<test_exception>(sut);
 
         BOOST_REQUIRE(first);
         BOOST_REQUIRE(second);
-        BOOST_REQUIRE_EQUAL(42, (*a.get_try()).member());
     }
 }
 
-BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
-    BOOST_TEST_MESSAGE("running future reduction move-only to move-only");
-    {
-        atomic_bool first{false};
-        move_only result;
-
-        future<void> a = async(default_executor, [&_flag = first] {
-            _flag = true;
-            return move_only(42);
-        }).then([&_result = result](auto&& x) {
-            return async(
-                default_executor,
-                [&_result](auto&& x) {
-                    _result = std::move(x);
-                },
-                forward<move_only>(x));
-        });
-
-        while (!a.get_try()) {
-            this_thread::sleep_for(chrono::milliseconds(1));
-        }
-
-        BOOST_REQUIRE(first);
-        BOOST_REQUIRE_EQUAL(42, result.member());
-    }
-    {
-        bool first{false};
-        move_only result;
-
-        future<void> a = async(immediate_executor, [&_flag = first] {
-            _flag = true;
-            return move_only(42);
-        }).then([&_result = result](auto&& x) {
-            return async(
-                immediate_executor,
-                [&_result](auto&& x) {
-                    _result = std::move(x);
-                },
-                forward<move_only>(x));
-        });
-
-        BOOST_REQUIRE(a.get_try());
-
-        BOOST_REQUIRE(first);
-        BOOST_REQUIRE_EQUAL(42, result.member());
-    }
-}
+BOOST_AUTO_TEST_SUITE_END()

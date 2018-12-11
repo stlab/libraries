@@ -72,6 +72,10 @@ struct channel_test_fixture : channel_test_fixture_base {
     std::array<stlab::receiver<T>, N> _receive;
 
     channel_test_fixture() {
+        test_reset();
+    } 
+    
+    void test_reset() {
         for (std::size_t i = 0; i < N; i++)
             std::tie(_send[i], _receive[i]) = stlab::channel<T>(stlab::default_executor);
     }

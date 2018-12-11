@@ -229,6 +229,37 @@ BOOST_AUTO_TEST_CASE(int_concatenate_two_channels) {
 
     BOOST_REQUIRE_EQUAL(42, result);
 }
+
+BOOST_AUTO_TEST_CASE(int_concatenate_channels_with_different_executor) {
+    {
+        atomic_int result{ 0 };
+
+        auto done = _receive[0] | (executor{ immediate_executor } & [](int x) { return x + 1; }) | [&result](int x) { result = x; };
+
+        _receive[0].set_ready();
+
+        _send[0](42);
+
+        wait_until_done([&] { return result == 43; });
+
+        BOOST_REQUIRE_EQUAL(43, result);
+    }
+    test_reset();
+    {
+        atomic_int result{ 0 };
+
+        auto done = _receive[0] | ([](int x) { return x + 1; } & executor{ immediate_executor }) | [&result](int x) { result = x; };
+
+        _receive[0].set_ready();
+
+        _send[0](42);
+
+        wait_until_done([&] { return result == 43; });
+
+        BOOST_REQUIRE_EQUAL(43, result);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 namespace {
@@ -430,11 +461,11 @@ BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
 
         auto g = move(receive) | generator(valuesInFlight1, valuesInFlight2);
 
-        auto r1 = g | (buffer_size(bs.first) & echo()) | [&valuesInFlight1](auto x) {
+        auto r1 = g | (buffer_size{ bs.first } &echo()) | [&valuesInFlight1](auto x) {
             BOOST_REQUIRE_EQUAL(x, valuesInFlight1.front());
             valuesInFlight1.pop();
         };
-        auto r2 = g | (buffer_size(bs.second) & echo()) | [&valuesInFlight2](auto x) {
+        auto r2 = g | (buffer_size{ bs.second } &echo()) | [&valuesInFlight2](auto x) {
             BOOST_REQUIRE_EQUAL(x, valuesInFlight2.front());
             valuesInFlight2.pop();
         };
@@ -483,13 +514,13 @@ BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
 
-    for (auto bs : {0, 1, 2, 10}) {
+    for (auto bs : {0ull, 1ull, 2ull, 10ull}) {
         sender<int> send;
         receiver<int> receive;
         tie(send, receive) = channel<int>(default_executor);
         atomic_int result{0};
 
-        auto check = receive | (buffer_size(bs) & [&](int x) { result += x; });
+        auto check = receive | (buffer_size{ bs } &[&](int x) { result += x; });
 
         receive.set_ready();
         send(1);
@@ -505,13 +536,13 @@ BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
 BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel two values different buffer sizes");
 
-    for (auto bs : {0, 1, 2, 10}) {
+    for (auto bs : {0ull, 1ull, 2ull, 10ull}) {
         sender<int> send;
         receiver<int> receive;
         tie(send, receive) = channel<int>(default_executor);
         atomic_int result{0};
 
-        auto check = receive | (buffer_size(bs) & [&](int x) { result += x; });
+        auto check = receive | (buffer_size{ bs } &[&](int x) { result += x; });
 
         receive.set_ready();
         send(1);
@@ -528,23 +559,46 @@ BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
 BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel many values different buffer sizes");
 
-    for (auto bs : {0, 1, 2, 10}) {
-        sender<int> send;
-        receiver<int> receive;
-        tie(send, receive) = channel<int>(default_executor);
-        atomic_int result{0};
+    {
+        for (auto bs : { 0ull, 1ull, 2ull, 10ull }) {
+            sender<int> send;
+            receiver<int> receive;
+            tie(send, receive) = channel<int>(default_executor);
+            atomic_int result{ 0 };
 
-        auto check = receive | (buffer_size(bs) & [&](int x) { result += x; });
+            auto check = receive | (buffer_size{ bs } &[&](int x) { result += x; });
 
-        receive.set_ready();
-        for (auto i = 0; i < 10; ++i)
-            send(1);
+            receive.set_ready();
+            for (auto i = 0; i < 10; ++i)
+                send(1);
 
-        while (result < 10) {
-            this_thread::sleep_for(chrono::microseconds(1));
+            while (result < 10) {
+                this_thread::sleep_for(chrono::microseconds(1));
+            }
+
+            BOOST_REQUIRE_EQUAL(10, result);
+        }
+    }
+    {
+        for (auto bs : { 0ull, 1ull, 2ull, 10ull }) {
+            sender<int> send;
+            receiver<int> receive;
+            tie(send, receive) = channel<int>(default_executor);
+            atomic_int result{ 0 };
+
+            auto check = receive | ([&](int x) { result += x; } &buffer_size{ bs });
+
+            receive.set_ready();
+            for (auto i = 0; i < 10; ++i)
+                send(1);
+
+            while (result < 10) {
+                this_thread::sleep_for(chrono::microseconds(1));
+            }
+
+            BOOST_REQUIRE_EQUAL(10, result);
         }
 
-        BOOST_REQUIRE_EQUAL(10, result);
     }
 }
 
