@@ -2,65 +2,53 @@
 
 {% assign methods = siblings | where_exp:"p","p.layout == 'method'" %}
 
+{% assign ctor_name = page.title %}
+{% assign dtor_name = "~" | append: page.title %}
+
+{% if page.ctor != 'unspecified' or page.dtor != 'unspecified' or methods.size > 0 %}
 <h3>Member Functions</h3>
-<table class='definition-table'>
-{% unless page.ctor == 'unspecified' %}
-    <tr>
-        {% case page.ctor %}
-        {% when 'delete' %}
-            <td class='decl'>(constructor)</td>
-            <td class='defn'><i>deleted</i></td>
-        {% when 'default' %}
-            <td class='decl'>(constructor)</td>
-            <td class='defn'>Default-constructs a {{ page.pure-name }}</i></td>
-        {% else %}
-            <td class='decl'><a href='{{ page.pure-name }}.html'>(constructor)</a></td>
-            <td class='defn'>Constructs a {{ page.pure-name }}</td>
-        {% endcase %}
-    </tr>
-{% endunless %}
-
-{% unless page.dtor == 'unspecified' %}
-    <tr>
-        {% case page.dtor %}
-        {% when 'delete' %}
-            <td class='decl'>(destructor)</td>
-            <td class='defn'><i>deleted</i></td>
-        {% when 'default' %}
-            <td class='decl'>(destructor)</td>
-            <td class='defn'>Default-destructs a {{ page.pure-name }}</td>
-        {% else %}
-            <td class='decl'><a href='-{{ page.pure-name }}.html'>(destructor)</a></td>
-            <td class='defn'>Destructs a {{ page.pure-name }}</td>
-        {% endcase %}
-    </tr>
-{% endunless %}
-
-{% if methods.size > 0 %}
-  {% for p in methods %}
-    {% if p.pure-name == dtor_name or p.pure-name == page.pure-name %}
-        {% continue %}
-    {% endif %}
-
-    {% assign short_url = p.url | remove_first: page.url %}
-    <tr>
-        <td class='decl'>
-          <div><a href="{{short_url}}">{{ p.pure-name }}</a></div>
-        </td>
-        <td class='defn'>
-            {% if p.brief %}
-                {{ p.brief | markdownify}}
-            {% elsif p.description %}
-                {{ p.description | markdownify}}
-            {% else %}
-                {{ '_No details given_' | markdownify}}
-            {% endif %}
-            {% if p.annotation %}
-                <span class='annotation'>({{p.annotation}})</span>
-            {% endif %}
-        </td>
-    </tr>
-  {% endfor %}
 {% endif %}
+
+<table class='definition-table'>
+
+{% for p in methods %}
+  {% if p.is_ctor %}
+    <tr>
+        <td class='decl' colspan='2'><a href='{{p.url}}'>(constructor)</a></td>
+    </tr>
+  {% endif %}
+{% endfor %}
+
+{% for p in methods %}
+  {% if p.is_dtor %}
+    <tr>
+        <td class='decl' colspan='2'><a href='{{p.url}}'>(destructor)</a></td>
+    </tr>
+  {% endif %}
+{% endfor %}
+
+{% for p in methods %}
+  {% if p.is_ctor or p.is_dtor %}
+    {% continue %}
+  {% endif %}
+
+  <tr>
+    <td class='decl'>
+      <div><a href="{{p.url}}">{{ p.title | escape }}</a></div>
+    </td>
+    <td class='defn'>
+      {% if p.brief %}
+        {{ p.brief | markdownify}}
+      {% elsif p.description %}
+        {{ p.description | markdownify}}
+      {% else %}
+        {{ '_No details given_' | markdownify}}
+      {% endif %}
+      {% if p.annotation %}
+        <span class='annotation'>({{p.annotation | join: ", "}})</span>
+      {% endif %}
+    </td>
+  </tr>
+{% endfor %}
 </table>
 

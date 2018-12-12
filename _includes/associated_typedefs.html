@@ -1,0 +1,24 @@
+{% if page.typedefs %}
+  <h3>Types</h3>
+  <table class='definition-table'>
+    <tr class='headers'>
+      <th>Type</th>
+      <th>Definition</th>
+      <th>Notes</th>
+    </tr>
+    {% for type in page.typedefs %}
+      <tr>
+        <td class='type'>{% highlight c++ %}{{ type[0] }}{% endhighlight %}</td>
+        <td class='decl'>{{ type[1].definition | escape}}</td>
+        {% if type[1].description or type[1].annotation %}
+          <td class='defn'>
+            {{ type[1].description | markdownify }}
+            {% if type[1].annotation %}
+              <span class='annotation'>({{ type[1].annotation | join: ", " }})</span>
+            {% endif %}
+          </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+  </table>
+{% endif %}

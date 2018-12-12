@@ -1,16 +1,3 @@
-{% if jekyll.environment == "production" %}
-    {% assign git_base = "https://github.com/stlab/libraries/blob/master/" %}
-{% elsif jekyll.environment == "development" %}
-    {% assign git_base = "https://github.com/stlab/libraries/blob/develop/" %}
-{% else %}
-    {% assign git_base = "https://github.com/stlab/libraries/blob/" | append: jekyll.environment | append: "/" %}
-{% endif %}
-
-{% if page.defined-in-header %}
-<div>
-    Defined in 
-    <a href="{{git_base}}{{page.defined-in-header}}">
-        <code>&lt;{{page.defined-in-header}}&gt;</code>
-    </a>
-</div>
+{% if page.defined-in-file %}
+<div>Defined in <code>&lt;{{page.defined-in-file}}&gt;</code></div>
 {% endif %}

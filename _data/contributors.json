@@ -18,7 +18,7 @@
     "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 495
+    "contributions": 527
   },
   {
     "login": "fosterbrereton",
@@ -60,7 +60,7 @@
     "received_events_url": "https://api.github.com/users/sean-parent/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 113
+    "contributions": 59
   },
   {
     "login": "apmccartney",
@@ -81,7 +81,7 @@
     "received_events_url": "https://api.github.com/users/apmccartney/received_events",
     "type": "User",
     "site_admin": false,
-    "contributions": 12
+    "contributions": 28
   },
   {
     "login": "jaredadobe",
@@ -126,6 +126,27 @@
     "contributions": 8
   },
   {
+    "login": "rwols",
+    "id": 2431823,
+    "node_id": "MDQ6VXNlcjI0MzE4MjM=",
+    "avatar_url": "https://avatars3.githubusercontent.com/u/2431823?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/rwols",
+    "html_url": "https://github.com/rwols",
+    "followers_url": "https://api.github.com/users/rwols/followers",
+    "following_url": "https://api.github.com/users/rwols/following{/other_user}",
+    "gists_url": "https://api.github.com/users/rwols/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/rwols/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/rwols/subscriptions",
+    "organizations_url": "https://api.github.com/users/rwols/orgs",
+    "repos_url": "https://api.github.com/users/rwols/repos",
+    "events_url": "https://api.github.com/users/rwols/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/rwols/received_events",
+    "type": "User",
+    "site_admin": false,
+    "contributions": 4
+  },
+  {
     "login": "Frans-Willem",
     "id": 346213,
     "node_id": "MDQ6VXNlcjM0NjIxMw==",
@@ -145,5 +166,68 @@
     "type": "User",
     "site_admin": false,
     "contributions": 3
+  },
+  {
+    "login": "dixlorenz",
+    "id": 10881076,
+    "node_id": "MDQ6VXNlcjEwODgxMDc2",
+    "avatar_url": "https://avatars1.githubusercontent.com/u/10881076?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/dixlorenz",
+    "html_url": "https://github.com/dixlorenz",
+    "followers_url": "https://api.github.com/users/dixlorenz/followers",
+    "following_url": "https://api.github.com/users/dixlorenz/following{/other_user}",
+    "gists_url": "https://api.github.com/users/dixlorenz/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/dixlorenz/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/dixlorenz/subscriptions",
+    "organizations_url": "https://api.github.com/users/dixlorenz/orgs",
+    "repos_url": "https://api.github.com/users/dixlorenz/repos",
+    "events_url": "https://api.github.com/users/dixlorenz/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/dixlorenz/received_events",
+    "type": "User",
+    "site_admin": false,
+    "contributions": 2
+  },
+  {
+    "login": "aaronalbers",
+    "id": 37545192,
+    "node_id": "MDQ6VXNlcjM3NTQ1MTky",
+    "avatar_url": "https://avatars3.githubusercontent.com/u/37545192?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/aaronalbers",
+    "html_url": "https://github.com/aaronalbers",
+    "followers_url": "https://api.github.com/users/aaronalbers/followers",
+    "following_url": "https://api.github.com/users/aaronalbers/following{/other_user}",
+    "gists_url": "https://api.github.com/users/aaronalbers/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/aaronalbers/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/aaronalbers/subscriptions",
+    "organizations_url": "https://api.github.com/users/aaronalbers/orgs",
+    "repos_url": "https://api.github.com/users/aaronalbers/repos",
+    "events_url": "https://api.github.com/users/aaronalbers/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/aaronalbers/received_events",
+    "type": "User",
+    "site_admin": false,
+    "contributions": 1
+  },
+  {
+    "login": "superfunc",
+    "id": 1583002,
+    "node_id": "MDQ6VXNlcjE1ODMwMDI=",
+    "avatar_url": "https://avatars0.githubusercontent.com/u/1583002?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/superfunc",
+    "html_url": "https://github.com/superfunc",
+    "followers_url": "https://api.github.com/users/superfunc/followers",
+    "following_url": "https://api.github.com/users/superfunc/following{/other_user}",
+    "gists_url": "https://api.github.com/users/superfunc/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/superfunc/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/superfunc/subscriptions",
+    "organizations_url": "https://api.github.com/users/superfunc/orgs",
+    "repos_url": "https://api.github.com/users/superfunc/repos",
+    "events_url": "https://api.github.com/users/superfunc/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/superfunc/received_events",
+    "type": "User",
+    "site_admin": false,
+    "contributions": 1
   }
 ]

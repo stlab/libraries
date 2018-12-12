@@ -1,5 +1,5 @@
 ---
-layout: free-function
+layout: function
 title: stlab::when_all
 tags: [library]
 scope: stlab

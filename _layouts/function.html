@@ -1,0 +1,56 @@
+---
+layout: default
+---
+<div class="post">
+  <header class="post-header">
+      <h1 class='code'>{{ page.title | escape }}</h1>
+  </header>
+
+  <article class="post-content">
+    {% include defined_in_header.html %}
+
+    <br/>
+
+    {{page.brief | markdownify}}
+
+    <br/>
+
+    {% include overloads.html %}
+
+    {% for entity in page.entities %}
+      {% case entity.kind %}
+        {% when 'parameters'%}
+          <h3>Parameters</h3>
+          {% if entity.list %}
+            <table class='parameter-table'>
+            {% for item in entity.list %}
+                <tr>
+                  <td class='decl'>{{ item.name }}</td>
+                  <td class='defn'>
+                      {% if item.annotation %}
+                      <span class='annotation'>({{item.annotation | join: ", "}})</span>
+                      {% endif %}
+                      {{ item.description | markdownify }}
+                  </td>
+                </tr>
+            {% endfor %}
+            </table>
+          {% else %}
+            <p>(none)</p>
+          {% endif %}
+        {% when 'result'%}
+          <h3>Return value</h3>
+          {% if entity.description %}
+            {{ entity.description | markdownify }}
+          {% else %}
+            <p>(none)</p>
+          {% endif %}
+        {% else %}
+      {% endcase %}
+    {% endfor %}
+
+    {{ content }}
+
+    {% include external_examples.html name=page.example header="Example" %}
+  </article>
+</div>

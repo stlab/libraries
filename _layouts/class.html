@@ -1,14 +1,17 @@
 ---
 layout: default
 ---
-
-<header class="post-header">
-    <h1 class='code'>{{ page.title }}</h1>
-</header>
-
 <div class="post">
+    <header class="post-header">
+        <h1 class='code'>{{ page.title | escape }}</h1>
+    </header>
+
     <article class="post-content">
         {% include defined_in_header.html %}
+
+        <br/>
+
+        {{page.brief | markdownify}}
 
         {% if page.declaration.first != empty %}
            <table class='declaration-table'>
@@ -16,7 +19,7 @@ layout: default
             <tr>
               <td>
                 {% highlight cpp %}{{ item }}{% endhighlight %}
-               </td>
+              </td>
             </tr>
            {% endfor %}
            </table>
@@ -24,33 +27,13 @@ layout: default
             {% highlight c++ %}{{ page.declaration }}{% endhighlight %}
         {% endif %}
 
-        {{page.brief | markdownify }}
+        {{page.description | markdownify}}
 
-        {{page.description | markdownify }}
+        {% include associated_enumerations.html %}
 
-        {% if page.member-types %}
-            <h3>Member types</h3>
-            <table class='definition-table'>
-                <tr class='headers'>
-                    <th>Member type</th>
-                    <th colspan=2>Definition</th>
-                </tr>
-                {% for type in page.member-types %}
-                    <tr>
-                        <td><code>{{ type.type }}</code></td>
-                        <td><code>{{ type.definition }}</code></td>
-                        {% if type.note or type.annotation %}
-                            <td>
-                                {{ type.note }}
-                                {% if type.annotation %}
-                                <span class='annotation'>{{ type.annotation }}</span>
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-            </table>
-        {% endif %}
+        {% include associated_typedefs.html %}
+
+        {% include associated_fields.html %}
 
         {% include associated_methods.html %}
 

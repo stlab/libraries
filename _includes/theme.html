@@ -1,0 +1,81 @@
+<div class="theme">
+    <a id="theme-switcher"></a>
+</div>
+
+<script type="text/javascript">
+    'use strict';
+    {
+        const key = "theme";
+        const switcher = document.getElementById("theme-switcher");
+        const content = document.getElementById("site-wrapper");
+
+        function theme(name, next) {
+            if (name === "dark") {
+                set("/css/main-dark.css");            
+            }
+            else {
+                set("/css/main-light.css");               
+            }
+
+            store(name);
+
+            switcher.textContent = "<" + next + ">";
+        }
+
+        function set(url){
+            const id = "main-style";
+
+            // Hide content while changing styles to avoid flashing unstyled content
+            content.style.display = "none";
+
+            let style = document.getElementById(id);
+            const parent = style.parentElement;
+            parent.removeChild(style);
+            style = document.createElement('link');
+            style.type = 'text/css';
+            style.rel = 'stylesheet';
+            style.id = id;
+            style.onload = () => {
+                content.style.display = "initial";
+            };
+            style.href = url;
+            parent.appendChild(style);
+        }
+
+        function store(name){
+            localStorage.setItem(key, name);
+        }
+
+        function load() {
+            let name = localStorage.getItem(key);
+            if (name == 'undefined' || name == undefined) {
+                name = "light";            
+            }
+            
+            return name;
+        }
+
+        function swap() {
+            const name = load();
+
+            theme(next(name), name);
+        }
+
+        function next(current) {
+            if (current === "light") {
+                return "dark";
+            } else {
+                return "light";
+            }
+        }
+
+        // Load saved theme
+        const name = load();
+        theme(name, next(name));
+
+        // Hook up switch handler
+        switcher.onclick = event => {
+            swap();
+        };
+    }
+</script> 

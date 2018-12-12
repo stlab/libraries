@@ -1,0 +1,29 @@
+{% include derive_family.html %}
+
+{% assign enums = siblings | where_exp:"p","p.layout == 'enumeration'" %}
+
+{% if enums.size > 0 %}
+  <h3>Enumerations</h3>
+  <table class='associated-table'>
+  {% for p in enums %}
+    <tr>
+      <td class='name'>
+      <div><a href="{{p.url}}">{{ p.title | escape }}</a></div>
+      </td>
+      <td class='brief'>
+        {% if p.brief %}
+          {{ p.brief | markdownify}}
+        {% elsif p.description %}
+          {{ p.description | markdownify}}
+        {% else %}
+          {{ '_No details given_' | markdownify}}
+        {% endif %}
+        {% if p.annotation %}
+          <span class='annotation'>({{p.annotation | join: ", "}})</span>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </table>
+{% endif %}
+

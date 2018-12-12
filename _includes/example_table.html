@@ -5,40 +5,28 @@
     {% assign examples = examples | sort: 'scope' %}
 {% endunless %}
 
-{% if examples.size != 0 %}
-
 <h3>Examples</h3>
 
 <table class='example-table'>
-{% for p in examples %}
-  <tr>
-      <td class='decl_func'>
-      {% if p.scope %}
-        {% assign label = p.scope | append: "::" | append: p.pure-name %}
-      {% elsif p.pure-name %}
-        {% assign label = p.pure-name %}
-      {% else %}
-        {% assign label = p.title %}
-      {% endif %}
-
-      <a href='{{p.url}}'><code>{{label}}</code></a>
-      </td>
-      <td class='decl_link'>
-        {% for e in p.example %}
-            {% assign lastchar = p.url | split: '' | last %}
-            {% if lastchar == '/' %}
-                {% assign url = p.url | split: '/' | push: e | join: '/' %}
-            {% else %}
-                {% assign url = p.url | split: '/' | pop | push: e | join: '/' %}
-            {% endif %}
-            <a href='{{url}}'><code>{{e}}</code></a><br/>
-        {% endfor %}
-      </td>
-      <td class='defn'>
-        {{p.brief}}
-      </td>
-  </tr>
-{% endfor %}
+  {% for p in examples %}
+    <tr>
+        <td class='decl_func'>
+          <a href='{{p.url}}'><code>{{p.title}}</code></a>
+        </td>
+        <td class='decl_link'>
+          {% for e in p.example %}
+              {% assign lastchar = p.url | split: '' | last %}
+              {% if lastchar == '/' %}
+                  {% assign url = p.url | split: '/' | push: e | join: '/' %}
+              {% else %}
+                  {% assign url = p.url | split: '/' | pop | push: e | join: '/' %}
+              {% endif %}
+              <a href='{{url}}'><code>{{e}}</code></a><br/>
+          {% endfor %}
+        </td>
+        <td class='defn'>
+          {{p.brief}}
+        </td>
+    </tr>
+  {% endfor %}
 </table>
-
-{% endif %}
