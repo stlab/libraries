@@ -267,11 +267,11 @@ const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, tru
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, false>::_vtable;
+const typename task<R(Args...)>::concept task<R(Args...)>::model<F, false>::_vtable;
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, true>::_vtable;
+const typename task<R(Args...)>::concept task<R(Args...)>::model<F, true>::_vtable;
 
 #endif
 

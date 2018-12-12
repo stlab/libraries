@@ -124,9 +124,8 @@ void tuple_for_each(T& t, Op op) {
  * The default value is returned, if the index is equal or greater to tuple_size
  */
 template <typename T, typename F, typename D>
-auto get_i(T& t, std::size_t index, F&& f, D&& default_v) {
-    return detail::get_i_impl<0, std::tuple_size<T>::value>::go(t, index, std::forward<F>(f),
-                                                                std::forward<D>(default_v));
+auto get_i(T& t, std::size_t index, F f, D&& default_v) {
+    return detail::get_i_impl<0, std::tuple_size<T>::value>::go(t, index, std::move(f), std::forward<D>(default_v));
 }
 
 /*
@@ -150,7 +149,7 @@ constexpr decltype(auto) apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>)
 
 template <class F, class Tuple, std::size_t... I>
 constexpr decltype(auto) apply_optional_indexed_impl(F&& f, Tuple&& t, std::index_sequence<I...>) {
-    return std::forward<F>(f)(*std::get<I>(std::forward<Tuple>(t))...);
+    return std::forward<F>(f)(std::move(*std::get<I>(std::forward<Tuple>(t)))...);
 }
 
 /**************************************************************************************************/

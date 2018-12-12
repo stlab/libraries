@@ -2,13 +2,19 @@
 set -x
 
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+  #
+  # It is nevessary to patch gcc std.variant because of a clang bug which is fixed in clang 8.0
+  # further details are here: https://stackoverflow.com/questions/46506387/getstring-for-variants-fail-under-clang-but-not-g
+  #
+  sudo .travis/patches/patch_std_variant.sh
+
   sudo update-alternatives \
-    --install /usr/bin/gcc gcc /usr/bin/gcc-5 90 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-5 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-5
+    --install /usr/bin/gcc gcc /usr/bin/gcc-7 90 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
+    --slave /usr/bin/gcov gcov /usr/bin/gcov-7
   sudo update-alternatives \
-    --install /usr/bin/clang clang /usr/bin/clang-3.8 90 \
-    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-3.8
+    --install /usr/bin/clang clang /usr/bin/clang-7 90 \
+    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-7
   sudo update-alternatives --config gcc
   sudo update-alternatives --config clang
   if [ "$CXX" = "clang++" ]; then
