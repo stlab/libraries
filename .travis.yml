@@ -19,14 +19,14 @@ addons:
     config:
       retries: true
     sources:
-      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
+      - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main"
         key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
       - ubuntu-toolchain-r-test
-      - george-edison55-precise-backports
+      #- george-edison55-precise-backports
     packages:
       - gcc-6
       - g++-6
-      - clang-3.8
+      - clang-6.0
       - llvm-dev
       - cmake
       - cmake-data
@@ -45,7 +45,7 @@ matrix:
 
   - language: c++
     os: osx
-    osx_image: xcode8.3
+    osx_image: xcode10.1
     compiler: clang
     script:
       - brew update
