@@ -313,7 +313,7 @@ struct generator {
     int _value = 0;
     tuple<T&...> _queues;
 
-    generator(T&... q) : _queues(q...) {}
+    explicit generator(T&... q) : _queues(q...) {}
 
     template <size_t... I>
     void push_values(int value, index_sequence<I...>) {
