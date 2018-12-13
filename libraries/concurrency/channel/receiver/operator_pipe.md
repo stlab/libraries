@@ -18,14 +18,14 @@ entities:
         declaration: |
           template <typename F> 
           auto operator|(F&& f)
-        description: Attaches the given process to the receiver and returns a new receiver. It can either be a function object with a single parameter or a process that has an `await()` and a `yield()` method.
+        description: Attaches the given process to the receiver and returns a new receiver. It can either be a function object with a single parameter or a process that has an `await()` and a `yield()` method. L-value processes can be attached when they are wrapped within `std::reference_wrapper`.
       - name: stlab::receiver::operator|
         pure-name: operator|
         defined-in-header: stlab/concurrency/channel.hpp 
         declaration: |
           template <typename F>
           auto operator|(detail::annotated_process<F>&& ap)
-        description: Attaches the given annotated process to the receiver and returns a new receiver. It can either be a function object with a single parameter or a process that follows this signature. An `annotated_process` should not be explicitly instantiated but it gets implicitly created as soon as one combines a function object with an `operator&` and an `executor` or a `buffer_size` or both.
+        description: Attaches the given annotated process to the receiver and returns a new receiver. It can either be a function object with a single parameter or a process that follows this signature. An `annotated_process` should not be explicitly instantiated but it gets implicitly created as soon as one combines a function object with an `operator&` and an `executor` or a `buffer_size` or both. L-value processes can be attached when they are wrapped within `std::reference_wrapper`.
   - kind: parameters
     list:
       - name: f
