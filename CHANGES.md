@@ -1,4 +1,4 @@
-## v1.4.0 - 2018 - December - 
+## v1.4.0 - 2018 - December - 12
 - Fixed Issues
     - [#208](https://github.com/stlab/libraries/issues/208): g++8.2.0 compiling error
     - [#206](https://github.com/stlab/libraries/issues/206): channels does not allow processes as lvalues, only as rvalue
