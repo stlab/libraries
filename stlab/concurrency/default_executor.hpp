@@ -140,7 +140,10 @@ public:
         if (_pool == nullptr) throw std::bad_alloc();
 
         _cleanupgroup = CreateThreadpoolCleanupGroup();
-        if (_pool == nullptr) throw std::bad_alloc();
+        if (_cleanupgroup == nullptr) {
+            CloseThreadpool(_pool);
+            throw std::bad_alloc();
+        }
 
         SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
         SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
