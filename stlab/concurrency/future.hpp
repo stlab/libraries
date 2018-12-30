@@ -332,7 +332,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         {
             std::unique_lock<std::mutex> lock(_mutex);
             ready = _ready;
-            if (!ready) _then.emplace_back(std::move(executor), std::move(p.first));
+            if (!ready) _then.emplace_back(std::forward<E>(executor), std::move(p.first));
         }
         if (ready) executor(std::move(p.first));
 
