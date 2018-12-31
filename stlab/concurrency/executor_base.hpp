@@ -53,6 +53,27 @@ auto execute_delayed(std::chrono::steady_clock::duration duration, E executor) {
     return execute_at(std::chrono::steady_clock::now() + duration, std::move(executor));
 }
 
+struct executor {
+    executor_t _executor;
+};
+
+template <typename F>
+struct executor_task_pair {
+    executor_t _executor;
+    F _f;
+};
+
+template <typename F>
+executor_task_pair<F> operator&(executor e, F&& f) {
+    return executor_task_pair<F>{std::move(e._executor), std::forward<F>(f)};
+}
+
+template <typename F>
+executor_task_pair<F> operator&(F&& f, executor e) {
+    return executor_task_pair<F>{std::move(e._executor), std::forward<F>(f)};
+}
+
+
 /**************************************************************************************************/
 
 } // namespace v1

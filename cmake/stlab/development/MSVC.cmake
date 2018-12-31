@@ -1,4 +1,4 @@
-set( stlab_MSVC_base_flags /W3 /WX )
+set( stlab_MSVC_base_flags /W3 /WX /D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 set( stlab_MSVC_debug_flags )
 set( stlab_MSVC_coverage_flags )
 set( stlab_MSVC_release_flags )
