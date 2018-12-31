@@ -81,6 +81,15 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
     return p.second;
 }
 
+template <typename E>
+future<void> make_exceptional_future(std::exception_ptr error, E executor) {
+    auto p = package<void()>(std::move(executor), [_error = error]() {
+        std::rethrow_exception(_error);
+    });
+    p.first();
+    return p.second;
+}
+
 template <typename T>
 T blocking_get(future<T> x) {
     stlab::optional<T> result;
