@@ -10,8 +10,10 @@ MKDIR build_debug
 PUSHD build_debug
 
 ::conan install .. -o Boost:shared=False --build=missing
-conan install .. -s compiler="Visual Studio" -s compiler.version=14 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False
+:: Use this line, when the package is not available
+::conan install .. -s compiler="Visual Studio" -s compiler.version=15 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False --build boost
+conan install .. -s compiler="Visual Studio" -s compiler.version=15 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False
 
-cmake -G "Visual Studio 14 Win64" -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
+cmake -G "Visual Studio 15 Win64" -D CMAKE_BUILD_TYPE=debug -D stlab_testing=ON ..
 
 POPD

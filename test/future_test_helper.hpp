@@ -21,6 +21,7 @@
 using lock_t = std::unique_lock<std::mutex>;
 
 namespace future_test_helper {
+
 template <std::size_t no>
 struct custom_scheduler {
     using result_type = void;
@@ -40,7 +41,9 @@ struct custom_scheduler {
 
     static int usage_counter() { return counter().load(); }
 
-    static void reset() { counter() = 0; }
+    static void reset() {
+        counter() = 0;
+    }
 
     static std::atomic_int& counter() {
         static std::atomic_int counter;
@@ -51,8 +54,18 @@ private:
     size_t _id = no; // only used for debugging purpose
 };
 
+
+
+template <std::size_t I>
+stlab::executor_t make_executor() {
+    return [_executor = custom_scheduler<I>{}](stlab::task<void()> f) mutable {
+        _executor(std::move(f));
+    };
+}
+
+
 class test_exception : public std::exception {
-    const std::string _error;
+    std::string _error;
 
 public:
     test_exception() {}
