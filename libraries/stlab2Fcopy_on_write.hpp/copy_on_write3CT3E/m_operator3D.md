@@ -27,14 +27,12 @@ overloads:
     description: Move assignment
     return: __OPTIONAL__
     signature_with_names: auto operator=(copy_on_write<T> && x) -> copy_on_write<T> &
-  template <class U> auto operator=(U &&) -> disable_copy_assign<U>:
-    annotation:
-      - public
+  "template <class U>\nauto operator=(U &&) -> disable_copy_assign<U>":
     arguments:
       - description: __OPTIONAL__
         name: x
         type: U &&
     description: Copy assignment from non-`T`-type
     return: __OPTIONAL__
-    signature_with_names: template <class U> auto operator=(U && x) -> disable_copy_assign<U>
+    signature_with_names: "template <class U>\nauto operator=(U && x) -> disable_copy_assign<U>"
 ---

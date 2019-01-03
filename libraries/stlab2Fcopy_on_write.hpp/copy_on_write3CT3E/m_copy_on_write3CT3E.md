@@ -34,9 +34,7 @@ overloads:
     description: Move constructor
     return: __OPTIONAL__
     signature_with_names: copy_on_write<T>(copy_on_write<T> && x)
-  template <class U, class V, class... Args> copy_on_write<T>(U &&, V &&, Args &&...):
-    annotation:
-      - public
+  "template <class U, class V, class... Args>\ncopy_on_write<T>(U &&, V &&, Args &&...)":
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -49,10 +47,8 @@ overloads:
         type: Args &&...
     description: Constructor
     return: __OPTIONAL__
-    signature_with_names: template <class U, class V, class... Args> copy_on_write<T>(U && x, V && y, Args &&... args)
-  template <class U> copy_on_write<T>(U &&, disable_copy<U>):
-    annotation:
-      - public
+    signature_with_names: "template <class U, class V, class... Args>\ncopy_on_write<T>(U && x, V && y, Args &&... args)"
+  "template <class U>\ncopy_on_write<T>(U &&, disable_copy<U>)":
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -63,5 +59,5 @@ overloads:
         unnamed: true
     description: Constructor
     return: __OPTIONAL__
-    signature_with_names: template <class U> copy_on_write<T>(U && x, disable_copy<U>)
+    signature_with_names: "template <class U>\ncopy_on_write<T>(U && x, disable_copy<U>)"
 ---
