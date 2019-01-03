@@ -6,8 +6,8 @@ if [ "$TRAVIS_OS_NAME" = "linux" ]; then
     --install /usr/bin/gcc gcc /usr/bin/gcc-6 90 \
     --slave /usr/bin/g++ g++ /usr/bin/g++-6
   sudo update-alternatives \
-    --install /usr/bin/clang clang /usr/bin/clang-3.8 90 \
-    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-3.8
+    --install /usr/bin/clang clang /usr/bin/clang-6 90 \
+    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-6
   sudo update-alternatives --config gcc
   sudo update-alternatives --config clang
   export NPROC=$(nproc)

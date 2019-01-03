@@ -9,13 +9,9 @@ defined-in-file: stlab/copy_on_write.hpp
 declaration: "template <typename T>\nclass stlab::copy_on_write;"
 typedefs:
   element_type:
-    annotation:
-      - public
     definition: T
     description: The type of value stored
   value_type:
-    annotation:
-      - public
     definition: T
     description: The type of value stored
 fields:

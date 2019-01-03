@@ -9,7 +9,6 @@ defined-in-file: stlab/copy_on_write.hpp
 overloads:
   bool unique_instance() const:
     annotation:
-      - public
       - deprecated ()
     description: Singular variant
     return: "`true` iff the object instance reference count is one. `false` otherwise."

@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   bool identity(const copy_on_write<T> &) const:
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x

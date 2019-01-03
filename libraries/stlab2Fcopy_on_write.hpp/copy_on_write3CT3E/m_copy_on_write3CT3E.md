@@ -9,14 +9,10 @@ defined-in-file: stlab/copy_on_write.hpp
 is_ctor: true
 overloads:
   copy_on_write<T>():
-    annotation:
-      - public
     description: Default constructor
     return: __OPTIONAL__
     signature_with_names: copy_on_write<T>()
   copy_on_write<T>(const copy_on_write<T> &):
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -25,8 +21,6 @@ overloads:
     return: __OPTIONAL__
     signature_with_names: copy_on_write<T>(const copy_on_write<T> & x)
   copy_on_write<T>(copy_on_write<T> &&):
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x

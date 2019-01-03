@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   auto operator=(const copy_on_write<T> &) -> copy_on_write<T> &:
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -18,8 +16,6 @@ overloads:
     return: __OPTIONAL__
     signature_with_names: auto operator=(const copy_on_write<T> & x) -> copy_on_write<T> &
   auto operator=(copy_on_write<T> &&) -> copy_on_write<T> &:
-    annotation:
-      - public
     arguments:
       - description: __OPTIONAL__
         name: x

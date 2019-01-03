@@ -8,8 +8,6 @@ tags:
 defined-in-file: stlab/copy_on_write.hpp
 overloads:
   auto operator*() const -> const stlab::copy_on_write::element_type &:
-    annotation:
-      - public
     description: Singular variant
     return: A const reference to the element type
     signature_with_names: auto operator*() const -> const stlab::copy_on_write::element_type &
