@@ -262,7 +262,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename S, typename F>
     auto then(S s, F f) {
-        return recover(std::move(s), [_f = std::move(f)](const auto& x){
+        return recover(std::move(s), [_f = std::move(f)](const auto& x) mutable {
             return _f(x._p->get_ready());
         });
     }
@@ -273,7 +273,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename S, typename F>
     auto recover(S s, F f) {
         auto p = package<std::result_of_t<F(future<T>)>()>(s,
-            [_f = std::move(f), _p = future<T>(this->shared_from_this())] {
+            [_f = std::move(f), _p = future<T>(this->shared_from_this())] () mutable {
                 return _f(_p);
             });
 
