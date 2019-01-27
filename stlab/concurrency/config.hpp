@@ -62,7 +62,7 @@
 #endif
 
 #ifndef STLAB_CPP_VERSION
-#define STLAB_CPP_VERSION 14
+#define STLAB_CPP_VERSION 17
 #endif
 
 #ifndef STLAB_FUTURE_COROUTINES
