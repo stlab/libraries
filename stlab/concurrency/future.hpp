@@ -332,7 +332,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         {
             std::unique_lock<std::mutex> lock(_mutex);
             ready = _ready;
-            if (!ready) _then.emplace_back(std::move(executor), std::move(p.first));
+            if (!ready) _then.emplace_back(std::forward<E>(executor), std::move(p.first));
         }
         if (ready) executor(std::move(p.first));
 
@@ -1683,16 +1683,18 @@ struct value_<T, enable_if_copyable<T>> {
 
     template <typename F, typename... Args>
     static void set(shared_base<future<void>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...)
-                         .recover([_p = sb.shared_from_this()](future<void> f) {
-                             if (f.error()) {
-                                 _p->_error = std::move(*f.error());
-                                 value_::proceed(*_p);
-                                 throw future_error(future_error_codes::reduction_failed);
-                             }
-                             return;
-                         })
-                         .then([_p = sb.shared_from_this()]() { proceed(*_p); });
+        sb._result = f(std::forward<Args>(args)...);
+        sb._reduction_helper.value =
+            (*sb._result)
+                .recover([_p = sb.shared_from_this()](future<void> f) {
+                     if (f.error()) {
+                         _p->_error = std::move(*f.error());
+                         value_::proceed(*_p);
+                         throw future_error(future_error_codes::reduction_failed);
+                     }
+                     return;
+                 })
+                 .then([_p = sb.shared_from_this()]() { proceed(*_p); });
     }
 };
 
@@ -1803,20 +1805,20 @@ auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<void>>&& r) -> 
 template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto f) { return *f.get_try(); });
+    return std::move(r).then([](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
 }
 
 /**************************************************************************************************/
 
 template <typename T>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then([](auto&&){});
+    return std::move(r).then([](auto){});
 }
 
 template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto&& f) { return *std::forward<future<R>>(f).get_try(); });
+    return std::move(r).then([](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
 }
 
 /**************************************************************************************************/
@@ -1827,7 +1829,7 @@ inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void> 
 
 template <typename R>
 auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto f) { return *f.get_try(); });
+    return std::move(r).then([](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
 }
 
 /**************************************************************************************************/

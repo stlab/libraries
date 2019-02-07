@@ -63,7 +63,9 @@ private:
         dispatch_group_t _group = dispatch_group_create();
         ~group() {
             dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+#if !__has_feature(objc_arc)
             dispatch_release(_group);
+#endif
         }
     };
 
@@ -140,7 +142,10 @@ public:
         if (_pool == nullptr) throw std::bad_alloc();
 
         _cleanupgroup = CreateThreadpoolCleanupGroup();
-        if (_pool == nullptr) throw std::bad_alloc();
+        if (_cleanupgroup == nullptr) {
+            CloseThreadpool(_pool);
+            throw std::bad_alloc();
+        }
 
         SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
         SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);

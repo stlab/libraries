@@ -1,3 +1,9 @@
+## v1.4.1 - 2019 - February - 08
+- Fixed Issues
+    - [#234](https://github.com/stlab/libraries/issues/234): version is incorrect in stlabConfig.cmake
+    - [#229](https://github.com/stlab/libraries/issues/229): SIGBUS in future destructor
+    - [#220](https://github.com/stlab/libraries/issues/220): make_ready_future for move-only types
+
 ## v1.4.0 - 2018 - December - 12
 - Fixed Issues
     - [#208](https://github.com/stlab/libraries/issues/208): g++8.2.0 compiling error

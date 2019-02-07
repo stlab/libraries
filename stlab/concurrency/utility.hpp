@@ -61,7 +61,7 @@ future<std::decay_t<T>> make_ready_future(T&& x, E executor) {
     auto p = package<std::decay_t<T>(std::decay_t<T>)>(
         std::move(executor), [](auto&& x) { return std::forward<decltype(x)>(x); });
     p.first(std::forward<T>(x));
-    return p.second;
+    return std::move(p.second);
 }
 
 template <typename E>
@@ -78,6 +78,15 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
         return std::forward<decltype(x)>(x);
     });
     p.first(T{});
+    return std::move(p.second);
+}
+
+template <typename E>
+future<void> make_exceptional_future(std::exception_ptr error, E executor) {
+    auto p = package<void()>(std::move(executor), [_error = error]() {
+        std::rethrow_exception(_error);
+    });
+    p.first();
     return p.second;
 }
 
