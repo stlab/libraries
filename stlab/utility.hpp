@@ -21,7 +21,6 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
 namespace detail {
@@ -73,24 +72,28 @@ struct index_sequence_to_array<std::index_sequence<N...>> {
 
 /**************************************************************************************************/
 
-template <class Seq, template<std::size_t> class F, std::size_t Index, std::size_t Count>
+template <class Seq, template <std::size_t> class F, std::size_t Index, std::size_t Count>
 struct index_sequence_transform;
 
-template <class Seq, template<std::size_t> class F, std::size_t Index = 0, std::size_t Count = Seq::size()>
+template <class Seq,
+          template <std::size_t> class F,
+          std::size_t Index = 0,
+          std::size_t Count = Seq::size()>
 using index_sequence_transform_t = typename index_sequence_transform<Seq, F, Index, Count>::type;
 
-template <class Seq, template<std::size_t> class F, std::size_t Index, std::size_t Count>
+template <class Seq, template <std::size_t> class F, std::size_t Index, std::size_t Count>
 struct index_sequence_transform {
-    using type = index_sequence_cat_t<index_sequence_transform_t<Seq, F, Index, Count / 2>,
+    using type = index_sequence_cat_t<
+        index_sequence_transform_t<Seq, F, Index, Count / 2>,
         index_sequence_transform_t<Seq, F, Index + Count / 2, Count - Count / 2>>;
 };
 
-template <class Seq, template<std::size_t> class F, std::size_t Index>
+template <class Seq, template <std::size_t> class F, std::size_t Index>
 struct index_sequence_transform<Seq, F, Index, 0> {
     using type = std::index_sequence<>;
 };
 
-template <class Seq, template<std::size_t> class F, std::size_t Index>
+template <class Seq, template <std::size_t> class F, std::size_t Index>
 struct index_sequence_transform<Seq, F, Index, 1> {
     using type = typename F<index_sequence_to_array<Seq>::value[Index]>::type;
 };
@@ -104,9 +107,9 @@ constexpr detail::move_if_helper_t<P, T> move_if(T&& t) noexcept {
 
 /**************************************************************************************************/
 
-template<class F, class...Args>
-void for_each_argument(F&& f, Args&&...args) {
- return (void)std::initializer_list<int>{(std::forward<F>(f)(args),0)...};
+template <class F, class... Args>
+void for_each_argument(F&& f, Args&&... args) {
+    return (void)std::initializer_list<int>{(std::forward<F>(f)(args), 0)...};
 }
 
 /**************************************************************************************************/
@@ -122,4 +125,3 @@ void for_each_argument(F&& f, Args&&...args) {
 #endif
 
 /**************************************************************************************************/
-

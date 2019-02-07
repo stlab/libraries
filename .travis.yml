@@ -1,5 +1,6 @@
 sudo: required
-dist: trusty
+dist: xenial
+#group: deprecated-2017Q4
 language: cpp
 
 cache:
@@ -9,25 +10,16 @@ cache:
 addons:
   apt:
     sources:
-      - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
       - ubuntu-toolchain-r-test
-      - george-edison55-precise-backports
+#      - sourceline: deb http://apt.llvm.org/xenial/ llvm-toolchain-precise-7.0 main
+#        key_url: http://apt.llvm.org/llvm-snapshot.gpg.key
     packages:
-      - g++-5
-      - clang-3.8
-      - cmake
-      - cmake-data
+      - g++-7
+#      - clang-7.0
 
 branches:
   except: /pr\/.*/
-  
-before_install:
-  - pip install --user conan
 
-script:
-  - .travis/build.sh
-  
 matrix:
   include:
     #
@@ -35,34 +27,60 @@ matrix:
     #
     - os: osx
       compiler: clang
-      osx_image: xcode8
-      before_install: pip install conan
+      osx_image: xcode10.1
+      before_install:
+        - brew update
+        - brew upgrade python
+        - pip3 install --no-cache-dir pyyaml
+        - pip3 install --user conan
+        - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
+        - ./enhance_conan.sh
+
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
-        
+        options=""
+
     - os: osx
       compiler: clang
-      osx_image: xcode8
-      before_install: pip install conan
+      osx_image: xcode10.1
+      before_install:
+        - brew update
+        - brew upgrade python
+        - pip3 install --no-cache-dir pyyaml
+        - pip3 install --user conan
+        - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
+        - ./enhance_conan.sh
+
       env:
         build_type=release
-        options="-D stlab_testing=ON"
+        options=""
 
     #
-    # Linux Clang, Debug & Release
+    # Linux Clang, Debug & Release, with and without coroutines
     #
     - os: linux
       compiler: clang
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
-        
+        options=""
+
     - os: linux
       compiler: clang
       env:
         build_type=release
-        options="-D stlab_testing=ON"
+        options=""
+
+#    - os: linux
+#      compiler: clang
+#      env:
+#        build_type=debug
+#        options="-Dstlab.coroutines=ON"
+#
+#    - os: linux
+#      compiler: clang
+#      env:
+#        build_type=release
+#        options="-Dstlab.coroutines=ON"
 
     #
     # Linux GCC, Debug & Release
@@ -71,13 +89,13 @@ matrix:
       compiler: gcc
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
+        options=""
 
     - os: linux
       compiler: gcc
       env:
         build_type=release
-        options="-D stlab_testing=ON"
+        options=""
 
     #
     # Address sanitizer
@@ -86,8 +104,8 @@ matrix:
       compiler: clang
       env:
         build_type=debug
-        flags="-fsanitize=address;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
+        flags="-fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all"
+        options=""
 
     #
     # Undefined behavior sanitizer
@@ -96,8 +114,8 @@ matrix:
       compiler: clang
       env:
         build_type=debug
-        flags="-fsanitize=undefined;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
+        flags="-fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
+        options=""
 
     #
     # Thread sanitizer
@@ -107,8 +125,8 @@ matrix:
       env:
         build_type=debug
         TSAN_OPTIONS="suppressions=${TRAVIS_BUILD_DIR}/test/sanitizer_suppressions"
-        flags="-fsanitize=thread;-fno-omit-frame-pointer;"
-        options="-D stlab_testing=ON"
+        flags="-fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all"
+        options=""
 
     #
     # Coverage
@@ -118,7 +136,7 @@ matrix:
       env:
         build_type=debug
         coverage=TRUE
-        options="-D stlab_testing=ON -D coverage=ON"
+        options="-D stlab.coverage=ON"
       packages:
         - lcov
       after_success:
@@ -132,23 +150,13 @@ matrix:
       compiler: clang
       env:
         build_type=debug
-        options="-D stlab_testing=ON"
+        options=""
       before_install:
         - pip install --user conan
+        - ./enhance_conan.sh
         - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-      addons:
-        apt:
-          sources:
-            - sourceline: "deb http://apt.llvm.org/precise/ llvm-toolchain-precise-3.8 main"
-              key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
-            - ubuntu-toolchain-r-test
-            - george-edison55-precise-backports
-          packages:
-            - g++-5
-            - clang-3.8
-            - cmake
-            - cmake-data
-        coverity_scan:
+
+      coverity_scan:
           project:
             name: "stlab/libraries"
             description: "Build submitted via Travis CI"
@@ -156,6 +164,42 @@ matrix:
           build_command_prepend: ""
           build_command: ".travis/build.sh"
           branch_pattern: coverity
+
+
+before_install:
+  - pip install --user conan
+  - ./enhance_conan.sh
+
+
+install:
+  ############################################################################
+  # All the dependencies are installed in ${HOME}/deps/
+  ############################################################################
+  - DEPS_DIR="${HOME}/deps"
+  - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
+
+  ############################################################################
+  # Install a recent CMake
+  ############################################################################
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.tar.gz"
+      mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+    else
+      brew install cmake || brew upgrade cmake
+    fi
+  - cmake --version
+
+  ############################################################################
+  # Go back to the root of the project and setup the build directory
+  ############################################################################  
+  - cd "${TRAVIS_BUILD_DIR}"
+
+
+script:
+  - .travis/build.sh
+
 
 notifications:
   recipients:

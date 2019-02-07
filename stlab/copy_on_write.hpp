@@ -74,7 +74,9 @@ public:
         x._self = nullptr;
     }
 
-    ~copy_on_write() { if (_self && (--_self->_count == 0)) delete _self; }
+    ~copy_on_write() {
+        if (_self && (--_self->_count == 0)) delete _self;
+    }
 
     auto operator=(const copy_on_write& x) noexcept -> copy_on_write& {
         return *this = copy_on_write(x);
@@ -132,7 +134,7 @@ public:
     }
 
     friend inline bool operator<(const copy_on_write& x, const copy_on_write& y) noexcept {
-        return *x < *y;
+        return !x.identity(y) && (*x < *y);
     }
 
     friend inline bool operator<(const copy_on_write& x, const element_type& y) noexcept {
@@ -180,7 +182,7 @@ public:
     }
 
     friend inline bool operator==(const copy_on_write& x, const copy_on_write& y) noexcept {
-        return *x == *y;
+        return x.identity(y) || (*x == *y);
     }
 
     friend inline bool operator==(const copy_on_write& x, const element_type& y) noexcept {
@@ -212,4 +214,3 @@ public:
 #endif
 
 /**************************************************************************************************/
-

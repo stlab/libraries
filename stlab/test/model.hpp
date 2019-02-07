@@ -23,7 +23,6 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
-
 /**************************************************************************************************/
 
 struct annotate_counters {
@@ -39,9 +38,7 @@ struct annotate_counters {
     std::mutex _mutex;
     std::condition_variable _condition;
 
-    std::size_t remaining() const {
-        return _copy_ctor + _move_ctor - _dtor + 1;
-    }
+    std::size_t remaining() const { return _copy_ctor + _move_ctor - _dtor + 1; }
 
     void wait(std::size_t count) {
         std::unique_lock<std::mutex> lock(_mutex);
@@ -110,10 +107,8 @@ struct regular {
     explicit regular(int x) : _x(x) { std::cout << _x << " ctor" << std::endl; }
     ~regular() { std::cout << _x << " dtor" << std::endl; }
 
-    regular(const regular& rhs) : _x(rhs._x) {
-        std::cout << _x << " copy-ctor" << std::endl;
-    }
-    regular(regular&& rhs) noexcept : _x(std::move(rhs._x))  {
+    regular(const regular& rhs) : _x(rhs._x) { std::cout << _x << " copy-ctor" << std::endl; }
+    regular(regular&& rhs) noexcept : _x(std::move(rhs._x)) {
         std::cout << _x << " move-ctor" << std::endl;
         rhs._x = 0;
     }
@@ -135,7 +130,9 @@ struct regular {
         std::swap(lhs._x, rhs._x);
     }
 
-    friend inline bool operator==(const regular& lhs, const regular& rhs) { return lhs._x == rhs._x; }
+    friend inline bool operator==(const regular& lhs, const regular& rhs) {
+        return lhs._x == rhs._x;
+    }
     friend inline bool operator!=(const regular& lhs, const regular& rhs) { return !(lhs == rhs); }
 
     friend inline bool operator<(const regular& lhs, const regular& rhs) {
@@ -150,6 +147,7 @@ struct regular {
 class move_only {
 private:
     int _member{0};
+
 public:
     move_only() {}
     move_only(int member) : _member(member) {}
@@ -158,7 +156,7 @@ public:
     move_only(move_only&&) = default;
     move_only& operator=(move_only&&) = default;
     virtual ~move_only() = default;
-    
+
     int member() { return _member; }
     int member() const { return _member; }
 };
@@ -176,4 +174,3 @@ public:
 #endif
 
 /**************************************************************************************************/
-

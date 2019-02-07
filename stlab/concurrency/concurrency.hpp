@@ -19,4 +19,3 @@
 #include <stlab/concurrency/utility.hpp>
 
 #endif
-
