@@ -276,7 +276,9 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename E, typename F>
     auto then(E&& executor, F&& f) {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](const auto& x) { return _f(x._p->get_ready()); });
+                       [_f = std::forward<F>(f)](const auto& x) mutable { 
+                            return _f(x._p->get_ready()); 
+                       });
     }
 
     template <typename F>

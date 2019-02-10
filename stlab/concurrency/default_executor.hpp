@@ -63,7 +63,7 @@ private:
         dispatch_group_t _group = dispatch_group_create();
         ~group() {
             dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
-#if !__has_feature(objc_arc)
+#if !STLAB_FEATURE(OBJC_ARC)
             dispatch_release(_group);
 #endif
         }
