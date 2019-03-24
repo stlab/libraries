@@ -84,7 +84,7 @@ struct task_system {
     std::shared_ptr<const model> _self{std::make_shared<const model>()};
     
 public:
-    void operator()(task<void()> f) {
+    void operator()(task<void()> f) const {
         (*_self)(std::move(f));
     }
 };
@@ -182,7 +182,7 @@ class task_system {
     std::shared_ptr<model> _self{std::make_shared<model>()};
     
 public:
-    void operator()(task<void()> f) {
+    void operator()(task<void()> f) const {
         (*_self)(std::move(f));
     }
 };
@@ -297,7 +297,7 @@ class task_system {
     std::shared_ptr<model> _self{std::make_shared<model>()};
     
 public:
-    void operator()(task<void()> f) {
+    void operator()(task<void()> f) const {
         (*_self)(std::move(f));
     }
 };
@@ -311,7 +311,7 @@ public:
 struct default_executor_type {
     using result_type = void;
     
-    static task_system get_task_system() {
+    static const task_system& get_task_system() {
         static task_system only_task_system;
         return only_task_system;
     }
