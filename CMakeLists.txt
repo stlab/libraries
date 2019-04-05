@@ -148,8 +148,6 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
 endif()
 
 list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
-include( stlab/coroutines )
-target_link_libraries( stlab INTERFACE stlab::coroutines )
 
 if ( stlab.testing )
   include( stlab/development )
@@ -203,7 +201,7 @@ write_basic_package_version_file(
 # generate a CMake configuration file for consumption by CMake's `find_package`
 # intrinsic
 #
-install( TARGETS stlab coroutines EXPORT stlabTargets )
+install( TARGETS stlab EXPORT stlabTargets )
 
 #
 # Non-testing header files (preserving relative paths) are installed to the
