@@ -27,10 +27,10 @@ matrix:
     #
     - os: osx
       compiler: clang
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       before_install:
         - brew update
-        - brew upgrade python
+        #- brew upgrade python
         - pip3 install --no-cache-dir pyyaml
         - pip3 install --user conan
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
@@ -42,10 +42,10 @@ matrix:
 
     - os: osx
       compiler: clang
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       before_install:
         - brew update
-        - brew upgrade python
+        #- brew upgrade python
         - pip3 install --no-cache-dir pyyaml
         - pip3 install --user conan
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
