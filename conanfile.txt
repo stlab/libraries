@@ -1,5 +1,5 @@
 [requires]
-boost/1.68.0@conan/stable
+boost/1.69.0@conan/stable
 
 [generators]
 cmake
@@ -19,7 +19,6 @@ boost:without_filesystem=True
 boost:without_container=True
 boost:without_program_options=True
 boost:without_wave=True
-boost:without_signals=True
 boost:without_thread=True
 boost:without_graph_parallel=True
 boost:without_context=True
