@@ -1363,7 +1363,7 @@ detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, buffer_
 /**************************************************************************************************/
 
 template <typename T>
-class receiver {
+class [[nodiscard]] receiver {
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
 
     ptr_t _p;
