@@ -74,6 +74,14 @@ add_test( NAME stlab.test.tuple COMMAND stlab.test.tuple )
 
 ################################################################################
 
+add_executable( stlab.test.traits
+        traits_test.cpp
+        main.cpp )
+
+target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
+add_test( NAME stlab.test.traits COMMAND stlab.test.traits )
+
+################################################################################
 #
 # tests are compiled without compiler extensions to ensure the stlab headers
 # are not dependent upon any such extension.
@@ -85,6 +93,7 @@ set_target_properties(
   stlab.test.cow
   stlab.test.task
   stlab.test.tuple
+  stlab.test.traits
   PROPERTIES CXX_EXTENSIONS OFF )
 
 #
