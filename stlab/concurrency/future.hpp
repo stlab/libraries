@@ -712,7 +712,7 @@ public:
 /**************************************************************************************************/
 
 template <typename T>
-class future<T, enable_if_copyable<T>> {
+class [[nodiscard]] future<T, enable_if_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 
@@ -826,7 +826,7 @@ public:
     }
 
     void detach() const {
-        then([_hold = _p](auto) {}, [](const auto&) {});
+        (void)then([_hold = _p](auto) {}, [](const auto&) {});
     }
 
     void reset() { _p.reset(); }
@@ -843,7 +843,7 @@ public:
 /**************************************************************************************************/
 
 template <>
-class future<void, void> {
+class [[nodiscard]] future<void, void> {
     using ptr_t = std::shared_ptr<detail::shared_base<void>>;
     ptr_t _p;
 
@@ -957,7 +957,7 @@ public:
     }
 
     void detach() const {
-        then([_hold = _p](auto) {}, []() {});
+        (void)then([_hold = _p](auto) {}, []() {});
     }
 
     void reset() { _p.reset(); }
@@ -972,7 +972,7 @@ public:
 /**************************************************************************************************/
 
 template <typename T>
-class future<T, enable_if_not_copyable<T>> {
+class [[nodiscard]] future<T, enable_if_not_copyable<T>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
 
@@ -1050,7 +1050,7 @@ public:
     }
 
     void detach() const {
-        _p->then_r(unique_usage(_p), [_hold = _p](auto) {}, [](auto&&) {});
+        (void)_p->then_r(unique_usage(_p), [_hold = _p](auto) {}, [](auto&&) {});
     }
 
     void reset() { _p.reset(); }

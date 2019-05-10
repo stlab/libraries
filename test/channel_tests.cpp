@@ -608,11 +608,11 @@ BOOST_AUTO_TEST_CASE(report_channel_broken_when_no_process_is_attached) {
     receiver<int> receive;
 
     BOOST_REQUIRE_EXCEPTION(
-        (receive | [](int) { return 1; }), channel_error,
+        (void)(receive | [](int) { return 1; }), channel_error,
         ([](const auto& e) { return string("broken channel") == e.what(); }));
 
     BOOST_REQUIRE_EXCEPTION(
-        (receive | (buffer_size{2} & [](int) { return 1; })), channel_error,
+        (void)(receive | (buffer_size{2} & [](int) { return 1; })), channel_error,
         ([](const auto& e) { return string("broken channel") == e.what(); }));
 }
 
@@ -627,11 +627,11 @@ BOOST_AUTO_TEST_CASE(report_channel_broken_when_process_is_already_running) {
     receive.set_ready();
 
     BOOST_REQUIRE_EXCEPTION(
-        (receive | [](int) { return 1; }), channel_error,
+        (void)(receive | [](int) { return 1; }), channel_error,
         ([](const auto& e) { return string("process already running") == e.what(); }));
 
     BOOST_REQUIRE_EXCEPTION(
-        (receive | (buffer_size{2} & [](int) { return 1; })), channel_error,
+        (void)(receive | (buffer_size{2} & [](int) { return 1; })), channel_error,
         ([](const auto& e) { return string("process already running") == e.what(); }));
 }
 
