@@ -34,7 +34,7 @@ class router {
 
 public:
     template <class E, class F>
-    router(E executor, F router_func) : _self{std::make_shared<model<E, F>>(std::move(executor), std::move(router_func))} {}
+    router(E executor, F router_func) : _self{std::make_unique<model<E, F>>(std::move(executor), std::move(router_func))} {}
 
     void set_ready() { _self->set_ready(); }
     receiver<T> get_route(K key) { return _self->get_route(std::move(key)); }
@@ -121,7 +121,7 @@ private:
         channel_t _default_route;
     };
 
-    std::shared_ptr<concept_t> _self;
+    std::unique_ptr<concept_t> _self;
 };
 
 /**************************************************************************************************/
