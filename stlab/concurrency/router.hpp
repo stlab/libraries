@@ -78,6 +78,13 @@ private:
             return _routes.back().second.second;
         }
 
+        void route(T t) override {
+            if (std::empty(_routes)) return _default_route.first(std::move(t));
+            const auto& keys = _router_func(t);
+            if (std::empty(keys)) return _default_route.first(std::move(t));
+            route_keys(keys, std::move(t));
+        }
+
         template<class C, typename std::enable_if_t<std::is_same<typename C::value_type, std::pair<K, bool>>::value, int> = 0>
         void route_keys(const C& keys, T t) {
             bool did_route = false;
@@ -106,13 +113,6 @@ private:
                 if (find_it->first != key) continue;
                 find_it->second.first(t);
             }
-        }
-
-        void route(T t) override {
-            if (std::empty(_routes)) return _default_route.first(std::move(t));
-            const auto& keys = _router_func(t);
-            if (std::empty(keys)) return _default_route.first(std::move(t));
-            route_keys(keys, std::move(t)); 
         }
 
         E _executor;
