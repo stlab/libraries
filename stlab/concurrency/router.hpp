@@ -55,7 +55,7 @@ private:
         model(E executor, F router_func)
         : _executor{std::move(executor)}
         , _router_func{std::move(router_func)}
-        , _sender_receiver{channel<T>(_executor)}
+        , _default_route{channel<T>(_executor)}
         {}
 
         void set_ready() override {
@@ -64,10 +64,10 @@ private:
             });
             for (auto& pair : _routes)
                 pair.second.second.set_ready();
-            _sender_receiver.second.set_ready();
+            _default_route.second.set_ready();
         }
 
-        receiver<T> get_default_route() override { return _sender_receiver.second; }
+        receiver<T> get_default_route() override { return _default_route.second; }
 
         receiver<T> get_route(K key) override {
             auto find_it = std::find_if(begin(_routes), std::end(_routes), [&](const route_pair& pair){
@@ -92,7 +92,7 @@ private:
                 find_it->second.first(t);
                 did_route = true;
             }
-            if (!did_route) return _sender_receiver.first(std::move(t));
+            if (!did_route) return _default_route.first(std::move(t));
         }
 
         template<class C, typename std::enable_if_t<std::is_same<typename C::value_type, K>::value, int> = 0>
@@ -109,16 +109,16 @@ private:
         }
 
         void route(T t) override {
-            if (std::empty(_routes)) return _sender_receiver.first(std::move(t));
+            if (std::empty(_routes)) return _default_route.first(std::move(t));
             const auto& key_set = _router_func(t);
-            if (std::empty(key_set)) return _sender_receiver.first(std::move(t));
+            if (std::empty(key_set)) return _default_route.first(std::move(t));
             route_keys(key_set, std::move(t)); 
         }
 
         E _executor;
         F _router_func;
         routes _routes;
-        channel_t _sender_receiver;
+        channel_t _default_route;
     };
 
     std::shared_ptr<concept_t> _self;
