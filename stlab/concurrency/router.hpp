@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <stdexcept>
 
 #include <stlab/concurrency/channel.hpp>
 
@@ -29,50 +30,55 @@ inline namespace v1 {
 template <class T, class K>
 class router {
     using channel_t = std::pair<sender<T>, receiver<T>>;
-    using route_pair = std::pair<K, channel_t>;
+    using route_pair = std::pair<const K, channel_t>;
     using routes = std::vector<route_pair>;
 
 public:
-    template <class E, class F>
-    router(E executor, F router_func) : _self{std::make_unique<model<E, F>>(std::move(executor), std::move(router_func))} {}
+    template <class I, class F>
+    router(std::pair<I, I> key_range, F router_func) : _self{std::make_unique<model<F>>(make_routes(key_range), std::move(router_func))} {}
 
     void set_ready() { _self->set_ready(); }
-    receiver<T> get_route(K key) { return _self->get_route(std::move(key)); }
+    receiver<T> get_route(const K& key) const { return _self->get_route(key); }
     void operator()(T t) { _self->route(std::move(t)); }
 
 private:
+    template<class I>
+    static routes make_routes(const std::pair<I, I>& range) {
+        routes result;
+        std::transform(range.first, range.second, std::back_inserter(result), [](auto route_key) -> route_pair {
+            return {std::get<0>(route_key), channel<T>(std::get<1>(route_key))};
+        });
+        if (std::empty(result)) throw std::runtime_error("no routes provided");
+        return result;
+    }
+
     struct concept_t {
-        virtual receiver<T> get_route(K key) = 0;
+        virtual receiver<T> get_route(const K& key) const = 0;
         virtual void set_ready() = 0;
         virtual void route(T t) = 0;
         virtual ~concept_t() = default;
     };
 
-    template <class E, class F>
+    template <class F>
     struct model : concept_t {
-        model(E executor, F router_func)
-        : _executor{std::move(executor)}
+        model(routes routes, F router_func)
+        : _routes{std::move(routes)}
         , _router_func{std::move(router_func)}
         {}
 
         void set_ready() override {
-            std::sort(std::begin(_routes), std::end(_routes), [](const route_pair& a, const route_pair& b){
-                return a.first < b.first;
-            });
             for (auto& pair : _routes) pair.second.second.set_ready();
         }
 
-        receiver<T> get_route(K key) override {
+        receiver<T> get_route(const K& key) const override {
             auto find_it = std::find_if(begin(_routes), std::end(_routes), [&](const route_pair& pair){
                 return pair.first == key;
             });
             if (find_it != std::end(_routes)) return find_it->second.second;
-            _routes.push_back(std::make_pair(std::move(key), channel<T>(_executor)));
-            return _routes.back().second.second;
+            throw std::runtime_error("no such route");
         }
 
         void route(T t) override {
-            if (std::empty(_routes)) return;
             const auto& keys = _router_func(t);
             if (std::empty(keys)) return;
             route(keys, std::move(t));
@@ -105,7 +111,6 @@ private:
             }
         }
 
-        E _executor;
         F _router_func;
         routes _routes;
     };
