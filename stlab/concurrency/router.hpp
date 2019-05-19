@@ -28,7 +28,7 @@ inline namespace v1 {
 
 template <class T, class K>
 class router {
-    using channel_pair = std::pair<stlab::sender<T>, stlab::receiver<T>>;
+    using channel_pair = std::pair<sender<T>, receiver<T>>;
     using route_pair = std::pair<K, channel_pair>;
     using routes = std::vector<route_pair>;
 
@@ -37,14 +37,14 @@ public:
     router(E executor, F router_func) : _self{std::make_shared<model<E, F>>(std::move(executor), std::move(router_func))} {}
 
     void set_ready() { _self->set_ready(); }
-    stlab::receiver<T> get_route(K key) { return _self->get_route(std::move(key)); }
-    stlab::receiver<T> get_default_route() { return _self->get_default_route(); }
+    receiver<T> get_route(K key) { return _self->get_route(std::move(key)); }
+    receiver<T> get_default_route() { return _self->get_default_route(); }
     void operator()(T t) { _self->route(std::move(t)); }
 
 private:
     struct concept_t {
-        virtual stlab::receiver<T> get_route(K key) = 0;
-        virtual stlab::receiver<T> get_default_route() = 0;
+        virtual receiver<T> get_route(K key) = 0;
+        virtual receiver<T> get_default_route() = 0;
         virtual void set_ready() = 0;
         virtual void route(T t) = 0;
         virtual ~concept_t() = default;
@@ -55,7 +55,7 @@ private:
         model(E executor, F router_func)
         : _executor{std::move(executor)}
         , _router_func{std::move(router_func)}
-        , _sender_receiver{stlab::channel<T>(_executor)}
+        , _sender_receiver{channel<T>(_executor)}
         {}
 
         void set_ready() override {
@@ -67,14 +67,14 @@ private:
             _sender_receiver.second.set_ready();
         }
 
-        stlab::receiver<T> get_default_route() override { return _sender_receiver.second; }
+        receiver<T> get_default_route() override { return _sender_receiver.second; }
 
-        stlab::receiver<T> get_route(K key) override {
+        receiver<T> get_route(K key) override {
             auto find_it = std::find_if(begin(_routes), std::end(_routes), [&](const route_pair& pair){
                 return pair.first == key;
             });
             if (find_it != std::end(_routes)) return find_it->second.second;
-            _routes.push_back(std::make_pair(std::move(key), stlab::channel<T>(_executor)));
+            _routes.push_back(std::make_pair(std::move(key), channel<T>(_executor)));
             return _routes.back().second.second;
         }
 
