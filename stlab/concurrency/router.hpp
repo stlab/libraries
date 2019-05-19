@@ -28,8 +28,8 @@ inline namespace v1 {
 
 template <class T, class K>
 class router {
-    using channel_pair = std::pair<sender<T>, receiver<T>>;
-    using route_pair = std::pair<K, channel_pair>;
+    using channel_t = std::pair<sender<T>, receiver<T>>;
+    using route_pair = std::pair<K, channel_t>;
     using routes = std::vector<route_pair>;
 
 public:
@@ -118,7 +118,7 @@ private:
         E _executor;
         F _router_func;
         routes _routes;
-        channel_pair _sender_receiver;
+        channel_t _sender_receiver;
     };
 
     std::shared_ptr<concept_t> _self;
