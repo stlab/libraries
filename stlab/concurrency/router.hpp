@@ -62,13 +62,13 @@ private:
     using mutable_static_routes = std::array<std::pair<K, channel_t>, N>;
 
     template<std::size_t N, std::size_t... Is>
-    static static_routes<N> make_static_routes(const mutable_static_routes<N>& mutable_routes, std::index_sequence<Is...>) {
-        return {{ {std::get<0>(mutable_routes[Is]), std::get<1>(mutable_routes[Is])}... }};
+    static static_routes<N> make_static_routes(mutable_static_routes<N> mutable_routes, std::index_sequence<Is...>) {
+        return {{ {std::move(std::get<0>(mutable_routes[Is])), std::move(std::get<1>(mutable_routes[Is]))}... }};
     }
 
     template<std::size_t N, std::size_t... Is>
-    static static_routes<N> make_static_routes(const mutable_static_routes<N>& mutable_routes) {
-        return make_static_routes(mutable_routes, std::make_index_sequence<N>());
+    static static_routes<N> make_static_routes(mutable_static_routes<N> mutable_routes) {
+        return make_static_routes(std::move(mutable_routes), std::make_index_sequence<N>());
     }
 
     template<std::size_t N, class E>
@@ -77,7 +77,7 @@ private:
         std::transform(std::begin(route_keys), std::end(route_keys), std::begin(result), [](auto route_key) -> route_pair {
             return {std::get<0>(route_key), channel<T>(std::get<1>(route_key))};
         });
-        return make_static_routes(result);
+        return make_static_routes(std::move(result));
     }
 
     struct concept_t {
