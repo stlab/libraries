@@ -71,11 +71,11 @@ private:
         }
 
         receiver<T> get_route(const K& key) const override {
-            auto find_it = std::find_if(begin(_routes), std::end(_routes), [&](const route_pair& pair){
-                return pair.first == key;
+            auto find_it = std::lower_bound(std::begin(_routes), std::end(_routes), key, [](const route_pair& a, const K& k){
+                return a.first < k;
             });
-            if (find_it != std::end(_routes)) return find_it->second.second;
-            throw std::runtime_error("no such route");
+            if (find_it == std::end(_routes) || find_it->first != key) throw std::runtime_error("no such route");
+            return find_it->second.second;
         }
 
         void route(T t) override {
