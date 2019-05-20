@@ -33,9 +33,15 @@ class router {
     using route_pair = std::pair<const K, channel_t>;
     using routes = std::vector<route_pair>;
 
+    template<std::size_t N>
+    using static_routes = std::array<route_pair, N>;
+
 public:
     template <class I, class F>
-    router(std::pair<I, I> key_range, F router_func) : _self{std::make_unique<model<F>>(make_routes(key_range), std::move(router_func))} {}
+    router(const std::pair<I, I>& key_range, F router_func) : _self{std::make_unique<model<routes, F>>(make_routes(key_range), std::move(router_func))} {}
+
+    template <std::size_t N, class E, class F>
+    router(const std::array<std::pair<K, E>, N>& route_keys, F router_func) : _self{std::make_unique<model<static_routes<N>, F>>(make_routes(route_keys), std::move(router_func))} {}
 
     void set_ready() { _self->set_ready(); }
     receiver<T> get_route(const K& key) const { return _self->get_route(key); }
@@ -52,6 +58,28 @@ private:
         return result;
     }
 
+    template<std::size_t N>
+    using mutable_static_routes = std::array<std::pair<K, channel_t>, N>;
+
+    template<std::size_t N, std::size_t... Is>
+    static static_routes<N> make_static_routes(const mutable_static_routes<N>& mutable_routes, std::index_sequence<Is...>) {
+        return {{ {std::get<0>(mutable_routes[Is]), std::get<1>(mutable_routes[Is])}... }};
+    }
+
+    template<std::size_t N, std::size_t... Is>
+    static static_routes<N> make_static_routes(const mutable_static_routes<N>& mutable_routes) {
+        return make_static_routes(mutable_routes, std::make_index_sequence<N>());
+    }
+
+    template<std::size_t N, class E>
+    static static_routes<N> make_routes(const std::array<std::pair<K, E>, N>& route_keys) {
+        mutable_static_routes<N> result;
+        std::transform(std::begin(route_keys), std::end(route_keys), std::begin(result), [](auto route_key) -> route_pair {
+            return {std::get<0>(route_key), channel<T>(std::get<1>(route_key))};
+        });
+        return make_static_routes(result);
+    }
+
     struct concept_t {
         virtual receiver<T> get_route(const K& key) const = 0;
         virtual void set_ready() = 0;
@@ -59,9 +87,9 @@ private:
         virtual ~concept_t() = default;
     };
 
-    template <class F>
+    template <class R, class F>
     struct model : concept_t {
-        model(routes routes, F router_func)
+        model(R routes, F router_func)
         : _routes{std::move(routes)}
         , _router_func{std::move(router_func)}
         {}
@@ -112,7 +140,7 @@ private:
         }
 
         F _router_func;
-        routes _routes;
+        R _routes;
     };
 
     std::unique_ptr<concept_t> _self;
