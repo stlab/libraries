@@ -11,11 +11,17 @@
 
 /**************************************************************************************************/
 
-#define STLAB_TASK_SYSTEM_PORTABLE 0
-#define STLAB_TASK_SYSTEM_LIBDISPATCH 1
-#define STLAB_TASK_SYSTEM_EMSCRIPTEN 2
-#define STLAB_TASK_SYSTEM_PNACL 3
-#define STLAB_TASK_SYSTEM_WINDOWS 4
+#define STLAB_FEATURE_PRIVATE_OBJC_ARC() 0
+
+#define STLAB_FEATURE(X) (STLAB_FEATURE_PRIVATE_##X())
+
+/**************************************************************************************************/
+
+#define STLAB_TASK_SYSTEM_PORTABLE      0
+#define STLAB_TASK_SYSTEM_LIBDISPATCH   1
+#define STLAB_TASK_SYSTEM_EMSCRIPTEN    2
+#define STLAB_TASK_SYSTEM_PNACL         3
+#define STLAB_TASK_SYSTEM_WINDOWS       4
 
 #if __APPLE__
 
@@ -26,6 +32,11 @@
 #define STLAB_CPP_VERSION 17
 #endif
 
+#endif
+
+#if __has_feature(objc_arc)
+    #undef STLAB_FEATURE_PRIVATE_OBJC_ARC
+    #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
 #endif
 
 #elif __EMSCRIPTEN__
@@ -62,7 +73,11 @@
 #endif
 
 #ifndef STLAB_CPP_VERSION
-#define STLAB_CPP_VERSION 14
+#define STLAB_CPP_VERSION 17
+#endif
+
+#ifndef STLAB_FUTURE_COROUTINES
+#define STLAB_FUTURE_COROUTINES 0
 #endif
 
 /**************************************************************************************************/

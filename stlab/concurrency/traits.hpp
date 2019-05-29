@@ -25,11 +25,22 @@ using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
 
 /**************************************************************************************************/
 
-template <typename T>
-using enable_if_copyable = std::enable_if_t<std::is_copy_constructible<T>::value>;
+template<template<typename> class test, typename T>
+struct smart_test : test<T> {};
+
+template<typename T>
+using smart_is_copy_constructible = smart_test<std::is_copy_constructible, T>;
 
 template <typename T>
-using enable_if_not_copyable = std::enable_if_t<!std::is_copy_constructible<T>::value>;
+constexpr bool smart_is_copy_constructible_v = smart_is_copy_constructible<T>::value;
+
+/**************************************************************************************************/
+
+template <typename T>
+using enable_if_copyable = std::enable_if_t<smart_is_copy_constructible_v<T>>;
+
+template <typename T>
+using enable_if_not_copyable = std::enable_if_t<!smart_is_copy_constructible_v<T>>;
 
 /**************************************************************************************************/
 

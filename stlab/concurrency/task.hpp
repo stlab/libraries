@@ -52,7 +52,7 @@ class task<R(Args...)> {
         return false;
     }
 
-    struct concept {
+    struct concept_t {
         void (*dtor)(void*);
         void (*move_ctor)(void*, void*) noexcept;
         R (*invoke)(void*, Args&&...);
@@ -82,10 +82,12 @@ class task<R(Args...)> {
         static auto const_pointer(const void* self) noexcept -> const void* {
             return &static_cast<const model*>(self)->_f;
         }
-
-        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                            target_type, pointer,   const_pointer};
-
+#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
+        static const concept_t _vtable;
+#else
+        static constexpr concept_t _vtable = { dtor, move_ctor, invoke,
+                                             target_type, pointer, const_pointer };
+#endif
         F _f;
     };
 
@@ -110,8 +112,12 @@ class task<R(Args...)> {
             return static_cast<const model*>(self)->_p.get();
         }
 
-        static constexpr concept _vtable = {dtor,        move_ctor, invoke,
-                                            target_type, pointer,   const_pointer};
+#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
+        static const concept_t _vtable;
+#else
+        static constexpr concept_t _vtable = { dtor, move_ctor, invoke,
+                                             target_type, pointer, const_pointer };
+#endif
 
         std::unique_ptr<F> _p;
     };
@@ -124,10 +130,14 @@ class task<R(Args...)> {
     static auto pointer(void*) noexcept -> void* { return nullptr; }
     static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
 
-    static constexpr concept _vtable = {dtor,         move_ctor, invoke,
-                                        target_type_, pointer,   const_pointer};
+#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
+    static const concept_t _vtable;
+#else
+    static constexpr concept_t _vtable = { dtor, move_ctor, invoke,
+                                         target_type_, pointer, const_pointer };
+#endif
 
-    const concept* _vtable_ptr = &_vtable;
+    const concept_t* _vtable_ptr = &_vtable;
 
     /*
         REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
@@ -136,7 +146,7 @@ class task<R(Args...)> {
         data on my MacBook Pro. tasks are move only object so the exepectation is that moving the
         funciton object is proportional to the sizeof the object. We try to construct tasks emplace
         and so they are rarely moved (need to review the code to make sure that is true). The
-        concept will consume one word so this gives us 31 words (on a 64 bit machine) for the model.
+        concept_t will consume one word so this gives us 31 words (on a 64 bit machine) for the model.
         Probably excessive but still allows 16 tasks on a cache line
 
         I welcome empirical data from an actual system on a better size.
@@ -216,28 +226,54 @@ public:
 #if STLAB_CPP_VERSION < 17
 // In C++17 constexpr implies inline and these definitions are deprecated
 
-template <class R, class... Args>
-const typename task<R(Args...)>::concept task<R(Args...)>::_vtable;
+
+
+#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
+    template <class R, class... Args>
+    const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable = { dtor, move_ctor, invoke,
+                                                                           target_type_, pointer, const_pointer };
+#else
+    template <class R, class... Args>
+    const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable;
+#endif
+
+
 
 #ifdef _MSC_VER
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept task<R(Args...)>::model<F, false>::_vtable;
+const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, false>::_vtable;
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept task<R(Args...)>::model<F, true>::_vtable;
+const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, true>::_vtable;
+
+#else
+
+#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
+
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, false>::_vtable = { dtor, move_ctor, invoke,
+                                                                                                 target_type, pointer, const_pointer };
+
+template <class R, class... Args>
+template <class F>
+const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, true>::_vtable = { dtor, move_ctor, invoke,
+                                                                                                target_type, pointer, const_pointer };
 
 #else
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, false>::_vtable;
+const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, false>::_vtable;
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept task<R(Args...)>::template model<F, true>::_vtable;
+const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, true>::_vtable;
+
+#endif
 
 #endif
 

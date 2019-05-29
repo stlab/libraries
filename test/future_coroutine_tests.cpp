@@ -18,7 +18,7 @@
 
 #include "future_test_helper.hpp"
 
-#ifdef STLAB_FUTURE_COROUTINE_SUPPORT
+#if STLAB_FUTURE_COROUTINES
 
 using namespace stlab;
 using namespace future_test_helper;

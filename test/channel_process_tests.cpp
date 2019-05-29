@@ -8,8 +8,6 @@
 
 #include <boost/test/unit_test.hpp>
 
-#define STLAB_DISABLE_FUTURE_COROUTINES
-
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
@@ -305,9 +303,9 @@ struct process_with_set_error {
 
     std::atomic_bool& _check;
 
-    void await(int n) { throw std::runtime_error{""}; }
+    void await(int) { throw std::runtime_error{""}; }
 
-    void set_error(std::exception_ptr error) { _check = true; }
+    void set_error(std::exception_ptr) { _check = true; }
 
     int yield() { return 42; }
 
@@ -329,7 +327,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) 
                       throw std::runtime_error{""};
                       return v;
                   } |
-                  process_with_set_error{check} | [](int x) {};
+                  process_with_set_error{check} | [](int) {};
 
     receive.set_ready();
     send(42);
@@ -347,7 +345,7 @@ struct process_with_close {
 
     std::atomic_bool& _check;
 
-    void await(int n) { throw std::runtime_error{""}; }
+    void await(int) { throw std::runtime_error{""}; }
 
     void close() { _check = true; }
 
@@ -371,7 +369,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_close_is_called_on_upstream_error) {
                       throw std::runtime_error{""};
                       return v;
                   } |
-                  process_with_close{check} | [](int x) {};
+                  process_with_close{check} | [](int) {};
 
     receive.set_ready();
     send(42);

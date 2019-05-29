@@ -86,7 +86,7 @@ inline std::uint64_t str_hash(const std::string& x) {
 
 inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
     return hash ^ (str_hash(x) << 1);
-};
+}
 
 /**************************************************************************************************/
 
@@ -169,7 +169,7 @@ void test1(stlab::schedule_mode mode) {
 
 /**************************************************************************************************/
 
-int main(int argc, const char* argv[]) {
+int main(int, const char*[]) {
     test0(stlab::schedule_mode::single);
 
     std::cout << "-=-=-=-=-\n";
