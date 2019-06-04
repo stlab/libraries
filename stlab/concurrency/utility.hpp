@@ -99,8 +99,8 @@ T blocking_get(future<T> x) {
     std::condition_variable condition;
     std::mutex m;
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (r.error())
-            error = *std::forward<decltype(r)>(r).error();
+        if (r.exception())
+            error = std::forward<decltype(r)>(r).exception();
         else
             result = std::move(*std::forward<decltype(r)>(r).get_try());
 
@@ -132,8 +132,8 @@ stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& tim
             if (!state) {
                 return;
             }
-            if (r.error())
-                state->error = *std::forward<decltype(r)>(r).error();
+            if (r.exception())
+                state->error = std::forward<decltype(r)>(r).exception();
             else
                 state->result = std::move(*std::forward<decltype(r)>(r).get_try());
             {
@@ -165,7 +165,7 @@ inline void blocking_get(future<void> x) {
     std::condition_variable condition;
     std::mutex m;
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (r.error()) error = *std::forward<decltype(r)>(r).error();
+        if (auto ex = std::forward<decltype(r)>(r).exception(); ex) error = ex;
         {
             std::unique_lock<std::mutex> lock(m);
             flag = true;
@@ -190,7 +190,7 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
             if (!state) {
                 return;
             }
-            if (r.error()) state->error = *std::forward<decltype(r)>(r).error();
+            if (auto ex = r.exception(); ex) state->error = ex;
             {
                 std::unique_lock<std::mutex> lock(state->m);
                 state->flag = true;

@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
                         throw test_exception("failure");
                     })
             .recover([](future<void> failedFuture) {
-                if (failedFuture.error()) check_failure<test_exception>(failedFuture, "failure");
+                if (failedFuture.exception()) check_failure<test_exception>(failedFuture, "failure");
             });
         wait_until_future_completed(sut);
 
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
                          throw test_exception("failure");
                      })
                ^ [](future<void> failedFuture) {
-                    if (failedFuture.error()) check_failure<test_exception>(failedFuture, "failure");
+                    if (failedFuture.exception()) check_failure<test_exception>(failedFuture, "failure");
                 });
         wait_until_future_completed(sut);
 
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
 
         sut = when_all(make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2)
             .recover([](auto error) {
-                if (error.error())
+                if (error.exception())
                     return 815;
                 else
                     return 0;
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
 
         sut = (when_all(make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2) ^
                   [](auto error) {
-                      if (error.error())
+                      if (error.exception())
                           return 815;
                       else
                           return 0;
