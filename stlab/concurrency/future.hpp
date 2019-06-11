@@ -259,7 +259,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     executor_t _executor;
     stlab::optional<T> _result;
     reduction_helper<T> _reduction_helper;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
     then_t _then;
@@ -378,7 +378,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
         }
 #endif
-        if (_exception) std::rethrow_exception(*_exception);
+        if (_exception) std::rethrow_exception(_exception);
         return *_result;
     }
 
@@ -389,7 +389,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_exception) std::rethrow_exception(*_exception);
+            if (_exception) std::rethrow_exception(_exception);
             return _result;
         }
         return {};
@@ -404,7 +404,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             ready = _ready;
         }
         if (ready) {
-            if (_exception) std::rethrow_exception(*_exception);
+            if (_exception) std::rethrow_exception(_exception);
             return std::move(_result);
         }
         return {};
@@ -420,7 +420,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     executor_t _executor;
     stlab::optional<T> _result;
     reduction_helper<T> _reduction_helper;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
     then_t _then;
@@ -500,7 +500,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
             ready = _ready;
         }
         if (ready) {
-            if (_exception) std::rethrow_exception(*_exception);
+            if (_exception) std::rethrow_exception(_exception);
             return std::move(_result);
         }
         return {};
@@ -514,7 +514,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     using then_t = std::vector<std::pair<executor_t, task<void()>>>;
 
     executor_t _executor;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
     then_t _then;
@@ -597,7 +597,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
             ready = _ready;
         }
         if (ready) {
-            if (_exception) std::rethrow_exception(*_exception);
+            if (_exception) std::rethrow_exception(_exception);
             return true;
         }
         return false;
@@ -838,9 +838,11 @@ public:
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
     [[deprecated("Use exception() instead")]]
-    stlab::optional<std::exception_ptr> error() const& { return _p->_exception; }
+    stlab::optional<std::exception_ptr> error() const& {
+        return _p->_exception? stlab::optional<std::exception_ptr>{_p->_exception} : stlab::nullopt;
+    }
 
-    std::exception_ptr exception() const& { return _p->_exception.value_or(std::exception_ptr{}); }
+    std::exception_ptr exception() const& { return _p->_exception; }
 };
 
 /**************************************************************************************************/
@@ -970,9 +972,11 @@ public:
     bool get_try() const& { return _p->get_try(); }
 
     [[deprecated("Use exception() instead")]]
-    stlab::optional<std::exception_ptr> error() const& { return _p->_exception; }
+    stlab::optional<std::exception_ptr> error() const& {
+        return _p->_exception? stlab::optional<std::exception_ptr>{_p->_exception} : stlab::nullopt;
+    }
 
-    std::exception_ptr exception() const& { return _p->_exception.value_or(std::exception_ptr{}); }
+    std::exception_ptr exception() const& { return _p->_exception; }
 };
 
 /**************************************************************************************************/
@@ -1068,9 +1072,11 @@ public:
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
     [[deprecated("Use exception() instead")]]
-    stlab::optional<std::exception_ptr> error() const& { return _p->_exception; }
+    stlab::optional<std::exception_ptr> error() const& {
+        return _p->_exception? stlab::optional<std::exception_ptr>{_p->_exception} : stlab::nullopt;
+    }
 
-    std::exception_ptr exception() const& { return _p->_exception.value_or(std::exception_ptr{}); }
+    std::exception_ptr exception() const& { return _p->_exception; }
 };
 
 template <typename Sig, typename E, typename F>
@@ -1120,7 +1126,7 @@ struct when_all_shared {
     future<void> _holds[std::tuple_size<Args>::value]{};
     std::atomic_size_t _remaining{std::tuple_size<Args>::value};
     std::atomic_flag _error_happened = ATOMIC_FLAG_INIT;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     packaged_task<> _f;
 
     template <std::size_t index, typename FF>
@@ -1148,7 +1154,7 @@ struct when_any_shared {
     future<void> _holds[S]{};
     std::atomic_size_t _remaining{S};
     std::atomic_flag _value_received = ATOMIC_FLAG_INIT;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     size_t _index;
     packaged_task<> _f;
 
@@ -1182,7 +1188,7 @@ struct when_any_shared<S, void> {
     future<void> _holds[S]{};
     std::atomic_size_t _remaining{S};
     std::atomic_flag _value_received = ATOMIC_FLAG_INIT;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     size_t _index;
     packaged_task<> _f;
 
@@ -1208,9 +1214,8 @@ struct when_any_shared<S, void> {
     }
 };
 
-inline void rethrow_if_false(bool x, stlab::optional<std::exception_ptr>& p) {
-    if (!x) std::rethrow_exception(*p);
-    ;
+inline void rethrow_if_false(bool x, std::exception_ptr& p) {
+    if (!x) std::rethrow_exception(p);
 }
 
 template <typename F, typename Args, typename P, std::size_t... I>
@@ -1231,7 +1236,7 @@ auto apply_when_all_args(F& f, P& p) {
 template <typename F, typename P>
 auto apply_when_any_arg(F& f, P& p) {
     if (p->_exception) {
-        std::rethrow_exception(*p->_exception);
+        std::rethrow_exception(p->_exception);
     }
 
     return p->apply(f);
@@ -1390,7 +1395,7 @@ struct context_result {
     using result_type = R;
 
     R _results;
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     size_t _index;
     F _f;
 
@@ -1416,7 +1421,7 @@ struct context_result {
 
 template <typename F, bool Indexed>
 struct context_result<F, Indexed, void> {
-    stlab::optional<std::exception_ptr> _exception;
+    std::exception_ptr _exception;
     size_t _index;
     F _f;
 
@@ -1486,7 +1491,7 @@ struct common_context : CR {
 
     auto execute() {
         if (this->_exception) {
-            std::rethrow_exception(*(this->_exception));
+            std::rethrow_exception(this->_exception);
         }
         return CR::operator()();
     }
