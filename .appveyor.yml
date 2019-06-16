@@ -43,7 +43,7 @@ build_script:
   - IF EXIST build RMDIR /S /Q build
   - MKDIR build
   - cd build
-  - cmake -G "Visual Studio 15 2017 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_65_1 -D CMAKE_BUILD_TYPE=debug -D Boost_USE_STATIC_LIBS=ON ..
+  - cmake -G "Visual Studio 15 2017 Win64" -D BOOST_ROOT=C:/Libraries/boost_1_69_0 -D CMAKE_BUILD_TYPE=debug -D Boost_USE_STATIC_LIBS=ON ..
   - cmake --build . --config Release
   - ctest -C Release 
   

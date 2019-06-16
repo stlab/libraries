@@ -120,13 +120,13 @@ struct test_fixture {
 
     void check_valid_future(const stlab::future<T>& f) {
         BOOST_REQUIRE(f.valid() == true);
-        BOOST_REQUIRE(!f.error());
+        BOOST_REQUIRE(!f.exception());
     }
 
     template <typename F, typename... FS>
     void check_valid_future(const F& f, const FS&... fs) {
         BOOST_REQUIRE(f.valid() == true);
-        BOOST_REQUIRE(!f.error());
+        BOOST_REQUIRE(!f.exception());
         check_valid_future(fs...);
     }
 
