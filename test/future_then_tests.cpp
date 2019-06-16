@@ -648,11 +648,11 @@ BOOST_AUTO_TEST_CASE(future_async_moving_move_only_capture_to_result) {
 }
 
 BOOST_AUTO_TEST_CASE(future_async_mutable_move_move_only_capture_to_result) {
-    BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
+    BOOST_TEST_MESSAGE("moving move_only capture to result in task");
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [& _m = m]() mutable { return move(_m); });
+    sut = async(make_executor<0>(), [& _m = m]() { return move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -666,7 +666,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [] { return move_only{10}; }).then([& _m = m](auto) mutable {
+    sut = async(make_executor<0>(), [] { return move_only{10}; }).then([& _m = m](auto) {
         return move(_m);
     });
 
@@ -678,14 +678,14 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 }
 
 BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to_result) {
-    BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
+    BOOST_TEST_MESSAGE("moving move_only capture to result in task");
 
     {
         move_only m{42};
 
-        sut = async(make_executor<0>(), []() mutable {
+        sut = async(make_executor<0>(), []() {
                   return move_only{10};
-              }).then([& _m = m](auto) mutable { return move(_m); });
+              }).then([& _m = m](auto) { return move(_m); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -696,8 +696,8 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
     {
         move_only m{42};
 
-        sut = async(make_executor<0>(), []() mutable { return move_only{10}; }) |
-              [& _m = m](auto) mutable { return move(_m); };
+        sut = async(make_executor<0>(), []() { return move_only{10}; }) |
+              [& _m = m](auto) { return move(_m); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
