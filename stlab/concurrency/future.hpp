@@ -276,7 +276,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename E, typename F>
     auto then(E&& executor, F&& f) {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](const auto& x) mutable { 
+                       [_f = std::forward<F>(f)](const auto& x) {
                             return _f(x._p->get_ready()); 
                        });
     }
@@ -289,7 +289,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     template <typename E, typename F>
     auto recover(E executor, F&& f) {
         auto p = package<std::result_of_t<F(future<T>)>()>(
-            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
+            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() {
                 return std::move(_f)(std::move(_p));
             });
 
@@ -311,7 +311,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename E, typename F>
     auto then_r(bool unique, E&& executor, F&& f) {
-        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) mutable {
+        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) {
             return _f(std::move(*(std::forward<decltype(x)>(x).get_try())));
         });
     }
@@ -326,7 +326,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         if (!unique) return recover(std::forward<E>(executor), std::forward<F>(f));
 
         auto p = package<std::result_of_t<F(future<T>)>()>(
-            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
+            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() {
                 return _f(std::move(_p));
             });
 
@@ -436,7 +436,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     template <typename E, typename F>
     auto then_r(bool unique, E&& executor, F&& f) {
-        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) mutable {
+        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) {
             return std::move(_f)(std::move(*std::forward<decltype(x)>(x).get_try()));
         });
     }
@@ -450,7 +450,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     auto recover_r(bool, E executor, F&& f) {
         // rvalue case unique is assumed.
         auto p = package<std::result_of_t<F(future<T>)>()>(
-            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
+            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() {
                 return _f(std::move(_p));
             });
 
@@ -530,7 +530,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 
     template <typename E, typename F>
     auto then(E&& executor, F&& f) {
-        return recover(std::forward<E>(executor), [_f = std::forward<F>(f)](auto x) mutable {
+        return recover(std::forward<E>(executor), [_f = std::forward<F>(f)](auto x) {
             x.get_try(); // throw if error
             return std::move(_f)();
         });
@@ -703,7 +703,7 @@ public:
         if (p) (*p)(std::forward<A>(args)...);
     }
 
-    void set_exception(std::exception_ptr error) {
+    void set_exception(std::exception_ptr error) const {
         auto p = _p.lock();
         if (p) p->set_error(std::move(error));
     }
@@ -1630,7 +1630,7 @@ auto async(E executor, F&& f, Args&&... args)
     auto p = package<result_type()>(
         executor, std::bind<result_type>(
                       [_f = std::forward<F>(f)](
-                          unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
+                          unwrap_reference_t<std::decay_t<Args>>&... args) -> result_type {
                           return _f(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
                       },
                       std::forward<Args>(args)...));
@@ -1794,7 +1794,7 @@ template <typename E, typename F>
 auto shared_base<void>::recover(E&& executor, F&& f)
     -> future<reduced_t<std::result_of_t<F(future<void>)>>> {
     auto p = package<std::result_of_t<F(future<void>)>()>(
-        executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() mutable {
+        executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() {
             return _f(_p);
         });
 
@@ -1894,7 +1894,7 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...> {
         std::pair<stlab::packaged_task<>, stlab::future<void>> _promise;
 
         inline promise_type() {
-            _promise = stlab::package<void()>(stlab::immediate_executor, []() mutable {});
+            _promise = stlab::package<void()>(stlab::immediate_executor, []() {});
         }
 
         inline stlab::future<void> get_return_object() { return _promise.second; }
@@ -1924,7 +1924,7 @@ auto operator co_await(stlab::future<R> f) {
         void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input)
                 .then(stlab::default_executor,
-                      [this, ch](auto&& result) mutable {
+                      [this, ch](auto&& result) {
                           this->_result = std::forward<decltype(result)>(result);
                           ch.resume();
                       })
@@ -1944,7 +1944,7 @@ inline auto operator co_await(stlab::future<void> f) {
 
         inline void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input)
-                .then(stlab::default_executor, [ch]() mutable { ch.resume(); })
+                .then(stlab::default_executor, [ch]() { ch.resume(); })
                 .detach();
         }
     };
