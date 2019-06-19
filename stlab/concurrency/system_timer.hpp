@@ -59,7 +59,9 @@ namespace detail {
 struct system_timer_type {
     using result_type = void;
 
+
     template <typename F>
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F f) const {
         using namespace std::chrono;
 
@@ -67,6 +69,22 @@ struct system_timer_type {
 
         dispatch_after_f(
             dispatch_time(0, duration_cast<nanoseconds>(when - steady_clock::now()).count()),
+            dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), new f_t(std::move(f)),
+            [](void* f_) {
+                auto f = static_cast<f_t*>(f_);
+                (*f)();
+                delete f;
+            });
+    }
+
+    template <typename F, typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, F f) const {
+        using namespace std::chrono;
+
+        using f_t = decltype(f);
+
+        dispatch_after_f(
+            dispatch_time(0, duration_cast<nanoseconds>(duration).count()),
             dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), new f_t(std::move(f)),
             [](void* f_) {
                 auto f = static_cast<f_t*>(f_);
@@ -104,7 +122,9 @@ public:
         CloseThreadpool(_pool);
     }
 
+
     template <typename F>
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F&& f) {
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>, new F(std::forward<F>(f)),
                                            &_callBackEnvironment);
@@ -114,6 +134,20 @@ public:
         }
 
         auto file_time = time_point_to_FILETIME(when);
+
+        SetThreadpoolTimer(timer, &file_time, 0, 0);
+    }
+
+    template <typename F, typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, F&& f) { {
+        auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>, new F(std::forward<F>(f)),
+                                           &_callBackEnvironment);
+
+        if (timer == nullptr) {
+            throw std::bad_alloc();
+        }
+
+        auto file_time = time_point_to_FILETIME(std::chrono::steady_clock::now() + duration);
 
         SetThreadpoolTimer(timer, &file_time, 0, 0);
     }
@@ -216,9 +250,18 @@ public:
     }
 
     template <typename F>
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F&& f) {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(when, std::forward<F>(f));
+        std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
+        _condition.notify_one();
+    }
+
+    template <typename F, typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, F&& f) {
+        lock_t lock(_timed_queue_mutex);
+        _timed_queue.emplace_back(std::chrono::steady_clock::now() + duration, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
         _condition.notify_one();
     }
