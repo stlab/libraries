@@ -275,9 +275,15 @@ public:
 struct system_timer_type {
     using result_type = void;
 
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, task<void()> f) const {
+        operator()(when - std::chrono::steady_clock().now(), std::move(f));
+    }
+
+    template <typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, task<void()> f) const {
         static system_timer only_system_timer;
-        only_system_timer(when, std::move(f));
+        only_system_timer(duration, std::move(f));
     }
 };
 
