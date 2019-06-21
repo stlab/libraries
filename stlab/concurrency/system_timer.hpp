@@ -130,7 +130,7 @@ public:
             throw std::bad_alloc();
         }
 
-        auto file_time = time_point_to_FILETIME(steady_clock::now() + duration);
+        auto file_time = time_point_to_FILETIME(duration);
 
         SetThreadpoolTimer(timer, &file_time, 0, 0);
     }
@@ -144,16 +144,13 @@ private:
         (*f)();
     }
 
-    time_t steady_clock_to_time_t(std::chrono::steady_clock::time_point t) const {
+    template <typename Rep, typename Per = std::ratio<1 >>
+    FILETIME time_point_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
         using namespace std::chrono;
-        return to_time_t(system_clock::now() +
-                         duration_cast<system_clock::duration>(t - steady_clock::now()));
-    }
-
-    FILETIME time_point_to_FILETIME(const std::chrono::steady_clock::time_point& when) const {
         FILETIME ft = {0, 0};
         SYSTEMTIME st = {0};
-        time_t t = steady_clock_to_time_t(when);
+        auto when = system_clock::now() + duration_cast<system_clock::duration>(duration);
+        time_t t = system_clock::to_time_t(when);
         tm utc_tm;
         if (!gmtime_s(&utc_tm, &t)) {
             st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
