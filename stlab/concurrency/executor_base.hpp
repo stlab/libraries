@@ -31,19 +31,6 @@ using executor_t = std::function<void(stlab::task<void()>)>;
  * at the given time point on the executor provided
  */
 
-[[deprecated("Use chrono::duration as parameter instead")]]
-inline executor_t execute_at(std::chrono::steady_clock::time_point when, executor_t executor) {
-    return [_when = std::move(when), _executor = std::move(executor)](auto f) mutable {
-        if ((_when != std::chrono::steady_clock::time_point()) &&
-            (_when > std::chrono::steady_clock::now()))
-            system_timer(_when, [_f = std::move(f), _executor = std::move(_executor)]() mutable {
-                _executor(std::move(_f));
-            });
-        else
-            _executor(std::move(f));
-    };
-}
-
 template <typename Rep, typename Per = std::ratio<1>>
 executor_t execute_at(std::chrono::duration<Rep, Per> duration, executor_t executor) {
     return [_duration = std::move(duration), _executor = std::move(executor)](auto f) mutable {
@@ -54,6 +41,12 @@ executor_t execute_at(std::chrono::duration<Rep, Per> duration, executor_t execu
         else
             _executor(std::move(f));
     };
+}
+
+[[deprecated("Use chrono::duration as parameter instead")]]
+inline executor_t execute_at(std::chrono::steady_clock::time_point when, executor_t executor) {
+    using namespace std::chrono;
+    return execute_at(duration_cast<nanoseconds>(when - steady_clock::now()), std::move(executor));
 }
 
 /*
