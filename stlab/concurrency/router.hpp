@@ -77,14 +77,14 @@ public:
     receiver<T> add_route(K key, Ex executor) {
         assert(!_ready);
 
-        channel_t<T> ch = channel<T>(executor);
+        channel_t<T> ch = channel<T>(std::move(executor));
         auto result = ch.second;
         auto insert_it = std::lower_bound(_routes.begin(), _routes.end(), key,
                                           [](const auto& p, const auto& k) { return p.first < k; });
 
         assert(insert_it == _routes.end() || insert_it->first != key);
 
-        _routes.insert(insert_it, std::make_pair(key, std::move(ch)));
+        _routes.insert(insert_it, std::make_pair(std::move(key), std::move(ch)));
 
         return result;
     }
