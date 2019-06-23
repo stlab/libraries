@@ -65,16 +65,12 @@ public:
         _ready = true;
     }
 
-    stlab::optional<receiver<T>> route(K key) const {
-        stlab::optional<receiver<T>> result;
-
-        auto find_it = std::lower_bound(_routes.begin(), _routes.end(), key,
+    stlab::optional<receiver<T>> route(const K& key) const {
+        auto find_it = std::lower_bound(_routes.cbegin(), _routes.cend(), key,
                                         [](const auto& p, const auto& k) { return p.first < k; });
 
-        if (find_it == _routes.end() || find_it->first != key) return result;
-        result = find_it->second.second;
-
-        return result;
+        if (find_it == _routes.end() || find_it->first != key) return stlab::nullopt;
+        return find_it->second.second;
     }
 
     template <typename Ex>
@@ -161,7 +157,7 @@ public:
 
     void set_ready() { _p->set_ready(); }
 
-    stlab::optional<receiver<T>> route(K key) const { return _p->route(std::move(key)); }
+    stlab::optional<receiver<T>> route(const K& key) const { return _p->route(key); }
 
     template <typename Ex>
     receiver<T> add_route(K key, Ex executor) {
@@ -173,9 +169,9 @@ public:
     void operator()(T arg) { _p->operator()(std::move(arg)); }
 };
 
-template <typename T, typename K, typename E, typename F>
-auto make_router(E executor, F router_function) {
-    return router<T, K, E, F>(std::move(executor), std::move(router_function));
+template <typename T, typename K, typename E, typename F, typename... U>
+auto make_router(E executor, F router_function, std::pair<K, channel_t<U>>... route_pairs) {
+    return router<T, K, E, F>(std::move(executor), std::move(router_function), std::move(route_pairs)...);
 }
 
 /**************************************************************************************************/
