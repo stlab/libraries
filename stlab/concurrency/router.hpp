@@ -54,7 +54,7 @@ public:
         _router_function(std::move(router_function)), _routes{
                                                           std::make_pair(route_pairs.first,
                                                                          route_pairs.second)...} {
-        assert(std::is_sorted(_routes.cbegin(), _routes.cend(),
+        assert(std::is_sorted(std::cbegin(_routes), std::cend(_routes),
                               [](const auto& x, const auto& y) { return x.first < y.first; }));
         set_ready();
     }
@@ -66,10 +66,10 @@ public:
     }
 
     stlab::optional<receiver<T>> route(const K& key) const {
-        auto find_it = std::lower_bound(_routes.cbegin(), _routes.cend(), key,
+        auto find_it = std::lower_bound(std::cbegin(_routes), std::cend(_routes), key,
                                         [](const auto& p, const auto& k) { return p.first < k; });
 
-        if (find_it == _routes.end() || find_it->first != key) return stlab::nullopt;
+        if (find_it == std::cend(_routes) || find_it->first != key) return stlab::nullopt;
         return find_it->second.second;
     }
 
@@ -79,10 +79,10 @@ public:
 
         channel_t<T> ch = channel<T>(std::move(executor));
         auto result = ch.second;
-        auto insert_it = std::lower_bound(_routes.begin(), _routes.end(), key,
+        auto insert_it = std::lower_bound(std::cbegin(_routes), std::cend(_routes), key,
                                           [](const auto& p, const auto& k) { return p.first < k; });
 
-        assert(insert_it == _routes.end() || insert_it->first != key);
+        assert(insert_it == std::cend(_routes) || insert_it->first != key);
 
         _routes.insert(insert_it, std::make_pair(std::move(key), std::move(ch)));
 
@@ -97,12 +97,12 @@ public:
             auto _this = _weak_this.lock();
             if (!_this) return;
             auto keys = _this->_router_function(_arg);
-            auto find_it = std::begin(_this->_routes);
+            auto find_it = std::cbegin(_this->_routes);
             for (const auto& key : keys) {
                 find_it =
-                    std::lower_bound(find_it, std::end(_this->_routes), key,
+                    std::lower_bound(find_it, std::cend(_this->_routes), key,
                                      [](const auto& p, const auto& k) { return p.first < k; });
-                if (find_it == std::end(_this->_routes)) return;
+                if (find_it == std::cend(_this->_routes)) return;
                 if (find_it->first != key) continue;
                 find_it->second.first(_arg);
             }
