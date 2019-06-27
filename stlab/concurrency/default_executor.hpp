@@ -27,6 +27,7 @@
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#include <array>
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
@@ -300,7 +301,7 @@ class priority_task_system {
         std::condition_variable ready;
     };
     std::vector<thread_context> _threads{_count};
-    std::vector<notification_queue> _q[3];
+    std::array<std::vector<notification_queue>, 3> _q;
     std::atomic<unsigned> _index{0};
     bool _done{false};
 
@@ -328,7 +329,8 @@ class priority_task_system {
 public:
     priority_task_system() {
         for (auto q = 0; q < 3; ++q) {
-            _q[q].resize(_count);
+            std::vector<notification_queue> resized{_count};
+            std::swap(_q[q], resized);
             for (unsigned n = 0; n != _count; ++n) {
                 _q[q][n].set_context(_threads[n].mutex, _threads[n].ready);
             }
