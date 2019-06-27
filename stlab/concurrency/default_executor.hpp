@@ -55,9 +55,33 @@ namespace detail {
 
 /**************************************************************************************************/
 
+enum class executor_priority
+{
+    high,
+    medium,
+    low
+};
+
+/**************************************************************************************************/
+
 #if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
 
-struct default_executor_type {
+constexpr auto platform_priority(executor_priority p)
+{
+    switch (p)
+    {
+        case executor_priority::low:
+            return DISPATCH_QUEUE_PRIORITY_LOW;
+        case executor_priority::medium:
+            return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+        case executor_priority::high:
+            return DISPATCH_QUEUE_PRIORITY_HIGH;
+    }
+}
+
+
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
 private:
     struct group {
         dispatch_group_t _group = dispatch_group_create();
@@ -70,6 +94,7 @@ private:
     };
 
 public:
+
     using result_type = void;
     template <typename F>
     void operator()(F f) const {
@@ -78,7 +103,7 @@ public:
         static group g;
 
         dispatch_group_async_f(g._group,
-                               dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                               dispatch_get_global_queue(platform_priority(P), 0),
                                new f_t(std::move(f)), [](void* f_) {
                                    auto f = static_cast<f_t*>(f_);
                                    (*f)();
@@ -89,7 +114,8 @@ public:
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
 
-struct default_executor_type {
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
     using result_type = void;
 
     template <typename F>
@@ -109,7 +135,8 @@ struct default_executor_type {
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
 
-struct default_executor_type {
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
     using result_type = void;
 
     template <typename F>
@@ -130,6 +157,20 @@ struct default_executor_type {
 
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
 
+constexpr auto platform_priority(executor_priority p)
+{
+    switch (p)
+    {
+        case executor_priority::low:
+            return TP_CALLBACK_PRIORITY_LOW;
+        case executor_priority::medium:
+            return TP_CALLBACK_PRIORITY_NORMAL;
+        case executor_priority::high:
+            return TP_CALLBACK_PRIORITY_HIGH;
+    }
+}
+
+template <executor_priority P = executor_priority::medium>
 class task_system {
     PTP_POOL _pool = nullptr;
     TP_CALLBACK_ENVIRON _callBackEnvironment;
@@ -147,6 +188,7 @@ public:
             throw std::bad_alloc();
         }
 
+        SetThreadpoolCallbackPriority(&_callBackEnvironment, platform_priority(P));
         SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
         SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
     }
@@ -178,20 +220,27 @@ private:
     }
 };
 
+/**************************************************************************************************/
+/**************************************************************************************************/
+
 #elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
 
-/**************************************************************************************************/
 
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
     std::deque<task<void()>> _q;
     bool _done{false};
-    std::mutex _mutex;
-    std::condition_variable _ready;
+    std::mutex* _mutex{nullptr};
+    std::condition_variable* _ready{nullptr};
 
 public:
+    void set_context(std::mutex& m, std::condition_variable& cv) {
+        _mutex = &m;
+        _ready = &cv;
+    }
+
     bool try_pop(task<void()>& x) {
-        lock_t lock{_mutex, std::try_to_lock};
+        lock_t lock{*_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
@@ -201,26 +250,26 @@ public:
     template <typename F>
     bool try_push(F&& f) {
         {
-            lock_t lock{_mutex, std::try_to_lock};
+            lock_t lock{*_mutex, std::try_to_lock};
             if (!lock) return false;
             _q.emplace_back(std::forward<F>(f));
         }
-        _ready.notify_one();
+        _ready->notify_all();
         return true;
     }
 
     void done() {
         {
-            lock_t lock{_mutex};
+            lock_t lock{*_mutex};
             _done = true;
         }
-        _ready.notify_all();
+        _ready->notify_all();
     }
 
     bool pop(task<void()>& x) {
-        lock_t lock{_mutex};
+        lock_t lock{*_mutex};
         while (_q.empty() && !_done)
-            _ready.wait(lock);
+            _ready->wait(lock);
         if (_q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
@@ -230,83 +279,162 @@ public:
     template <typename F>
     void push(F&& f) {
         {
-            lock_t lock{_mutex};
+            lock_t lock{*_mutex};
             _q.emplace_back(std::forward<F>(f));
         }
-        _ready.notify_one();
+        _ready->notify_all();
     }
 };
 
 /**************************************************************************************************/
 
-class task_system {
+class priority_task_system {
+    using lock_t = std::unique_lock<std::mutex>;
+
     const unsigned _count{std::thread::hardware_concurrency()};
-    std::vector<std::thread> _threads;
-    std::vector<notification_queue> _q{_count};
+
+    struct thread_context
+    {
+        std::thread thread;
+        std::mutex mutex;
+        std::condition_variable ready;
+    };
+    std::vector<thread_context> _threads{_count};
+    std::vector<notification_queue> _q[3];
     std::atomic<unsigned> _index{0};
+    bool _done{false};
 
     void run(unsigned i) {
         while (true) {
             task<void()> f;
 
-            for (unsigned n = 0; n != _count * 32; ++n) {
-                if (_q[(i + n) % _count].try_pop(f)) break;
+            for (unsigned q = 0; q < 3; ++q) {
+                for (unsigned n = 0; n != _count * 32; ++n) {
+                    if (_q[q][(i + n) % _count].try_pop(f)) break;
+                }
+                if (f) break;
             }
-            if (!f && !_q[i].pop(f)) break;
 
-            f();
+            if (!f) {
+                lock_t lock{_threads[i].mutex};
+                while (_q[0].empty() && _q[1].empty() && _q[2].empty() && !_done)
+                    _threads[i].ready.wait(lock);
+            }
+            else
+                f();
         }
     }
 
 public:
-    task_system() {
+    priority_task_system() {
+        for (auto q = 0; q < 3; ++q) {
+            _q[q].resize(_count);
+            for (unsigned n = 0; n != _count; ++n) {
+                _q[q][n].set_context(_threads[n].mutex, _threads[n].ready);
+            }
+        }
         for (unsigned n = 0; n != _count; ++n) {
-            _threads.emplace_back([&, n] { run(n); });
+            _threads[n].thread = std::thread([&, n] { run(n); });
         }
     }
 
-    ~task_system() {
-        for (auto& e : _q)
-            e.done();
+    ~priority_task_system() {
+        _done = true;
+        for (auto q = 0; q < 3; ++q)
+            for (auto& e : _q[q])
+                e.done();
 
         for (auto& e : _threads)
-            e.join();
+            e.thread.join();
     }
 
     template <typename F>
-    void operator()(F&& f) {
+    void high(F&& f) {
         auto i = _index++;
 
         for (unsigned n = 0; n != _count; ++n) {
-            if (_q[(i + n) % _count].try_push(std::forward<F>(f))) return;
+            if (_q[0][(i + n) % _count].try_push(std::forward<F>(f))) return;
         }
 
-        _q[i % _count].push(std::forward<F>(f));
+        _q[0][i % _count].push(std::forward<F>(f));
+    }
+
+    template <typename F>
+    void medium(F&& f) {
+        auto i = _index++;
+
+        for (unsigned n = 0; n != _count; ++n) {
+            if (_q[1][(i + n) % _count].try_push(std::forward<F>(f))) return;
+        }
+
+        _q[1][i % _count].push(std::forward<F>(f));
+    }
+
+    template <typename F>
+    void low(F&& f) {
+        auto i = _index++;
+
+        for (unsigned n = 0; n != _count; ++n) {
+            if (_q[2][(i + n) % _count].try_push(std::forward<F>(f))) return;
+        }
+
+        _q[2][i % _count].push(std::forward<F>(f));
     }
 };
+
+inline priority_task_system& pts() {
+    static priority_task_system only_task_system;
+    return only_task_system;
+}
+
+template <executor_priority P = executor_priority::medium>
+struct task_system
+{
+    using result_type = void;
+
+    void operator()(task<void()> f) const {
+        if constexpr (P == executor_priority::high)
+        {
+            pts().high(std::move(f));
+        }
+        else if constexpr (P == executor_priority::medium)
+        {
+            pts().medium(std::move(f));
+        }
+        else if constexpr (P == executor_priority::low)
+        {
+            pts().low(std::move(f));
+        }
+    }
+};
+
 
 #endif
 
 #if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) || \
     (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
 
-struct default_executor_type {
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        static task_system only_task_system;
+        static task_system<P> only_task_system;
         only_task_system(std::move(f));
     }
 };
 
 #endif
+
 /**************************************************************************************************/
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-constexpr auto default_executor = detail::default_executor_type{};
+constexpr auto low_executor = detail::executor_type<detail::executor_priority::low>{};
+constexpr auto default_executor = detail::executor_type<detail::executor_priority::medium>{};
+constexpr auto high_executor = detail::executor_type<detail::executor_priority::high>{};
 
 /**************************************************************************************************/
 
