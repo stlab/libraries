@@ -20,7 +20,8 @@ add_test( NAME stlab.test.channel COMMAND stlab.test.channel )
 ################################################################################
 
 add_executable( stlab.test.executor
-        executor_test.cpp )
+        executor_test.cpp
+        main.cpp)
 
 target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
 add_test( NAME stlab.test.executor COMMAND stlab.test.executor )
