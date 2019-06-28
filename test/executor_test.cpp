@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
         lowSum += results[i + iterations * 2];
     }
 
-    BOOST_REQUIRE(std::fabs(3.0 - static_cast<double>(highSum) / iterations) < 0.001);
-    BOOST_REQUIRE(std::fabs(2.0 - static_cast<double>(defaultSum) / iterations) < 0.001);
-    BOOST_REQUIRE(std::fabs(1.0 - static_cast<double>(lowSum) / iterations) < 0.001);
+    BOOST_REQUIRE_GT(0.001, std::fabs(3.0 - static_cast<double>(highSum) / iterations));
+    BOOST_REQUIRE_GT(0.001, std::fabs(2.0 - static_cast<double>(defaultSum) / iterations));
+    BOOST_REQUIRE_GT(0.001, std::fabs(1.0 - static_cast<double>(lowSum) / iterations));
 }
