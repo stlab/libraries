@@ -5,15 +5,17 @@
 */
 /**************************************************************************************************/
 
+#include <boost/test/unit_test.hpp>
+
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include <thread>
 
 using namespace stlab;
 
-BOOST_AUTO_TEST_CASE(all_low_prio_tasks_get_executed) {
+BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
+    BOOST_TEST_MESSAGE("All low priority tasks are executed");
 
     serial_queue_t queue(low_executor);
     std::vector<int> results;
@@ -40,6 +42,7 @@ BOOST_AUTO_TEST_CASE(all_low_prio_tasks_get_executed) {
 }
 
 BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
+  BOOST_TEST_MESSAGE("All default priority tasks are executed");
 
     serial_queue_t queue(default_executor);
     std::vector<int> results;
@@ -66,6 +69,7 @@ BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
 }
 
 BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
+    BOOST_TEST_MESSAGE("All high priority tasks are executed");
 
     serial_queue_t queue(high_executor);
     std::vector<int> results;

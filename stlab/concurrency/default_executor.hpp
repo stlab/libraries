@@ -71,12 +71,12 @@ constexpr auto platform_priority(executor_priority p)
 {
     switch (p)
     {
-        case executor_priority::low:
-            return DISPATCH_QUEUE_PRIORITY_LOW;
-        case executor_priority::medium:
-            return DISPATCH_QUEUE_PRIORITY_DEFAULT;
         case executor_priority::high:
             return DISPATCH_QUEUE_PRIORITY_HIGH;
+        case executor_priority::medium:
+          return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+        default::
+            return DISPATCH_QUEUE_PRIORITY_LOW;
     }
 }
 
@@ -162,12 +162,12 @@ constexpr auto platform_priority(executor_priority p)
 {
     switch (p)
     {
-        case executor_priority::low:
-            return TP_CALLBACK_PRIORITY_LOW;
-        case executor_priority::medium:
-            return TP_CALLBACK_PRIORITY_NORMAL;
         case executor_priority::high:
             return TP_CALLBACK_PRIORITY_HIGH;
+        case executor_priority::medium:
+            return TP_CALLBACK_PRIORITY_NORMAL;
+        default:
+          return TP_CALLBACK_PRIORITY_LOW;
     }
 }
 
@@ -267,16 +267,6 @@ public:
         _ready->notify_all();
     }
 
-    bool pop(task<void()>& x) {
-        lock_t lock{*_mutex};
-        while (_q.empty() && !_done)
-            _ready->wait(lock);
-        if (_q.empty()) return false;
-        x = std::move(_q.front());
-        _q.pop_front();
-        return true;
-    }
-
     template <typename F>
     void push(F&& f) {
         {
@@ -303,10 +293,10 @@ class priority_task_system {
     std::vector<thread_context> _threads{_count};
     std::array<std::vector<notification_queue>, 3> _q;
     std::atomic<unsigned> _index{0};
-    bool _done{false};
+    std::atomic_bool _done{false};
 
     void run(unsigned i) {
-        while (true) {
+        while (!_done) {
             task<void()> f;
 
             for (unsigned q = 0; q < 3; ++q) {
@@ -329,8 +319,8 @@ class priority_task_system {
 public:
     priority_task_system() {
         for (auto q = 0; q < 3; ++q) {
-            std::vector<notification_queue> resized{_count};
-            std::swap(_q[q], resized);
+            std::vector<notification_queue> queues{_count};
+            std::swap(_q[q], queues);
             for (unsigned n = 0; n != _count; ++n) {
                 _q[q][n].set_context(_threads[n].mutex, _threads[n].ready);
             }
