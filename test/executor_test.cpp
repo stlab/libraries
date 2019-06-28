@@ -78,6 +78,8 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     }
 }
 
+#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
 
@@ -126,3 +128,5 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_REQUIRE_GT(0.001, std::fabs(2.0 - static_cast<double>(defaultSum) / iterations));
     BOOST_REQUIRE_GT(0.001, std::fabs(1.0 - static_cast<double>(lowSum) / iterations));
 }
+
+#endif
