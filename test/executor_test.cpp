@@ -125,16 +125,13 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
         lowSum += results[i + iterations * 2];
     }
 
-    BOOST_REQUIRE_GT(0.001, std::fabs(3.0 - static_cast<double>(highSum) / iterations));
-    BOOST_REQUIRE_GT(0.001, std::fabs(2.0 - static_cast<double>(defaultSum) / iterations));
-    BOOST_REQUIRE_GT(0.001, std::fabs(1.0 - static_cast<double>(lowSum) / iterations));
+    BOOST_REQUIRE_GT(0.01, std::fabs(3.0 - static_cast<double>(highSum) / iterations));
+    BOOST_REQUIRE_GT(0.01, std::fabs(2.0 - static_cast<double>(defaultSum) / iterations));
+    BOOST_REQUIRE_GT(0.01, std::fabs(1.0 - static_cast<double>(lowSum) / iterations));
 }
-
-
 
 #endif
 
-#if 0
 
 BOOST_AUTO_TEST_CASE(MeasureTiming) {
   std::vector<int> results;
@@ -147,18 +144,18 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
   auto start = std::chrono::steady_clock::now();
 
     for (auto i = 0; i < iterations; ++i) {
-      default_executor([_i = i, &results] {
+      low_executor([_i = i, &results] {
         results[_i] = 1;
       });
 
       default_executor([_i = i+iterations, &results] {
-        results[_i] = 1;
+        results[_i] = 2;
       });
-      default_executor([_i = i + iterations*2, &results]{
-        results[_i] = 1;
+      high_executor([_i = i + iterations*2, &results]{
+        results[_i] = 3;
       });
     }
-    default_executor([&cv,&done] {
+    low_executor([&cv,&done] {
       {
         done = true;
       }
@@ -175,4 +172,3 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::cout << std::chrono::duration<double>(stop - start).count() << "\n";
 
 }
-#endif

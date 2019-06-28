@@ -230,17 +230,16 @@ private:
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
     std::deque<task<void()>> _q;
-    std::mutex* _mutex{nullptr};
+    std::mutex _queue_mutex;
     std::condition_variable* _ready{nullptr};
 
 public:
-    void set_context(std::mutex& m, std::condition_variable& cv) {
-        _mutex = &m;
+    void set_context(std::condition_variable& cv) {
         _ready = &cv;
     }
 
     bool try_pop(task<void()>& x) {
-        lock_t lock{*_mutex, std::try_to_lock};
+        lock_t lock{_queue_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
@@ -250,7 +249,7 @@ public:
     template <typename F>
     bool try_push(F&& f) {
         {
-            lock_t lock{*_mutex, std::try_to_lock};
+            lock_t lock{_queue_mutex, std::try_to_lock};
             if (!lock) return false;
             _q.emplace_back(std::forward<F>(f));
         }
@@ -261,7 +260,7 @@ public:
     template <typename F>
     void push(F&& f) {
         {
-            lock_t lock{*_mutex};
+            lock_t lock{_queue_mutex};
             _q.emplace_back(std::forward<F>(f));
         }
         _ready->notify_all();
@@ -287,23 +286,27 @@ class priority_task_system {
     std::atomic_bool _done{false};
 
     void run(unsigned i) {
-        while (!_done) {
+        while (true) {
+            begin:
             task<void()> f;
 
             for (auto& q : _q) {
-                for (unsigned n = 0; n != _count * 32; ++n) {
-                    if (q[(i + n) % _count].try_pop(f)) break;
+                for (unsigned n = 0; n != _count * 4; ++n) {
+                    if (q[(i + n) % _count].try_pop(f)) {
+                        f();
+                        goto begin;
+                    };
                 }
-                if (f) break;
             }
 
-            if (!f) {
+            {
                 lock_t lock{_thread_contexts[i].mutex};
-                while (_q[0].empty() && _q[1].empty() && _q[2].empty() && !_done)
+                while(!_done) {
+                    goto begin;
                     _thread_contexts[i].ready.wait(lock);
+                }
             }
-            else
-                f();
+            if (_done) return;
         }
     }
 
@@ -313,7 +316,7 @@ public:
             std::vector<notification_queue> queues{_count};
             std::swap(q, queues);
             for (unsigned n = 0; n != _count; ++n) {
-                q[n].set_context(_thread_contexts[n].mutex, _thread_contexts[n].ready);
+                q[n].set_context(_thread_contexts[n].ready);
             }
         }
         for (unsigned n = 0; n != _count; ++n) {
@@ -334,7 +337,7 @@ public:
     void execute(F&& f) {
         auto i = _index++;
 
-        for (unsigned n = 0; n != _count; ++n) {
+        for (unsigned n = 0; n != _count * 4; ++n) {
             if (_q[P][(i + n) % _count].try_push(std::forward<F>(f))) return;
         }
 
