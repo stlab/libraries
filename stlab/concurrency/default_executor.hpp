@@ -75,7 +75,7 @@ constexpr auto platform_priority(executor_priority p)
             return DISPATCH_QUEUE_PRIORITY_HIGH;
         case executor_priority::medium:
           return DISPATCH_QUEUE_PRIORITY_DEFAULT;
-        default::
+        default:
             return DISPATCH_QUEUE_PRIORITY_LOW;
     }
 }
@@ -230,7 +230,6 @@ private:
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
     std::deque<task<void()>> _q;
-    bool _done{false};
     std::mutex* _mutex{nullptr};
     std::condition_variable* _ready{nullptr};
 
@@ -259,14 +258,6 @@ public:
         return true;
     }
 
-    void done() {
-        {
-            lock_t lock{*_mutex};
-            _done = true;
-        }
-        _ready->notify_all();
-    }
-
     template <typename F>
     void push(F&& f) {
         {
@@ -286,11 +277,11 @@ class priority_task_system {
 
     struct thread_context
     {
-        std::thread thread;
         std::mutex mutex;
         std::condition_variable ready;
+        std::thread thread;
     };
-    std::vector<thread_context> _threads{_count};
+    std::vector<thread_context> _thread_contexts{_count};
     std::array<std::vector<notification_queue>, 3> _q;
     std::atomic<unsigned> _index{0};
     std::atomic_bool _done{false};
@@ -299,17 +290,17 @@ class priority_task_system {
         while (!_done) {
             task<void()> f;
 
-            for (unsigned q = 0; q < 3; ++q) {
+            for (auto& q : _q) {
                 for (unsigned n = 0; n != _count * 32; ++n) {
-                    if (_q[q][(i + n) % _count].try_pop(f)) break;
+                    if (q[(i + n) % _count].try_pop(f)) break;
                 }
                 if (f) break;
             }
 
             if (!f) {
-                lock_t lock{_threads[i].mutex};
+                lock_t lock{_thread_contexts[i].mutex};
                 while (_q[0].empty() && _q[1].empty() && _q[2].empty() && !_done)
-                    _threads[i].ready.wait(lock);
+                    _thread_contexts[i].ready.wait(lock);
             }
             else
                 f();
@@ -318,59 +309,36 @@ class priority_task_system {
 
 public:
     priority_task_system() {
-        for (auto q = 0; q < 3; ++q) {
+        for (auto& q : _q) {
             std::vector<notification_queue> queues{_count};
-            std::swap(_q[q], queues);
+            std::swap(q, queues);
             for (unsigned n = 0; n != _count; ++n) {
-                _q[q][n].set_context(_threads[n].mutex, _threads[n].ready);
+                q[n].set_context(_thread_contexts[n].mutex, _thread_contexts[n].ready);
             }
         }
         for (unsigned n = 0; n != _count; ++n) {
-            _threads[n].thread = std::thread([&, n] { run(n); });
+            _thread_contexts[n].thread = std::thread([&, n] { run(n); });
         }
     }
 
     ~priority_task_system() {
         _done = true;
-        for (auto q = 0; q < 3; ++q)
-            for (auto& e : _q[q])
-                e.done();
+        for (auto& context : _thread_contexts)
+            context.ready.notify_all();
 
-        for (auto& e : _threads)
-            e.thread.join();
+        for (auto& context : _thread_contexts)
+            context.thread.join();
     }
 
-    template <typename F>
-    void high(F&& f) {
+    template <std::size_t P, typename F>
+    void execute(F&& f) {
         auto i = _index++;
 
         for (unsigned n = 0; n != _count; ++n) {
-            if (_q[0][(i + n) % _count].try_push(std::forward<F>(f))) return;
+            if (_q[P][(i + n) % _count].try_push(std::forward<F>(f))) return;
         }
 
-        _q[0][i % _count].push(std::forward<F>(f));
-    }
-
-    template <typename F>
-    void medium(F&& f) {
-        auto i = _index++;
-
-        for (unsigned n = 0; n != _count; ++n) {
-            if (_q[1][(i + n) % _count].try_push(std::forward<F>(f))) return;
-        }
-
-        _q[1][i % _count].push(std::forward<F>(f));
-    }
-
-    template <typename F>
-    void low(F&& f) {
-        auto i = _index++;
-
-        for (unsigned n = 0; n != _count; ++n) {
-            if (_q[2][(i + n) % _count].try_push(std::forward<F>(f))) return;
-        }
-
-        _q[2][i % _count].push(std::forward<F>(f));
+        _q[P][i % _count].push(std::forward<F>(f));
     }
 };
 
@@ -385,18 +353,7 @@ struct task_system
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        if constexpr (P == executor_priority::high)
-        {
-            pts().high(std::move(f));
-        }
-        else if constexpr (P == executor_priority::medium)
-        {
-            pts().medium(std::move(f));
-        }
-        else if constexpr (P == executor_priority::low)
-        {
-            pts().low(std::move(f));
-        }
+        pts().execute<static_cast<std::size_t>(P)>(std::move(f));
     }
 };
 
@@ -439,3 +396,4 @@ constexpr auto high_executor = detail::executor_type<detail::executor_priority::
 /**************************************************************************************************/
 
 #endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
+
