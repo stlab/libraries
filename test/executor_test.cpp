@@ -11,6 +11,7 @@
 #include <stlab/concurrency/serial_queue.hpp>
 
 #include <cmath>
+#include <iostream>
 #include <thread>
 
 using namespace stlab;
@@ -129,4 +130,49 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_REQUIRE_GT(0.001, std::fabs(1.0 - static_cast<double>(lowSum) / iterations));
 }
 
+
+
+#endif
+
+#if 0
+
+BOOST_AUTO_TEST_CASE(MeasureTiming) {
+  std::vector<int> results;
+  const auto iterations = 30000;
+  results.resize(iterations * 3);
+  std::mutex m;
+  std::condition_variable cv;
+  bool done = false;
+  default_executor([]{});
+  auto start = std::chrono::steady_clock::now();
+
+    for (auto i = 0; i < iterations; ++i) {
+      default_executor([_i = i, &results] {
+        results[_i] = 1;
+      });
+
+      default_executor([_i = i+iterations, &results] {
+        results[_i] = 1;
+      });
+      default_executor([_i = i + iterations*2, &results]{
+        results[_i] = 1;
+      });
+    }
+    default_executor([&cv,&done] {
+      {
+        done = true;
+      }
+      cv.notify_one();
+    });
+
+    std::unique_lock block{ m };
+    while (!done)
+    {
+      cv.wait(block);
+    }
+
+    auto stop = std::chrono::steady_clock::now();
+    std::cout << std::chrono::duration<double>(stop - start).count() << "\n";
+
+}
 #endif
