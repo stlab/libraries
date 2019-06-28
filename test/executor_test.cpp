@@ -21,49 +21,37 @@ BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     std::vector<int> results;
     std::atomic_bool done{false};
 
-    for (auto i = 0; i < 10; ++i)
-    {
-        queue.executor()([_i = i, &results]{
-            results.push_back(_i);
-        });
+    for (auto i = 0; i < 10; ++i) {
+        queue.executor()([_i = i, &results] { results.push_back(_i); });
     }
-    queue.executor()([&done]{
-        done = true;
-    });
+    queue.executor()([&done] { done = true; });
 
     while (!done) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    for (auto i = 0; i < 10; ++i)
-    {
+    for (auto i = 0; i < 10; ++i) {
         BOOST_REQUIRE_EQUAL(i, results[i]);
     }
 }
 
 BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
-  BOOST_TEST_MESSAGE("All default priority tasks are executed");
+    BOOST_TEST_MESSAGE("All default priority tasks are executed");
 
     serial_queue_t queue(default_executor);
     std::vector<int> results;
     std::atomic_bool done{false};
 
-    for (auto i = 0; i < 10; ++i)
-    {
-        queue.executor()([_i = i, &results]{
-            results.push_back(_i);
-        });
+    for (auto i = 0; i < 10; ++i) {
+        queue.executor()([_i = i, &results] { results.push_back(_i); });
     }
-    queue.executor()([&done]{
-        done = true;
-    });
+    queue.executor()([&done] { done = true; });
 
     while (!done) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    for (auto i = 0; i < 10; ++i)
-    {
+    for (auto i = 0; i < 10; ++i) {
         BOOST_REQUIRE_EQUAL(i, results[i]);
     }
 }
@@ -75,23 +63,65 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     std::vector<int> results;
     std::atomic_bool done{false};
 
-    for (auto i = 0; i < 10; ++i)
-    {
-        queue.executor()([_i = i, &results]{
-            results.push_back(_i);
-        });
+    for (auto i = 0; i < 10; ++i) {
+        queue.executor()([_i = i, &results] { results.push_back(_i); });
     }
-    queue.executor()([&done]{
-        done = true;
-    });
+    queue.executor()([&done] { done = true; });
 
     while (!done) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    for (auto i = 0; i < 10; ++i)
-    {
+    for (auto i = 0; i < 10; ++i) {
         BOOST_REQUIRE_EQUAL(i, results[i]);
     }
 }
 
+BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
+    BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
+
+    std::mutex m;
+    std::vector<int> results;
+    const auto iterations = 30000;
+    results.reserve(iterations * 3);
+
+    {
+        std::unique_lock block{m};
+        for (auto i = 0; i < iterations; ++i) {
+            low_executor([&] {
+                std::unique_lock guard{m};
+                results.push_back(1);
+            });
+
+            default_executor([&] {
+                std::unique_lock guard{m};
+                results.push_back(2);
+            });
+            high_executor([&] {
+                std::unique_lock guard{m};
+                results.push_back(3);
+            });
+        }
+    }
+
+    while (true) {
+        {
+            std::unique_lock guard{m};
+            if (results.size() == iterations * 3) break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto highSum{0};
+    auto defaultSum{0};
+    auto lowSum{0};
+    for (auto i = 0; i < iterations; ++i) {
+        highSum += results[i];
+        defaultSum += results[i + iterations];
+        lowSum += results[i + iterations * 2];
+    }
+
+    BOOST_REQUIRE(3.0 - static_cast<double>(highSum) / iterations < 0.001);
+    BOOST_REQUIRE(2.0 - static_cast<double>(defaultSum) / iterations < 0.001);
+    BOOST_REQUIRE(1.0 - static_cast<double>(lowSum) / iterations < 0.001);
+}
