@@ -300,7 +300,7 @@ class priority_task_system {
             task<void()> f;
 
             for (auto& q : _q) {
-                for (unsigned n = 0; n != _count * 4; ++n) {
+                for (unsigned n = 0; n != 64 / _count; ++n) {
                     if (q[(i + n) % _count].try_pop(f)) {
                         f();
                         goto begin;
@@ -353,7 +353,7 @@ public:
     void execute(F&& f) {
         auto i = _index++;
 
-        for (unsigned n = 0; n != _count * 4; ++n) {
+        for (unsigned n = 0; n != 64 / _count; ++n) {
             if (_q[P][(i + n) % _count].try_push(std::forward<F>(f))) return;
         }
 
