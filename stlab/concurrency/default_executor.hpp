@@ -246,6 +246,15 @@ public:
         return true;
     }
 
+    bool pop(task<void()>& x) {
+        lock_t lock{_queue_mutex};
+        if (_q.empty()) return false;
+        x = std::move(_q.front());
+        _q.pop_front();
+        return true;
+    }
+
+
     template <typename F>
     bool try_push(F&& f) {
         {
@@ -296,6 +305,13 @@ class priority_task_system {
                         f();
                         goto begin;
                     };
+                }
+            }
+
+            for (auto& q : _q) {
+                if (q[i].pop(f)) {
+                    f();
+                    goto begin;
                 }
             }
 
