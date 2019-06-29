@@ -15,6 +15,11 @@
 
 #define STLAB_FEATURE(X) (STLAB_FEATURE_PRIVATE_##X())
 
+// __has_feature is a clang specific extension, gcc does not know it
+#ifndef __has_feature      // Optional.
+#define __has_feature(x) 0 // Compatibility with non-clang compilers.
+#endif
+
 /**************************************************************************************************/
 
 #define STLAB_TASK_SYSTEM_PORTABLE      0
