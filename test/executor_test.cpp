@@ -20,11 +20,15 @@ BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     BOOST_TEST_MESSAGE("All low priority tasks are executed");
 
     serial_queue_t queue(low_executor);
+    std::mutex m;
     std::vector<int> results;
     std::atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
-        queue.executor()([_i = i, &results] { results.push_back(_i); });
+        queue.executor()([_i = i, &m, &results] {
+            std::unique_lock block{m};
+            results.push_back(_i);
+        });
     }
     queue.executor()([&done] { done = true; });
 
@@ -41,11 +45,15 @@ BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
     BOOST_TEST_MESSAGE("All default priority tasks are executed");
 
     serial_queue_t queue(default_executor);
+    std::mutex m;
     std::vector<int> results;
     std::atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
-        queue.executor()([_i = i, &results] { results.push_back(_i); });
+        queue.executor()([_i = i, &m, &results] {
+            std::unique_lock block{m};
+            results.push_back(_i);
+        });
     }
     queue.executor()([&done] { done = true; });
 
@@ -62,11 +70,15 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     BOOST_TEST_MESSAGE("All high priority tasks are executed");
 
     serial_queue_t queue(high_executor);
+    std::mutex m;
     std::vector<int> results;
     std::atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
-        queue.executor()([_i = i, &results] { results.push_back(_i); });
+        queue.executor()([_i = i, &m, &results] {
+            std::unique_lock block{m};
+            results.push_back(_i);
+        });
     }
     queue.executor()([&done] { done = true; });
 
@@ -137,35 +149,29 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
   std::vector<int> results;
   const auto iterations = 30000;
   results.resize(iterations * 3);
-  std::mutex m;
-  std::condition_variable cv;
-  bool done = false;
-  default_executor([]{});
+  std::atomic_int counter{0};
+
   auto start = std::chrono::steady_clock::now();
 
     for (auto i = 0; i < iterations; ++i) {
-      low_executor([_i = i, &results] {
+      low_executor([_i = i, &results,&counter] {
         results[_i] = 1;
+        ++counter;
       });
 
-      default_executor([_i = i+iterations, &results] {
+      default_executor([_i = i+iterations, &results,&counter] {
         results[_i] = 2;
+        ++counter;
       });
-      high_executor([_i = i + iterations*2, &results]{
+      high_executor([_i = i + iterations*2, &results,&counter]{
         results[_i] = 3;
+        ++counter;
       });
     }
-    low_executor([&cv,&done] {
-      {
-        done = true;
-      }
-      cv.notify_one();
-    });
-
-    std::unique_lock block{ m };
-    while (!done)
+    
+    while (counter != iterations*3)
     {
-      cv.wait(block);
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     auto stop = std::chrono::steady_clock::now();
