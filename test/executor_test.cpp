@@ -95,57 +95,50 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
 
-    mutex m;
     vector<int> results;
     const auto iterations = 30000;
-    results.reserve(iterations * 3);
-
+    std::atomic_int done{0};
+    std::atomic_int highCount{0};
+    std::atomic_int defaultCount{0};
+    std::atomic_int correctDefault{0};
+    std::atomic_int correctLow{0};
+    std::atomic_int taskRunning{0};
     {
-        unique_lock block{m};
         for (auto i = 0; i < iterations; ++i) {
             low_executor([&] {
-                unique_lock guard{m};
-                results.push_back(1);
+                ++taskRunning;
+                correctLow += static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
+                ++done;
+                --taskRunning;
             });
+            ++defaultCount;
             default_executor([&] {
-                unique_lock guard{m};
-                results.push_back(2);
+                ++taskRunning;
+                correctDefault += static_cast<int>(highCount <= taskRunning);
+                --defaultCount;
+                ++done;
+                --taskRunning;
             });
+            ++highCount;
             high_executor([&] {
-                unique_lock guard{m};
-                results.push_back(3);
+                ++taskRunning;
+                --highCount;
+                ++done;
+                --taskRunning;
             });
         }
     }
 
-    while (true) {
-        {
-            unique_lock guard{m};
-            if (results.size() == iterations * 3) break;
-        }
+    while (done != iterations * 3) {
         this_thread::sleep_for(chrono::milliseconds(1));
     }
 
-    auto highSum{0};
-    auto defaultSum{0};
-    auto lowSum{0};
-    for (auto i = 0; i < iterations; ++i) {
-        highSum += results[i];
-        defaultSum += results[i + iterations];
-        lowSum += results[i + iterations * 2];
-    }
+    cout << "Correct default ordering " << correctDefault.load() <<"\n";
+    cout << "Correct low ordering " << correctLow.load() << "\n";
 
-    auto correctHighOrdering = fabs(3.0 - static_cast<double>(highSum) / iterations);
-    auto correctDefaultOrdering = fabs(2.0 - static_cast<double>(defaultSum) / iterations);
-    auto correctLowOrdering = fabs(1.0 - static_cast<double>(lowSum) / iterations);
-
-    cout << "Correct high ordering " << 1.0 - correctHighOrdering << "%\n";
-    cout << "Correct default ordering " << 1.0 - correctDefaultOrdering << "%\n";
-    cout << "Correct low ordering " << 1.0 - correctLowOrdering << "%\n";
-
-    BOOST_WARN_GT(0.01, correctHighOrdering);
-    BOOST_WARN_GT(0.01, correctDefaultOrdering);
-    BOOST_WARN_GT(0.01, correctLowOrdering);
+//    BOOST_WARN_GT(0.01, correctHighOrdering);
+//    BOOST_WARN_GT(0.01, correctDefaultOrdering);
+//    BOOST_WARN_GT(0.01, correctLowOrdering);
 }
 
 BOOST_AUTO_TEST_CASE(MeasureTiming) {
