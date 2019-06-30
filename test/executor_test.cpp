@@ -95,8 +95,7 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
 
-    vector<int> results;
-    const auto iterations = 30000;
+    const auto iterations = 300000;
     std::atomic_int done{0};
     std::atomic_int highCount{0};
     std::atomic_int defaultCount{0};
@@ -133,32 +132,32 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
         this_thread::sleep_for(chrono::milliseconds(1));
     }
 
-    cout << "Correct default ordering " << correctDefault.load() <<"\n";
-    cout << "Correct low ordering " << correctLow.load() << "\n";
-
-//    BOOST_WARN_GT(0.01, correctHighOrdering);
-//    BOOST_WARN_GT(0.01, correctDefaultOrdering);
-//    BOOST_WARN_GT(0.01, correctLowOrdering);
+    cout << "Correct default ordering: " << static_cast<double>(correctDefault.load())/iterations <<"%\n";
+    cout << "Correct low ordering:     " << static_cast<double>(correctLow.load())/iterations << "%\n";
 }
 
 BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::vector<int> results;
-    const auto iterations = 30000;
+    const auto iterations = 100000;
     results.resize(iterations * 3);
     bool done = false;
     condition_variable ready;
+    atomic_int counter{0};
 
     auto start = chrono::high_resolution_clock::now();
 
     for (auto i = 0; i < iterations; ++i) {
-        low_executor([_i = i, &results] {
+        low_executor([_i = i, &results,&counter] {
             results[_i] = 1;
+            ++counter;
         });
-        default_executor([_i = i + iterations, &results] {
+        default_executor([_i = i + iterations, &results,&counter] {
             results[_i] = 2;
+            ++counter;
         });
-        high_executor([_i = i + iterations * 2, &results] {
+        high_executor([_i = i + iterations * 2, &results,&counter] {
             results[_i] = 3;
+            ++counter;
         });
     }
 
@@ -169,8 +168,9 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     while (!done) ready.wait(lock);
 
     auto stop = std::chrono::high_resolution_clock::now();
-    std::cout << "Complete calculation time:" << std::chrono::duration<double>(stop - start).count() << "s\n";
+    std::cout << "\nPerformance measuring: " << std::chrono::duration<double>(stop - start).count() << "s\n";
 
-    // we have to be sure, that really all tasks are done
-    this_thread::sleep_for(chrono::milliseconds(100));
+    while (counter < 3*iterations) {
+        this_thread::sleep_for(chrono::milliseconds(1));
+    }
 }
