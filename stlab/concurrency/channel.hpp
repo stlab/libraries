@@ -930,7 +930,11 @@ struct shared_process
             } else {
                 if (get_process_state(_process).first == process_state::await) return;
             }
-            auto [state, duration] = get_process_state(_process);
+
+            // Workaround until we can use structured bindings
+            auto tmp = get_process_state(_process);
+            const auto& state = tmp.first;
+            const auto& duration = tmp.second;
 
             /*
                 Once we hit yield, go ahead and call it. If the yield is delayed then schedule it.

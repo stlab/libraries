@@ -15,25 +15,26 @@
 #include <thread>
 
 using namespace stlab;
+using namespace std;
 
 BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     BOOST_TEST_MESSAGE("All low priority tasks are executed");
 
     serial_queue_t queue(low_executor);
-    std::mutex m;
-    std::vector<int> results;
-    std::atomic_bool done{false};
+    mutex m;
+    vector<int> results;
+    atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
         queue.executor()([_i = i, &m, &results] {
-            std::unique_lock block{m};
+            unique_lock block{m};
             results.push_back(_i);
         });
     }
     queue.executor()([&done] { done = true; });
 
     while (!done) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 
     for (auto i = 0; i < 10; ++i) {
@@ -45,20 +46,20 @@ BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
     BOOST_TEST_MESSAGE("All default priority tasks are executed");
 
     serial_queue_t queue(default_executor);
-    std::mutex m;
-    std::vector<int> results;
-    std::atomic_bool done{false};
+    mutex m;
+    vector<int> results;
+    atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
         queue.executor()([_i = i, &m, &results] {
-            std::unique_lock block{m};
+            unique_lock block{m};
             results.push_back(_i);
         });
     }
     queue.executor()([&done] { done = true; });
 
     while (!done) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 
     for (auto i = 0; i < 10; ++i) {
@@ -70,20 +71,20 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     BOOST_TEST_MESSAGE("All high priority tasks are executed");
 
     serial_queue_t queue(high_executor);
-    std::mutex m;
-    std::vector<int> results;
-    std::atomic_bool done{false};
+    mutex m;
+    vector<int> results;
+    atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
         queue.executor()([_i = i, &m, &results] {
-            std::unique_lock block{m};
+            unique_lock block{m};
             results.push_back(_i);
         });
     }
     queue.executor()([&done] { done = true; });
 
     while (!done) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 
     for (auto i = 0; i < 10; ++i) {
@@ -91,30 +92,27 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     }
 }
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
 
-    std::mutex m;
-    std::vector<int> results;
+    mutex m;
+    vector<int> results;
     const auto iterations = 30000;
     results.reserve(iterations * 3);
 
     {
-        std::unique_lock block{m};
+        unique_lock block{m};
         for (auto i = 0; i < iterations; ++i) {
             low_executor([&] {
-                std::unique_lock guard{m};
+                unique_lock guard{m};
                 results.push_back(1);
             });
-
             default_executor([&] {
-                std::unique_lock guard{m};
+                unique_lock guard{m};
                 results.push_back(2);
             });
             high_executor([&] {
-                std::unique_lock guard{m};
+                unique_lock guard{m};
                 results.push_back(3);
             });
         }
@@ -122,10 +120,10 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
 
     while (true) {
         {
-            std::unique_lock guard{m};
+            unique_lock guard{m};
             if (results.size() == iterations * 3) break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 
     auto highSum{0};
@@ -137,44 +135,49 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
         lowSum += results[i + iterations * 2];
     }
 
-    BOOST_WARN_GT(0.01, std::fabs(3.0 - static_cast<double>(highSum) / iterations));
-    BOOST_WARN_GT(0.01, std::fabs(2.0 - static_cast<double>(defaultSum) / iterations));
-    BOOST_WARN_GT(0.01, std::fabs(1.0 - static_cast<double>(lowSum) / iterations));
+    auto correctHighOrdering = fabs(3.0 - static_cast<double>(highSum) / iterations);
+    auto correctDefaultOrdering = fabs(2.0 - static_cast<double>(defaultSum) / iterations);
+    auto correctLowOrdering = fabs(1.0 - static_cast<double>(lowSum) / iterations);
+
+    cout << "Correct high ordering " << 1.0 - correctHighOrdering << "%\n";
+    cout << "Correct default ordering " << 1.0 - correctDefaultOrdering << "%\n";
+    cout << "Correct low ordering " << 1.0 - correctLowOrdering << "%\n";
+
+    BOOST_WARN_GT(0.01, correctHighOrdering);
+    BOOST_WARN_GT(0.01, correctDefaultOrdering);
+    BOOST_WARN_GT(0.01, correctLowOrdering);
 }
 
-#endif
-
-
 BOOST_AUTO_TEST_CASE(MeasureTiming) {
-  std::vector<int> results;
-  const auto iterations = 30000;
-  results.resize(iterations * 3);
-  std::atomic_int counter{0};
+    std::vector<int> results;
+    const auto iterations = 30000;
+    results.resize(iterations * 3);
+    bool done = false;
+    condition_variable ready;
 
-  auto start = std::chrono::steady_clock::now();
+    auto start = chrono::high_resolution_clock::now();
 
     for (auto i = 0; i < iterations; ++i) {
-      low_executor([_i = i, &results,&counter] {
-        results[_i] = 1;
-        ++counter;
-      });
-
-      default_executor([_i = i+iterations, &results,&counter] {
-        results[_i] = 2;
-        ++counter;
-      });
-      high_executor([_i = i + iterations*2, &results,&counter]{
-        results[_i] = 3;
-        ++counter;
-      });
-    }
-    
-    while (counter != iterations*3)
-    {
-      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        low_executor([_i = i, &results] {
+            results[_i] = 1;
+        });
+        default_executor([_i = i + iterations, &results] {
+            results[_i] = 2;
+        });
+        high_executor([_i = i + iterations * 2, &results] {
+            results[_i] = 3;
+        });
     }
 
-    auto stop = std::chrono::steady_clock::now();
-    std::cout << std::chrono::duration<double>(stop - start).count() << "\n";
+    low_executor([&]{ done = true; ready.notify_one(); });
 
+    mutex block;
+    unique_lock<mutex> lock{block};
+    while (!done) ready.wait(lock);
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    std::cout << "Complete calculation time:" << std::chrono::duration<double>(stop - start).count() << "s\n";
+
+    // we have to be sure, that really all tasks are done
+    this_thread::sleep_for(chrono::milliseconds(100));
 }

@@ -318,8 +318,8 @@ class priority_task_system {
             {
                 lock_t lock{_thread_contexts[i].mutex};
                 while(!_done) {
-                    goto begin;
                     _thread_contexts[i].ready.wait(lock);
+                    goto begin;
                 }
             }
             if (_done) return;
