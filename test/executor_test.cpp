@@ -161,10 +161,18 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
         });
     }
 
-    low_executor([&]{ done = true; ready.notify_one(); });
-
     mutex block;
-    unique_lock<mutex> lock{block};
+    low_executor([&] {
+        {
+            unique_lock lock{block};
+            done = true;
+        }
+
+        ready.notify_one();
+    });
+
+
+    unique_lock lock{block};
     while (!done) ready.wait(lock);
 
     auto stop = std::chrono::high_resolution_clock::now();
