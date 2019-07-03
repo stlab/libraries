@@ -17,7 +17,10 @@
 using namespace stlab;
 using namespace std;
 
+namespace
+{
 inline void rest() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+}
 
 BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     BOOST_TEST_MESSAGE("All low priority tasks are executed");

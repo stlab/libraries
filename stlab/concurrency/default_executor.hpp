@@ -12,6 +12,7 @@
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/task.hpp>
 
+#include <cassert>
 #include <chrono>
 #include <functional>
 
@@ -80,6 +81,7 @@ constexpr auto platform_priority(executor_priority p)
         default:
             assert(!"Unknown value!");
     }
+    return DISPATCH_QUEUE_PRIORITY_DEFAULT;
 }
 
 
@@ -174,6 +176,7 @@ constexpr auto platform_priority(executor_priority p)
             assert(!"Unknown value!");
 
     }
+    return TP_CALLBACK_PRIORITY_NORMAL;
 }
 
 template <executor_priority P = executor_priority::medium>
