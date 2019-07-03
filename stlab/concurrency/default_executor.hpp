@@ -168,7 +168,7 @@ constexpr auto platform_priority(executor_priority p)
             return TP_CALLBACK_PRIORITY_HIGH;
         case executor_priority::medium:
             return TP_CALLBACK_PRIORITY_NORMAL;
-        case executor_priotrity::low:
+        case executor_priority::low:
             return TP_CALLBACK_PRIORITY_LOW;
         default:
             assert(!"Unknown value!");
@@ -287,6 +287,8 @@ class priority_task_system {
     using lock_t = std::unique_lock<std::mutex>;
 
     const unsigned _count{std::thread::hardware_concurrency()};
+    // The 64 for spinning over the queues is a value of current experience.
+    const unsigned _spin{std::thread::hardware_concurrency()<64? 64 : std::thread::hardware_concurrency()};
 
     struct thread_context
     {
@@ -305,7 +307,9 @@ class priority_task_system {
             task<void()> f;
 
             for (auto& q : _q) {
-                for (unsigned n = 0; n != 64 / _count; ++n) {
+                // As less cores are available as more spinning over
+                // the individual queues seems to be better
+                for (unsigned n = 0; n != _spin / _count; ++n) {
                     if (q[(i + n) % _count].try_pop(f)) {
                         f();
                         goto begin;
@@ -349,10 +353,10 @@ public:
 
     template <std::size_t P, typename F>
     void execute(F&& f) {
-        static_assert(0 <= P < 3, "More than 3 priorities are not known!");
+        static_assert(P < 3, "More than 3 priorities are not known!");
         auto i = _index++;
 
-        for (unsigned n = 0; n != 64 / _count; ++n) {
+        for (unsigned n = 0; n != _spin / _count; ++n) {
             if (_q[P][(i + n) % _count].try_push(std::forward<F>(f))) return;
         }
 

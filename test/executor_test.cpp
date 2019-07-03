@@ -17,6 +17,8 @@
 using namespace stlab;
 using namespace std;
 
+inline void rest() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+
 BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     BOOST_TEST_MESSAGE("All low priority tasks are executed");
 
@@ -34,7 +36,7 @@ BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     queue.executor()([&done] { done = true; });
 
     while (!done) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        rest();
     }
 
     for (auto i = 0; i < 10; ++i) {
@@ -59,7 +61,7 @@ BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
     queue.executor()([&done] { done = true; });
 
     while (!done) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        rest();
     }
 
     for (auto i = 0; i < 10; ++i) {
@@ -84,12 +86,55 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     queue.executor()([&done] { done = true; });
 
     while (!done) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        rest();
     }
 
     for (auto i = 0; i < 10; ++i) {
         BOOST_REQUIRE_EQUAL(i, results[i]);
     }
+}
+
+BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
+    BOOST_TEST_MESSAGE("The task system restarts after it went to pending");
+
+    bool done{false};
+    mutex m;
+    condition_variable cv;
+
+    default_executor([&]{
+        rest();
+        {
+            unique_lock block{m};
+            done = true;
+        }
+        cv.notify_one();
+    });
+
+
+    {
+        unique_lock block{m};
+        while (!done) {
+            cv.wait(block);
+        }
+    }
+
+    default_executor([&] {
+        rest();
+        {
+            unique_lock block{m};
+            done = false;
+        }
+        cv.notify_one();
+    });
+
+    {
+        unique_lock block{m};
+        while (done) {
+            cv.wait(block);
+        }
+    }
+
+    BOOST_REQUIRE(!done);
 }
 
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
@@ -129,7 +174,7 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     }
 
     while (done != iterations * 3) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        rest();
     }
 
     cout << "Correct default ordering: " << static_cast<double>(correctDefault.load())/iterations <<"%\n";
@@ -179,6 +224,6 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::cout << "\nPerformance measuring: " << std::chrono::duration<double>(stop - start).count() << "s\n";
 
     while (counter < 3*iterations) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        rest();
     }
 }

@@ -514,7 +514,7 @@ BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
 BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel one value different buffer sizes");
 
-    for (auto bs : {0ull, 1ull, 2ull, 10ull}) {
+    for (auto bs : std::vector<std::size_t>{ 0, 1, 2, 10 }) {
         sender<int> send;
         receiver<int> receive;
         tie(send, receive) = channel<int>(default_executor);
@@ -536,7 +536,7 @@ BOOST_AUTO_TEST_CASE(int_channel_one_value_different_buffer_sizes) {
 BOOST_AUTO_TEST_CASE(int_channel_two_values_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel two values different buffer sizes");
 
-    for (auto bs : {0ull, 1ull, 2ull, 10ull}) {
+    for (auto bs : std::vector<std::size_t>{ 0, 1, 2, 10 }) {
         sender<int> send;
         receiver<int> receive;
         tie(send, receive) = channel<int>(default_executor);
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
     BOOST_TEST_MESSAGE("int channel many values different buffer sizes");
 
     {
-        for (auto bs : { 0ull, 1ull, 2ull, 10ull }) {
+        for (auto bs : std::vector<std::size_t>{ 0, 1, 2, 10 }) {
             sender<int> send;
             receiver<int> receive;
             tie(send, receive) = channel<int>(default_executor);
@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(int_channel_many_values_different_buffer_sizes) {
         }
     }
     {
-        for (auto bs : { 0ull, 1ull, 2ull, 10ull }) {
+        for (auto bs : std::vector<std::size_t>{ 0, 1, 2, 10 }) {
             sender<int> send;
             receiver<int> receive;
             tie(send, receive) = channel<int>(default_executor);
