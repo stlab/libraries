@@ -75,8 +75,10 @@ constexpr auto platform_priority(executor_priority p)
             return DISPATCH_QUEUE_PRIORITY_HIGH;
         case executor_priority::medium:
           return DISPATCH_QUEUE_PRIORITY_DEFAULT;
-        default:
+        case executor_priority::low:
             return DISPATCH_QUEUE_PRIORITY_LOW;
+        default:
+            assert(!"Unknown value!");
     }
 }
 
@@ -166,8 +168,11 @@ constexpr auto platform_priority(executor_priority p)
             return TP_CALLBACK_PRIORITY_HIGH;
         case executor_priority::medium:
             return TP_CALLBACK_PRIORITY_NORMAL;
+        case executor_priotrity::low:
+            return TP_CALLBACK_PRIORITY_LOW;
         default:
-          return TP_CALLBACK_PRIORITY_LOW;
+            assert(!"Unknown value!");
+
     }
 }
 
@@ -285,9 +290,9 @@ class priority_task_system {
 
     struct thread_context
     {
-        std::mutex mutex;
-        std::condition_variable ready;
-        std::thread thread;
+        std::mutex _mutex;
+        std::condition_variable _ready;
+        std::thread _thread;
     };
     std::vector<thread_context> _thread_contexts{_count};
     std::array<std::vector<notification_queue>, 3> _q;
@@ -308,17 +313,10 @@ class priority_task_system {
                 }
             }
 
-            for (auto& q : _q) {
-                if (q[i].pop(f)) {
-                    f();
-                    goto begin;
-                }
-            }
-
             {
-                lock_t lock{_thread_contexts[i].mutex};
-                while(!_done) {
-                    _thread_contexts[i].ready.wait(lock);
+                lock_t lock{_thread_contexts[i]._mutex};
+                if (!_done) {
+                    _thread_contexts[i]._ready.wait(lock);
                     goto begin;
                 }
             }
@@ -332,25 +330,26 @@ public:
             std::vector<notification_queue> queues{_count};
             std::swap(q, queues);
             for (unsigned n = 0; n != _count; ++n) {
-                q[n].set_context(_thread_contexts[n].ready);
+                q[n].set_context(_thread_contexts[n]._ready);
             }
         }
         for (unsigned n = 0; n != _count; ++n) {
-            _thread_contexts[n].thread = std::thread([&, n] { run(n); });
+            _thread_contexts[n]._thread = std::thread([&, n] { run(n); });
         }
     }
 
     ~priority_task_system() {
         _done = true;
         for (auto& context : _thread_contexts)
-            context.ready.notify_all();
+            context._ready.notify_all();
 
         for (auto& context : _thread_contexts)
-            context.thread.join();
+            context._thread.join();
     }
 
     template <std::size_t P, typename F>
     void execute(F&& f) {
+        static_assert(0 <= P < 3, "More than 3 priorities are not known!");
         auto i = _index++;
 
         for (unsigned n = 0; n != 64 / _count; ++n) {
