@@ -44,4 +44,4 @@ Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the pla
 
 *Microsoft Windows Platform Build Notes*:
 - If you are using `conan` for the first time, add `--build missing` to conan command call in `setup_msvc.bat` script
-- Use administrator command prompt if you get issues in manifest creation during `setup_msvc.bat` run
+- Use administrator command prompt if you get issues in manifest creation during `setup_msvc.bat` run (ex: `mt : general error c101008d`)
