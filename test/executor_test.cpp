@@ -139,6 +139,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
 
     unique_lock block{m};// not needed but it silences the TSAN
     BOOST_REQUIRE(!done);
+    rest();
 }
 
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
