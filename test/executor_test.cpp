@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
 BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     BOOST_TEST_MESSAGE("The task system restarts after it went to pending");
 
-    bool done{false};
+    atomic_bool done{false};
     mutex m;
     condition_variable cv;
 
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::vector<int> results;
     const auto iterations = 100000;
     results.resize(iterations * 3);
-    bool done = false;
+    atomic_bool done = false;
     condition_variable ready;
     atomic_int counter{0};
 
