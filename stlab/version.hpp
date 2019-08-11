@@ -19,13 +19,13 @@
 //  STLAB_VERSION / 100 % 1000 is the minor version
 //  STLAB_VERSION / 100000 is the major version
 
-#define STLAB_VERSION 100401
+#define STLAB_VERSION 100500
 
 //
 //  STLAB_LIB_VERSION must be defined to be the same as STLAB_VERSION
 //  but as a *string* in the form "x_y[_z]" where x is the major version
 //  number, y is the minor version number, and z is the patch level if not 0.
 
-#define STLAB_LIB_VERSION "1_4_1"
+#define STLAB_LIB_VERSION "1_5_0"
 
 #endif
