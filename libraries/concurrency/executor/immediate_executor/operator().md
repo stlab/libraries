@@ -15,9 +15,9 @@ entities:
         declaration: |
           template <typename F> 
           void operator()(F f) const
-        description: Execute the given function object immediately.
+        description: Execute the given task immediately.
   - kind: parameters
     list:
       - name: f
-        description: The function object that shall now be executed.
+        description: The task that shall now be executed.
 ---
