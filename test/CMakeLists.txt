@@ -19,6 +19,16 @@ add_test( NAME stlab.test.channel COMMAND stlab.test.channel )
 
 ################################################################################
 
+add_executable( stlab.test.executor
+        executor_test.cpp
+        main.cpp)
+
+target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
+add_test( NAME stlab.test.executor COMMAND stlab.test.executor )
+
+
+################################################################################
+
 add_executable( stlab.test.future
   future_recover_tests.cpp
   future_test_helper.cpp
@@ -112,6 +122,7 @@ ProcessorCount(nProcessors)
 if(nProcessors)
   set_tests_properties(
     stlab.test.channel
+    stlab.test.executor
     stlab.test.future
     stlab.test.serial_queue
     stlab.test.cow
