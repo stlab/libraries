@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
         {
             unique_lock block{m};
             done = false;
+            cv.notify_one();
         }
-        cv.notify_one();
     });
 
     {
@@ -137,9 +137,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
         }
     }
 
-    unique_lock block{m};// not needed but it silences the TSAN
     BOOST_REQUIRE(!done);
-    rest();
 }
 
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
@@ -216,9 +214,9 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
         {
             unique_lock lock{block};
             done = true;
-        }
 
-        ready.notify_one();
+            ready.notify_one();
+        }
     });
 
 
