@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 
 notifications:
   slack:
@@ -19,15 +19,15 @@ addons:
     config:
       retries: true
     sources:
-      - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main"
-        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
       - ubuntu-toolchain-r-test
+#      - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main"
+#        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
       #- george-edison55-precise-backports
     packages:
-      - gcc-6
-      - g++-6
-      - clang-6.0
-      - llvm-dev
+      - gcc-7
+      - g++-7
+#      - clang-6.0
+#      - llvm-dev
       - cmake
       - cmake-data
 
@@ -45,7 +45,7 @@ matrix:
 
   - language: c++
     os: osx
-    osx_image: xcode10.1
+    osx_image: xcode10.2
     compiler: clang
     script:
       - brew update
