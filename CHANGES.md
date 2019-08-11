@@ -1,7 +1,15 @@
-## v1.5.0 - 2019 - August
+## v1.5.0 - 2019 - August PLANNED
+- Fixed issues
+    - [#264](https://github.com/stlab/libraries/issues/264): `future::error()` interface is odd
+    - [#260](https://github.com/stlab/libraries/issues/260): set_exception() should be a const member.
+    - [#248](https://github.com/stlab/libraries/issues/248): Lifetime of receivers returned by operator|
+    - [#243](https://github.com/stlab/libraries/issues/243): Vector of move only type passed to continuation fails to compile.
+    
 - Enhancements
     - [#269](https://github.com/stlab/libraries/issues/269): Extend the default_executor with high and low priority
-    
+    - [#262](https://github.com/stlab/libraries/issues/262): `system_timer` interface is cumbersome. Now it accepts a 
+      duration from now. The previously available interface with a time_point is marked as deprecated and will be removed in a future release.
+
 ## v1.4.1 - 2019 - February - 08
 - Fixed Issues
     - [#234](https://github.com/stlab/libraries/issues/234): version is incorrect in stlabConfig.cmake
