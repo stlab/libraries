@@ -14,7 +14,7 @@ else()
   set( subproject OFF )
 endif()
 
-project( stlab VERSION 1.4.1 LANGUAGES CXX )
+project( stlab VERSION 1.5.0 LANGUAGES CXX )
 
 include( CTest )
 include( CMakeDependentOption )
