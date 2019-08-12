@@ -57,13 +57,13 @@ enum class message_t { argument, error };
 
 /**************************************************************************************************/
 
-using process_state_scheduled = std::pair<process_state, std::chrono::steady_clock::time_point>;
+using process_state_scheduled = std::pair<process_state, std::chrono::nanoseconds>;
 
 constexpr process_state_scheduled await_forever{process_state::await,
-                                                std::chrono::steady_clock::time_point::max()};
+                                                std::chrono::nanoseconds::max()};
 
 constexpr process_state_scheduled yield_immediate{process_state::yield,
-                                                  std::chrono::steady_clock::time_point::min()};
+                                                  std::chrono::nanoseconds::min()};
 
 /**************************************************************************************************/
 
@@ -930,20 +930,21 @@ struct shared_process
             } else {
                 if (get_process_state(_process).first == process_state::await) return;
             }
-            auto now = std::chrono::steady_clock::now();
-            process_state state;
-            std::chrono::steady_clock::time_point when;
-            std::tie(state, when) = get_process_state(_process);
+
+            // Workaround until we can use structured bindings
+            auto tmp = get_process_state(_process);
+            const auto& state = tmp.first;
+            const auto& duration = tmp.second;
 
             /*
                 Once we hit yield, go ahead and call it. If the yield is delayed then schedule it.
                This process will be considered running until it executes.
             */
             if (state == process_state::yield) {
-                if (when <= now)
+                if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <= std::chrono::nanoseconds::min())
                     broadcast(unwrap(*_process).yield());
                 else
-                    execute_at(when,
+                    execute_at(duration,
                                _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
                         auto _this = _weak_this.lock();
                         if (!_this) return;
@@ -958,14 +959,14 @@ struct shared_process
                 else if we await with an expired timeout then go ahead and yield now.
                 else schedule a timeout when we will yield if not canceled by intervening await.
             */
-            else if (when == std::chrono::steady_clock::time_point::max()) {
+            else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) == std::chrono::nanoseconds::max()) {
                 task_done();
-            } else if (when <= now) {
+            } else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <= std::chrono::nanoseconds::min()) {
                 broadcast(unwrap(*_process).yield());
             } else {
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
-                execute_at(when, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
+                execute_at(duration, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
                     auto _this = _weak_this.lock();
                     // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;

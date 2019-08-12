@@ -149,8 +149,7 @@ struct sum {
 };
 
 inline stlab::process_state_scheduled await_soon() {
-    return std::make_pair(stlab::process_state::await,
-                          std::chrono::steady_clock::now() + std::chrono::seconds(1));
+    return std::make_pair(stlab::process_state::await, std::chrono::seconds(1));
 }
 
 struct timed_sum {
