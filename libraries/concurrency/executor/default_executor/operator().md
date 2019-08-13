@@ -16,14 +16,14 @@ entities:
           template <typename F> 
           void operator()(F&& f) const
         description: Pushes the given task to the systems thread pool and it is executed with high priority.
-        - name: stlab::default_executor::operator()
+      - name: stlab::default_executor::operator()
         pure-name: operator()
         defined-in-header: stlab/concurrency/default_executor.hpp 
         declaration: |
           template <typename F> 
           void operator()(F&& f) const
         description: Pushes the given task to the systems thread pool and it is executed with medium priority.
-        - name: stlab::low_executor::operator()
+      - name: stlab::low_executor::operator()
         pure-name: operator()
         defined-in-header: stlab/concurrency/default_executor.hpp 
         declaration: |

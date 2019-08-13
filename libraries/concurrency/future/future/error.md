@@ -1,5 +1,5 @@
 ---
-layout: method
+layout: function
 title: error
 tags: [library]
 scope: future
@@ -13,7 +13,7 @@ entities:
       - name: stlab::future::error
         pure-name: error
         defined-in-header: stlab/concurrency/future.hpp 
-        declaration: [[deprecated]] stlab::optional<std::exception_ptr> error() const
+        declaration: "[[deprecated]] stlab::optional<std::exception_ptr> error() const"
         description: In case an error occurred, it returns the stored exception pointer.
   - kind: result
     description: an optional that holds the exception pointer if an exception has occurred.
