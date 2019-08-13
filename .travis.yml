@@ -20,14 +20,10 @@ addons:
       retries: true
     sources:
       - ubuntu-toolchain-r-test
-#      - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main"
-#        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
-      #- george-edison55-precise-backports
+
     packages:
       - gcc-7
       - g++-7
-#      - clang-6.0
-#      - llvm-dev
       - cmake
       - cmake-data
 
@@ -42,18 +38,6 @@ matrix:
     os: linux
     compiler: gcc
     script: ./build.sh 
-
-  - language: c++
-    os: osx
-    osx_image: xcode10.2
-    compiler: clang
-    script:
-      - brew update
-      - brew install lcov
-      - ./build.sh -D coverage=ON
-    after_success:
-      - cd build
-      - bash <(curl -s https://codecov.io/bash) -X fix
 
   - language: ruby
     rvm: ruby-head
