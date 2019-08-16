@@ -46,19 +46,19 @@
 
 #elif __EMSCRIPTEN__
 
-#ifndef STLAB_TASK_SYSTEM()
+#ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM() STLAB_TASK_SYSTEM_EMSCRIPTEN()
 #endif
 
 #elif __pnacl__
 
-#ifndef STLAB_TASK_SYSTEM()
+#ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM() STLAB_TASK_SYSTEM_PNACL()
 #endif
 
 #elif _MSC_VER
 
-#ifndef STLAB_TASK_SYSTEM()
+#ifndef STLAB_TASK_SYSTEM
 #define STLAB_TASK_SYSTEM() STLAB_TASK_SYSTEM_WINDOWS()
 #endif
 
