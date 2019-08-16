@@ -82,7 +82,7 @@
 #endif
 
 #ifndef STLAB_FUTURE_COROUTINES
-#define STLAB_FUTURE_COROUTINES() 0
+#define STLAB_FUTURE_COROUTINES 0
 #endif
 
 /**************************************************************************************************/
