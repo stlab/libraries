@@ -16,6 +16,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <stlab/concurrency/config.hpp>
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -223,7 +225,7 @@ public:
     friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
 
-#if STLAB_CPP_VERSION < 17
+#if STLAB_CPP_VERSION() < 17
 // In C++17 constexpr implies inline and these definitions are deprecated
 
 
