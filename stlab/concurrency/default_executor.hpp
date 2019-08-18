@@ -28,6 +28,7 @@
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
+
 #include <array>
 #include <algorithm>
 #include <atomic>
@@ -118,6 +119,8 @@ public:
     }
 };
 
+/**************************************************************************************************/
+
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 template <executor_priority P = executor_priority::medium>
@@ -138,6 +141,8 @@ struct executor_type {
             new f_t(std::move(f)), 0);
     }
 };
+
+/**************************************************************************************************/
 
 #elif STLAB_TASK_SYSTEM(PNACL)
 
@@ -160,6 +165,8 @@ struct executor_type {
                                                     0);
     }
 };
+
+/**************************************************************************************************/
 
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 
@@ -230,7 +237,6 @@ private:
     }
 };
 
-/**************************************************************************************************/
 /**************************************************************************************************/
 
 #elif STLAB_TASK_SYSTEM(PORTABLE)
@@ -385,6 +391,8 @@ struct task_system
 
 #endif
 
+/**************************************************************************************************/
+
 #if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
 
 template <executor_priority P = executor_priority::medium>
@@ -421,3 +429,4 @@ constexpr auto high_executor = detail::executor_type<detail::executor_priority::
 
 #endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
+/**************************************************************************************************/

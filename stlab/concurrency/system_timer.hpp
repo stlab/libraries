@@ -29,6 +29,7 @@
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
+
 #include <algorithm>
 #include <condition_variable>
 #include <thread>
@@ -48,6 +49,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 namespace detail {
@@ -84,7 +86,11 @@ struct system_timer_type {
     }
 };
 
+/**************************************************************************************************/
+
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
+
+/**************************************************************************************************/
 
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 
@@ -169,6 +175,8 @@ private:
     }
 };
 
+/**************************************************************************************************/
+
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
 class system_timer {
@@ -245,6 +253,8 @@ public:
 };
 
 #endif
+
+/**************************************************************************************************/
 
 #if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
 
