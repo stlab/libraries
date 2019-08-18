@@ -18,7 +18,7 @@ foreach( path IN LISTS examples )
         string( REPLACE "/" "." target "${target}" )
 
         add_executable( ${target} "libraries/${path}" )
-        set_property( TARGET ${target} PROPERTY CXX_STANDARD 14 )
+        set_property( TARGET ${target} PROPERTY CXX_STANDARD 17 )
         set_property( TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
 
         target_link_libraries( ${target} PUBLIC stlab )

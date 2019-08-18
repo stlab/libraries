@@ -1,55 +1,52 @@
 ---
-layout: method
-title: stlab::future::future
-tags: [library]
-scope: future
-pure-name: future
-defined-in-header: stlab/concurrency/future.hpp
+layout: function
+title: future
 brief: Constructs a future
-entities:
-  - kind: methods
-    list:
-      - name: stlab::concurrency::future
-        pure-name: future
-        declaration: |
-            future()
-        description: The first call to the default constructor will construct an empty future.
-      - name: stlab::concurrency::future
-        pure-name: future
-        declaration: |
-            future(const future& other) = default
-        description: The copy constructor is available for futures of copyable T and void.
-      - name: stlab::concurrency::future
-        pure-name: future
-        declaration: |
-            future(const future& other) = disabled
-        description: The copy constructor is disabled for move only types.      
-      - name: stlab::concurrency::future
-        pure-name: future
-        declaration: |
-            future(future&& other) noexcept
-        description: |
-            Moves the _target_ of `other` to the target of `*this`. If `other` is _empty_, `*this`
-            will be _empty_ after the call too. `other` is in a partially formed state after the
+defined-in-header: stlab/concurrency/future.hpp
+tags:
+  - function
+overloads:
+  future<T>():
+    description: The first call to the default constructor will construct an empty future.
+    return: __OPTIONAL__
+    signature_with_names: future<T>()
+  future<T>(const future<T> &):  
+    description: The copy constructor is available for futures of copyable T and void. It is disabled for move only types
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: const future<T> &
+    return: __OPTIONAL__
+    signature_with_names: future<T>(const future<T>& x)
+  future<T>(future<T>&& ):
+    description: |
+            Moves the _target_ of `x` to the target of `*this`. If `x` is _empty_, `*this`
+            will be _empty_ after the call too. `x` is in a partially formed state after the
             call.
-      - name: stlab::future::operator=
-        pure-name: operator=
-        defined-in-header: stlab/concurrency/future.hpp 
-        declaration: |
-            future& operator=(const future& x) = default
-        description: The copy assignment operator is available for copyable T and void futures
-      - name: stlab::future::operator=
-        pure-name: operator=
-        defined-in-header: stlab/concurrency/future.hpp 
-        declaration: |
-            future& operator=(const future& x) = delete
-        description: The copy assignment operator is disabled for move only types.
-      - name: stlab::concurrency::future
-        pure-name: future
-        declaration: |
-            future& operator=(future&& other) noexcept
-        description: |
-            Moves the _target_ of `other` to the target of `*this`. If `other` is _empty_, `*this`
-            will be _empty_ after the call too. `other` is in a partially formed state after the
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: future<T>&&
+    return: __OPTIONAL__
+    signature_with_names: future<T>(future<T>&& x) noexept
+  future<T>& operator=(const future<T>& ): 
+    description: The copy assignment operator is available for copyable T and void futures. It is disabled for move only types.
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: const future<T>&
+    return: __OPTIONAL__
+    signature_with_names: future<T>& operator=(const future<T>& x)
+  future<T>& operator=(future<T>&& ):
+    description: |
+            Moves the _target_ of `x` to the target of `*this`. If `x` is _empty_, `*this`
+            will be _empty_ after the call too. `x` is in a partially formed state after the
             call.
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: future<T>&&
+    return: __OPTIONAL__
+    signature_with_names: future<T>& operator=(future<T>&& x) noexept
 ---
+

@@ -9,7 +9,7 @@ dtor: default
 annotation: template class
 declaration: |
   template <typename T>
-  class future
+  class [[nodiscard]] future
 brief: An alternative `future` implementation with support for continuations, splits, and joins
 description: |
   `stlab::future` differs from `std::future` in several ways:
@@ -23,6 +23,8 @@ description: |
   1. If the last copy of a future destructs, the associated task and any held futures for the task arguments are released and the associated packaged_task will become a no-op if called. 
   1. There are no `wait()` or `get()` functions. Instead, there is a `get_try()` which returns an `optional<T>` (or if `T` is `void`, the result is a `bool` with `true` indicating the associated task has executed.
 
+   It is necessary to specialize the template `stlab::smart_test` if type T is e.g. a container of a non copyable type like `std::vector<std::unique_ptr<>>` so that the the library can correctly dispatch for move-only types internally. This is unfortunately necessary because of a defect in the C++ standard. (The trait std::is_copy_constructible<> does not return the correct results in such a case.) For further details see in ./test/traits_test.cpp.
+   
   ## To Do
   - Error handling
 member-types:

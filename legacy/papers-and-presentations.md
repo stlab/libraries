@@ -44,7 +44,7 @@ redirect_from: /legacy/index.php/Papers_and_Presentations
 * Algorithms for User Interfaces (http://www.emarcus.org/papers/gpce2009-marcus.pdf)\\
   Jaakko Järvi, Texas A&M University, Mat Marcus, Canyonlands Software Design, Sean Parent, Adobe Systems, Inc., John Freeman, Texas A&M University, and Jacob N. Smith, Texas A&M University\\
   From: GPCE '09 Proceedings of the 8th international conference on Generative programming and component engineering, New York, NY, USA, pages 147-156, 2009. ACM\\
-  _Copyright ACM, 2009. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 8th International Conference on Generative Programming and Component Engineering (Denver, Colorado, October 4–5, 2009). GPCE 2009 <http://doi.acm.org/10.1145/1621607.1621630>_
+  _Copyright ACM, 2009. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 8th International Conference on Generative Programming and Component Engineering (Denver, Colorado, October 4–5, 2009). GPCE 2009 <https://doi.acm.org/10.1145/1621607.1621630>_
 
 * Runtime Concepts for the C++ Standard Template Library (Extended Version) (http://www.emarcus.org/papers/oops2008-marcus.pdf)\\
   Peter Pirkelbauer, Texas A&M University, Sean Parent, Adobe Systems, Inc., Mat Marcus, Adobe Systems, Inc., Bjarne Stroustrup, Texas A&M University\\
@@ -57,17 +57,17 @@ redirect_from: /legacy/index.php/Papers_and_Presentations
 * Property Models: From Incidental Algorithms to Reusable Components (http://www.emarcus.org/papers/gpce2008-marcus.pdf)\\
   Jaakko J&auml;rvi, Texas A&M University, Mat Marcus, Adobe Systems, Inc., Sean Parent,  Adobe Systems, Inc., John Freeman, Texas A&M University, and Jacob N. Smith, Texas A&M University\\
   From: GPCE '08: Proceedings of the 7th international conference on Generative programming and component engineering, New York, NY, USA, pages 89-98, 2008. ACM\\
-  _Copyright ACM, 2008. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 7th International Conference on Generative Programming and Component Engineering (Nashville, Tennessee, October 19–20, 2008). GPCE 2008 <http://doi.acm.org/10.1145/1449913.1449927>_
+  _Copyright ACM, 2008. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 7th International Conference on Generative Programming and Component Engineering (Nashville, Tennessee, October 19–20, 2008). GPCE 2008 <https://doi.acm.org/10.1145/1449913.1449927>_
 
 * Runtime Concepts for the C++ Standard Template Library (http://www.emarcus.org/papers/oops2008-marcus.pdf)\\
   Peter Pirkelbauer, Texas A&M University, Sean Parent, Adobe Systems, Inc., Mat Marcus, Adobe Systems, Inc., Bjarne Stroustrup, Texas A&M University\\
   From: Proceedings of the 2008 ACM symposium on Applied Computing, Special Track on Object Oriented Programming Languages and Systems\\
-  _Copyright ACM, 2008. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 2008 ACM symposium on Applied Computing (Fortaleza, Brazil, March 16-20, 2008). SAC 2008 <http://doi.acm.org/10.1145/1363686.1363734>_
+  _Copyright ACM, 2008. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 2008 ACM symposium on Applied Computing (Fortaleza, Brazil, March 16-20, 2008). SAC 2008 <https://doi.acm.org/10.1145/1363686.1363734>_
 
 * Library Composition and Adaptation using C++ Concepts (http://www.emarcus.org/papers/gpce2007f-authors-version.pdf)\\
   Jaakko Järvi, Texas A&M University, Mat Marcus, Adobe Systems, Inc., Jacob N. Smith, Texas A&M University.\\
   From: Proceedings of the 6th international conference on Generative programming and component engineering, 2007.\\
-  _Copyright ACM, 2007. This is the author's version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 6th International Conference on Generative Programming and Component Engineering (Salzburg, Austria, October 01 - 03, 2007). GPCE '07 <http://doi.acm.org/10.1145/1289971.1289984>_
+  _Copyright ACM, 2007. This is the author's version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 6th International Conference on Generative Programming and Component Engineering (Salzburg, Austria, October 01 - 03, 2007). GPCE '07 <https://doi.acm.org/10.1145/1289971.1289984>_
 
 * Runtime Polymorphic Generic Programming--Mixing Objects and Concepts in ConceptC++ (http://www.emarcus.org/papers/MPOOL2007-marcus.pdf)\\
   Mat Marcus, Adobe Systems, Inc., Jaakko Järvi, Texas A&M University, Sean Parent, Adobe Systems, Inc.\\

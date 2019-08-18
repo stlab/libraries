@@ -1,31 +1,22 @@
 ---
 layout: function
 title: stlab::package
-tags: [library]
-scope: stlab
-pure-name: package
-brief: Create a packaged_task/future pair
-annotation: template function
-example: package_example.cpp
+brief: Create a promise/future pair
 defined-in-header: stlab/concurrency/future.hpp
-entities:
-  - kind: overloads
-    name: stlab::package
-    list:
-      - name: package
-        pure-name: package
-        declaration: |
-            template <typename Sig, typename E, typename F>
-            auto package(E executor, F f) ->
-                std::pair<detail::packaged_task_from_signature_t<Sig>,
-                          future<detail::result_of_t_<Sig>>>
-        description: The template function package creates a pair of a packaged_task and a future. Calling the packaged_task will be invoked on the calling thread, not on the provided `executor`. The purpose of the passed `executor` is to have already an executor for an attached continuation.
-  - kind: parameters
-    list:
-      - name: executor
-        description: The passed function will run on this executor
-      - name: f
-        description: Callable object to call
-  - kind: result
-    description: A std::pair of a packaged_task and the associated future.
+tags:
+  - function
+example: package_example.cpp
+overloads:
+  "template <typename Sig, typename E, typename F>\nauto package(E executor, F f)":
+    description: The template function package creates a pair of a promise and a future. Calling the promise will be invoked immediately, not on the provided `executor`. The purpose of the passed `executor` is to have already an executor for an attached continuation.
+    arguments:
+      - description: The executor is the default executor for a possible attached continuation
+        name: executor
+        type: E
+    arguments:
+      - description: Callable object to call
+        name: f
+        type: F
+    return: A std::pair of a promise and the associated future.
+    signature_with_names: "template <typename Sig, typename E, typename F>\nauto package(E executor, F f)"
 ---

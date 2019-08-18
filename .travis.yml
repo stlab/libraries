@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 
 notifications:
   slack:
@@ -19,15 +19,11 @@ addons:
     config:
       retries: true
     sources:
-      - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main"
-        key_url : "http://apt.llvm.org/llvm-snapshot.gpg.key"
       - ubuntu-toolchain-r-test
-      #- george-edison55-precise-backports
+
     packages:
-      - gcc-6
-      - g++-6
-      - clang-6.0
-      - llvm-dev
+      - gcc-7
+      - g++-7
       - cmake
       - cmake-data
 
@@ -43,20 +39,9 @@ matrix:
     compiler: gcc
     script: ./build.sh 
 
-  - language: c++
-    os: osx
-    osx_image: xcode10.1
-    compiler: clang
-    script:
-      - brew update
-      - brew install lcov
-      - ./build.sh -D coverage=ON
-    after_success:
-      - cd build
-      - bash <(curl -s https://codecov.io/bash) -X fix
-
   - language: ruby
-    rvm: ruby-head
+    rvm: 2.6.0
+    
     install: gem install jekyll html-proofer github-pages
     script: bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
     env:
