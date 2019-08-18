@@ -19,6 +19,16 @@ add_test( NAME stlab.test.channel COMMAND stlab.test.channel )
 
 ################################################################################
 
+add_executable( stlab.test.executor
+        executor_test.cpp
+        main.cpp)
+
+target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
+add_test( NAME stlab.test.executor COMMAND stlab.test.executor )
+
+
+################################################################################
+
 add_executable( stlab.test.future
   future_recover_tests.cpp
   future_test_helper.cpp
@@ -74,6 +84,14 @@ add_test( NAME stlab.test.tuple COMMAND stlab.test.tuple )
 
 ################################################################################
 
+add_executable( stlab.test.traits
+        traits_test.cpp
+        main.cpp )
+
+target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
+add_test( NAME stlab.test.traits COMMAND stlab.test.traits )
+
+################################################################################
 #
 # tests are compiled without compiler extensions to ensure the stlab headers
 # are not dependent upon any such extension.
@@ -85,6 +103,7 @@ set_target_properties(
   stlab.test.cow
   stlab.test.task
   stlab.test.tuple
+  stlab.test.traits
   PROPERTIES CXX_EXTENSIONS OFF )
 
 #
@@ -103,6 +122,7 @@ ProcessorCount(nProcessors)
 if(nProcessors)
   set_tests_properties(
     stlab.test.channel
+    stlab.test.executor
     stlab.test.future
     stlab.test.serial_queue
     stlab.test.cow

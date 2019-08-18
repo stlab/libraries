@@ -12,21 +12,23 @@
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/task.hpp>
 
+#include <cassert>
 #include <chrono>
 #include <functional>
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM () == STLAB_TASK_SYSTEM_LIBDISPATCH()
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_EMSCRIPTEN()
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PNACL()
 #include <ppapi/cpp/completion_callback.h>
 #include <ppapi/cpp/core.h>
 #include <ppapi/cpp/module.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_WINDOWS()
 #include <Windows.h>
 #include <memory>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PORTABLE()
+#include <array>
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
@@ -55,21 +57,49 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+enum class executor_priority
+{
+    high,
+    medium,
+    low
+};
 
-struct default_executor_type {
+/**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_LIBDISPATCH()
+
+constexpr auto platform_priority(executor_priority p)
+{
+    switch (p)
+    {
+        case executor_priority::high:
+            return DISPATCH_QUEUE_PRIORITY_HIGH;
+        case executor_priority::medium:
+          return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+        case executor_priority::low:
+            return DISPATCH_QUEUE_PRIORITY_LOW;
+        default:
+            assert(!"Unknown value!");
+    }
+    return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+}
+
+
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
 private:
     struct group {
         dispatch_group_t _group = dispatch_group_create();
         ~group() {
             dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
-#if !__has_feature(objc_arc)
+#if !STLAB_FEATURE(OBJC_ARC)
             dispatch_release(_group);
 #endif
         }
     };
 
 public:
+
     using result_type = void;
     template <typename F>
     void operator()(F f) const {
@@ -78,7 +108,7 @@ public:
         static group g;
 
         dispatch_group_async_f(g._group,
-                               dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                               dispatch_get_global_queue(platform_priority(P), 0),
                                new f_t(std::move(f)), [](void* f_) {
                                    auto f = static_cast<f_t*>(f_);
                                    (*f)();
@@ -87,9 +117,10 @@ public:
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_EMSCRIPTEN()
 
-struct default_executor_type {
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
     using result_type = void;
 
     template <typename F>
@@ -107,9 +138,10 @@ struct default_executor_type {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PNACL()
 
-struct default_executor_type {
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
     using result_type = void;
 
     template <typename F>
@@ -128,8 +160,26 @@ struct default_executor_type {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_WINDOWS()
 
+constexpr auto platform_priority(executor_priority p)
+{
+    switch (p)
+    {
+        case executor_priority::high:
+            return TP_CALLBACK_PRIORITY_HIGH;
+        case executor_priority::medium:
+            return TP_CALLBACK_PRIORITY_NORMAL;
+        case executor_priority::low:
+            return TP_CALLBACK_PRIORITY_LOW;
+        default:
+            assert(!"Unknown value!");
+
+    }
+    return TP_CALLBACK_PRIORITY_NORMAL;
+}
+
+template <executor_priority P = executor_priority::medium>
 class task_system {
     PTP_POOL _pool = nullptr;
     TP_CALLBACK_ENVIRON _callBackEnvironment;
@@ -147,6 +197,7 @@ public:
             throw std::bad_alloc();
         }
 
+        SetThreadpoolCallbackPriority(&_callBackEnvironment, platform_priority(P));
         SetThreadpoolCallbackPool(&_callBackEnvironment, _pool);
         SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
     }
@@ -178,135 +229,186 @@ private:
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-
 /**************************************************************************************************/
+/**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PORTABLE()
+
 
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
     std::deque<task<void()>> _q;
-    bool _done{false};
-    std::mutex _mutex;
-    std::condition_variable _ready;
+    std::mutex _queue_mutex;
+    std::condition_variable* _ready{nullptr};
 
 public:
+    void set_context(std::condition_variable& cv) {
+        _ready = &cv;
+    }
+
     bool try_pop(task<void()>& x) {
-        lock_t lock{_mutex, std::try_to_lock};
+        lock_t lock{_queue_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
         return true;
     }
 
-    template <typename F>
-    bool try_push(F&& f) {
-        {
-            lock_t lock{_mutex, std::try_to_lock};
-            if (!lock) return false;
-            _q.emplace_back(std::forward<F>(f));
-        }
-        _ready.notify_one();
-        return true;
-    }
-
-    void done() {
-        {
-            lock_t lock{_mutex};
-            _done = true;
-        }
-        _ready.notify_all();
-    }
-
     bool pop(task<void()>& x) {
-        lock_t lock{_mutex};
-        while (_q.empty() && !_done)
-            _ready.wait(lock);
+        lock_t lock{_queue_mutex};
         if (_q.empty()) return false;
         x = std::move(_q.front());
         _q.pop_front();
         return true;
     }
 
+
+    template <typename F>
+    bool try_push(F&& f) {
+        {
+            lock_t lock{_queue_mutex, std::try_to_lock};
+            if (!lock) return false;
+            _q.emplace_back(std::forward<F>(f));
+        }
+        _ready->notify_all();
+        return true;
+    }
+
     template <typename F>
     void push(F&& f) {
         {
-            lock_t lock{_mutex};
+            lock_t lock{_queue_mutex};
             _q.emplace_back(std::forward<F>(f));
         }
-        _ready.notify_one();
+        _ready->notify_all();
     }
 };
 
 /**************************************************************************************************/
 
-class task_system {
+class priority_task_system {
+    using lock_t = std::unique_lock<std::mutex>;
+
     const unsigned _count{std::thread::hardware_concurrency()};
-    std::vector<std::thread> _threads;
-    std::vector<notification_queue> _q{_count};
+    // The 64 for spinning over the queues is a value of current experience.
+    const unsigned _spin{std::thread::hardware_concurrency()<64? 64 : std::thread::hardware_concurrency()};
+
+    struct thread_context
+    {
+        std::mutex _mutex;
+        std::condition_variable _ready;
+        std::thread _thread;
+    };
+    std::vector<thread_context> _thread_contexts{_count};
+    std::array<std::vector<notification_queue>, 3> _q;
     std::atomic<unsigned> _index{0};
+    std::atomic_bool _done{false};
 
     void run(unsigned i) {
         while (true) {
+            begin:
             task<void()> f;
 
-            for (unsigned n = 0; n != _count * 32; ++n) {
-                if (_q[(i + n) % _count].try_pop(f)) break;
+            for (auto& q : _q) {
+                // As less cores are available as more spinning over
+                // the individual queues seems to be better
+                for (unsigned n = 0; n != _spin / _count; ++n) {
+                    if (q[(i + n) % _count].try_pop(f)) {
+                        f();
+                        goto begin;
+                    };
+                }
             }
-            if (!f && !_q[i].pop(f)) break;
 
-            f();
+            {
+                lock_t lock{_thread_contexts[i]._mutex};
+                if (!_done) {
+                    _thread_contexts[i]._ready.wait(lock);
+                    goto begin;
+                }
+            }
+            if (_done) return;
         }
     }
 
 public:
-    task_system() {
+    priority_task_system() {
+        for (auto& q : _q) {
+            std::vector<notification_queue> queues{_count};
+            std::swap(q, queues);
+            for (unsigned n = 0; n != _count; ++n) {
+                q[n].set_context(_thread_contexts[n]._ready);
+            }
+        }
         for (unsigned n = 0; n != _count; ++n) {
-            _threads.emplace_back([&, n] { run(n); });
+            _thread_contexts[n]._thread = std::thread([&, n] { run(n); });
         }
     }
 
-    ~task_system() {
-        for (auto& e : _q)
-            e.done();
+    ~priority_task_system() {
+        _done = true;
+        for (auto& context : _thread_contexts)
+            context._ready.notify_all();
 
-        for (auto& e : _threads)
-            e.join();
+        for (auto& context : _thread_contexts)
+            context._thread.join();
     }
 
-    template <typename F>
-    void operator()(F&& f) {
+    template <std::size_t P, typename F>
+    void execute(F&& f) {
+        static_assert(P < 3, "More than 3 priorities are not known!");
         auto i = _index++;
 
-        for (unsigned n = 0; n != _count; ++n) {
-            if (_q[(i + n) % _count].try_push(std::forward<F>(f))) return;
+        for (unsigned n = 0; n != _spin / _count; ++n) {
+            if (_q[P][(i + n) % _count].try_push(std::forward<F>(f))) return;
         }
 
-        _q[i % _count].push(std::forward<F>(f));
+        _q[P][i % _count].push(std::forward<F>(f));
     }
 };
 
-#endif
+inline priority_task_system& pts() {
+    static priority_task_system only_task_system;
+    return only_task_system;
+}
 
-#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) || \
-    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
-
-struct default_executor_type {
+template <executor_priority P = executor_priority::medium>
+struct task_system
+{
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        static task_system only_task_system;
+        pts().execute<static_cast<std::size_t>(P)>(std::move(f));
+    }
+};
+
+
+#endif
+
+#if (STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PORTABLE()) || \
+    (STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_WINDOWS())
+
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
+    using result_type = void;
+
+    void operator()(task<void()> f) const {
+        static task_system<P> only_task_system;
         only_task_system(std::move(f));
     }
 };
 
 #endif
+
 /**************************************************************************************************/
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-constexpr auto default_executor = detail::default_executor_type{};
+constexpr auto low_executor = detail::executor_type<detail::executor_priority::low>{};
+constexpr auto default_executor = detail::executor_type<detail::executor_priority::medium>{};
+constexpr auto high_executor = detail::executor_type<detail::executor_priority::high>{};
 
 /**************************************************************************************************/
 
@@ -319,3 +421,4 @@ constexpr auto default_executor = detail::default_executor_type{};
 /**************************************************************************************************/
 
 #endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
+

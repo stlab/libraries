@@ -17,18 +17,18 @@
 #include <chrono>
 #include <functional>
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_LIBDISPATCH()
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_EMSCRIPTEN()
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PNACL()
 #include <ppapi/cpp/completion_callback.h>
 #include <ppapi/cpp/core.h>
 #include <ppapi/cpp/module.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_WINDOWS()
 #include <Windows.h>
 #include <memory>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PORTABLE()
 #include <algorithm>
 #include <condition_variable>
 #include <thread>
@@ -54,19 +54,27 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_LIBDISPATCH()
 
 struct system_timer_type {
     using result_type = void;
 
+
     template <typename F>
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F f) const {
+        using namespace std::chrono;
+        operator()(when - steady_clock::now(), std::move(f));
+    }
+
+    template <typename F, typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, F f) const {
         using namespace std::chrono;
 
         using f_t = decltype(f);
 
         dispatch_after_f(
-            dispatch_time(0, duration_cast<nanoseconds>(when - steady_clock::now()).count()),
+            dispatch_time(0, duration_cast<nanoseconds>(duration).count()),
             dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), new f_t(std::move(f)),
             [](void* f_) {
                 auto f = static_cast<f_t*>(f_);
@@ -76,9 +84,9 @@ struct system_timer_type {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_EMSCRIPTEN()
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_WINDOWS()
 
 class system_timer {
     PTP_POOL _pool = nullptr;
@@ -104,8 +112,17 @@ public:
         CloseThreadpool(_pool);
     }
 
+
     template <typename F>
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F&& f) {
+        using namespace std::chrono;
+        operator()(when - steady_clock.now(), std::forward<F>(f));
+    }
+
+    template <typename F, typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, F&& f) {
+        using namespace std::chrono;
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>, new F(std::forward<F>(f)),
                                            &_callBackEnvironment);
 
@@ -113,7 +130,7 @@ public:
             throw std::bad_alloc();
         }
 
-        auto file_time = time_point_to_FILETIME(when);
+        auto file_time = time_point_to_FILETIME(duration);
 
         SetThreadpoolTimer(timer, &file_time, 0, 0);
     }
@@ -127,17 +144,13 @@ private:
         (*f)();
     }
 
-    time_t steady_clock_to_time_t(std::chrono::steady_clock::time_point t) const {
-        return std::chrono::system_clock::to_time_t(
-            std::chrono::system_clock::now() +
-            std::chrono::duration_cast<std::chrono::system_clock::duration>(
-                t - std::chrono::steady_clock::now()));
-    }
-
-    FILETIME time_point_to_FILETIME(const std::chrono::steady_clock::time_point& when) const {
+    template <typename Rep, typename Per = std::ratio<1 >>
+    FILETIME time_point_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
+        using namespace std::chrono;
         FILETIME ft = {0, 0};
         SYSTEMTIME st = {0};
-        time_t t = steady_clock_to_time_t(when);
+        auto when = system_clock::now() + duration_cast<system_clock::duration>(duration);
+        time_t t = system_clock::to_time_t(when);
         tm utc_tm;
         if (!gmtime_s(&utc_tm, &t)) {
             st.wSecond = static_cast<WORD>(utc_tm.tm_sec);
@@ -156,7 +169,7 @@ private:
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#elif STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PORTABLE()
 
 class system_timer {
     using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;
@@ -216,9 +229,16 @@ public:
     }
 
     template <typename F>
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F&& f) {
+        using namespace std::chrono;
+        operator()(when - steady_clock::now(), std::move(f));
+    }
+
+    template <typename F, typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, F&& f) {
         lock_t lock(_timed_queue_mutex);
-        _timed_queue.emplace_back(when, std::forward<F>(f));
+        _timed_queue.emplace_back(std::chrono::steady_clock::now() + duration, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
         _condition.notify_one();
     }
@@ -226,15 +246,21 @@ public:
 
 #endif
 
-#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS) || \
-    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE)
+#if (STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_WINDOWS()) || \
+    (STLAB_TASK_SYSTEM() == STLAB_TASK_SYSTEM_PORTABLE())
 
 struct system_timer_type {
     using result_type = void;
 
+    [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, task<void()> f) const {
+        operator()(when - std::chrono::steady_clock().now(), std::move(f));
+    }
+
+    template <typename Rep, typename Per = std::ratio<1>>
+    void operator()(std::chrono::duration<Rep, Per> duration, task<void()> f) const {
         static system_timer only_system_timer;
-        only_system_timer(when, std::move(f));
+        only_system_timer(duration, std::move(f));
     }
 };
 

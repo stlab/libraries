@@ -648,11 +648,11 @@ BOOST_AUTO_TEST_CASE(future_async_moving_move_only_capture_to_result) {
 }
 
 BOOST_AUTO_TEST_CASE(future_async_mutable_move_move_only_capture_to_result) {
-    BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
+    BOOST_TEST_MESSAGE("moving move_only capture to result in task");
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [& _m = m]() mutable { return move(_m); });
+    sut = async(make_executor<0>(), [& _m = m]() { return move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -666,7 +666,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [] { return move_only{10}; }).then([& _m = m](auto) mutable {
+    sut = async(make_executor<0>(), [] { return move_only{10}; }).then([& _m = m](auto) {
         return move(_m);
     });
 
@@ -678,14 +678,14 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
 }
 
 BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to_result) {
-    BOOST_TEST_MESSAGE("moving move_only capture to result in mutable task");
+    BOOST_TEST_MESSAGE("moving move_only capture to result in task");
 
     {
         move_only m{42};
 
-        sut = async(make_executor<0>(), []() mutable {
+        sut = async(make_executor<0>(), []() {
                   return move_only{10};
-              }).then([& _m = m](auto) mutable { return move(_m); });
+              }).then([& _m = m](auto) { return move(_m); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -696,8 +696,8 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
     {
         move_only m{42};
 
-        sut = async(make_executor<0>(), []() mutable { return move_only{10}; }) |
-              [& _m = m](auto) mutable { return move(_m); };
+        sut = async(make_executor<0>(), []() { return move_only{10}; }) |
+              [& _m = m](auto) { return move(_m); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -758,6 +758,70 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+namespace stlab
+{
+
+// specializing std::vector, so that the framework can detect correctly
+// if std::vector<move_only> is copyable or only moveable
+template<template<typename> class test, typename T, typename A>
+struct smart_test<test, std::vector<T, A>> : test<T> {};
+
+}
+
+BOOST_FIXTURE_TEST_SUITE(future_then_move_only_container, test_fixture<std::vector<move_only>>)
+
+BOOST_AUTO_TEST_CASE(future_continuation_async_move_only_container) {
+    BOOST_TEST_MESSAGE("moving move_only move only container");
+
+    {
+        sut = async(make_executor<0>(), []() {
+            std::vector<move_only> result;
+            result.emplace_back(10);
+            result.emplace_back(42);
+
+            return result;
+        }).then([](auto x) {
+            x.emplace_back(50);
+            return x;
+        });
+
+        check_valid_future(sut);
+        auto result = blocking_get(std::move(sut));
+
+        BOOST_REQUIRE_EQUAL(3, result.size());
+        BOOST_REQUIRE_EQUAL(10, result[0].member());
+        BOOST_REQUIRE_EQUAL(42, result[1].member());
+        BOOST_REQUIRE_EQUAL(50, result[2].member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+    {
+        sut = async(make_executor<0>(), []() {
+            std::vector<move_only> result;
+            result.emplace_back(10);
+            result.emplace_back(42);
+
+            return result;
+        }) | [](auto x) {
+            x.emplace_back(50);
+            return x;
+        };
+
+        check_valid_future(sut);
+        auto result = blocking_get(std::move(sut));
+
+        BOOST_REQUIRE_EQUAL(3, result.size());
+        BOOST_REQUIRE_EQUAL(10, result[0].member());
+        BOOST_REQUIRE_EQUAL(42, result[1].member());
+        BOOST_REQUIRE_EQUAL(50, result[2].member());
+        BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
 
 BOOST_FIXTURE_TEST_SUITE(future_then_int, test_fixture<int>)
 

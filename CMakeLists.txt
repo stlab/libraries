@@ -14,7 +14,7 @@ else()
   set( subproject OFF )
 endif()
 
-project( stlab VERSION 1.4.1 LANGUAGES CXX )
+project( stlab VERSION 1.5.0 LANGUAGES CXX )
 
 include( CTest )
 include( CMakeDependentOption )
@@ -123,8 +123,7 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     endif()
   endif()
 
-
-  if(NOT TARGET Boost::unit_test_framework)
+  if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
     message(FATAL_ERROR "Could not find Boost unit test framework.")
   endif()
   
