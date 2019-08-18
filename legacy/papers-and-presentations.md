@@ -57,7 +57,7 @@ redirect_from: /legacy/index.php/Papers_and_Presentations
 * Property Models: From Incidental Algorithms to Reusable Components (http://www.emarcus.org/papers/gpce2008-marcus.pdf)\\
   Jaakko J&auml;rvi, Texas A&M University, Mat Marcus, Adobe Systems, Inc., Sean Parent,  Adobe Systems, Inc., John Freeman, Texas A&M University, and Jacob N. Smith, Texas A&M University\\
   From: GPCE '08: Proceedings of the 7th international conference on Generative programming and component engineering, New York, NY, USA, pages 89-98, 2008. ACM\\
-  _Copyright ACM, 2008. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 7th International Conference on Generative Programming and Component Engineering (Nashville, Tennessee, October 19–20, 2008). GPCE 2008 <http://doi.acm.org/10.1145/1449913.1449927>_
+  _Copyright ACM, 2008. This is the authors' version of the work. It is posted here by permission of ACM for your personal use. Not for redistribution. The definitive version was published in the Proceedings of the 7th International Conference on Generative Programming and Component Engineering (Nashville, Tennessee, October 19–20, 2008). GPCE 2008 <https://doi.acm.org/10.1145/1449913.1449927>_
 
 * Runtime Concepts for the C++ Standard Template Library (http://www.emarcus.org/papers/oops2008-marcus.pdf)\\
   Peter Pirkelbauer, Texas A&M University, Sean Parent, Adobe Systems, Inc., Mat Marcus, Adobe Systems, Inc., Bjarne Stroustrup, Texas A&M University\\
