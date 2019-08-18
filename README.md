@@ -41,3 +41,7 @@ First, you will need the following tools:
 `conan` and `cmake` are available on the Mac via [Homebrew](http://brew.sh). `cmake` is available on Windows via [`scoop`](http://scoop.sh/).
 
 Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the platform of your choice. It will setup all necessary library dependencies and create the platform-specific project file in the `./build/` directory.
+
+*Microsoft Windows Platform Build Notes*:
+- If you are using `conan` for the first time, add `--build missing` to conan command call in `setup_msvc.bat` script
+- Use administrator command prompt if you get issues in manifest creation during `setup_msvc.bat` run (ex: `mt : general error c101008d`)
