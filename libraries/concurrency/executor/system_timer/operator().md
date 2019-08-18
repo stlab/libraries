@@ -5,11 +5,12 @@ tags: [library]
 pure-name: operator()
 defined-in-header: stlab/concurrency/system_timer.hpp 
 description: |
-  Executes the given function at the specified time point. 
-  
-  When the time point is in the past, then the function will be executed immediately.
+  Executes the given task after the specified duration.
 
-  In case that the previous function takes longer as the time difference between its starting point and the start of the next function. Then the next function may be executed delayed. So a function can be executed later as specified, but never earlier.
+  [deprecated] Executes the given task at the specified time point. 
+  When the time point is in the past, then the task will be executed immediately.
+
+  In case that the previous task takes longer as the time difference between its starting point and the start of the next task. Then the next task may be executed delayed. So a task can be executed later as specified, but never earlier.
 entities:
   - kind: methods
     list:
@@ -18,12 +19,21 @@ entities:
         defined-in-header: stlab/concurrency/system_timer.hpp 
         declaration: |
           template <typename F>
-          void operator() (std::chrono::system_clock::time_point when, F&& f) const
-        description: This executors executes the given function.
+          [[deprecated]] void operator() (std::chrono::steady_clock::time_point when, F&& f) const
+        description: This executors executes the given task at the given time.
+      - name: stlab::system_timer::operator()
+        pure-name: operator()
+        defined-in-header: stlab/concurrency/system_timer.hpp 
+        declaration: |
+          template <typename F, typename Rep, typename Per = std::ratio<1>>
+          void operator()(std::chrono::duration<Rep, Per> duration, F f) const
+        description: This executors executes the given task after the given duration.
   - kind: parameters
     list:
+      - name: duration
+        description: The waiting duration after the task shall be executed.
       - name: when
-        description: The time point when the function shall be executed.
+        description: The time point when the task shall be executed.
       - name: f
-        description: The function object that shall be executed on the main loop.
+        description: The task that shall be executed on the given executor.
 ---

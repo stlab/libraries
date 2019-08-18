@@ -33,8 +33,8 @@ void pop_and_run_task() {
     std::function<void()> task;
 
     {
-    std::lock_guard<std::mutex> lock(m);
-    task = pop_front_unsafe(task_queue);
+        std::lock_guard<std::mutex> lock(m);
+        task = pop_front_unsafe(task_queue);
     }
 
     task();

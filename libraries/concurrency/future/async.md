@@ -1,31 +1,24 @@
 ---
 layout: function
 title: stlab::async
-tags: [library]
-scope: stlab
-pure-name: async
-brief: Run a function on a specified executor
-annotation: template function
-example: async_example.cpp
+brief: Creates a future running on a given executor
 defined-in-header: stlab/concurrency/future.hpp
-entities:
-  - kind: overloads
-    name: stlab::async
-    list:
-      - name: async
-        pure-name: async
-        declaration: |
-            template <typename E, typename F, typename ...Args>
-            future<std::result_of_t<F (Args...)>> async(E executor, F&& f, Args&&... args)
-        description: The template function async runs the function f asynchronously on the specified executor and returns a stlab::future that will eventually hold the result of that function call.
-  - kind: parameters
-    list:
-      - name: executor
-        description: The passed function will run on this executor
-      - name: f
-        description: Callable object to call
-      - name: args
-        description: parameters to pass to f
-  - kind: result
-    description: stlab::future referring to the shared state created by this call to std::async.
+tags:
+  - function
+example: async_example.cpp
+overloads:
+  "template <typename E, typename F, typename... Args>\nfuture<std::result_of_t<F(Args...)>> async(E, F&&, Args&&... )":
+    description: The template function creates future that runs the callable object f on the specified executor.
+    arguments:
+      - description: The executor that shall be used to run the given callable f.
+        name: executor
+        type: E
+      - description: The callable object
+        name: f
+        type: F&&
+      - description: All arguments that are needed to call f, if needed.
+        name: args
+        type: Args&&
+    return: The future on the for the underlying task f
+    signature_with_names: "template <typename E, typename F, typename... Args>\nfuture<std::result_of_t<F(Args...)>> async(E executor, F&& f, Args&&... args)"
 ---
