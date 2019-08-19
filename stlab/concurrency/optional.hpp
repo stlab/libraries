@@ -22,7 +22,7 @@
 #if defined(STLAB_FORCE_BOOST_OPTIONAL)
     #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_BOOST()
 #elif defined(__has_include) // Check if __has_include is present
-    #if __has_include(<optional>) && STLAB_CPP_VERSION(17)
+    #if __has_include(<optional>) && STLAB_CPP_VERSION_AT_LEAST(17)
         #include <optional>
         #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_STD()
     #elif __has_include(<experimental/optional>)
@@ -77,6 +77,10 @@ using optional = boost::optional<T>;
 const boost::none_t nullopt((boost::none_t::init_tag()));
 
 /**************************************************************************************************/
+
+#else
+
+    #error `optional` variant not specified
 
 #endif
 
