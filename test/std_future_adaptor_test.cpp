@@ -6,7 +6,7 @@
 /**************************************************************************************************/
 
 #include <iostream>
-
+#include <string>
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/std_future_adaptor.hpp>
