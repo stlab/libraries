@@ -45,3 +45,8 @@ Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the pla
 *Microsoft Windows Platform Build Notes*:
 - If you are using `conan` for the first time, add `--build missing` to conan command call in `setup_msvc.bat` script
 - Use administrator command prompt if you get issues in manifest creation during `setup_msvc.bat` run (ex: `mt : general error c101008d`)
+
+# Upcomming Changes in Version 2
+* Currently we are redesigning the interface of the `future` class. We will make the associated executor to a task more explicit by removing the implicit "inheritance" of the executors from the previous future. So a continuation will not get automatically the same executor from its predecessor. If non is provided, then it will be automatically be executed via the `immediate_executor`.
+* As well we will remove all `.then()` and `.recover()` functions from the futures. Only the `operator|()` and `operator^()` will remain. So the pipe notation as it is comming with C++20 ranges will become the only choice. Obviously this will be a breaking change.
+* In parallel we think about changing the then former `revover()` interface, see issue [#263](https://github.com/stlab/libraries/issues/263).
