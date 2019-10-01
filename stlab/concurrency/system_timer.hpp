@@ -123,7 +123,7 @@ public:
     [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F&& f) {
         using namespace std::chrono;
-        operator()(when - steady_clock.now(), std::forward<F>(f));
+        operator()(when - steady_clock::now(), std::forward<F>(f));
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
@@ -136,7 +136,7 @@ public:
             throw std::bad_alloc();
         }
 
-        auto file_time = time_point_to_FILETIME(duration);
+        auto file_time = duration_to_FILETIME(duration);
 
         SetThreadpoolTimer(timer, &file_time, 0, 0);
     }
@@ -151,7 +151,7 @@ private:
     }
 
     template <typename Rep, typename Per = std::ratio<1 >>
-    FILETIME time_point_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
+    FILETIME duration_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
         using namespace std::chrono;
         FILETIME ft = {0, 0};
         SYSTEMTIME st = {0};
