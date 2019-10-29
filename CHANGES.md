@@ -1,4 +1,9 @@
-## v1.5.0 - 2019 - August PLANNED
+## v1.5.1 - 2019 - October 29
+- Fixed issues
+    - [#285](https://github.com/stlab/libraries/issues/285): steady_clock.now()
+    - [#262](https://github.com/stlab/libraries/issues/282): time_point_to_FILETIME() to duration_to_FILETIME()
+
+## v1.5.0 - 2019 - August 17
 - Fixed issues
     - [#264](https://github.com/stlab/libraries/issues/264): `future::error()` interface is odd
     - [#260](https://github.com/stlab/libraries/issues/260): set_exception() should be a const member.
