@@ -225,10 +225,9 @@ public:
     friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
 
-#if STLAB_CPP_VERSION() < 17
+#if STLAB_CPP_VERSION_LESS_THAN(17)
+
 // In C++17 constexpr implies inline and these definitions are deprecated
-
-
 
 #if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
     template <class R, class... Args>
@@ -238,8 +237,6 @@ public:
     template <class R, class... Args>
     const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable;
 #endif
-
-
 
 #ifdef _MSC_VER
 
@@ -264,7 +261,6 @@ template <class R, class... Args>
 template <class F>
 const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, true>::_vtable = { dtor, move_ctor, invoke,
                                                                                                 target_type, pointer, const_pointer };
-
 #else
 
 template <class R, class... Args>
