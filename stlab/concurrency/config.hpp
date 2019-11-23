@@ -12,81 +12,84 @@
 /**************************************************************************************************/
 
 #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 0
+#define STLAB_FEATURE_PRIVATE_COROUTINES() 0
 
 #define STLAB_FEATURE(X) (STLAB_FEATURE_PRIVATE_##X())
 
-// __has_feature is a clang specific extension, gcc does not know it
-#ifndef __has_feature      // Optional.
-#define __has_feature(x) 0 // Compatibility with non-clang compilers.
-#endif
-
 /**************************************************************************************************/
 
-#define STLAB_TASK_SYSTEM_PORTABLE      0
-#define STLAB_TASK_SYSTEM_LIBDISPATCH   1
-#define STLAB_TASK_SYSTEM_EMSCRIPTEN    2
-#define STLAB_TASK_SYSTEM_PNACL         3
-#define STLAB_TASK_SYSTEM_WINDOWS       4
+#define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_PNACL() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 0
+
+#define STLAB_TASK_SYSTEM(X) (STLAB_TASK_SYSTEM_PRIVATE_##X())
+
+#define STLAB_CPP_VERSION(X) (STLAB_CPP_VERSION_PRIVATE() == (X))
+#define STLAB_CPP_VERSION_LESS_THAN(X) (STLAB_CPP_VERSION_PRIVATE() < (X))
+#define STLAB_CPP_VERSION_AT_LEAST(X) (STLAB_CPP_VERSION_PRIVATE() >= (X))
 
 #if __APPLE__
 
-#ifndef STLAB_TASK_SYSTEM
-#define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_LIBDISPATCH
+    #undef STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH
+    #define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 1
 
-#if __cplusplus >= 201703L
-#define STLAB_CPP_VERSION 17
-#endif
-
-#endif
-
-#if __has_feature(objc_arc)
-    #undef STLAB_FEATURE_PRIVATE_OBJC_ARC
-    #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
-#endif
+    #if defined(__has_feature)
+        #if __has_feature(objc_arc)
+            #undef STLAB_FEATURE_PRIVATE_OBJC_ARC
+            #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
+        #endif
+    #endif
 
 #elif __EMSCRIPTEN__
 
-#ifndef STLAB_TASK_SYSTEM
-#define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_EMSCRIPTEN
-#endif
+    #undef STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN
+    #define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 1
 
 #elif __pnacl__
 
-#ifndef STLAB_TASK_SYSTEM
-#define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_PNACL
-#endif
+    #undef STLAB_TASK_SYSTEM_PRIVATE_PNACL
+    #define STLAB_TASK_SYSTEM_PRIVATE_PNACL() 1
 
 #elif _MSC_VER
 
-#ifndef STLAB_TASK_SYSTEM
-#define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_WINDOWS
+    #undef STLAB_TASK_SYSTEM_PRIVATE_WINDOWS
+    #define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 1
+
+    #if _MSVC_LANG == 201103L
+        #define STLAB_CPP_VERSION_PRIVATE() 11
+    #elif _MSVC_LANG == 201402L
+        #define STLAB_CPP_VERSION_PRIVATE() 14
+    #elif _MSC_FULL_VER >= 191225830 && _MSVC_LANG == 201703L
+        #define STLAB_CPP_VERSION_PRIVATE() 17
+    #else
+        #warning Unknown version of C+; assuming C++20.
+        #define STLAB_CPP_VERSION_PRIVATE() 20
+    #endif
+
+#else
+
+    #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
+    #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
+
 #endif
 
-#if _MSC_FULL_VER >= 191225830 && _MSVC_LANG >= 201403L
-#define STLAB_CPP_VERSION 17
-#endif
-
-#endif
-
-// Default configuration
-
-#ifndef STLAB_TASK_SYSTEM
-#define STLAB_TASK_SYSTEM STLAB_TASK_SYSTEM_PORTABLE
-#if __cplusplus >= 201703L
-#define STLAB_CPP_VERSION 17
-#endif
-#endif
-
-#ifndef STLAB_CPP_VERSION
-#define STLAB_CPP_VERSION 17
-#endif
-
-#ifndef STLAB_FUTURE_COROUTINES
-#define STLAB_FUTURE_COROUTINES 0
+#if !defined(STLAB_CPP_VERSION_PRIVATE)
+    #if __cplusplus == 201103L
+        #define STLAB_CPP_VERSION_PRIVATE() 11
+    #elif __cplusplus == 201402L
+        #define STLAB_CPP_VERSION_PRIVATE() 14
+    #elif __cplusplus == 201703L
+        #define STLAB_CPP_VERSION_PRIVATE() 17
+    #else
+        #warning Unknown version of C+; assuming C++20.
+        #define STLAB_CPP_VERSION_PRIVATE() 20
+    #endif
 #endif
 
 /**************************************************************************************************/
 
-#endif
+#endif // STLAB_CONCURRENCY_CONFIG_HPP
 
 /**************************************************************************************************/

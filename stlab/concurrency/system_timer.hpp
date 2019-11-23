@@ -17,18 +17,19 @@
 #include <chrono>
 #include <functional>
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#elif STLAB_TASK_SYSTEM(PNACL)
 #include <ppapi/cpp/completion_callback.h>
 #include <ppapi/cpp/core.h>
 #include <ppapi/cpp/module.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#elif STLAB_TASK_SYSTEM(PORTABLE)
+
 #include <algorithm>
 #include <condition_variable>
 #include <thread>
@@ -48,13 +49,14 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM(LIBDISPATCH)
 
 struct system_timer_type {
     using result_type = void;
@@ -84,9 +86,13 @@ struct system_timer_type {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+/**************************************************************************************************/
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
+
+/**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM(WINDOWS)
 
 class system_timer {
     PTP_POOL _pool = nullptr;
@@ -117,7 +123,7 @@ public:
     [[deprecated("Use chrono::duration as parameter instead")]]
     void operator()(std::chrono::steady_clock::time_point when, F&& f) {
         using namespace std::chrono;
-        operator()(when - steady_clock.now(), std::forward<F>(f));
+        operator()(when - steady_clock::now(), std::forward<F>(f));
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
@@ -130,7 +136,7 @@ public:
             throw std::bad_alloc();
         }
 
-        auto file_time = time_point_to_FILETIME(duration);
+        auto file_time = duration_to_FILETIME(duration);
 
         SetThreadpoolTimer(timer, &file_time, 0, 0);
     }
@@ -145,7 +151,7 @@ private:
     }
 
     template <typename Rep, typename Per = std::ratio<1 >>
-    FILETIME time_point_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
+    FILETIME duration_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
         using namespace std::chrono;
         FILETIME ft = {0, 0};
         SYSTEMTIME st = {0};
@@ -169,7 +175,9 @@ private:
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+/**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM(PORTABLE)
 
 class system_timer {
     using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;
@@ -246,8 +254,9 @@ public:
 
 #endif
 
-#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS) || \
-    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE)
+/**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
 
 struct system_timer_type {
     using result_type = void;

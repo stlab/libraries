@@ -16,18 +16,19 @@
 #include <chrono>
 #include <functional>
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+#elif STLAB_TASK_SYSTEM(PNACL)
 #include <ppapi/cpp/completion_callback.h>
 #include <ppapi/cpp/core.h>
 #include <ppapi/cpp/module.h>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+#elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
+#elif STLAB_TASK_SYSTEM(PORTABLE)
+
 #include <array>
 #include <algorithm>
 #include <atomic>
@@ -51,6 +52,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 namespace detail {
@@ -66,7 +68,7 @@ enum class executor_priority
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_LIBDISPATCH
+#if STLAB_TASK_SYSTEM(LIBDISPATCH)
 
 constexpr auto platform_priority(executor_priority p)
 {
@@ -117,7 +119,9 @@ public:
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_EMSCRIPTEN
+/**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
@@ -138,7 +142,9 @@ struct executor_type {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PNACL
+/**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM(PNACL)
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
@@ -160,7 +166,9 @@ struct executor_type {
     }
 };
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS
+/**************************************************************************************************/
+
+#elif STLAB_TASK_SYSTEM(WINDOWS)
 
 constexpr auto platform_priority(executor_priority p)
 {
@@ -230,10 +238,8 @@ private:
 };
 
 /**************************************************************************************************/
-/**************************************************************************************************/
 
-#elif STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE
-
+#elif STLAB_TASK_SYSTEM(PORTABLE)
 
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
@@ -385,8 +391,9 @@ struct task_system
 
 #endif
 
-#if (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_PORTABLE) || \
-    (STLAB_TASK_SYSTEM == STLAB_TASK_SYSTEM_WINDOWS)
+/**************************************************************************************************/
+
+#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
@@ -422,3 +429,4 @@ constexpr auto high_executor = detail::executor_type<detail::executor_priority::
 
 #endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
+/**************************************************************************************************/
