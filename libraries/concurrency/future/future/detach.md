@@ -1,18 +1,15 @@
 ---
-layout: method
+layout: function
 title: detach
-tags: [library]
-scope: future
-pure-name: detach
+brief: Detaches the associated tasks from this instance.
 defined-in-header: stlab/concurrency/future.hpp 
-declaration: detach()
-description: Detaches the associated tasks from this instance. So it will be executed even when this instance get destructed.
-entities:
-  - kind: methods
-    list:
-      - name: stlab::future::detach
-        pure-name: detach
-        defined-in-header: stlab/concurrency/future.hpp 
-        declaration: void detach() const
-        description: Lets the current task run and detaches it from this instance.
+tags:
+  - function
+overloads:
+  void detach():
+    description: Lets the current task run and detaches it from this instance.
+    return: __OPTIONAL__
+    signature_with_names: void detach()
 ---
+Detaches the associated tasks from this instance. So it will be executed even when this instance get destructed.
+

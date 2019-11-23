@@ -23,6 +23,8 @@ description: |
 
   All non-destructed receivers on a channel must be `set_ready()` or data cannot flow to any
   stream processes.
+
+  It is necessary to specialize the template `stlab::smart_test` if type T is e.g. a container of a non copyable type like `std::vector<std::unique_ptr<>>` so that the the library can correctly dispatch for move-only types internally. This is unfortunately necessary because of a defect in the C++ standard. (The trait std::is_copy_constructible<> does not return the correct results in such a case.) 
 member-types:
   - type: value_type
     definition: T
