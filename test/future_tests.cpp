@@ -624,18 +624,38 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_with_execution) {
 
 BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_task) {
     BOOST_TEST_MESSAGE("future reduction with mutable task");
-    
+
     auto func = [i = int{0}]() mutable {
         i++;
+        return i;
     };
 
-    stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
+    auto result = stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
         func();
 
-        stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
-            func();
-        }).detach();
+        return stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
+            return func();
+        });
+    });
 
-    }).detach();
+    BOOST_REQUIRE_EQUAL(2, *stlab::blocking_get(result).get_try());
 }
 
+BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_task) {
+    BOOST_TEST_MESSAGE("future reduction with move only mutable task");
+
+    auto func = [i = move_only{0}]() mutable {
+        i = move_only{i.member()+1};
+        return std::move(i);
+    };
+
+    auto result = stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
+        func();
+
+        return stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
+            return func();
+        });
+    });
+
+    BOOST_REQUIRE_EQUAL(2, (*stlab::blocking_get(std::move(result)).get_try()).member());
+}
