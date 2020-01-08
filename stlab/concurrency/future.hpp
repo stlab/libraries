@@ -1633,7 +1633,7 @@ auto async(E executor, F&& f, Args&&... args)
     auto p = package<result_type()>(
         executor, std::bind<result_type>(
                       [_f = std::forward<F>(f)](
-                          unwrap_reference_t<std::decay_t<Args>>&... args) -> result_type {
+                          unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
                           return _f(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
                       },
                       std::forward<Args>(args)...));

@@ -621,3 +621,21 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_with_execution) {
     BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
     BOOST_REQUIRE_EQUAL(42, result);
 }
+
+BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_task) {
+    BOOST_TEST_MESSAGE("future reduction with mutable task");
+    
+    auto func = [i = int{0}]() mutable {
+        i++;
+    };
+
+    stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
+        func();
+
+        stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
+            func();
+        }).detach();
+
+    }).detach();
+}
+
