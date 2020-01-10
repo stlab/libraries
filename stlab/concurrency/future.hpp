@@ -533,7 +533,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 
     template <typename E, typename F>
     auto then(E&& executor, F&& f) {
-        return recover(std::forward<E>(executor), [_f = std::forward<F>(f)](auto x) {
+        return recover(std::forward<E>(executor), [_f = std::forward<F>(f)](auto x) mutable {
             x.get_try(); // throw if error
             return std::move(_f)();
         });
@@ -1536,7 +1536,7 @@ struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
-        auto p = package<R()>(executor, [_c = context] { return _c->execute(); });
+        auto p = package<R()>(executor, [_c = context]() mutable { return _c->execute(); });
 
         context->_f = std::move(p.first);
 
@@ -1797,7 +1797,7 @@ template <typename E, typename F>
 auto shared_base<void>::recover(E&& executor, F&& f)
     -> future<reduced_t<std::result_of_t<F(future<void>)>>> {
     auto p = package<std::result_of_t<F(future<void>)>()>(
-        executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() {
+        executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() mutable {
             return _f(_p);
         });
 
