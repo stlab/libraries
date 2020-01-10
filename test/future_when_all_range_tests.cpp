@@ -6,6 +6,7 @@
 
 /**************************************************************************************************/
 
+#include <numeric>
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/default_executor.hpp>
@@ -275,6 +276,69 @@ BOOST_AUTO_TEST_CASE(future_when_all_move_range_with_many_elements) {
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_task) {
+    BOOST_TEST_MESSAGE("future when all range with mutable task");
+
+    struct mutable_int
+    {
+        int i = 0;
+        auto operator()() {
+            ++i;
+            return i;
+        }
+    };
+    mutable_int func1, func2;
+    std::vector<future<mutable_int>> futures {
+        async(stlab::default_executor, [func = std::move(func1)]() mutable {
+            func();
+            return std::move(func);
+        }),
+        async(stlab::default_executor, [func = std::move(func2)]() mutable {
+            func();
+            return std::move(func);
+        })
+    };
+    auto sut = when_all(stlab::default_executor, [](auto result) {
+            return std::accumulate(result.begin(), result.end(), 0, [](int sum, auto f){ return sum + f(); });
+        },
+        std::make_pair(futures.begin(), futures.end())
+    );
+
+    BOOST_REQUIRE_EQUAL(4, stlab::blocking_get(sut));
+}
+
+
+BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
+    BOOST_TEST_MESSAGE("future when all range with mutable void task");
+
+    std::atomic_int check{0};
+    struct mutable_int {
+      std::atomic_int& _check;
+        int i = 0;
+        void operator()() {
+            ++i;
+            ++_check;
+        }
+    };
+
+    mutable_int func1{ check }, func2{check};
+    std::vector<future<void>> futures{
+        async(stlab::default_executor, [func = func1]() mutable { func(); }),
+        async(stlab::default_executor, [func = func2]() mutable { func(); })};
+
+    future<void> sut = when_all(stlab::default_executor,
+                        [_func = mutable_int{check}]() mutable {
+                            _func();
+                        },
+                        std::make_pair(futures.begin(), futures.end()));
+
+    stlab::blocking_get(sut);
+
+    BOOST_REQUIRE_EQUAL(3, check);
+}
+
 
 // ----------------------------------------------------------------------------
 //                             Error cases

@@ -110,6 +110,58 @@ BOOST_AUTO_TEST_CASE(future_when_all_args) {
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
+BOOST_AUTO_TEST_CASE(future_when_all_Arguments_with_mutable_task) {
+    BOOST_TEST_MESSAGE("future when all arguments with mutable task");
+
+    struct mutable_int
+    {
+        int i = 0;
+        auto operator()() {
+            ++i;
+            return i;
+        }
+    };
+    mutable_int func1, func2;
+
+    auto sut = when_all(stlab::default_executor, [](auto f1, auto f2){ return f1() + f2(); },
+        async(stlab::default_executor, [func = std::move(func1)]() mutable {
+            func();
+            return std::move(func);
+        }),
+        async(stlab::default_executor, [func = std::move(func2)]() mutable {
+            func();
+            return std::move(func);
+        })
+        );
+
+    BOOST_REQUIRE_EQUAL(4, stlab::blocking_get(sut));
+}
+BOOST_AUTO_TEST_CASE(future_when_all_arguments_with_mutable_move_onlytask) {
+    BOOST_TEST_MESSAGE("future when all arguments with mutable move only task");
+
+    struct mutable_move_only
+    {
+        move_only i;
+        auto operator()() {
+            i = move_only{i.member() + 1};
+            return std::move(i);
+        }
+    };
+    mutable_move_only func1, func2;
+
+    auto sut = when_all(stlab::default_executor, [](auto f1, auto f2){ return f1().member() + f2().member(); },
+                        async(stlab::default_executor, [func = std::move(func1)]() mutable {
+                            func();
+                            return std::move(func);
+                        }),
+                        async(stlab::default_executor, [func = std::move(func2)]() mutable {
+                            func();
+                            return std::move(func);
+                        })
+    );
+
+    BOOST_REQUIRE_EQUAL(4, stlab::blocking_get(sut));
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(future_when_all_args_move_only, test_fixture<move_only>)
