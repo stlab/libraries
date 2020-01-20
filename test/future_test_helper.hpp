@@ -113,7 +113,7 @@ struct test_fixture {
         while (!result) {
             result = f.get_try();
         }
-        return std::move(result);
+        return result;
     }
 
     void check_valid_future() {}
