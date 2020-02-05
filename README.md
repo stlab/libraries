@@ -19,7 +19,7 @@ ASL libraries will be migrated here in the stlab namespace, new libraries will b
 
 # Content
 
-## [Concurrency](http://www.stlab.cc/libraries/concurrency/)
+## [Concurrency](https://www.stlab.cc/libraries/concurrency/)
 This library provides futures and channels, high level constructs for implementing algorithms that eases the use of 
 multiple CPU cores while minimizing contention. This library solves several problems of the C++11 and C++17 TS futures.  
 
@@ -36,7 +36,7 @@ First, you will need the following tools:
 - [`conan`](https://www.conan.io/) ([download](https://www.conan.io/downloads))
 - [`CMake`](https://cmake.org/) ([download](https://cmake.org/download/))
 - (Mac) Xcode 8.2.1 or later
-- (MSVC) Visual Studio 2015 (14.0) Update 3 or later
+- (MSVC) Visual Studio 2017.9 or later
 
 `conan` and `cmake` are available on the Mac via [Homebrew](http://brew.sh). `cmake` is available on Windows via [`scoop`](http://scoop.sh/).
 
