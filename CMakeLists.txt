@@ -14,7 +14,7 @@ else()
   set( subproject OFF )
 endif()
 
-project( stlab VERSION 1.5.0 LANGUAGES CXX )
+project( stlab VERSION 1.5.2 LANGUAGES CXX )
 
 include( CTest )
 include( CMakeDependentOption )
@@ -272,5 +272,5 @@ install( FILES
 include( InstallRequiredSystemLibraries )
 set( CPACK_PACKAGE_VENDOR "Adobe Software Technology Lab" )
 set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" )
-set( CMAKE_PROJECT_HOMEPAGE_URL "http://stlab.cc/libraries/" )
+set( CMAKE_PROJECT_HOMEPAGE_URL "https://stlab.cc/libraries/" )
 include( CPack )

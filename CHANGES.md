@@ -1,3 +1,8 @@
+## v1.5.2 - 2020 - February 05
+- Fixed issues
+    - [#292](https://github.com/stlab/libraries/issues/292): What happened to our mutable lambdas?
+    - [#287](https://github.com/stlab/libraries/issues/287): future's `then` doesn't fully support mutable lambdas yet
+
 ## v1.5.1 - 2019 - October 29
 - Fixed issues
     - [#285](https://github.com/stlab/libraries/issues/285): steady_clock.now()
