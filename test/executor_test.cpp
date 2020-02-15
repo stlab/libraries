@@ -140,39 +140,59 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     BOOST_REQUIRE(!done);
 }
 
+namespace
+{
+    atomic_int highCount{0};
+    atomic_int defaultCount{0};
+    atomic_int lowCount{0};
+
+    atomic_int taskRunning{0};
+    atomic_int done{0};
+
+    template<stlab::detail::executor_priority P>
+    struct check_task
+    {
+        atomic_int &_correctScheduleCount;
+        atomic_int &_currentPrioCount;
+
+        check_task(atomic_int &correctCount, atomic_int& prioCount)
+            : _correctScheduleCount(correctCount)
+            , _currentPrioCount(prioCount)
+        {
+            ++_currentPrioCount;
+        }
+
+        void operator()() {
+            --_currentPrioCount;
+
+            ++taskRunning;
+
+            if constexpr (P == stlab::detail::executor_priority::low)
+                _correctScheduleCount += static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
+
+            if constexpr (P == stlab::detail::executor_priority::medium) {
+                _correctScheduleCount += static_cast<int>(highCount <= taskRunning);
+            }
+
+            ++done;
+            --taskRunning;
+        }
+    };
+}
+
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
 
-    const auto iterations = 300000;
-    std::atomic_int done{0};
-    std::atomic_int highCount{0};
-    std::atomic_int defaultCount{0};
-    std::atomic_int correctDefault{0};
-    std::atomic_int correctLow{0};
-    std::atomic_int taskRunning{0};
+    const auto iterations = 3'000'000;
+
+    atomic_int correctLow{0};
+    atomic_int correctDefault{0};
+    atomic_int correctHigh{0};
     {
         for (auto i = 0; i < iterations; ++i) {
-            low_executor([&] {
-                ++taskRunning;
-                correctLow += static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
-                ++done;
-                --taskRunning;
-            });
-            ++defaultCount;
-            default_executor([&] {
-                ++taskRunning;
-                correctDefault += static_cast<int>(highCount <= taskRunning);
-                --defaultCount;
-                ++done;
-                --taskRunning;
-            });
-            ++highCount;
-            high_executor([&] {
-                ++taskRunning;
-                --highCount;
-                ++done;
-                --taskRunning;
-            });
+            low_executor(check_task<stlab::detail::executor_priority::low>{correctLow, lowCount});
+            high_executor(check_task<stlab::detail::executor_priority::high>{correctHigh, highCount});
+            default_executor(check_task<stlab::detail::executor_priority::medium>{correctDefault, defaultCount});
         }
     }
 
@@ -186,7 +206,7 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
 
 BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::vector<int> results;
-    const auto iterations = 100000;
+    const auto iterations = 3'000'000;
     results.resize(iterations * 3);
     atomic_bool done = false;
     condition_variable ready;
