@@ -52,7 +52,7 @@
     #undef STLAB_TASK_SYSTEM_PRIVATE_PNACL
     #define STLAB_TASK_SYSTEM_PRIVATE_PNACL() 1
 
-#elif _MSC_VER
+#elif ___MSC_VER
 
     #undef STLAB_TASK_SYSTEM_PRIVATE_WINDOWS
     #define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 1
@@ -83,7 +83,7 @@
     #elif __cplusplus == 201703L
         #define STLAB_CPP_VERSION_PRIVATE() 17
     #else
-        #warning Unknown version of C+; assuming C++20.
+        //#warning Unknown version of C+; assuming C++20.
         #define STLAB_CPP_VERSION_PRIVATE() 20
     #endif
 #endif
