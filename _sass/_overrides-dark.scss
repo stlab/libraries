@@ -1,0 +1,8 @@
+// Copy this file to you site and use it to override CSS variables that apply to the dark CSS
+// definitions. See `main-dark.scss` in the theme for a complete list of variables you can override
+// with this file.
+
+// @debug "Old link-color: #{$link-color}";
+$hyde-primary: $stlab-purple;
+// $link-color: $stlab-purple;
+// @debug "New link-color: #{$link-color}";
