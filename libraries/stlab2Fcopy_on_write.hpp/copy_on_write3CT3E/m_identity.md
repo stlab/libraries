@@ -1,7 +1,7 @@
 ---
 layout: method
 title: identity
-owner: sparent
+owner: sean-parent
 brief: Used to see if two copy_on_write items refer to the same instance.
 tags:
   - method

@@ -1,7 +1,7 @@
 ---
 layout: method
 title: operator const element_type &
-owner: sparent
+owner: sean-parent
 brief: Obtain a `const` reference to the underlying object.
 tags:
   - method

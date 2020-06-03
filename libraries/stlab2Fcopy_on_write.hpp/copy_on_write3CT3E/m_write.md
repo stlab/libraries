@@ -1,7 +1,7 @@
 ---
 layout: method
 title: write
-owner: sparent
+owner: sean-parent
 brief: Obtain a non-`const` reference to the underlying value
 tags:
   - method

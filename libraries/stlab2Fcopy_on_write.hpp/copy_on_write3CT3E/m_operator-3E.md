@@ -1,7 +1,7 @@
 ---
 layout: method
 title: operator->
-owner: sparent
+owner: sean-parent
 brief: Obtain a `const` pointer to the underlying object.
 tags:
   - method
