@@ -1,10 +1,11 @@
 ---
 layout: library
 title: API Documentation
-owner: fbrereto
+owner: fosterbrereton
 brief: The stlab libraries
 library-type: library
-tab: Libraries
+tab: " Libraries"
+home-icon: book
 ---
 
 ### Source Code

@@ -1,7 +1,7 @@
 ---
 layout: method
 title: unique
-owner: sparent
+owner: sean-parent
 brief: Returns if the object instance reference count is one
 tags:
   - method

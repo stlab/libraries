@@ -1,7 +1,7 @@
 ---
 layout: function
 title: operator>=
-owner: sparent
+owner: sean-parent
 brief: Greater-than-or-equal operator
 tags:
   - function

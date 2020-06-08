@@ -1,7 +1,7 @@
 ---
 layout: function
 title: swap
-owner: sparent
+owner: sean-parent
 brief: Swap specialization
 tags:
   - function

@@ -2,34 +2,23 @@
 layout: default
 ---
 
-<div class="home">
+{% assign home_thumbs = site.pages | where_exp:"p","p.home-icon" | sort:"tab"%}
 
+<div class="home">
   <table class='icon-table'>
   <tr>
-    <td>
-        <a href='libraries/'>
-        <div class='icon-box'>
-            <div class='top'><i class="fa fa-inverse fa-book"></i></div>
-            <div class='bottom'>Libraries</div>
-        </div>
-        </a>
-    </td>
-    <td>
-        <a href='tips/'>
-        <div class='icon-box'>
-            <div class='top'><i class="fa fa-inverse fa-thumb-tack"></i></div>
-            <div class='bottom'>Tips</div>
-        </div>
-        </a>
-    </td>
-    <td>
-        <a href='legacy/'>
-        <div class='icon-box'>
-            <div class='top'><i class="fa fa-inverse fa-pagelines"></i></div>
-            <div class='bottom'>Legacy</div>
-        </div>
-        </a>
-    </td>
+    {% for page in home_thumbs %}
+      <td>
+        {% if page.home-icon %}
+            <a href='{{page.url}}'>
+            <div class='icon-box'>
+                <div class='top'><i class="fa fa-inverse fa-{{page.home-icon}}"></i></div>
+                <div class='bottom'>{{page.tab}}</div>
+            </div>
+            </a>
+        {% endif %}
+      </td>
+    {% endfor %}
   </tr>
   </table>
 
@@ -48,6 +37,6 @@ layout: default
     {% endfor %}
   </ul>
 
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+  <p class="rss-subscribe">subscribe <a href='{{ "/feed.xml" | prepend: site.baseurl }}'>via RSS</a></p>
 
 </div>

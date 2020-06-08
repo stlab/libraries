@@ -1,7 +1,7 @@
 ---
 layout: method
 title: copy_on_write<T>
-owner: sparent
+owner: sean-parent
 brief: Constructor
 tags:
   - method
