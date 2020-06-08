@@ -1,0 +1,33 @@
+{% unless examples %}
+    {% assign this_url = page.url | relative_url %}
+    {% assign examples = site.pages | where_exp:"p","p.example" %}
+    {% assign examples = examples | where_exp:"p","p.url contains this_url" %}
+    {% assign examples = examples | where_exp:"p","p.url != this_url" %}
+    {% assign examples = examples | sort: 'scope' %}
+{% endunless %}
+
+<h3>Examples</h3>
+
+<table class='example-table'>
+  {% for p in examples %}
+    <tr>
+        <td class='decl_func'>
+          <a href='{{p.url}}'><code>{{p.title}}</code></a>
+        </td>
+        <td class='decl_link'>
+          {% for e in p.example %}
+              {% assign lastchar = p.url | split: '' | last %}
+              {% if lastchar == '/' %}
+                  {% assign url = p.url | split: '/' | push: e | join: '/' %}
+              {% else %}
+                  {% assign url = p.url | split: '/' | pop | push: e | join: '/' %}
+              {% endif %}
+              <a href='{{url}}'><code>{{e}}</code></a><br/>
+          {% endfor %}
+        </td>
+        <td class='defn'>
+          {{p.brief}}
+        </td>
+    </tr>
+  {% endfor %}
+</table>
