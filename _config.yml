@@ -15,7 +15,7 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://www.stlab.cc" # the base hostname & protocol for your site
 twitter_username: SeanParent
 github_username:  stlab
-theme: jekyll-theme-adobe-hyde
+theme: jekyll-theme-cayman
 exclude:
     - _source
     - build
