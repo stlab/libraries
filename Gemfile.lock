@@ -28,7 +28,7 @@ GEM
     execjs (2.7.0)
     faraday (1.0.1)
       multipart-post (>= 1.2, < 3)
-    ffi (1.13.0)
+    ffi (1.13.1)
     forwardable-extended (2.6.0)
     gemoji (3.0.1)
     github-pages (206)
@@ -143,9 +143,6 @@ GEM
     jekyll-sitemap (1.4.0)
       jekyll (>= 3.7, < 5.0)
     jekyll-swiss (1.0.0)
-    jekyll-theme-adobe-hyde (1.0.0)
-      jekyll (~> 3.8)
-      jekyll-seo-tag (~> 2.0)
     jekyll-theme-architect (0.1.1)
       jekyll (~> 3.5)
       jekyll-seo-tag (~> 2.0)
@@ -246,7 +243,6 @@ PLATFORMS
 
 DEPENDENCIES
   github-pages
-  jekyll-theme-adobe-hyde
 
 BUNDLED WITH
-   1.17.2
+   2.1.4
