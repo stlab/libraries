@@ -20,6 +20,7 @@
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/optional.hpp>
+#include <stlab/memory.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
