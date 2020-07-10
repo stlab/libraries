@@ -187,8 +187,8 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
 
 namespace
 {
-    auto fiboN{ 10000 };
-    const auto iterations = 1'000'000;
+    auto fiboN{ 1000 };
+    const auto iterations = 100'000;
     const auto startCount = 100;
     atomic_int workToDo = (iterations - startCount) * 3;
     const auto expectedWork = startCount * 3 + workToDo;
