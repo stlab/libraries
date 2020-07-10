@@ -244,7 +244,7 @@ private:
 inline auto queue_size() {
 #ifdef STLAB_UNIT_TEST
     // The test cannot run with less than two cores
-    return std::min(2, std::thread::hardware_concurrency());
+    return std::max(2u, std::thread::hardware_concurrency());
 #else
     return std::thread::hardware_concurrency();
 #endif
