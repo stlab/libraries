@@ -241,7 +241,7 @@ private:
 
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
-auto queue_size() {
+inline auto queue_size() {
 #ifdef STLAB_UNIT_TEST
     // The test cannot run with less than two cores
     return std::min(2, std::thread::hardware_concurrency());
