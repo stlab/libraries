@@ -293,9 +293,11 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_all_are_ready_at_the_beginning) {
     bool check{false};
 
     sut = stlab::when_any(
-      stlab::default_executor, [&check](auto) { check = true; }, std::make_pair(std::begin(tasks), std::end(tasks)));
+        stlab::default_executor, [&check](auto) { check = true; },
+        std::make_pair(std::begin(tasks), std::end(tasks)));
 
     check_valid_future(sut);
+    wait_until_future_completed(sut);
     BOOST_REQUIRE(check);
 }
 
