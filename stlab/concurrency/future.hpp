@@ -20,6 +20,7 @@
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/optional.hpp>
+#include <stlab/memory.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
@@ -1453,8 +1454,12 @@ struct single_trigger {
     static void go(C& context, F&& f, size_t index) {
         auto before = context._single_event_trigger.test_and_set();
         if (!before) {
-            for (auto& h : context._holds)
-                h.reset();
+            {
+                std::unique_lock guard(context._hold_guard);
+                for (auto i = 0u; i < context._holds.size(); ++i) {
+                    if (i != index) context._holds[i].reset();
+                }
+            }
             context.apply(std::forward<F>(f), index);
             context._f();
         }
@@ -1487,6 +1492,7 @@ template <typename CR, typename F, typename ResultCollector, typename FailureCol
 struct common_context : CR {
     std::atomic_size_t _remaining;
     std::atomic_flag _single_event_trigger = ATOMIC_FLAG_INIT;
+    std::mutex _hold_guard;
     std::vector<future<void>> _holds;
     packaged_task<> _f;
 
@@ -1513,8 +1519,9 @@ struct common_context : CR {
 
 template <typename C, typename E, typename T>
 void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
+    std::unique_lock guard(context->_hold_guard);
     context->_holds[index] =
-        std::move(a).recover(std::move(executor), [_context = std::weak_ptr<C>(context), _i = index](auto x) {
+        std::move(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception(); ex) {

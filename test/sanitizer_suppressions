@@ -1,5 +1,3 @@
-race:stlab::v1::detail::attach_tasks
-
 race:stlab::v1::detail::when_all_shared
 
 race:stlab::v1::blocking_get
