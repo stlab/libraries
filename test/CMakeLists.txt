@@ -92,6 +92,15 @@ target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
 add_test( NAME stlab.test.traits COMMAND stlab.test.traits )
 
 ################################################################################
+
+add_executable( stlab.test.forest
+        forest_test.cpp
+        main.cpp )
+
+target_link_libraries( stlab.test.forest PUBLIC stlab::testing )
+add_test( NAME stlab.test.forest COMMAND stlab.test.forest )
+
+################################################################################
 #
 # tests are compiled without compiler extensions to ensure the stlab headers
 # are not dependent upon any such extension.
