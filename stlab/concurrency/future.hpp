@@ -131,12 +131,12 @@ struct result_of_when_all_t;
 
 template <typename F>
 struct result_of_when_all_t<F, void> {
-    using result_type = typename std::result_of<F()>::type;
+    using result_type = std::invoke_result_t<F>;
 };
 
 template <typename F, typename T>
 struct result_of_when_all_t {
-    using result_type = typename std::result_of<F(const std::vector<T>&)>::type;
+    using result_type = std::invoke_result_t<F, const std::vector<T>&>;
 };
 
 template <typename F, typename T>
@@ -144,12 +144,12 @@ struct result_of_when_any_t;
 
 template <typename F>
 struct result_of_when_any_t<F, void> {
-    using result_type = typename std::result_of<F(size_t)>::type;
+    using result_type = std::invoke_result_t<F, size_t>;
 };
 
 template <typename F, typename R>
 struct result_of_when_any_t {
-    using result_type = typename std::result_of<F(R, size_t)>::type;
+    using result_type = std::invoke_result_t<F, R, size_t>;
 };
 
 template <typename T>
@@ -292,7 +292,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename E, typename F>
     auto recover(E executor, F&& f) {
-        auto p = package<std::result_of_t<F(future<T>)>()>(
+        auto p = package<std::invoke_result_t<F, future<T>>()>(
             executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
                 return std::move(_f)(std::move(_p));
             });
@@ -329,7 +329,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     auto recover_r(bool unique, E&& executor, F&& f) {
         if (!unique) return recover(std::forward<E>(executor), std::forward<F>(f));
 
-        auto p = package<std::result_of_t<F(future<T>)>()>(
+        auto p = package<std::invoke_result_t<F, future<T>>()>(
             executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
                 return _f(std::move(_p));
             });
@@ -453,7 +453,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename E, typename F>
     auto recover_r(bool, E executor, F&& f) {
         // rvalue case unique is assumed.
-        auto p = package<std::result_of_t<F(future<T>)>()>(
+        auto p = package<std::invoke_result_t<F, future<T>>()>(
             executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() {
                 return _f(std::move(_p));
             });
@@ -556,7 +556,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     }
 
     template <typename E, typename F>
-    auto recover(E&& executor, F&& f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>;
+    auto recover(E&& executor, F&& f) -> future<reduced_t<std::invoke_result_t<F, future<void>>>>;
 
     template <typename F>
     auto recover_r(bool, F&& f) {
@@ -1297,7 +1297,7 @@ template <typename T>
 struct make_when_any {
     template <typename E, typename F, typename... Ts>
     static auto make(E executor, F f, future<T> arg, future<Ts>... args) {
-        using result_t = typename std::result_of<F(T, size_t)>::type;
+        using result_t = std::invoke_result_t<F, T, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
         auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared] {
@@ -1317,7 +1317,7 @@ template <>
 struct make_when_any<void> {
     template <typename E, typename F, typename... Ts>
     static auto make(E executor, F&& f, future<Ts>... args) {
-        using result_t = typename std::result_of<F(size_t)>::type;
+        using result_t = std::invoke_result_t<F, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
         auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared] {
@@ -1634,8 +1634,8 @@ auto when_any(E executor, F&& f, std::pair<I, I> range) {
 
 template <typename E, typename F, typename... Args>
 auto async(E executor, F&& f, Args&&... args)
-    -> future<std::result_of_t<std::decay_t<F>(std::decay_t<Args>...)>> {
-    using result_type = std::result_of_t<std::decay_t<F>(std::decay_t<Args>...)>;
+    -> future<std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>> {
+    using result_type = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto p = package<result_type()>(
         executor, std::bind<result_type>(
@@ -1802,8 +1802,8 @@ void shared_base<void>::set_value(F& f, Args&&... args) {
 
 template <typename E, typename F>
 auto shared_base<void>::recover(E&& executor, F&& f)
-    -> future<reduced_t<std::result_of_t<F(future<void>)>>> {
-    auto p = package<std::result_of_t<F(future<void>)>()>(
+    -> future<reduced_t<std::invoke_result_t<F, future<void>>>> {
+    auto p = package<std::invoke_result_t<F, future<void>>()>(
         executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() mutable {
             return _f(_p);
         });
