@@ -771,8 +771,9 @@ public:
     return *this = forest(x);
     }
     forest& operator=(forest&& x) noexcept {
-        clear();
-        splice(end(), x);
+        auto tmp{move(x)}; // this is `release()`
+        clear(); // these two lines are `reset()`
+        splice(end(), tmp);
         return *this;
     }
 
