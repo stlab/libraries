@@ -99,7 +99,7 @@ inline auto to_string(I first, I last) {
 /**************************************************************************************************/
 
 template <typename Iterator>
-void test_fullorder_traversal(Iterator first, Iterator last, std::string expected) {
+void test_fullorder_traversal(Iterator first, Iterator last, const std::string& expected) {
     BOOST_CHECK(to_string(first, last) == expected);
 }
 
@@ -202,9 +202,16 @@ BOOST_AUTO_TEST_CASE(reverse_traversal) {
 
 /**************************************************************************************************/
 
+template <typename Forest, typename T>
+auto find_node(Forest& f, const T& x) {
+    return std::find_if(f.begin(), f.end(), [&](const auto& v){ return v == x; });
+}
+
+/**************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(child_traversal) {
     auto f{big_test_forest()};
-    auto parent{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "B"; })};
+    auto parent{find_node(f, "B")};
     std::string expected;
 
     BOOST_CHECK(*parent == "B");
@@ -231,14 +238,14 @@ BOOST_AUTO_TEST_CASE(test_find_parent) {
     auto f{big_test_forest()};
 
     {
-        auto child{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "B"; })};
+        auto child{find_node(f, "B")};
         BOOST_CHECK(*child == "B");
         auto parent{find_parent(child)};
         BOOST_CHECK(*parent == "A");
     }
 
     {
-        auto child{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "J"; })};
+        auto child{find_node(f, "J")};
         BOOST_CHECK(*child == "J");
         auto parent{find_parent(child)};
         BOOST_CHECK(*parent == "D");
@@ -251,13 +258,13 @@ BOOST_AUTO_TEST_CASE(test_has_children) {
     auto f{big_test_forest()};
 
     /*pass*/ {
-        auto node{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "B"; })};
+        auto node{find_node(f, "B")};
         BOOST_CHECK(*node == "B");
         BOOST_CHECK(has_children(node));
     }
 
     /*fail*/ {
-        auto node{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "J"; })};
+        auto node{find_node(f, "J")};
         BOOST_CHECK(*node == "J");
         BOOST_CHECK(!has_children(node));
     }
@@ -269,7 +276,7 @@ BOOST_AUTO_TEST_CASE(erase) {
     auto f{big_test_forest()};
 
     /*single node*/ {
-        auto node{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "J"; })};
+        auto node{find_node(f, "J")};
         BOOST_CHECK(*node == "J");
         auto erased_result = f.erase(node);
         std::string result{to_string(preorder_range(f))};
@@ -278,7 +285,7 @@ BOOST_AUTO_TEST_CASE(erase) {
     }
 
     /*multiple nodes*/ {
-        auto node{std::find_if(f.begin(), f.end(), [](auto& x){ return x == "D"; })};
+        auto node{find_node(f, "D")};
         BOOST_CHECK(*node == "D");
         auto erased_result = f.erase(leading_of(node), std::next(trailing_of(node)));
         std::string result{to_string(preorder_range(f))};
