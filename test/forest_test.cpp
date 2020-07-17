@@ -79,7 +79,7 @@ auto big_test_forest() {
 /**************************************************************************************************/
 
 template <typename R>
-inline auto to_string(R&& r) {
+inline auto to_string(const R& r) {
     std::string result;
     for (const auto& x : r) {
         result += x;

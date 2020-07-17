@@ -1137,7 +1137,7 @@ struct forest_range {
     I _l;
 
     auto begin() const { return _f; }
-    auto end() { return _l; }
+    auto end() const { return _l; }
 };
 
 /**************************************************************************************************/
