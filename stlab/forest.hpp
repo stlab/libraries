@@ -768,9 +768,7 @@ public:
     }
     forest(forest&& x) noexcept : forest() { splice(end(), x); }
     forest& operator=(const forest& x) {
-        auto tmp = x;
-        *this = std::move(tmp);
-        return *this;
+    return *this = forest(x);
     }
     forest& operator=(forest&& x) noexcept {
         clear();
