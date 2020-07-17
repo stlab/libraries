@@ -3,7 +3,10 @@ layout: library
 title: API Documentation
 owner: fbrereto
 brief: The stlab libraries
+tags:
+  - library
 library-type: library
+icon: book
 tab: Libraries
 ---
 
