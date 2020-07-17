@@ -60,14 +60,22 @@ auto trailing_of(I i) {
 
 /**************************************************************************************************/
 
+constexpr auto is_leading(forest_edge e) {
+    return e == forest_edge::leading;
+}
+
 template <class I> // I models a FullorderIterator
 auto is_leading(I i) {
-    return i.edge() == forest_edge::leading;
+    return is_leading(i.edge());
+}
+
+constexpr auto is_trailing(forest_edge e) {
+    return e == forest_edge::trailing;
 }
 
 template <class I> // I models a FullorderIterator
 auto is_trailing(I i) {
-    return i.edge() == forest_edge::trailing;
+    return is_trailing(i.edge());
 }
 
 /**************************************************************************************************/
@@ -584,7 +592,7 @@ private:
     void increment() {
         node_t* next(_node->link(_edge, node_t::next_s));
 
-        if (static_cast<bool>(_edge))
+        if (is_leading(_edge))
             _edge = forest_edge(next != _node);
         else
             _edge = forest_edge(next->link(forest_edge::leading, node_t::prior_s) == _node);
@@ -595,7 +603,7 @@ private:
     void decrement() {
         node_t* next(_node->link(_edge, node_t::prior_s));
 
-        if (static_cast<bool>(_edge))
+        if (is_leading(_edge))
             _edge = forest_edge(next->link(forest_edge::trailing, node_t::next_s) != _node);
         else
             _edge = forest_edge(next == _node);
@@ -673,7 +681,7 @@ private:
     void increment() {
         node_t* next(_node->link(_edge, node_t::next_s));
 
-        if (static_cast<bool>(_edge))
+        if (is_leading(_edge))
             _edge = forest_edge(next != _node);
         else
             _edge = forest_edge(next->link(forest_edge::leading, node_t::prior_s) == _node);
@@ -684,7 +692,7 @@ private:
     void decrement() {
         node_t* next(_node->link(_edge, node_t::prior_s));
 
-        if (static_cast<bool>(_edge))
+        if (is_leading(_edge))
             _edge = forest_edge(next->link(forest_edge::trailing, node_t::next_s) != _node);
         else
             _edge = forest_edge(next == _node);
@@ -880,7 +888,7 @@ bool operator==(const forest<T>& x, const forest<T>& y) {
 
     for (auto first(x.begin()), last(x.end()), pos(y.begin()); first != last; ++first, ++pos) {
         if (first.edge() != pos.edge()) return false;
-        if (first.edge() && (*first != *pos)) return false;
+        if (is_leading(first) && (*first != *pos)) return false;
     }
 
     return true;
@@ -996,7 +1004,7 @@ typename forest<T>::iterator forest<T>::insert(iterator pos,
                                                const_child_iterator f,
                                                const_child_iterator l) {
     for (const_iterator first(f.base()), last(l.base()); first != last; ++first, ++pos) {
-        if (first.edge()) pos = insert(pos, *first);
+        if (is_leading(first)) pos = insert(pos, *first);
     }
 
     return pos;

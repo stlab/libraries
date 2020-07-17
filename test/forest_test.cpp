@@ -295,3 +295,74 @@ BOOST_AUTO_TEST_CASE(erase) {
 }
 
 /**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(construction) {
+    auto f{big_test_forest()};
+
+    /* copy construction */ {
+        auto f2 = f;
+        BOOST_CHECK(f2 == f);
+    }
+
+    /* move construction */ {
+        auto f_size{f.size()};
+        auto f2 = std::move(f);
+        BOOST_CHECK(f2 != f);
+        BOOST_CHECK(f2.size() == f_size);
+    }
+}
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(assignment) {
+    auto f{big_test_forest()};
+
+    /* copy assignment */ {
+        decltype(f) f2;
+        BOOST_CHECK(f2.empty());
+        f2 = f;
+        BOOST_CHECK(f2 == f);
+    }
+
+    /* move assignment */ {
+        auto f_size{f.size()};
+        decltype(f) f2;
+        f2 = std::move(f);
+        BOOST_CHECK(f2 != f);
+        BOOST_CHECK(f2.size() == f_size);
+    }
+
+    /* self-move assignment */ {
+        auto f{big_test_forest()};
+        auto* pf{&f}; // We use a pointer here to get around a clang error when moving to self.
+        auto f_size{f.size()};
+        f = std::move(*pf);
+        BOOST_CHECK(f.size() == f_size);
+    }
+}
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(swap) {
+    auto f1{big_test_forest()};
+    auto f2{f1};
+    f2.pop_back();
+    f2.pop_front();
+    auto f1_sz{f1.size()};
+    auto f2_sz{f2.size()};
+
+    BOOST_CHECK(f1_sz != f2_sz);
+    BOOST_CHECK(f1 != f2);
+
+    std::swap(f1, f2);
+
+    BOOST_CHECK(f2.size() == f1_sz);
+    BOOST_CHECK(f1.size() == f2_sz);
+
+    f1.swap(f2);
+
+    BOOST_CHECK(f1.size() == f1_sz);
+    BOOST_CHECK(f2.size() == f2_sz);
+}
+
+/**************************************************************************************************/
