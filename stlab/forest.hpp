@@ -750,10 +750,10 @@ public:
     using reverse_iterator = reverse_fullorder_iterator<iterator>;
     using const_reverse_iterator = reverse_fullorder_iterator<const_iterator>;
 
-    using child_iterator = child_iterator<iterator>;
     /* qualification needed since: A name N used in a class S shall refer to the same declaration
        in its context and when re-evaluated in the completed scope of
        S. */
+    using child_iterator = stlab::child_iterator<iterator>;
     using const_child_iterator = stlab::child_iterator<const_iterator>;
     using reverse_child_iterator = std::reverse_iterator<child_iterator>;
 
