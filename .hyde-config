@@ -1,0 +1,9 @@
+{
+    "hyde-src-root": "stlab",
+    "hyde-yaml-dir": "../stlab.github.io/libraries",
+    "clang_flags": [
+        "-std=c++17",
+        "-I.",
+        "-Wno-everything"
+    ]
+}
