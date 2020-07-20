@@ -756,6 +756,8 @@ public:
     using reverse_iterator = reverse_fullorder_iterator<iterator>;
     using const_reverse_iterator = reverse_fullorder_iterator<const_iterator>;
 
+    template <class U> struct rebind { using type = forest<U>; };
+
     /* qualification needed since: A name N used in a class S shall refer to the same declaration
        in its context and when re-evaluated in the completed scope of
        S. */
