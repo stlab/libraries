@@ -65,7 +65,7 @@ constexpr auto is_leading(forest_edge e) {
 }
 
 template <class I> // I models a FullorderIterator
-auto is_leading(I i) {
+auto is_leading(const I& i) {
     return is_leading(i.edge());
 }
 
@@ -74,7 +74,7 @@ constexpr auto is_trailing(forest_edge e) {
 }
 
 template <class I> // I models a FullorderIterator
-auto is_trailing(I i) {
+auto is_trailing(const I& i) {
     return is_trailing(i.edge());
 }
 

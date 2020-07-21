@@ -5,15 +5,17 @@
 
 /**************************************************************************************************/
 
-// stdc++
-#include <optional>
-
 // stlab
+#include <stlab/concurrency/optional.hpp>
 #include <stlab/forest.hpp>
 
 /**************************************************************************************************/
 
 namespace stlab {
+
+/**************************************************************************************************/
+
+namespace forests {
 
 /**************************************************************************************************/
 // "Congruent" would be a nice name here, but in geometry that also implies reflection.
@@ -30,11 +32,11 @@ bool equal_shape(const Forest1& x, const Forest2& y) {
 /**************************************************************************************************/
 
 template <class Forest>
-struct forest_insert_iterator {
+struct insert_iterator {
     using value_type = typename Forest::value_type;
     using iterator_type = typename Forest::iterator;
 
-    explicit forest_insert_iterator(Forest& f) : _f{f}, _p{_f.root()} {}
+    explicit insert_iterator(Forest& f) : _f{f}, _p{_f.root()} {}
 
     auto& operator*() { return *this; }
 
@@ -56,14 +58,14 @@ private:
 };
 
 template <class Forest>
-auto forest_inserter(Forest& f) {
-    return forest_insert_iterator(f);
+auto make_inserter(Forest& f) {
+    return insert_iterator(f);
 }
 
 /**************************************************************************************************/
 
 template <class I, class O, class P, class UP>
-auto transform_forest(I first, I last, O out, P&& proj, UP&& pred) {
+auto transform(I first, I last, O out, P proj, UP pred) {
     for (; first != last; ++first) {
         ++out;
         if (pred(first)) {
@@ -80,10 +82,10 @@ auto transform_forest(I first, I last, O out, P&& proj, UP&& pred) {
 template <class Forest,
           class P,
           class U = decltype(std::declval<P>()(typename Forest::value_type()))>
-auto transcribe_forest(const Forest& f, P&& proj) {
+auto transcribe(const Forest& f, P&& proj) {
     typename Forest::template rebind<U>::type result;
-    transform_forest(f.begin(), f.end(), forest_inserter(result), std::forward<P>(proj),
-                     [](auto p) { return is_leading(p); });
+    forests::transform(std::cbegin(f), std::cend(f), make_inserter(result), std::forward<P>(proj),
+                       [](const auto& p) { return is_leading(p); });
     return result;
 }
 
@@ -104,12 +106,16 @@ auto flatten(I first, I last, O out) {
 
 /**************************************************************************************************/
 
-template <class I, // I models ForwardIterator; I::value_type == std::optional<T>
+template <class I, // I models ForwardIterator; I::value_type == stlab::optional<T>
           class O> // O models ForestOutputIterator
 auto unflatten(I first, I last, O out) {
-    return transform_forest(
-        first, last, out, [](auto x) { return *x; }, [](auto p) { return *p; });
+    return forests::transform(
+        first, last, out, [](const auto& x) { return *x; }, [](const auto& p) { return *p; });
 }
+
+/**************************************************************************************************/
+
+} // namespace forests
 
 /**************************************************************************************************/
 

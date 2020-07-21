@@ -21,7 +21,7 @@ namespace {
 /**************************************************************************************************/
 
 template <typename T>
-void print(const stlab::forest<T>& f) {
+void print(const forest<T>& f) {
     auto first{f.begin()};
     auto last{f.end()};
     std::size_t depth{0};
@@ -119,17 +119,17 @@ namespace detail {
 /**************************************************************************************************/
 
 template <typename T>
-inline auto to_string(const T& x) {
+auto to_string(const T& x) {
     return std::to_string(x);
 }
 
 template <>
-inline auto to_string(const std::string& x) {
+auto to_string(const std::string& x) {
     return x;
 }
 
 template <>
-inline auto to_string(const std::optional<std::string>& x) {
+auto to_string(const std::optional<std::string>& x) {
     return x ? to_string(*x) : "?";
 }
 
@@ -140,7 +140,7 @@ inline auto to_string(const std::optional<std::string>& x) {
 /**************************************************************************************************/
 
 template <typename R>
-inline auto to_string(const R& r) {
+auto to_string(const R& r) {
     std::string result;
     for (const auto& x : r) {
         result += detail::to_string(x);
@@ -149,7 +149,7 @@ inline auto to_string(const R& r) {
 }
 
 template <typename I>
-inline auto to_string(I first, I last) {
+auto to_string(I first, I last) {
     std::string result;
     while (first != last) {
         result += *first++;
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(test_equal_shape) {
     }
 
     BOOST_CHECK(f1 != f2);
-    BOOST_CHECK(equal_shape(f1, f2));
+    BOOST_CHECK(forests::equal_shape(f1, f2));
     BOOST_CHECK(to_string(f2) == "XXXXXXXXXXXXXXXXXXXXXX");
 }
 
@@ -445,12 +445,12 @@ BOOST_AUTO_TEST_CASE(test_equal_shape) {
 
 BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
     auto f1{big_test_forest()};
-    auto f2{stlab::transcribe_forest(f1, [](const std::string& x){
+    auto f2{forests::transcribe(f1, [](const std::string& x){
         assert(!x.empty());
         return static_cast<std::size_t>(x.front());
     })};
 
-    BOOST_CHECK(equal_shape(f1, f2));
+    BOOST_CHECK(forests::equal_shape(f1, f2));
     BOOST_CHECK(to_string(f2) == "65666770707171727267687373747475756869696665");
 }
 
@@ -460,13 +460,13 @@ BOOST_AUTO_TEST_CASE(test_flatten) {
     auto f1{big_test_forest()};
     std::vector<std::optional<std::string>> flat;
 
-    stlab::flatten(f1.begin(), f1.end(), std::back_inserter(flat));
+    forests::flatten(f1.begin(), f1.end(), std::back_inserter(flat));
 
     BOOST_CHECK(to_string(flat) == "ABCF?G?H??DI?J?K??E???");
 
     decltype(f1) f2;
 
-    stlab::unflatten(flat.begin(), flat.end(), stlab::forest_inserter(f2));
+    forests::unflatten(flat.begin(), flat.end(), forests::make_inserter(f2));
 
     BOOST_CHECK(f1 == f2);
 }
