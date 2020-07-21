@@ -95,7 +95,7 @@ template <class Forest,
           class P,
           class U = decltype(std::declval<P>()(typename Forest::value_type()))>
 auto transcribe(const Forest& f, P&& proj) {
-    typename Forest::template rebind<U>::type result;
+    stlab::forest<U> result;
     forests::transform(std::cbegin(f), std::cend(f), forests::inserter(result),
                        std::forward<P>(proj), [](const auto& p) { return is_leading(p); });
     return result;
