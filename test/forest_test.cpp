@@ -445,10 +445,12 @@ BOOST_AUTO_TEST_CASE(test_equal_shape) {
 
 BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
     auto f1{big_test_forest()};
-    auto f2{forests::transcribe(f1, [](const std::string& x){
+    stlab::forest<std::size_t> f2;
+
+    forests::transcribe(f1, forests::inserter(f2), [](const std::string& x){
         assert(!x.empty());
         return static_cast<std::size_t>(x.front());
-    })};
+    });
 
     BOOST_CHECK(forests::equal_shape(f1, f2));
     BOOST_CHECK(to_string(f2) == "65666770707171727267687373747475756869696665");

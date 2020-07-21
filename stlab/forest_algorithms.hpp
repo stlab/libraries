@@ -78,7 +78,7 @@ auto inserter(Container& c) {
 /**************************************************************************************************/
 
 template <class I, class O, class P, class UP>
-auto transform(I first, I last, O out, P proj, UP pred) {
+auto transcribe(I first, I last, O out, P proj, UP pred) {
     for (; first != last; ++first, ++out) {
         if (pred(first)) {
             out = proj(*first);
@@ -89,16 +89,21 @@ auto transform(I first, I last, O out, P proj, UP pred) {
     return out;
 }
 
-/**************************************************************************************************/
+template <class R, class O, class P, class UP>
+auto transcribe(const R& range, O out, P proj, UP pred) {
+    return transcribe(std::cbegin(range), std::cend(range), std::move(out), std::move(proj),
+                      std::move(pred));
+}
 
-template <class Forest,
-          class P,
-          class U = decltype(std::declval<P>()(typename Forest::value_type()))>
-auto transcribe(const Forest& f, P&& proj) {
-    stlab::forest<U> result;
-    forests::transform(std::cbegin(f), std::cend(f), forests::inserter(result),
-                       std::forward<P>(proj), [](const auto& p) { return is_leading(p); });
-    return result;
+template <class I, class O, class P>
+auto transcribe(I first, I last, O out, P proj) {
+    return transcribe(std::move(first), std::move(last), std::move(out), std::move(proj),
+                      [](const auto& p) { return is_leading(p); });
+}
+
+template <class R, class O, class P>
+auto transcribe(const R& range, O out, P proj) {
+    return transcribe(std::cbegin(range), std::cend(range), std::move(out), std::move(proj));
 }
 
 /**************************************************************************************************/
@@ -121,7 +126,7 @@ auto flatten(I first, I last, O out) {
 template <class I, // I models ForwardIterator; I::value_type == stlab::optional<T>
           class F> // F models Forest
 auto unflatten(I first, I last, F& f) {
-    return forests::transform(
+    return forests::transcribe(
         first, last, forests::inserter(f), [](const auto& x) { return *x; },
         [](const auto& p) { return *p; });
 }
