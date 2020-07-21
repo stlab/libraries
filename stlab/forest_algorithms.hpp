@@ -32,7 +32,7 @@ bool equal_shape(const Forest1& x, const Forest2& y) {
 /**************************************************************************************************/
 
 template <class Container>
-struct insert_iterator {
+struct transcribe_iterator {
     using iterator_category = std::output_iterator_tag;
     using value_type = void;
     using difference_type = void;
@@ -40,7 +40,7 @@ struct insert_iterator {
     using reference = void;
     using container_type = Container;
 
-    insert_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
+    transcribe_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
 
     constexpr auto& operator*() { return *this; }
     constexpr auto& operator++() {
@@ -53,12 +53,12 @@ struct insert_iterator {
         return result;
     }
 
-    constexpr insert_iterator<Container>& operator=(const typename Container::value_type& value) {
+    constexpr auto& operator=(const typename Container::value_type& value) {
         _i = _c->insert(_i, value);
         return *this;
     }
 
-    constexpr insert_iterator<Container>& operator=(typename Container::value_type&& value) {
+    constexpr auto& operator=(typename Container::value_type&& value) {
         _i = _c->insert(_i, std::move(value));
         return *this;
     }
@@ -71,8 +71,8 @@ private:
 };
 
 template <class Container>
-auto inserter(Container& c) {
-    return forests::insert_iterator(c, c.begin());
+auto transcriber(Container& c) {
+    return transcribe_iterator(c, c.begin());
 }
 
 /**************************************************************************************************/
@@ -127,7 +127,7 @@ template <class I, // I models ForwardIterator; I::value_type == stlab::optional
           class F> // F models Forest
 auto unflatten(I first, I last, F& f) {
     return forests::transcribe(
-        first, last, forests::inserter(f), [](const auto& x) { return *x; },
+        first, last, transcriber(f), [](const auto& x) { return *x; },
         [](const auto& p) { return *p; });
 }
 

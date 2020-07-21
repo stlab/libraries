@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
     auto f1{big_test_forest()};
     stlab::forest<std::size_t> f2;
 
-    forests::transcribe(f1, forests::inserter(f2), [](const std::string& x){
+    forests::transcribe(f1, forests::transcriber(f2), [](const std::string& x){
         assert(!x.empty());
         return static_cast<std::size_t>(x.front());
     });
