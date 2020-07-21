@@ -31,7 +31,7 @@ bool equal_shape(const Forest1& x, const Forest2& y) {
 
 /**************************************************************************************************/
 
-template<class Container>
+template <class Container>
 struct insert_iterator {
     using iterator_category = std::output_iterator_tag;
     using value_type = void;
@@ -43,8 +43,15 @@ struct insert_iterator {
     insert_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
 
     constexpr auto& operator*() { return *this; }
-    constexpr auto& operator++() { ++_i; return *this; }
-    constexpr auto operator++(int) { auto result{*this}; ++_i; return result; }
+    constexpr auto& operator++() {
+        ++_i;
+        return *this;
+    }
+    constexpr auto operator++(int) {
+        auto result{*this};
+        ++_i;
+        return result;
+    }
 
     constexpr insert_iterator<Container>& operator=(const typename Container::value_type& value) {
         _i = _c->insert(_i, value);
@@ -63,7 +70,7 @@ private:
     typename Container::iterator _i;
 };
 
-template<class Container>
+template <class Container>
 auto inserter(Container& c) {
     return forests::insert_iterator(c, c.begin());
 }
@@ -89,8 +96,8 @@ template <class Forest,
           class U = decltype(std::declval<P>()(typename Forest::value_type()))>
 auto transcribe(const Forest& f, P&& proj) {
     typename Forest::template rebind<U>::type result;
-    forests::transform(std::cbegin(f), std::cend(f), forests::inserter(result), std::forward<P>(proj),
-                       [](const auto& p) { return is_leading(p); });
+    forests::transform(std::cbegin(f), std::cend(f), forests::inserter(result),
+                       std::forward<P>(proj), [](const auto& p) { return is_leading(p); });
     return result;
 }
 
@@ -115,7 +122,8 @@ template <class I, // I models ForwardIterator; I::value_type == stlab::optional
           class F> // F models Forest
 auto unflatten(I first, I last, F& f) {
     return forests::transform(
-        first, last, forests::inserter(f), [](const auto& x) { return *x; }, [](const auto& p) { return *p; });
+        first, last, forests::inserter(f), [](const auto& x) { return *x; },
+        [](const auto& p) { return *p; });
 }
 
 /**************************************************************************************************/
