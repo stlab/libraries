@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(test_flatten) {
 
     decltype(f1) f2;
 
-    forests::unflatten(flat.begin(), flat.end(), forests::make_inserter(f2));
+    forests::unflatten(flat.begin(), flat.end(), f2);
 
     BOOST_CHECK(f1 == f2);
 }

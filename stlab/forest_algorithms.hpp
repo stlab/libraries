@@ -31,45 +31,50 @@ bool equal_shape(const Forest1& x, const Forest2& y) {
 
 /**************************************************************************************************/
 
-template <class Forest>
+template<class Container>
 struct insert_iterator {
-    using value_type = typename Forest::value_type;
-    using iterator_type = typename Forest::iterator;
+    using iterator_category = std::output_iterator_tag;
+    using value_type = void;
+    using difference_type = void;
+    using pointer = void;
+    using reference = void;
+    using container_type = Container;
 
-    explicit insert_iterator(Forest& f) : _f{f}, _p{_f.root()} {}
+    insert_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
 
-    auto& operator*() { return *this; }
+    constexpr auto& operator*() { return *this; }
+    constexpr auto& operator++() { ++_i; return *this; }
+    constexpr auto operator++(int) { auto result{*this}; ++_i; return result; }
 
-    auto& operator++() {
-        ++_p;
+    constexpr insert_iterator<Container>& operator=(const typename Container::value_type& value) {
+        _i = _c->insert(_i, value);
         return *this;
     }
 
-    auto& operator=(value_type&& x) {
-        _p = _f.insert(_p, std::forward<value_type>(x));
+    constexpr insert_iterator<Container>& operator=(typename Container::value_type&& value) {
+        _i = _c->insert(_i, std::move(value));
         return *this;
     }
 
-    void trailing() { _p = trailing_of(_p); }
+    constexpr auto trailing() { _i = trailing_of(_i); }
 
 private:
-    Forest& _f;
-    iterator_type _p;
+    Container* _c;
+    typename Container::iterator _i;
 };
 
-template <class Forest>
-auto make_inserter(Forest& f) {
-    return insert_iterator(f);
+template<class Container>
+auto inserter(Container& c) {
+    return forests::insert_iterator(c, c.begin());
 }
 
 /**************************************************************************************************/
 
 template <class I, class O, class P, class UP>
 auto transform(I first, I last, O out, P proj, UP pred) {
-    for (; first != last; ++first) {
-        ++out;
+    for (; first != last; ++first, ++out) {
         if (pred(first)) {
-            *out = proj(*first);
+            out = proj(*first);
         } else {
             out.trailing();
         }
@@ -84,7 +89,7 @@ template <class Forest,
           class U = decltype(std::declval<P>()(typename Forest::value_type()))>
 auto transcribe(const Forest& f, P&& proj) {
     typename Forest::template rebind<U>::type result;
-    forests::transform(std::cbegin(f), std::cend(f), make_inserter(result), std::forward<P>(proj),
+    forests::transform(std::cbegin(f), std::cend(f), forests::inserter(result), std::forward<P>(proj),
                        [](const auto& p) { return is_leading(p); });
     return result;
 }
@@ -107,10 +112,10 @@ auto flatten(I first, I last, O out) {
 /**************************************************************************************************/
 
 template <class I, // I models ForwardIterator; I::value_type == stlab::optional<T>
-          class O> // O models ForestOutputIterator
-auto unflatten(I first, I last, O out) {
+          class F> // F models Forest
+auto unflatten(I first, I last, F& f) {
     return forests::transform(
-        first, last, out, [](const auto& x) { return *x; }, [](const auto& p) { return *p; });
+        first, last, forests::inserter(f), [](const auto& x) { return *x; }, [](const auto& p) { return *p; });
 }
 
 /**************************************************************************************************/
