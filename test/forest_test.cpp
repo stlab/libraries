@@ -8,10 +8,46 @@
 
 // stlab
 #include <stlab/forest.hpp>
+#include <stlab/forest_algorithms.hpp>
 
 /**************************************************************************************************/
 
 using namespace stlab;
+
+/**************************************************************************************************/
+
+namespace {
+
+/**************************************************************************************************/
+
+template <typename T>
+void print(const forest<T>& f) {
+    auto first{f.begin()};
+    auto last{f.end()};
+    std::size_t depth{0};
+
+    while (first != last) {
+        if (is_trailing(first)) {
+            --depth;
+        }
+
+        for (std::size_t i{0}; i < depth; ++i) std::cout << "    ";
+
+        if (is_leading(first)) {
+            std::cout << "<";
+            ++depth;
+        } else {
+            std::cout << "</";
+        }
+
+        std::cout << *first << ">\n";
+        ++first;
+    }
+}
+
+/**************************************************************************************************/
+
+} // namespace
 
 /**************************************************************************************************/
 
@@ -78,17 +114,42 @@ auto big_test_forest() {
 
 /**************************************************************************************************/
 
+namespace detail {
+
+/**************************************************************************************************/
+
+template <typename T>
+auto to_string(const T& x) {
+    return std::to_string(x);
+}
+
+template <>
+auto to_string(const std::string& x) {
+    return x;
+}
+
+template <>
+auto to_string(const std::optional<std::string>& x) {
+    return x ? to_string(*x) : "?";
+}
+
+/**************************************************************************************************/
+
+} // namespace detail
+
+/**************************************************************************************************/
+
 template <typename R>
-inline auto to_string(const R& r) {
+auto to_string(const R& r) {
     std::string result;
     for (const auto& x : r) {
-        result += x;
+        result += detail::to_string(x);
     }
     return result;
 }
 
 template <typename I>
-inline auto to_string(I first, I last) {
+auto to_string(I first, I last) {
     std::string result;
     while (first != last) {
         result += *first++;
@@ -363,6 +424,53 @@ BOOST_AUTO_TEST_CASE(swap) {
 
     BOOST_CHECK(f1.size() == f1_sz);
     BOOST_CHECK(f2.size() == f2_sz);
+}
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_equal_shape) {
+    auto f1{big_test_forest()};
+    auto f2{f1};
+    
+    for (auto& x : preorder_range(f2)) {
+        x = "X";
+    }
+
+    BOOST_CHECK(f1 != f2);
+    BOOST_CHECK(forests::equal_shape(f1, f2));
+    BOOST_CHECK(to_string(f2) == "XXXXXXXXXXXXXXXXXXXXXX");
+}
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
+    auto f1{big_test_forest()};
+    stlab::forest<std::size_t> f2;
+
+    forests::transcribe(f1, forests::transcriber(f2), [](const std::string& x){
+        assert(!x.empty());
+        return static_cast<std::size_t>(x.front());
+    });
+
+    BOOST_CHECK(forests::equal_shape(f1, f2));
+    BOOST_CHECK(to_string(f2) == "65666770707171727267687373747475756869696665");
+}
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_flatten) {
+    auto f1{big_test_forest()};
+    std::vector<std::optional<std::string>> flat;
+
+    forests::flatten(f1.begin(), f1.end(), std::back_inserter(flat));
+
+    BOOST_CHECK(to_string(flat) == "ABCF?G?H??DI?J?K??E???");
+
+    decltype(f1) f2;
+
+    forests::unflatten(flat.begin(), flat.end(), f2);
+
+    BOOST_CHECK(f1 == f2);
 }
 
 /**************************************************************************************************/
