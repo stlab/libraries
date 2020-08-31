@@ -1129,19 +1129,21 @@ struct when_all_shared {
     Args _args;
     future<void> _holds[std::tuple_size<Args>::value]{};
     std::atomic_size_t _remaining{std::tuple_size<Args>::value};
-    std::atomic_flag _error_happened = ATOMIC_FLAG_INIT;
+    std::atomic_int _error_happened = 0;
     std::exception_ptr _exception;
     packaged_task<> _f;
 
     template <std::size_t index, typename FF>
     void done(FF&& f) {
-        assign_ready_future<FF>::assign(std::get<index>(_args), std::forward<FF>(f));
-        if (--_remaining == 0) _f();
+        if (!_error_happened) {
+            assign_ready_future<FF>::assign(std::get<index>(_args), std::forward<FF>(f));
+            if (--_remaining == 0) _f();
+        }
     }
 
     void failure(std::exception_ptr error) {
-        auto before = _error_happened.test_and_set();
-        if (before == false) {
+        auto before = _error_happened.fetch_or(1);
+        if (!before) {
             for (auto& h : _holds)
                 h.reset();
             _exception = std::move(error);
@@ -1157,13 +1159,13 @@ struct when_any_shared {
     stlab::optional<R> _arg;
     future<void> _holds[S]{};
     std::atomic_size_t _remaining{S};
-    std::atomic_flag _value_received = ATOMIC_FLAG_INIT;
+    std::atomic_int _value_received = 0;
     std::exception_ptr _exception;
     size_t _index;
     packaged_task<> _f;
 
     void failure(std::exception_ptr error) {
-        if (--_remaining == 0) {
+        if (--_remaining == 0 && !_value_received) {
             _exception = std::move(error);
             _f();
         }
@@ -1171,8 +1173,8 @@ struct when_any_shared {
 
     template <size_t index, typename FF>
     void done(FF&& f) {
-        auto before = _value_received.test_and_set();
-        if (before == false) {
+        auto before = _value_received.fetch_or(1);
+        if (!before) {
             _arg = std::move(*std::forward<FF>(f).get_try());
             _index = index;
             _f();
@@ -1191,13 +1193,13 @@ struct when_any_shared<S, void> {
     // decay
     future<void> _holds[S]{};
     std::atomic_size_t _remaining{S};
-    std::atomic_flag _value_received = ATOMIC_FLAG_INIT;
+    std::atomic_int _value_received = 0;
     std::exception_ptr _exception;
     size_t _index;
     packaged_task<> _f;
 
     void failure(std::exception_ptr error) {
-        if (--_remaining == 0) {
+        if (--_remaining == 0 && !_value_received) {
             _exception = std::move(error);
             _f();
         }
@@ -1205,8 +1207,8 @@ struct when_any_shared<S, void> {
 
     template <size_t index, typename FF>
     void done(FF&&) {
-        auto before = _value_received.test_and_set();
-        if (before == false) {
+        auto before = _value_received.fetch_or(1);
+        if (!before) {
             _index = index;
             _f();
         }
