@@ -1452,7 +1452,7 @@ struct context_result<F, Indexed, void> {
 struct single_trigger {
     template <typename C, typename F>
     static void go(C& context, F&& f, size_t index) {
-        auto before = context._single_event_trigger.test_and_set();
+        auto before = context._single_event_trigger.fetch_or(1);
         if (!before) {
             {
                 std::unique_lock guard(context._hold_guard);
@@ -1475,13 +1475,15 @@ struct single_trigger {
 struct all_trigger {
     template <typename C, typename F>
     static void go(C& context, F&& f, size_t index) {
-        context.apply(std::forward<F>(f), index);
-        if (--context._remaining == 0) context._f();
+        if (!context._single_event_trigger) {
+            context.apply(std::forward<F>(f), index);
+            if (--context._remaining == 0) context._f();
+        }
     }
 
     template <typename C>
     static void go(C& context, std::exception_ptr error, size_t index) {
-        if (--context._remaining == 0) {
+        if (--context._remaining == 0 && !context._single_event_trigger) {
             context.apply(std::move(error), index);
             context._f();
         }
@@ -1491,7 +1493,7 @@ struct all_trigger {
 template <typename CR, typename F, typename ResultCollector, typename FailureCollector>
 struct common_context : CR {
     std::atomic_size_t _remaining;
-    std::atomic_flag _single_event_trigger = ATOMIC_FLAG_INIT;
+    std::atomic_int _single_event_trigger = 0;
     std::mutex _hold_guard;
     std::vector<future<void>> _holds;
     packaged_task<> _f;

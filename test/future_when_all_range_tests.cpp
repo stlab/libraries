@@ -11,6 +11,7 @@
 
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/utility.hpp>
 #include <stlab/test/model.hpp>
 
@@ -71,6 +72,37 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
     BOOST_REQUIRE_EQUAL(size_t(42), r);
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
+}
+
+BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_all_delayed) {
+    using namespace std::chrono_literals;
+
+    stlab::serial_queue_t seriel_queue_1 {stlab::default_executor};
+    stlab::serial_queue_t seriel_queue_2 {stlab::default_executor};
+    stlab::serial_queue_t seriel_queue_3 {stlab::default_executor};
+
+    std::vector<stlab::future<void>> test_futures;
+    test_futures.emplace_back(
+        stlab::async(seriel_queue_1.executor(), []{
+            std::this_thread::sleep_for(0.1s);})
+    );
+
+    test_futures.emplace_back(
+        stlab::async(seriel_queue_2.executor(), []{
+            std::this_thread::sleep_for(0.1s);})
+    );
+
+    test_futures.emplace_back(
+        stlab::async(seriel_queue_3.executor(), []{
+            std::this_thread::sleep_for(0.1s);})
+    );
+    bool done{false};
+    auto done_future = stlab::when_all(stlab::default_executor, [&done] { done = true;},
+        std::make_pair(test_futures.begin(), test_futures.end()));
+
+    stlab::blocking_get(done_future);
+
+    BOOST_REQUIRE(done);
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
