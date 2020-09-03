@@ -1430,7 +1430,7 @@ struct context_result {
 
     R _results;
     std::exception_ptr _exception;
-    std::size_t _index = std::numeric_limits<std::size_t>::max();
+    std::size_t _index{0};
     F _f;
 
     context_result(F f, std::size_t s) : _f(std::move(f)) { init(_results, s); }
@@ -1456,7 +1456,7 @@ struct context_result {
 template <typename F, bool Indexed>
 struct context_result<F, Indexed, void> {
     std::exception_ptr _exception;
-    std::size_t _index = std::numeric_limits<std::size_t>::max();
+    std::size_t _index{0};
     F _f;
 
     context_result(F f, std::size_t) : _f(std::move(f)) {}
@@ -1485,10 +1485,11 @@ struct single_trigger {
         auto run{ false };
         {
             std::unique_lock lock{ context._guard };
-            if (context._index == std::numeric_limits<std::size_t>::max()) {
+            if (!context._single_event) {
                 for (auto i = 0u; i < context._holds.size(); ++i) {
                     if (i != index) context._holds[i].reset();
                 }
+                context._single_event = true;
                 context.apply(std::forward<F>(f), index);
                 run = true;
             }
@@ -1533,6 +1534,7 @@ template <typename CR, typename F, typename ResultCollector, typename FailureCol
 struct common_context : CR {
     std::mutex _guard;
     std::size_t _remaining;
+    bool _single_event{false};
     std::vector<future<void>> _holds;
     packaged_task<> _f;
 
