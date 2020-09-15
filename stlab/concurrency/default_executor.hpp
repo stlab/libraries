@@ -231,9 +231,10 @@ private:
     template <typename F>
     static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
                                        PVOID parameter,
-                                       PTP_WORK /*Work*/) {
+                                       PTP_WORK work) {
         std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
+        CloseThreadpoolWork(work);
     }
 };
 
