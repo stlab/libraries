@@ -488,7 +488,7 @@ rewraps the polymorphic concept in the appropriate regular layer $$ P_r -> R_r $
 [DRJ05] Dos Reis, Gabriel; J&auml;rvi, Jaako: [What is Generic Programming?](https://pdfs.semanticscholar.org/e730/3991015a041e50c7bdabbe4cb4678531e35b.pdf) LCSD'05.
 
 [GJS+06] Gregor, Douglas; J&auml;rvi, Jaako; Siek, Jeremy; Stroustrup, Bjarne; Dos Reis, Gabriel; Lumsdaine, Andrew: [Concepts: linguistic support for generic programming in C++
-](http://dl.acm.org/citation.cfm?id=1167499). OOPSLA'06.
+](https://dl.acm.org/doi/10.1145/1167515.1167499). OOPSLA'06.
 
 [MS88] Musser, David R.; Stepanov, Alexander A.: [Generic Programming.](http://stepanovpapers.com/genprog.pdf) ISSAC '88.
 
