@@ -20,6 +20,7 @@
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/optional.hpp>
+#include <stlab/memory.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
@@ -130,12 +131,12 @@ struct result_of_when_all_t;
 
 template <typename F>
 struct result_of_when_all_t<F, void> {
-    using result_type = typename std::result_of<F()>::type;
+    using result_type = std::invoke_result_t<F>;
 };
 
 template <typename F, typename T>
 struct result_of_when_all_t {
-    using result_type = typename std::result_of<F(const std::vector<T>&)>::type;
+    using result_type = std::invoke_result_t<F, const std::vector<T>&>;
 };
 
 template <typename F, typename T>
@@ -143,12 +144,12 @@ struct result_of_when_any_t;
 
 template <typename F>
 struct result_of_when_any_t<F, void> {
-    using result_type = typename std::result_of<F(size_t)>::type;
+    using result_type = std::invoke_result_t<F, size_t>;
 };
 
 template <typename F, typename R>
 struct result_of_when_any_t {
-    using result_type = typename std::result_of<F(R, size_t)>::type;
+    using result_type = std::invoke_result_t<F, R, size_t>;
 };
 
 template <typename T>
@@ -291,7 +292,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename E, typename F>
     auto recover(E executor, F&& f) {
-        auto p = package<std::result_of_t<F(future<T>)>()>(
+        auto p = package<std::invoke_result_t<F, future<T>>()>(
             executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
                 return std::move(_f)(std::move(_p));
             });
@@ -328,7 +329,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     auto recover_r(bool unique, E&& executor, F&& f) {
         if (!unique) return recover(std::forward<E>(executor), std::forward<F>(f));
 
-        auto p = package<std::result_of_t<F(future<T>)>()>(
+        auto p = package<std::invoke_result_t<F, future<T>>()>(
             executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
                 return _f(std::move(_p));
             });
@@ -452,7 +453,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename E, typename F>
     auto recover_r(bool, E executor, F&& f) {
         // rvalue case unique is assumed.
-        auto p = package<std::result_of_t<F(future<T>)>()>(
+        auto p = package<std::invoke_result_t<F, future<T>>()>(
             executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() {
                 return _f(std::move(_p));
             });
@@ -555,7 +556,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     }
 
     template <typename E, typename F>
-    auto recover(E&& executor, F&& f) -> future<reduced_t<std::result_of_t<F(future<void>)>>>;
+    auto recover(E&& executor, F&& f) -> future<reduced_t<std::invoke_result_t<F, future<void>>>>;
 
     template <typename F>
     auto recover_r(bool, F&& f) {
@@ -1126,26 +1127,37 @@ template <typename F, typename Args>
 struct when_all_shared {
     // decay
     Args _args;
+    std::mutex _guard;
     future<void> _holds[std::tuple_size<Args>::value]{};
-    std::atomic_size_t _remaining{std::tuple_size<Args>::value};
-    std::atomic_flag _error_happened = ATOMIC_FLAG_INIT;
+    std::size_t _remaining{std::tuple_size<Args>::value};
     std::exception_ptr _exception;
     packaged_task<> _f;
 
     template <std::size_t index, typename FF>
     void done(FF&& f) {
-        assign_ready_future<FF>::assign(std::get<index>(_args), std::forward<FF>(f));
-        if (--_remaining == 0) _f();
+        auto run{ false };
+        {
+            std::unique_lock lock{ _guard };
+            if (!_exception) {
+                assign_ready_future<FF>::assign(std::get<index>(_args), std::forward<FF>(f));
+                if (--_remaining == 0) run = true;
+            }
+        }
+        if (run) _f();
     }
 
     void failure(std::exception_ptr error) {
-        auto before = _error_happened.test_and_set();
-        if (before == false) {
-            for (auto& h : _holds)
-                h.reset();
-            _exception = std::move(error);
-            _f();
+        auto run{ false };
+        {
+            std::unique_lock lock{ _guard };
+            if (!_exception) {
+                for (auto& h : _holds)
+                    h.reset();
+                _exception = std::move(error);
+                run = true;
+            }
         }
+        if (run) _f();
     }
 };
 
@@ -1154,28 +1166,37 @@ struct when_any_shared {
     using result_type = R;
     // decay
     stlab::optional<R> _arg;
+    std::mutex _guard;
     future<void> _holds[S]{};
-    std::atomic_size_t _remaining{S};
-    std::atomic_flag _value_received = ATOMIC_FLAG_INIT;
+    std::size_t _remaining{S};
     std::exception_ptr _exception;
-    size_t _index;
+    std::size_t _index = std::numeric_limits<std::size_t>::max();
     packaged_task<> _f;
 
     void failure(std::exception_ptr error) {
-        if (--_remaining == 0) {
-            _exception = std::move(error);
-            _f();
+        auto run{ false };
+        {
+            std::unique_lock lock{ _guard };
+            if (--_remaining == 0) {
+                _exception = std::move(error);
+                run = true;
+            }
         }
+        if (run) _f();
     }
 
     template <size_t index, typename FF>
     void done(FF&& f) {
-        auto before = _value_received.test_and_set();
-        if (before == false) {
-            _arg = std::move(*std::forward<FF>(f).get_try());
-            _index = index;
-            _f();
+        auto run{ false };
+        {
+            std::unique_lock lock{ _guard };
+            if (_index == std::numeric_limits<std::size_t>::max()) {
+                _arg = std::move(*std::forward<FF>(f).get_try());
+                _index = index;
+                run = true;
+            }
         }
+        if (run) _f();
     }
 
     template <typename F>
@@ -1188,27 +1209,36 @@ template <size_t S>
 struct when_any_shared<S, void> {
     using result_type = void;
     // decay
+    std::mutex _guard;
     future<void> _holds[S]{};
-    std::atomic_size_t _remaining{S};
-    std::atomic_flag _value_received = ATOMIC_FLAG_INIT;
+    std::size_t _remaining{S};
     std::exception_ptr _exception;
-    size_t _index;
+    std::size_t _index = std::numeric_limits<std::size_t>::max();
     packaged_task<> _f;
 
     void failure(std::exception_ptr error) {
-        if (--_remaining == 0) {
-            _exception = std::move(error);
-            _f();
+        auto run{ false };
+        std::unique_lock lock{ _guard };
+        {
+            if (--_remaining == 0) {
+                _exception = std::move(error);
+                run = true;
+            }
         }
+        if (run) _f();
     }
 
     template <size_t index, typename FF>
     void done(FF&&) {
-        auto before = _value_received.test_and_set();
-        if (before == false) {
-            _index = index;
-            _f();
+        auto run{ false };
+        {
+            std::unique_lock lock{ _guard };
+            if (_index == std::numeric_limits<std::size_t>::max()) {
+                _index = index;
+                run = true;
+            }
         }
+        if (run) _f();
     }
 
     template <typename F>
@@ -1247,6 +1277,7 @@ auto apply_when_any_arg(F& f, P& p) {
 
 template <std::size_t i, typename E, typename P, typename T>
 void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
+    std::unique_lock lock{ p->_guard };
     p->_holds[i] = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
         auto p = _w.lock();
         if (!p) return;
@@ -1296,7 +1327,7 @@ template <typename T>
 struct make_when_any {
     template <typename E, typename F, typename... Ts>
     static auto make(E executor, F f, future<T> arg, future<Ts>... args) {
-        using result_t = typename std::result_of<F(T, size_t)>::type;
+        using result_t = std::invoke_result_t<F, T, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
         auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared] {
@@ -1316,7 +1347,7 @@ template <>
 struct make_when_any<void> {
     template <typename E, typename F, typename... Ts>
     static auto make(E executor, F&& f, future<Ts>... args) {
-        using result_t = typename std::result_of<F(size_t)>::type;
+        using result_t = std::invoke_result_t<F, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
         auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared] {
@@ -1344,21 +1375,21 @@ namespace detail {
 template <typename T>
 struct value_storer {
     template <typename C, typename F>
-    static void store(C& c, F&& f, size_t index) {
-        c._results = std::move(*std::forward<F>(f).get_try());
-        c._index = index;
+    static void store(C& context, F&& f, std::size_t index) {
+        context._results = std::move(*std::forward<F>(f).get_try());
+        context._index = index;
     }
 };
 
 template <typename T>
 struct value_storer<std::vector<T>> {
     template <typename C, typename F>
-    static void store(C& c, F&& f, size_t index) {
-        c._results[index] = std::move(*std::forward<F>(f).get_try());
+    static void store(C& context, F&& f, std::size_t index) {
+        context._results[index] = std::move(*std::forward<F>(f).get_try());
     }
 };
 
-template <bool Indxed, typename R>
+template <bool Indexed, typename R>
 struct result_creator;
 
 template <>
@@ -1399,25 +1430,25 @@ struct context_result {
 
     R _results;
     std::exception_ptr _exception;
-    size_t _index;
+    std::size_t _index{0};
     F _f;
 
-    context_result(F f, size_t s) : _index(0), _f(std::move(f)) { init(_results, s); }
+    context_result(F f, std::size_t s) : _f(std::move(f)) { init(_results, s); }
 
     template <typename T>
-    void init(std::vector<T>& v, size_t s) {
+    void init(std::vector<T>& v, std::size_t s) {
         v.resize(s);
     }
 
     template <typename T>
-    void init(T&, size_t) {}
+    void init(T&, std::size_t) {}
 
     template <typename FF>
-    void apply(FF&& f, size_t index) {
+    void apply(FF&& f, std::size_t index) {
         value_storer<R>::store(*this, std::forward<FF>(f), index);
     }
 
-    void apply(std::exception_ptr error, size_t) { _exception = std::move(error); }
+    void apply(std::exception_ptr error, std::size_t) { _exception = std::move(error); }
 
     auto operator()() { return result_creator<Indexed, R>::go(*this); }
 };
@@ -1425,17 +1456,17 @@ struct context_result {
 template <typename F, bool Indexed>
 struct context_result<F, Indexed, void> {
     std::exception_ptr _exception;
-    size_t _index;
+    std::size_t _index{0};
     F _f;
 
-    context_result(F f, size_t) : _f(std::move(f)) {}
+    context_result(F f, std::size_t) : _f(std::move(f)) {}
 
     template <typename FF>
-    void apply(FF&&, size_t index) {
+    void apply(FF&&, std::size_t index) {
         _index = index;
     }
 
-    void apply(std::exception_ptr error, size_t) { _exception = std::move(error); }
+    void apply(std::exception_ptr error, std::size_t) { _exception = std::move(error); }
 
     auto operator()() { return result_creator<Indexed, void>::go(*this); }
 };
@@ -1444,20 +1475,26 @@ struct context_result<F, Indexed, void> {
 
 /*
  * This specialization is used for cases when only one ready future is enough to move forward.
- * In case of when_any, the first successfull future triggers the continuation. All others are
- * cancelled. In case of when_all, after the first error, this future cannot be fullfilled anymore
+ * In case of when_any, the first successful future triggers the continuation. All others are
+ * cancelled. In case of when_all, after the first error, this future cannot be fulfilled anymore
  * and so we cancel the all the others.
  */
 struct single_trigger {
     template <typename C, typename F>
-    static void go(C& context, F&& f, size_t index) {
-        auto before = context._single_event_trigger.test_and_set();
-        if (!before) {
-            for (auto& h : context._holds)
-                h.reset();
-            context.apply(std::forward<F>(f), index);
-            context._f();
+    static bool go(C& context, F&& f, size_t index) {
+        auto run{ false };
+        {
+            std::unique_lock lock{ context._guard };
+            if (!context._single_event) {
+                for (auto i = 0u; i < context._holds.size(); ++i) {
+                    if (i != index) context._holds[i].reset();
+                }
+                context._single_event = true;
+                context.apply(std::forward<F>(f), index);
+                run = true;
+            }
         }
+        return run;
     }
 };
 
@@ -1469,24 +1506,35 @@ struct single_trigger {
  */
 struct all_trigger {
     template <typename C, typename F>
-    static void go(C& context, F&& f, size_t index) {
-        context.apply(std::forward<F>(f), index);
-        if (--context._remaining == 0) context._f();
+    static bool go(C& context, F&& f, size_t index) {
+        auto run{ false };
+        {
+            std::unique_lock lock{ context._guard };
+            context.apply(std::forward<F>(f), index);
+            if (--context._remaining == 0) run = true;
+        }
+        return run;
     }
 
     template <typename C>
-    static void go(C& context, std::exception_ptr error, size_t index) {
-        if (--context._remaining == 0) {
-            context.apply(std::move(error), index);
-            context._f();
+    static bool go(C& context, std::exception_ptr error, size_t index) {
+        auto run{ false };
+        {
+            std::unique_lock lock{ context._guard };
+            if (--context._remaining == 0) {
+                context.apply(std::move(error), index);
+                run = true;
+            }
         }
+        return run;
     }
 };
 
 template <typename CR, typename F, typename ResultCollector, typename FailureCollector>
 struct common_context : CR {
-    std::atomic_size_t _remaining;
-    std::atomic_flag _single_event_trigger = ATOMIC_FLAG_INIT;
+    std::mutex _guard;
+    std::size_t _remaining;
+    bool _single_event{false};
     std::vector<future<void>> _holds;
     packaged_task<> _f;
 
@@ -1500,12 +1548,12 @@ struct common_context : CR {
     }
 
     void failure(std::exception_ptr& error, size_t index) {
-        FailureCollector::go(*this, error, index);
+        if (FailureCollector::go(*this, error, index)) _f();
     }
 
     template <typename FF>
     void done(FF&& f, size_t index) {
-        ResultCollector::go(*this, std::forward<FF>(f), index);
+        if (ResultCollector::go(*this, std::forward<FF>(f), index)) _f();
     }
 };
 
@@ -1513,8 +1561,9 @@ struct common_context : CR {
 
 template <typename C, typename E, typename T>
 void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
+    std::unique_lock guard(context->_guard);
     context->_holds[index] =
-        std::move(a).recover(std::move(executor), [_context = std::weak_ptr<C>(context), _i = index](auto x) {
+        std::move(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception(); ex) {
@@ -1627,8 +1676,8 @@ auto when_any(E executor, F&& f, std::pair<I, I> range) {
 
 template <typename E, typename F, typename... Args>
 auto async(E executor, F&& f, Args&&... args)
-    -> future<std::result_of_t<std::decay_t<F>(std::decay_t<Args>...)>> {
-    using result_type = std::result_of_t<std::decay_t<F>(std::decay_t<Args>...)>;
+    -> future<std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>> {
+    using result_type = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto p = package<result_type()>(
         executor, std::bind<result_type>(
@@ -1795,8 +1844,8 @@ void shared_base<void>::set_value(F& f, Args&&... args) {
 
 template <typename E, typename F>
 auto shared_base<void>::recover(E&& executor, F&& f)
-    -> future<reduced_t<std::result_of_t<F(future<void>)>>> {
-    auto p = package<std::result_of_t<F(future<void>)>()>(
+    -> future<reduced_t<std::invoke_result_t<F, future<void>>>> {
+    auto p = package<std::invoke_result_t<F, future<void>>()>(
         executor, [_f = std::forward<F>(f), _p = future<void>(this->shared_from_this())]() mutable {
             return _f(_p);
         });
@@ -1927,7 +1976,7 @@ auto operator co_await(stlab::future<R> f) {
         void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input)
                 .then(stlab::default_executor,
-                      [this, ch](auto&& result) {
+                      [this, ch](auto&& result) mutable {
                           this->_result = std::forward<decltype(result)>(result);
                           ch.resume();
                       })
@@ -1947,7 +1996,7 @@ inline auto operator co_await(stlab::future<void> f) {
 
         inline void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input)
-                .then(stlab::default_executor, [ch]() { ch.resume(); })
+                .then(stlab::default_executor, [ch]() mutable { ch.resume(); })
                 .detach();
         }
     };

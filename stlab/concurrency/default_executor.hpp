@@ -231,15 +231,25 @@ private:
     template <typename F>
     static void CALLBACK callback_impl(PTP_CALLBACK_INSTANCE /*instance*/,
                                        PVOID parameter,
-                                       PTP_WORK /*Work*/) {
+                                       PTP_WORK work) {
         std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
+        CloseThreadpoolWork(work);
     }
 };
 
 /**************************************************************************************************/
 
 #elif STLAB_TASK_SYSTEM(PORTABLE)
+
+inline auto queue_size() {
+#ifdef STLAB_UNIT_TEST
+    // The test cannot run with less than two cores
+    return std::max(2u, std::thread::hardware_concurrency());
+#else
+    return std::thread::hardware_concurrency();
+#endif
+}
 
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
@@ -295,9 +305,9 @@ public:
 class priority_task_system {
     using lock_t = std::unique_lock<std::mutex>;
 
-    const unsigned _count{std::thread::hardware_concurrency()};
+    const unsigned _count{queue_size()};
     // The 64 for spinning over the queues is a value of current experience.
-    const unsigned _spin{std::thread::hardware_concurrency()<64? 64 : std::thread::hardware_concurrency()};
+    const unsigned _spin{queue_size()<64? 64 : queue_size()};
 
     struct thread_context
     {

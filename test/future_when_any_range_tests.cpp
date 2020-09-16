@@ -282,6 +282,26 @@ BOOST_AUTO_TEST_CASE(
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
+BOOST_AUTO_TEST_CASE(future_when_any_void_all_are_ready_at_the_beginning) {
+    BOOST_TEST_MESSAGE("running future when_any void when all futures are ready from the start");
+
+    std::vector<stlab::future<void>> tasks{
+        stlab::make_ready_future(stlab::default_executor),
+        stlab::make_ready_future(stlab::default_executor),
+    };
+
+    bool check{false};
+
+    sut = stlab::when_any(
+        stlab::default_executor, [&check](auto) { check = true; },
+        std::make_pair(std::begin(tasks), std::end(tasks)));
+
+    check_valid_future(sut);
+    wait_until_future_completed(sut);
+    BOOST_REQUIRE(check);
+}
+
+
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_all_fails) {
     BOOST_TEST_MESSAGE("running future when_any int void with range all fails");
     std::atomic_size_t failures{0};

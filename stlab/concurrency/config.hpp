@@ -83,7 +83,7 @@
     #elif __cplusplus == 201703L
         #define STLAB_CPP_VERSION_PRIVATE() 17
     #else
-        #warning Unknown version of C+; assuming C++20.
+        //#warning Unknown version of C+; assuming C++20.
         #define STLAB_CPP_VERSION_PRIVATE() 20
     #endif
 #endif

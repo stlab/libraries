@@ -1,3 +1,12 @@
+## v1.5.3 - 2020 - September 16
+- Fixed issues
+    - [#312](https://github.com/stlab/libraries/issues/312): default_executor implementation for Windows has a memory leak
+    - [#305](https://github.com/stlab/libraries/issues/305) stlab/concurrency/future.hpp won't compile with C++20
+    - [#303](https://github.com/stlab/libraries/issues/) range based stlab::when_any data race
+
+- Enhancement
+    - Adding Forest container and algorithms 
+    
 ## v1.5.2 - 2020 - February 05
 - Fixed issues
     - [#292](https://github.com/stlab/libraries/issues/292): What happened to our mutable lambdas?

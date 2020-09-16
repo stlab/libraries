@@ -12,6 +12,8 @@ if( NOT ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC"
     tuple_algorithm_test.cpp
     main.cpp
     channel_test_helper.hpp )
+
+  target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 endif()
 
 target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
@@ -22,6 +24,8 @@ add_test( NAME stlab.test.channel COMMAND stlab.test.channel )
 add_executable( stlab.test.executor
         executor_test.cpp
         main.cpp)
+
+target_compile_definitions(stlab.test.executor PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
 add_test( NAME stlab.test.executor COMMAND stlab.test.executor )
@@ -44,6 +48,9 @@ add_executable( stlab.test.future
 
 target_sources( stlab.test.future PUBLIC
   $<$<BOOL:$<TARGET_PROPERTY:COROUTINES>>:future_coroutine_tests.cpp> )
+
+target_compile_definitions(stlab.test.future PRIVATE STLAB_UNIT_TEST)
+
 target_link_libraries( stlab.test.future PUBLIC stlab::testing )
 add_test( NAME stlab.test.future COMMAND stlab.test.future )
 
@@ -51,6 +58,8 @@ add_test( NAME stlab.test.future COMMAND stlab.test.future )
 
 add_executable( stlab.test.serial_queue
   serial_queue_test.cpp )
+
+target_compile_definitions(stlab.test.serial_queue PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.serial_queue PUBLIC stlab::testing )
 add_test( NAME stlab.test.serial_queue COMMAND stlab.test.serial_queue )
@@ -61,6 +70,8 @@ add_executable( stlab.test.cow
   cow_test.cpp
   main.cpp )
 
+target_compile_definitions(stlab.test.cow PRIVATE STLAB_UNIT_TEST)
+
 target_link_libraries( stlab.test.cow PUBLIC stlab::testing )
 add_test( NAME stlab.test.cow COMMAND stlab.test.cow )
 
@@ -69,6 +80,8 @@ add_test( NAME stlab.test.cow COMMAND stlab.test.cow )
 add_executable( stlab.test.task
   task_test.cpp
   main.cpp )
+
+target_compile_definitions(stlab.test.task PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.task PUBLIC stlab::testing )
 add_test( NAME stlab.test.task COMMAND stlab.test.task )
@@ -79,6 +92,8 @@ add_executable( stlab.test.tuple
   tuple_test.cpp
   main.cpp )
 
+target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
+
 target_link_libraries( stlab.test.tuple PUBLIC stlab::testing )
 add_test( NAME stlab.test.tuple COMMAND stlab.test.tuple )
 
@@ -88,8 +103,19 @@ add_executable( stlab.test.traits
         traits_test.cpp
         main.cpp )
 
+target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
+
 target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
 add_test( NAME stlab.test.traits COMMAND stlab.test.traits )
+
+################################################################################
+
+add_executable( stlab.test.forest
+        forest_test.cpp
+        main.cpp )
+
+target_link_libraries( stlab.test.forest PUBLIC stlab::testing )
+add_test( NAME stlab.test.forest COMMAND stlab.test.forest )
 
 ################################################################################
 #
