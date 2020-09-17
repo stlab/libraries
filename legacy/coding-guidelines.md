@@ -14,7 +14,7 @@ _This section is for collecting our coding standards and style. This is primaril
 
 ## Introduction
 
-We could write an entire book on coding guidelines but luckily that has already been done. I'd recommend reading [_C++ Coding Standards: 101 Rules, Guidelines, and Best Practices_](https://www.amazon.com/dp/0321113586) by Herb Sutter, Andrei Alexandrescu.
+We could write an entire book on coding guidelines but luckily that has already been done. I'd recommend reading [_C++ Coding Standards: 101 Rules, Guidelines, and Best Practices_](https://www.amazon.com/Coding-Standards-Rules-Guidelines-Practices/dp/0321113586) by Herb Sutter, Andrei Alexandrescu.
 
 I would also recommend the online paper [_C++ Coding Guidelines_](https://xa.yimg.com/df/boost/coding_guidelines.html?token=SbOCPKyzP4V7_D7y8_ItT3nLFvitGq6jwev1XY6bgGQ4xjnBJy7Gi45swQXOscy_DsTtbwBQIhEBc4QCPNuWotlkHuAyUHqbGpJIh6NSy3hTZ01LgQ&type=download) by David Abrahams and Nathan Myers. This document follows a similar format and I will only attempt to document where our guidelines differ or are more refined.
 
