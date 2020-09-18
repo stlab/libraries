@@ -488,7 +488,7 @@ rewraps the polymorphic concept in the appropriate regular layer $$ P_r -> R_r $
 [DRJ05] Dos Reis, Gabriel; J&auml;rvi, Jaako: [What is Generic Programming?](https://pdfs.semanticscholar.org/e730/3991015a041e50c7bdabbe4cb4678531e35b.pdf) LCSD'05.
 
 [GJS+06] Gregor, Douglas; J&auml;rvi, Jaako; Siek, Jeremy; Stroustrup, Bjarne; Dos Reis, Gabriel; Lumsdaine, Andrew: [Concepts: linguistic support for generic programming in C++
-](http://dl.acm.org/citation.cfm?id=1167499). OOPSLA'06.
+](https://dl.acm.org/doi/10.1145/1167515.1167499). OOPSLA'06.
 
 [MS88] Musser, David R.; Stepanov, Alexander A.: [Generic Programming.](http://stepanovpapers.com/genprog.pdf) ISSAC '88.
 
@@ -496,7 +496,7 @@ rewraps the polymorphic concept in the appropriate regular layer $$ P_r -> R_r $
 
 [Str03] Stroustrup, Bjarne: [Concept checking - a more abstract way to type checking](http://www.stroustrup.com/n1510-concept-checking.pdf). C++ Committee, Paper 1510, 2003.
 
-[CSH96] Cleeland, C.; Schmidt, D.; Harrison, T.: [External Polymorphism](https://www.cs.wustl.edu/~schmidt/PDF/External-Polymorphism.pdf) PLoPD '96.
+[CSH96] Cleeland, C.; Schmidt, D.; Harrison, T.: [External Polymorphism](https://www.dre.vanderbilt.edu/~schmidt/PDF/External-Polymorphism.pdf) PLoPD '96.
 
 [DS98] James C. Dehnert and Alexander Stepanov. [Fundamentals of Generic Programming](http://stepanovpapers.com/DeSt98.pdf). In _Report of the Dagstuhl Seminar on Generic Programming_, volume 1766 of Lecture Notes in Computer Science, pages 1–11, Schloss Dagstuhl, Germany, April 1998.
 

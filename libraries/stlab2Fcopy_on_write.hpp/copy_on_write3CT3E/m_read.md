@@ -1,7 +1,7 @@
 ---
 layout: method
 title: read
-owner: sparent
+owner: sean-parent
 brief: Obtain a const reference to the underlying object.
 tags:
   - method

@@ -7,15 +7,15 @@
 
 # Site settings
 title: stlab
-subtitle: modern, modular c++ algorithms and data structures.
+subtitle: modern, modular C++ algorithms and data structures.
 email: sean.parent@stlab.cc
 description: > # this means to ignore newlines until "baseurl:"
-    stlab hosts modern, modular c++ algorithms and data structures.
+    stlab hosts modern, modular C++ algorithms and data structures.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://www.stlab.cc" # the base hostname & protocol for your site
 twitter_username: SeanParent
 github_username:  stlab
-
+remote_theme: adobe/hyde-theme@v1.0.0
 exclude:
     - _source
     - build
@@ -26,6 +26,13 @@ exclude:
     - README.md
     - stlab.bbprojectd/
     - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)
+    - tools/
+    - bs-config.sj
+    - CMakeLists.txt
+    - Gemfile
+    - Gemfile.lock
+adobe_hyde:
+    header_image: stlab-logo-long.svg
 
 # Build settings
 markdown: kramdown

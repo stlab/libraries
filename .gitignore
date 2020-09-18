@@ -6,5 +6,4 @@ build/
 stlab/
 boost/
 boost.tgz
-Gemfile.lock
 *.bbprojectsettings

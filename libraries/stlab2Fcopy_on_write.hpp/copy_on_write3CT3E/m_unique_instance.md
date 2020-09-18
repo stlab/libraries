@@ -1,7 +1,7 @@
 ---
 layout: method
 title: unique_instance
-owner: sparent
+owner: sean-parent
 brief: Forwarding routine for `unique`.
 tags:
   - method

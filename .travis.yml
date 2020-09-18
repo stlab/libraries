@@ -26,6 +26,7 @@ addons:
       - g++-7
       - cmake
       - cmake-data
+      - libcurl4-openssl-dev # required to avoid SSL errors
 
 matrix: 
   include:       

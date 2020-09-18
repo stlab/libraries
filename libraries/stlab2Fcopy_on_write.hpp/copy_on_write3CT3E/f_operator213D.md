@@ -1,7 +1,7 @@
 ---
 layout: function
 title: operator!=
-owner: sparent
+owner: sean-parent
 brief: Inequality operator
 tags:
   - function
