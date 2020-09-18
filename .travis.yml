@@ -41,7 +41,7 @@ matrix:
     script: ./build.sh 
 
   - language: ruby
-    rvm: 2.6.0
+    rvm: 2.7.0
     
     install: gem install jekyll html-proofer github-pages
     script: bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
