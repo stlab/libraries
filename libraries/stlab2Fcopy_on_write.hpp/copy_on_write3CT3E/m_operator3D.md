@@ -1,7 +1,7 @@
 ---
 layout: method
 title: operator=
-owner: sparent
+owner: sean-parent
 brief: Assignment operator
 tags:
   - method

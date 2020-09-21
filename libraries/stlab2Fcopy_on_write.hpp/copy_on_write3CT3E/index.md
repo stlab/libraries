@@ -1,7 +1,7 @@
 ---
 layout: class
 title: copy_on_write<T>
-owner: sparent
+owner: sean-parent
 brief: A copy-on-write wrapper for any type that models `RegularType`.
 tags:
   - class

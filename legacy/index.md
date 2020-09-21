@@ -3,6 +3,7 @@ title: Welcome to the stlab.adobe.com Wiki
 tab: Legacy
 layout: page
 redirect_from: /legacy/index.php/Main_Page
+home-icon: pagelines
 ---
 
 _These pages have been migrated from stlab.adobe.com/wiki for preservation. They may eventually be revised and moved into a more appropriate location on the site._

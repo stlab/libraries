@@ -26,6 +26,7 @@ addons:
       - g++-7
       - cmake
       - cmake-data
+      - libcurl4-openssl-dev # required to avoid SSL errors
 
 matrix: 
   include:       
@@ -40,10 +41,12 @@ matrix:
     script: ./build.sh 
 
   - language: ruby
-    rvm: 2.6.0
+    rvm: 2.7.0
     
     install: gem install jekyll html-proofer github-pages
-    script: bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
+    script: 
+      - bundle install
+      - bundle exec jekyll build && htmlproofer --http-status-ignore 0 ./_site
     env:
       global:
       - NOKOGIRI_USE_SYSTEM_LIBRARIES=true
