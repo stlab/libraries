@@ -1277,8 +1277,7 @@ auto apply_when_any_arg(F& f, P& p) {
 
 template <std::size_t i, typename E, typename P, typename T>
 void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
-    std::unique_lock lock{ p->_guard };
-    p->_holds[i] = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
+    auto&& holds = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
         auto p = _w.lock();
         if (!p) return;
 
@@ -1288,6 +1287,8 @@ void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
             p->template done<i>(std::move(x));
         }
     });
+    std::unique_lock lock{ p->_guard };
+    p->_holds[i] = std::move(holds);
 }
 
 template <typename E, typename P, typename... Ts, std::size_t... I>
@@ -1561,9 +1562,7 @@ struct common_context : CR {
 
 template <typename C, typename E, typename T>
 void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
-    std::unique_lock guard(context->_guard);
-    context->_holds[index] =
-        std::move(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
+    auto&& hold = std::move(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception(); ex) {
@@ -1572,6 +1571,9 @@ void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T
                 p->done(std::move(x), _i);
             }
         });
+
+    std::unique_lock guard(context->_guard);
+    context->_holds[index] = std::move(hold);
 }
 
 template <typename R, typename T, typename C, typename Enabled = void>

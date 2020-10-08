@@ -133,6 +133,32 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
+BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_and_immediate_continuation) {
+    BOOST_TEST_MESSAGE("running future when_all void with range with many elements and immediate continuation");
+    size_t p = 0;
+    size_t r = 0;
+    std::vector<stlab::future<int>> futures;
+    for (auto i = 0; i < 1000; ++i) {
+        futures.push_back(async(make_executor<0>(), [] { return 1; }));
+    }
+
+    sut = when_all(immediate_executor,
+                   [& _p = p, &_r = r](std::vector<int> v) {
+                       _p = v.size();
+                       for (auto i : v) {
+                           _r += i;
+                       }
+                   },
+                   std::make_pair(futures.begin(), futures.end()));
+
+    check_valid_future(sut);
+    wait_until_future_completed(sut);
+
+    BOOST_REQUIRE_EQUAL(size_t(1000), p);
+    BOOST_REQUIRE_EQUAL(size_t(1000), r);
+    BOOST_REQUIRE_LE(1000, custom_scheduler<0>::usage_counter());
+}
+
 /*
        /  F1  \
       / / F2 \ \
@@ -553,5 +579,35 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
+
+BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_fails_ofmany_elements_and_immediate_continuation) {
+    BOOST_TEST_MESSAGE("running future when_all void with range with one fails one of manyelements and immediate continuation");
+    size_t p = 0;
+    size_t r = 0;
+    std::vector<stlab::future<int>> futures;
+    for (auto i = 0; i < 500; ++i) {
+        futures.push_back(async(make_executor<0>(), [] { return 1; }));
+    }
+    futures.push_back(async(make_executor<0>(), []()->int { throw test_exception("failure"); }));
+
+    for (auto i = 0; i < 499; ++i) {
+        futures.push_back(async(make_executor<0>(), [] { return 1; }));
+    }
+
+    sut = when_all(immediate_executor,
+                   [& _p = p, &_r = r](std::vector<int> v) {
+                       _p = v.size();
+                       for (auto i : v) {
+                           _r += i;
+                       }
+                   },
+                   std::make_pair(futures.begin(), futures.end()));
+
+    wait_until_future_fails<test_exception>(sut);
+
+    check_failure<test_exception>(sut, "failure");
+    BOOST_REQUIRE_EQUAL(0, r);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
