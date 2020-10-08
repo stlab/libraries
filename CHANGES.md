@@ -1,3 +1,7 @@
+## v1.5.4 - 2020 - October 08
+- Fixed issues
+    - [#317](https://github.com/stlab/libraries/issues/317): when_all(range) and when_any(range) must not be used with an immediate_executor
+    
 ## v1.5.3 - 2020 - September 16
 - Fixed issues
     - [#312](https://github.com/stlab/libraries/issues/312): default_executor implementation for Windows has a memory leak
