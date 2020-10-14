@@ -15,7 +15,7 @@ When you look at a typical EBNF grammar it will frequently not distinguish which
 
 ## A Simple Recursive Descent Parser
 
-To solve the problem of validating an XML name we're going to write a simple recursive descent, or top-down, parser. The idea is to read from a stream of characters denoted by a pair of InputIterators - we will only need to read each character once without backtracking. A grammar which can be read in this form without backtracking is known as an [LL(1)](http://en.wikipedia.org/wiki/LL_parser] grammar.
+To solve the problem of validating an XML name we're going to write a simple recursive descent, or top-down, parser. The idea is to read from a stream of characters denoted by a pair of InputIterators - we will only need to read each character once without backtracking. A grammar which can be read in this form without backtracking is known as an [LL(1)](http://en.wikipedia.org/wiki/LL_parser) grammar.
 
 To do this we are going to translate each production rule into a function which will return a <tt>bool</tt> with the value <tt>true</tt> if it recognizes the production and false if it does not. If it does recognize the production then the stream will be advanced to the end of the production and a value will be updated with the recognized production. Otherwise, the stream and value are left unchanged. Such a function will follow this pattern:
 
