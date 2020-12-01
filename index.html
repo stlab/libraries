@@ -31,7 +31,7 @@ layout: default
 
   <h1>Latest Release: {{release.tag_name}}</h1>
 
-  Released {{release.published_at | date: "%b %-d, %Y" }}
+  Released: {{release.published_at | date: "%b %-d, %Y" }}
   <br/>
   Sources: <a href='https://github.com/stlab/libraries/compare/{{prev_release.tag_name}}...{{release.tag_name}}'>changes</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href='{{release.zipball_url}}'>zipball</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href='{{release.tarball_url}}'>tarball</a>
   <br/>
