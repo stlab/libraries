@@ -4,7 +4,6 @@ title:  New Concurrency Library
 categories: concurrency
 comments: true
 tags: concurrency library
-excerpt_separator: <!--more-->
 ---
 
 A new concurrency library was added as a first one to this new stlab instance.

@@ -4,7 +4,6 @@ layout: post
 tags: [tips]
 comments: true
 categories: tip
-excerpt_separator: <!--more-->
 ---
 
 At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk [Polymorphic Task Template in Ten](http://sean-parent.stlab.cc/papers-and-presentations#polymorphic-task-template-in-ten) which showed an easy way to implement a polymorphic task template, similar to [`std::function`](http://en.cppreference.com/w/cpp/utility/functional/function), with a small object optimization in 10 minutes.

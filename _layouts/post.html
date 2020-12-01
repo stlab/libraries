@@ -12,6 +12,10 @@ layout: default
     {{ content }}
   </div>
 
+  {% if page.author_bio %}
+  <p class="post-meta"><span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author_bio }}</span></span></p>
+  {% endif %}
+
   {% if page.comments %}
     <script src="https://utteranc.es/client.js"
             repo="stlab/libraries"

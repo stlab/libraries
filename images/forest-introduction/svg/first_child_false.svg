@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='200.000000' height='175.000000'>
+    <path d='M 61.377622 95.387329 C37.112562 131.702559 99.292494 135.674270 93.936003 107.302462' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='red'/>
+    <polygon points='89.778655 110.080313, 87.269160 97.324826, 98.093351 104.524610' fill='red' stroke='none'/>
+    <path d='M 92.677670 57.322330 C98.864122 51.135878 111.481849 49.279430 121.528132 51.752986' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='125.063665 48.217453, 130.013413 60.238268, 117.992598 55.288520' fill='black' stroke='none'/>
+    <path d='M 136.377622 95.387329 C112.112562 131.702559 174.292494 135.674270 168.936003 107.302462' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='164.778655 110.080313, 162.269160 97.324826, 173.093351 104.524610' fill='black' stroke='none'/>
+    <text font-size='16.000000' text-anchor='middle' x='74.099623' y='138.753469' dominant-baseline='central' fill='red'>
+H = {Hn, T}<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='112.231896' y='39.494097' dominant-baseline='central' fill='black'>
+I = {In, L}<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <circle cx='75.000000' r='25.000000' stroke='blue' stroke-width='2.000000' cy='75.000000' fill='white' stroke-dasharray='0'/>
+    <circle cx='150.000000' r='25.000000' stroke='blue' stroke-width='2.000000' cy='75.000000' fill='white' stroke-dasharray='0'/>
+    <text font-size='16.000000' text-anchor='middle' x='75.000000' y='75.000000' dominant-baseline='central' fill='black'>
+H<tspan dy='8.000000' font-size='.7em'>n</tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='150.000000' y='75.000000' dominant-baseline='central' fill='black'>
+I<tspan dy='8.000000' font-size='.7em'>n</tspan>
+    </text>
+</svg>
