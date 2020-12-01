@@ -197,7 +197,7 @@ Forest iterators are bidirectional: although the diagrams are simplified by draw
 
 Here, iterators will be described by this pair as `{node, edge}`. Since iterators always point to a node, we never speak of an iterator being on the out-edge of a node it is leaving. Rather, we always consider it on the in-edge of the node that it points to. Visually, iterators will only ever be on the northwest or southeast edge of the node to which they point.
 
-Iterators can point to the root node of a forest and can be compared to other iterators for equality. However, they should never be dereferenced.
+An iterator pointing to the root node of a forest can be compared to other iterators in the same forest, but cannot be dereferenced.
 
 ### Examples
 
