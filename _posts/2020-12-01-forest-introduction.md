@@ -3,9 +3,9 @@ layout: post
 title: 'Forest: An Introduction'
 owner: fosterbrereton
 comments: true
-excerpt: Hierarchies. Everyone uses them, so why are they difficult to maintain? In this article we explore `forest`, a data structure that makes heirarchies self-maintainable, so you can go back to thinking about the data they contain.
+excerpt: Hierarchies. Everyone uses them, so why are they difficult to maintain? In this article we explore `forest`, a data structure that makes hierarchies self-maintainable, so you can go back to thinking about the data they contain.
 author: Foster Brereton
-author_bio: Foster is a 20-year C++ veteran at Adobe, and a Senior Computer Scientist on Photoshop. He is also a contributor to the Adobe Source Libraries and stlab.cc. He can be reached at <a href='https://twitter.com/phostershop'>@phostershop</a> on Twitter.
+author_bio: Foster is a 20-year C++ veteran at Adobe and a Senior Computer Scientist on Photoshop. He is also a contributor to the Adobe Source Libraries and stlab.cc. He can be reached at <a href='https://twitter.com/phostershop'>@phostershop</a> on Twitter.
 ---
 
 <style>
@@ -24,7 +24,7 @@ author_bio: Foster is a 20-year C++ veteran at Adobe, and a Senior Computer Scie
 
 # Why Hierarchies are Hard
 
-From `vector` to `unordered_map`, container types serve to separate the details of the container from the data they maintain. C++ developers are no stranger to this valuable tenet. However when it comes to heirarchical containers, we find ourselves without a generic go-to solution. At best, we'll roll our own custom type for the specific use-case. At worst, that implementation embeds the heirarchy into the data itself. Who hasn't seen something like the below, only to get nerd sniped in all the wrong ways as they have to maintain it?
+From `vector` to `unordered_map`, container types serve to separate the details of the container from the data they maintain. C++ developers are no stranger to this valuable tenet. However, when it comes to hierarchical containers, we find ourselves without a generic go-to solution. At best, we'll roll our own custom type for the specific use-case. At worst, that implementation embeds the hierarchy into the data itself. Who hasn't seen something like the below, only to get nerd sniped in all the wrong ways as they have to maintain it?
 
 ```c++
 template <typename T>
@@ -37,11 +37,11 @@ struct my_type {
 }
 ```
 
-What does it look like to enforce that your heirarchy is actually a heirarchy? What's to stop a user of your container type from setting `_first_child` to `_parent`? How many squirrelly traversals do you need to do to assert that the user hasn't embedded a cycle somewhere, somehow? The policing of such a structure becomes too expensive, and users are left to themselves to make sure they get things right. In the end, they are required to maintain the container's consistency, which can be more expensive than maintaining the data itself. **If a container type cannot maintain its own internal consistency, it fails a basic requirement of these types.**
+What does it look like to enforce that your hierarchy is actually a hierarchy? What's to stop a user of your container type from setting `_first_child` to `_parent`? How many squirrelly traversals do you need to do to assert that the user hasn't embedded a cycle somewhere, somehow? The policing of such a structure becomes too expensive, and users are left to themselves to make sure they get things right. In the end, they are required to maintain the container's consistency, which can be more expensive than maintaining the data itself. **If a container type cannot maintain its own internal consistency, it fails a basic requirement of these types.**
 
 ## Easy Hierarchies: Beads on a String
 
-Let's go back to childhood for a minute. Imagine if you will a bead with a hole through it, and a bit of string that is tied to itself to form a loop:
+Let's go back to childhood for a minute. Imagine if you will a bead with a hole through it and a bit of string that is tied to itself to form a loop:
 
 <img class='svg-img' height='200px' src='{{site.baseurl}}/images/forest-introduction/bead_and_string.png'/>
 
@@ -57,7 +57,7 @@ Now let's add a third, but this time we feed it _between_ the two beads we have.
 
 <img class='svg-img' height='250px' src='{{site.baseurl}}/images/forest-introduction/three_beads.png'/>
 
-It turns out, if you follow the rule that the string can only be fed once through a bead, you cannot help but make a heirarchy. No matter where you add a new bead, you still have a hierarchy:
+It turns out, if you follow the rule that the string can only be fed once through a bead, you cannot help but make a hierarchy. No matter where you add a new bead, you still have a hierarchy:
 
 <img class='svg-img' height='350px' src='{{site.baseurl}}/images/forest-introduction/five_beads.png'/>
 
@@ -79,7 +79,7 @@ The forest's value type is the node. They are heap-allocated as necessary for st
 
 ## Edges
 
-Forest nodes are connected to one another by edges. For every node in the forest, there are always two edges that lead away from the node, and two that lead towards it. Here, edges are drawn as arrows pointed in the direction of forward travel:
+Forest nodes are connected by edges. For every node in the forest, there are always two edges that lead away from the node, and two that lead towards it. Here, edges are drawn as arrows pointed in the direction of forward travel:
 
 {% assign node_sz=100 %}
 {% assign node_half_sz=node_sz | divided_by: 2 %}
@@ -159,7 +159,7 @@ Forest nodes are connected to one another by edges. For every node in the forest
     <use xlink:href='#node' x='125' y='125'/>
 </svg>
 
-The two left edges are known as **leading edges**, and the two right edges are known as **trailing edges**. (The terms come from the edges' order of visitation during a fullorder traversal of the forest.)
+The two left edges are known as **leading edges**, and the two right edges are known as **trailing edges**. (The terms come from the edges' order of visitation during a full order traversal of the forest.)
 
 <svg width='175' height='125' viewBox='0 0 350 250'>
     <use xlink:href='#edge_li' x='175' y = '125'/>
@@ -172,7 +172,7 @@ The two left edges are known as **leading edges**, and the two right edges are k
     <text font-size='{{small_font_size}}' x='245' y='125' dominant-baseline="central">trailing</text>
 </svg>
 
-The two edges that point to $N$ are known as **in edges** and the edges that point away from $N$ are **out edges**:
+The two edges that point to $N$ are known as **in-edges** and the edges that point away from $N$ are **out-edges**:
 
 <svg width='150' height='150' viewBox='0 0 300 300'>
     <use xlink:href='#edge_li' x='150' y = '150'/>
@@ -186,18 +186,18 @@ The two edges that point to $N$ are known as **in edges** and the edges that poi
     <text font-size='{{small_font_size}}' x='250' y='30' dominant-baseline="central">out</text>
 </svg>
 
-It is worth noting that the terms "in" and "out" are relative to $N$. In other words, an in edge for $N$ will also be an out edge for some other node.
+It is worth noting that the terms "in" and "out" are relative to $N$. In other words, an in-edge for $N$ will also be an out-edge for some other node.
 
 ## Iterators
 
-Forest iterators are bidirectional: although the diagrams are simplified by drawing one-way edges, in reality they are doubly-linked. Forest iterators come in forward, reverse, fullorder, preorder, and postorder flavors, and all are comprised of two pieces of data:
+Forest iterators are bidirectional: although the diagrams are simplified by drawing one-way edges, in reality they are doubly-linked. Forest iterators come in forward, reverse, full order, preorder, and postorder flavors, and all are comprised of two pieces of data:
 
 - The node ($N$) to which they point
 - Whether they are on the leading ($L$) or trailing ($T$) edge of the node
 
-Here, iterators will be described by this pair as `{node, edge}`. Since iterators always point to a node, we never speak of an iterator being on the out edge of a node it is leaving. Rather, we always consider it on the in edge of the node that it points to. Visually, iterators will only ever be on the northwest or southeast edge of the node to which they point.
+Here, iterators will be described by this pair as `{node, edge}`. Since iterators always point to a node, we never speak of an iterator being on the out-edge of a node it is leaving. Rather, we always consider it on the in-edge of the node that it points to. Visually, iterators will only ever be on the northwest or southeast edge of the node to which they point.
 
-Iterators can point to the root node of a forest, and can be compared to other iterators for equality. However, they should never be dereferenced.
+Iterators can point to the root node of a forest and can be compared to other iterators for equality. However, they should never be dereferenced.
 
 ### Examples
 
@@ -219,9 +219,9 @@ Iterators can point to the root node of a forest, and can be compared to other i
 
 ### Iterator Advancement
 
-While pointing at a node, there are always two ways an iterator could advance: the leading out edge, or the trailing out edge. The rule of thumb for iterator advancement is that iterators prefer the edge they are on. Thus, if an iterator is on the leading edge of a node, it will advance through the leading out edge (and so for a trailing edge iterator.)
+While pointing at a node, there are always two ways an iterator could advance: the leading out-edge, or the trailing out-edge. The rule of thumb for iterator advancement is that iterators prefer the edge they are on. Thus, if an iterator is on the leading edge of a node, it will advance through the leading out-edge (and so for a trailing edge iterator.)
 
-There are two specific cases where this rule does not hold. The first is on a leaf node, where the leading out edge of the node arrives at the trailing in edge of that same node. In this case, the iterator is flipped from leading to trailing. The second is when an iterator traverses from the trailing out edge of a node to the leading in edge of its next sibling. In this case, the iterator is flipped from the trailing to leading.
+There are two specific cases where this rule does not hold. The first is on a leaf node, where the leading out-edge of the node arrives at the trailing in-edge of that same node. In this case, the iterator is flipped from leading to trailing. The second is when an iterator traverses from the trailing out-edge of a node to the leading in-edge of its next sibling. In this case, the iterator is flipped from the trailing to leading.
 
 ### Edge Flipping
 
@@ -250,49 +250,49 @@ assert(*trailing_iter == 'A');
 
 - `forest<T>::end()` will always return `{Root, T}`. This is true regardless of whether or not the forest is empty.
 
-- `forest<T>::begin()` will always return `++{Root, L}`. This follows the rules of the leading out edge explained above, meaning that it will either point to the first node in the forest (if it is not empty), or `end()` (if it is).
+- `forest<T>::begin()` will always return `++{Root, L}`. This follows the rules of the leading out-edge explained above, meaning that it will either point to the first node in the forest (if it is not empty), or `end()` (if it is).
 
 ## Forest Edge Constraints
 
 Now that we know about nodes, edges, and iterators, there are additional constraints the forest imposes upon its edges that maintain its structure. (Going back to our original illustration, these constraints make sure the string is only fed once through a bead.)
 
-### Leading In Edge
+### Leading In-Edge
 
-Visually, the northwest edge is the **leading in edge**. It originates (is an out edge) from one of two possible nodes. First, if $N$ is the first child of its parent node $P$, this edge is the leading out edge of $P$:
+Visually, the northwest edge is the **leading in-edge**. It originates (is an out-edge) from one of two possible nodes. First, if $N$ is the first child of its parent node $P$, this edge is the leading out-edge of $P$:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/li_child.svg'/>
 
-Otherwise, this edge is the trailing out edge of $N$'s prior sibling $S_{prior}$:
+Otherwise, this edge is the trailing out-edge of $N$'s prior sibling $S_{prior}$:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/li_sibling.svg'/>
 
-### Leading Out Edge
+### Leading Out-Edge
 
-The southwest edge is the **leading out edge**. It terminates (is an in edge) at one of two possible nodes. First, if $N$ is a parent, this edge is the leading out edge of the first child of $N$, $C_{first}$:
+The southwest edge is the **leading out-edge**. It terminates (is an in-edge) at one of two possible nodes. First, if $N$ is a parent, this edge is the leading out-edge of the first child of $N$, $C_{first}$:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/lo_parent.svg'/>
 
-Otherwise, this edge is the trailing out edge of $N$ itself:
+Otherwise, this edge is the trailing out-edge of $N$ itself:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/lo_self.svg'/>
 
-### Trailing In Edge
+### Trailing In-Edge
 
-The southeast edge is the **trailing in edge**. It originates (is an out edge) from one of two possible nodes. First, if $N$ is a parent, it comes from the trailing out edge of $N$'s last child, $C_{last}$:
+The southeast edge is the **trailing in-edge**. It originates (is an out-edge) from one of two possible nodes. First, if $N$ is a parent, it comes from the trailing out-edge of $N$'s last child, $C_{last}$:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/ti_parent.svg'/>
 
-Otherwise, it comes from the leading out edge of $N$ itself:
+Otherwise, it comes from the leading out-edge of $N$ itself:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/ti_self.svg'/>
 
-### Trailing Out Edge
+### Trailing Out-Edge
 
-The northeast edge is the **trailing out edge**. It terminates (is an in edge) at one of two related nodes. First, if $N$ is the last child of $P$, this edge points to the trailing out edge of $P$:
+The northeast edge is the **trailing out-edge**. It terminates (is an in-edge) at one of two related nodes. First, if $N$ is the last child of $P$, this edge points to the trailing out-edge of $P$:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/to_child.svg'/>
 
-Otherwise, this edge points to the leading out edge of $N$'s next sibling:
+Otherwise, this edge points to the leading out-edge of $N$'s next sibling:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/to_sibling.svg'/>
 
@@ -300,7 +300,7 @@ Otherwise, this edge points to the leading out edge of $N$'s next sibling:
 
 With the fundamental building blocks in place, here is how they combine to form some of the basic relationships in a forest. Note that every node in the forest maintains four relationships with the nodes around it.
 
-The examples also include C++ that would construct the forest in question. If the code does not make sense at this point in time, don't worry: we'll cover what's missing in following sections. If you'd like, you can skip over it now and revisit it later.
+The examples also include C++ that would construct the forest in question. If the code does not make sense right now, don't worry: we'll cover what's missing in the following sections. If you'd like, you can skip over it now and revisit it later.
 
 ### Empty
 
@@ -315,7 +315,7 @@ assert(f.empty());
 
 #### The Root Top Loop
 
-The root has a trailing-out edge which always points to its leading-in edge:
+The root has a trailing out-edge which always points to its leading in-edge:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/root_topped.svg'/>
 
@@ -403,9 +403,9 @@ In this case `insert` returns `{Clast, L}`. Trailing edge insertion can be used 
 
 ## Forest Traversal
 
-### Fullorder
+### Full order
 
-The traversal behavior of `stlab::forest<T>::iterator` is always fullorder. This means every node is visited twice: first, right before any of its children are visited (on the leading edge), and then again after the last child is visited (on the trailing edge). This behavior is recursive, and results in a depth-first traversal of the forest:
+The traversal behavior of `stlab::forest<T>::iterator` is always full order. This means every node is visited twice: first, right before any of its children are visited (on the leading edge), and then again after the last child is visited (on the trailing edge). This behavior is recursive, and results in a depth-first traversal of the forest:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/fullorder_one.svg'/>
 
@@ -454,7 +454,7 @@ while (first != last) {
 }
 ```
 
-### Fullorder Traversal of $N$'s Subtree
+### Full order Traversal of $N$'s Subtree
 
 To traverse a node $N$ and all of its descendants, the iterator range is:
 
@@ -472,11 +472,11 @@ To traverse a node $N$ and all of its descendants, the iterator range is:
     <text font-size='{{small_font_size}}' x='200' y='30' dominant-baseline="central">++{N, T} (last)</text>
 </svg>
 
-Note this technique does not work if $N==R$. In that case though, you'd be traversing the entire forest, in which case you can use `forest<T>::begin()` and `forest<T>::end()`.
+Note this technique does not work if $N==R$. In that case, you'd be traversing the entire forest, so you can use `forest<T>::begin()` and `forest<T>::end()`.
 
 ### Preorder Traversal
 
-A preorder traversal of the forest will visit every node once. During preorder traversal a parent will be visited before its children. We achieve preorder iteration by incrementing fullorder repeatedly, visiting a node only when the iterator is on a leading edge. Note the use of the root top loop as the terminating iterator for a full-forest preorder traversal:
+A preorder traversal of the forest will visit every node once. During preorder traversal, a parent will be visited before its children. We achieve preorder iteration by incrementing full order repeatedly, visiting a node only when the iterator is on a leading edge. Note the use of the root top loop as the terminating iterator for a full-forest preorder traversal:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/preorder.svg'/>
 
@@ -514,7 +514,7 @@ for (const auto& i : preorder_range(my_forest)) {
 
 ### Postorder Traversal
 
-A postorder traversal of the forest will visit every node once. During postorder traversal a parent will be visited after its children. We achieve postorder iteration by incrementing fullorder repeatedly, visiting a node only when the iterator is on a trailing edge:
+A postorder traversal of the forest will visit every node once. During postorder traversal, a parent will be visited after its children. We achieve postorder iteration by incrementing full order repeatedly, visiting a node only when the iterator is on a trailing edge:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/postorder.svg'/>
 
@@ -603,7 +603,7 @@ Consider the following forest and the defined `first` and `last` iterators into 
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/erase_begin.svg'/>
 
-Initially the iterators are at `{B, L}` and at `{R, T}`. The nodes $B$ and $C$ will be deleted because the traversal from `first` to `last` will go through each of those nodes twice. Even though the deletion iterator will pass through $A$, it is not deleted because it only passes through on the trailing edge, not on the leading edge:
+Initially, the iterators are at `{B, L}` and at `{R, T}`. The nodes $B$ and $C$ will be deleted because the traversal from `first` to `last` will go through each of those nodes twice. Even though the deletion iterator will pass through $A$, it is not deleted because it only passes through on the trailing edge, not on the leading edge:
 
 <img class='svg-img' src='{{site.baseurl}}/images/forest-introduction/svg/erase_middle.svg'/>
 
@@ -613,7 +613,7 @@ After the above erase has completed, the resulting forest will be:
 
 # Conclusion
 
-Containers should make a developer's life easier, not harder. When a container type requires you to think about maintaining its validity, it fails to achieve that intent. Forests present one solution to the heirarchy container type that is internally consistent. By maintaining itself, a forest lets you get back to handling the data, instead of the container.
+Containers should make a developer's life easier, not harder. When a container type requires you to think about maintaining its validity, it fails to achieve that intent. Forests present one solution to the hierarchy container type that is internally consistent. By maintaining itself, a forest lets you get back to handling the data, instead of the container.
 
 # The Sources
 
