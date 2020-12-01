@@ -1,5 +1,0 @@
----
-layout: post
----
-
-[Small Object Optimization for Polymorphic Types](/tips/small-object-optimizations.html)

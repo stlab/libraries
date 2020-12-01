@@ -37,11 +37,5 @@ adobe_hyde:
 # Build settings
 markdown: kramdown
 
-#wire this up
-comments :
-  provider : disqus
-  disqus :
-    short_name : stlab-cc
-
 plugins:
   - jekyll-redirect-from

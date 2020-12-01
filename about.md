@@ -15,12 +15,12 @@ stlab is the ongoing work of what was Adobe's Software Technology Lab. The Adobe
     <th>Description</th>
     <th>Download Source</th>
 </tr>
-{% assign releases = site.data.releases | sort: 'published_at' %}
+{% assign releases = site.data.releases | sort: 'published_at' | reverse %}
 {% for r in releases %}
 <tr>
-    <td><code><a href='{{r.html_url}}'>{{r.tag_name}}</a></code> <a href='https://github.com/stlab/libraries/tree/{{r.target_commitish}}'>(browse)</a></td>
-    <td>{{r.body}}</td>
-    <td><a href='{{r.zipball_url}}'>zip</a> | <a href='{{r.tarball_url}}'>tar</a></td>
+    <td><code><a href='{{r.html_url}}'>{{r.tag_name}}</a></code></td>
+    <td>{{r.body | markdownify}}</td>
+    <td><a href='{{r.zipball_url}}'>zip</a>&nbsp;|&nbsp;<a href='{{r.tarball_url}}'>tar</a></td>
 </tr>
 {% endfor %}
 </table>

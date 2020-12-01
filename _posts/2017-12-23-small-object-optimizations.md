@@ -1,17 +1,19 @@
 ---
 title: Small Object Optimization for Polymorphic Types
-layout: page
+layout: post
 tags: [tips]
 comments: true
+categories: tip
+excerpt_separator: <!--more-->
 ---
-
-## Summary
 
 At [Meeting C++ 2017](http://meetingcpp.com/2017/) I presented a lightning talk [Polymorphic Task Template in Ten](http://sean-parent.stlab.cc/papers-and-presentations#polymorphic-task-template-in-ten) which showed an easy way to implement a polymorphic task template, similar to [`std::function`](http://en.cppreference.com/w/cpp/utility/functional/function), with a small object optimization in 10 minutes.
 
 Unfortunately, the small object optimization, as described, leads to [_undefined behavior_](http://en.cppreference.com/w/cpp/language/ub). As a general rule, you cannot store an object of one type in memory and read it back as another, even if the other type is the objects base class (there are exceptions to this rule, but they do not apply to this situation).
 
 This tip looks at the details of the issue and describes a solution which turns out to be more efficient although it does require slightly more, and more complex, code to implement. A small object optimization for polymorphic types is a very useful construct so it important to understand how it can be done correctly.
+
+<!--more-->
 
 ## The Problem
 
