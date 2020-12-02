@@ -486,18 +486,18 @@ A C++ implementation of preorder traversal may look like this:
 
 ```c++
 template <typename T, typename F>
-void preorder_traversal(const stlab::forest<T>& f, F&& f) {
+void preorder_traversal(const stlab::forest<T>& forest, F&& func) {
     auto preorder_next{[](auto i){
         do {
             ++i;
         } while (i.edge() == stlab::forest_trailing_edge);
         return i;
     }};
-    auto first{preorder_next(f.begin())};
-    auto last{preorder_next(f.end())};
+    auto first{preorder_next(forest.begin())};
+    auto last{preorder_next(forest.end())};
 
     while (first != last) {
-        f(*first);
+        func(*first);
         first = preorder_next(first);
     }
 }
@@ -524,18 +524,18 @@ A C++ implementation of postorder traversal may look like this:
 
 ```c++
 template <typename T, typename F>
-void postorder_traversal(const stlab::forest<T>& f, F&& f) {
+void postorder_traversal(const stlab::forest<T>& forest, F&& func) {
     auto postorder_next{[](auto i){
         do {
             ++i;
         } while (i.edge() == stlab::forest_leading_edge);
         return i;
     }};
-    auto first{postorder_next(f.begin())};
-    auto last{f.end()};
+    auto first{postorder_next(forest.begin())};
+    auto last{forest.end()};
 
     while (first != last) {
-        f(*first);
+        func(*first);
         first = postorder_next(first);
     }
 }
