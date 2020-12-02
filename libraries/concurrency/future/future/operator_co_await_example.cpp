@@ -1,5 +1,5 @@
 
-#define STLAB_FUTURE_COROUTINE_SUPPORT
+#define STLAB_FUTURE_COROUTINES 1
 
 #include <iostream>
 
