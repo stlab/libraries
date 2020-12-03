@@ -612,7 +612,7 @@ BOOST_AUTO_TEST_CASE(future_async_move_only_move_captured_to_result) {
 
     {
         sut = async(make_executor<0>(), [] { return move_only{42}; }).then([](auto x) {
-            return move(x);
+            return x;
         });
 
         check_valid_future(sut);
@@ -623,7 +623,7 @@ BOOST_AUTO_TEST_CASE(future_async_move_only_move_captured_to_result) {
     }
     {
         sut = async(make_executor<0>(), [] { return move_only{42}; }) |
-              [](auto x) { return move(x); };
+              [](auto x) { return x; };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
