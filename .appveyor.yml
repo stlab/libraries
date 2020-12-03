@@ -40,18 +40,18 @@ environment:
     - FLAVOR: Visual Studio 2017
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       CMAKE_TOOLSET: Visual Studio 15 2017 Win64
-      BOOST_ROOT: C:\Libraries\boost_1_69_0
+      BOOST_PATH: C:\Libraries\boost_1_69_0
 
     - FLAVOR: Visual Studio 2019
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       CMAKE_TOOLSET: Visual Studio 16 2019
-      BOOST_ROOT: C:\Libraries\boost_1_71_0
+      BOOST_PATH: C:\Libraries\boost_1_71_0
 
 build_script:
   - cd C:\projects\libraries
   - IF EXIST build RMDIR /S /Q build
   - MKDIR build
   - cd build
-  - cmake -G "%CMAKE_TOOLSET%" -D BOOST_ROOT="%BOOST_ROOT%" -D Boost_USE_STATIC_LIBS=ON ..
+  - cmake -G "%CMAKE_TOOLSET%" -D Boost_ROOT="%BOOST_PATH%" -D Boost_USE_STATIC_LIBS=ON ..
   - cmake --build . --config Release
   - ctest -C Release
