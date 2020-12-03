@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.5 )
+cmake_minimum_required( VERSION 3.8 )
 
 #
 # Here we check whether stlab is being configured in isolation or as a component
