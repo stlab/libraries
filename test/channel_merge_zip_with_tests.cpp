@@ -235,7 +235,7 @@ BOOST_FIXTURE_TEST_CASE(int_zip_width_channel_different_type_void_functor,
     std::atomic_int result{0};
 
     auto check = zip_with(default_executor,
-                      [&](int, std::string y) { result += 2 + static_cast<int>(y.size()); },
+                      [&](int, std::string const& y) { result += 2 + static_cast<int>(y.size()); },
                       receive<0>(), receive<1>());
 
     receive<0>().set_ready();
