@@ -46,6 +46,7 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_system=False
         self.options["boost"].without_timer=False
         self.options["boost"].without_test=False
+        self.options["boost"].without_exception = False # required by Boost.Test
 
         self.options["boost"].without_atomic = True
         self.options["boost"].without_container = True
@@ -53,7 +54,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_contract = True
         self.options["boost"].without_coroutine = True
         self.options["boost"].without_date_time = True
-        self.options["boost"].without_exception = True
         self.options["boost"].without_fiber = True
         self.options["boost"].without_filesystem = True
         self.options["boost"].without_graph = True
@@ -63,7 +63,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_log = True
         self.options["boost"].without_math = True
         self.options["boost"].without_mpi = True
-        self.options["boost"].without_nowide = True
         self.options["boost"].without_program_options = True
         self.options["boost"].without_python = True
         self.options["boost"].without_random = True
