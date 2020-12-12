@@ -18,6 +18,8 @@ class StlabLibrariesConan(ConanFile):
     description = "Multicrypto Cross-Platform C++ Development Toolkit"
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
+    exports_sources = "CMakeLists.txt", "stlab/*", "cmake/*", "test/*"
+
     # exports = "conan_*", "ci_utils/*"
     # exports_sources = "src/*", "CMakeLists.txt", "cmake/*", "kth-infrastructureConfig.cmake.in", "include/*", "test/*", "examples/*", "test_new/*"
     # package_files = "build/lkth-infrastructure.a"
