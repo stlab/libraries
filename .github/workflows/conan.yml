@@ -9,7 +9,6 @@ env:
 jobs:
   generate-matrix:
     name: Generate Job Matrix
-    needs: wait-for-dependencies
     runs-on: ubuntu-20.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
