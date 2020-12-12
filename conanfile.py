@@ -58,7 +58,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_filesystem = True
         self.options["boost"].without_graph = True
         self.options["boost"].without_graph_parallel = True
-        self.options["boost"].without_headers = True
         self.options["boost"].without_iostreams = True
         self.options["boost"].without_locale = True
         self.options["boost"].without_log = True
