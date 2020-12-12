@@ -42,6 +42,29 @@ jobs:
           .github/install.sh
         shell: bash
 
+      - name: Settting Linux EnvVars
+        if: ${{ matrix.config.compiler == 'gcc' }}
+        shell: bash
+        run: |
+          echo "CONAN_GCC_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CONAN_DOCKER_IMAGE=conanio/gcc${{ matrix.config.version }}" >> $GITHUB_ENV
+
+      - name: Settting macOS EnvVars
+        if: ${{ matrix.config.compiler == 'apple-clang' }}
+        shell: bash
+        run: |
+          echo "CONAN_APPLE_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+
+      - name: Build
+        shell: bash
+        run: |
+          echo ${{ matrix.config.compiler }}
+          echo ${CONAN_GCC_VERSIONS}
+          echo ${CONAN_APPLE_CLANG_VERSIONS}
+          echo ${CONAN_DOCKER_IMAGE}
+          chmod +x .github/run.sh
+          .github/run.sh
+
 
     # - name: Create Build Environment
     #   # Some projects don't allow in-source building, so create a separate build directory
