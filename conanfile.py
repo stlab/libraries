@@ -1,4 +1,4 @@
-# Copyright 2017 Adobe
+# Copyright 2020 Adobe
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -11,14 +11,13 @@ from conans.errors import ConanInvalidConfiguration, ConanException
 
 class StlabLibrariesConan(ConanFile):
     name = "stlab"
-    version = "1.5.4"
-    # version = get_version()
+    version = "1.5.4"       #TODO(fernando): see how to automate the version number
     license = "http://www.boost.org/users/license.html"
-    url = "https://github.com/knuth/infrastructure"
-    description = "Multicrypto Cross-Platform C++ Development Toolkit"
+    url = "https://github.com/stlab/libraries"
+    description = "Software Technology Lab (stlab) libraries"
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
-    exports_sources = "CMakeLists.txt", "stlab/*", "cmake/*", "test/*"
+    exports_sources = "CMakeLists.txt", "LICENSE", "stlab/*", "cmake/*", "test/*"
 
     # exports = "conan_*", "ci_utils/*"
     # exports_sources = "src/*", "CMakeLists.txt", "cmake/*", "kth-infrastructureConfig.cmake.in", "include/*", "test/*", "examples/*", "test_new/*"
