@@ -546,6 +546,8 @@ struct forest_iterator {
 
     forest_iterator(const forest_iterator& x) : _node(x._node), _edge(x._edge) {}
 
+    forest_iterator& operator=(const forest_iterator&) = default;
+
     forest_edge edge() const { return _edge; }
     forest_edge& edge() { return _edge; }
 
