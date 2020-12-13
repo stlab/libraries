@@ -19,25 +19,9 @@ class StlabLibrariesConan(ConanFile):
     generators = "cmake"
     exports_sources = "CMakeLists.txt", "LICENSE", "stlab/*", "cmake/*", "test/*"
 
-    # exports = "conan_*", "ci_utils/*"
-    # exports_sources = "src/*", "CMakeLists.txt", "cmake/*", "kth-infrastructureConfig.cmake.in", "include/*", "test/*", "examples/*", "test_new/*"
-    # package_files = "build/lkth-infrastructure.a"
-    # build_policy = "missing"
-
-    # options = {
-    #     "shared": [True, False],
-    #     "fPIC": [True, False],
-    # }
-
-    # default_options = {
-    #     "shared": False,
-    #     "fPIC": True,
-    # }
-
     def requirements(self):
-        self.requires("boost/1.69.0@conan/stable")
-        # self.requires("boost/1.74.0@")
-        # self.requires("spdlog/1.8.0@")
+        # self.requires("boost/1.69.0@conan/stable")
+        self.requires("boost/1.74.0@")
 
     def configure(self):
         ConanFile.configure(self)
@@ -73,8 +57,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_thread = True
         self.options["boost"].without_type_erasure = True
         self.options["boost"].without_wave = True
-
-        # self.options["spdlog"].header_only = True
 
     def build(self):
         cmake = CMake(self)
