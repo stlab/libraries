@@ -34,7 +34,6 @@ class StlabLibrariesConan(ConanFile):
     #     "fPIC": True,
     # }
 
-
     def requirements(self):
         self.requires("boost/1.69.0@conan/stable")
         # self.requires("boost/1.74.0@")
@@ -87,11 +86,5 @@ class StlabLibrariesConan(ConanFile):
         cmake.test(output_on_failure=True)
 
     def imports(self):
-        # self.copy("*.dll", "", "include")
-        # self.copy("*.dylib", dst="include", src="include")
         self.copy("*.dll", "./bin", "bin")
         self.copy("*.dylib", "./bin", "lib")
-
-        # [imports]
-        # bin, *.dll -> ./bin # copies package bin folder DLLs to "bin" folder
-        # lib, *.dylib -> ./bin # copies package lib folder DLLs to "bin" folder
