@@ -104,7 +104,7 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     # will populate targets for each conan package specified in the
     # conanfile.txt
     #
-    conan_basic_setup( TARGETS )
+    conan_basic_setup( TARGETS KEEP_RPATHS )
 
     #
     # We provide aliases to the conan target to mimic the native findBoost
