@@ -16,6 +16,9 @@ endif()
 
 project( stlab VERSION 1.5.4 LANGUAGES CXX )
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 include( CTest )
 include( CMakeDependentOption )
 
