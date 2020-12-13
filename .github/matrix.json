@@ -1,1 +1,1 @@
-{"config": [{"name": "Linux GCC 7 Release","compiler": "gcc","version": "7","os": "ubuntu-20.04", "build_type": "release"},{"name": "macOS apple-clang 10.0 Release", "compiler": "apple-clang","version": "10.0","os": "macos-10.14",  "build_type": "release"},]}
+{"config": [{"name": "Linux GCC 7 Release","compiler": "gcc","version": "7","os": "ubuntu-20.04", "build_type": "release"},{"name": "macOS apple-clang 10.0 Release", "compiler": "apple-clang","version": "12.0","os": "macos-10.14",  "build_type": "release"},]}
