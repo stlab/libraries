@@ -396,7 +396,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_exception) std::rethrow_exception(_exception);
             return _result;
         }
-        return {};
+        return stlab::nullopt;
     }
 
     auto get_try_r(bool unique) -> stlab::optional<T> {
@@ -411,7 +411,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_exception) std::rethrow_exception(_exception);
             return std::move(_result);
         }
-        return {};
+        return stlab::nullopt;
     }
 };
 
