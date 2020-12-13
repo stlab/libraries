@@ -81,10 +81,9 @@ class StlabLibrariesConan(ConanFile):
         cmake = CMake(self)
         if not self.settings.compiler.cppstd:
             cmake.definitions["CMAKE_CXX_STANDARD"] = 17
-        # cmake.definitions["ABSL_ENABLE_INSTALL"] = True
-        # cmake.definitions["BUILD_TESTING"] = False
         cmake.configure()
         cmake.build()
+        cmake.test()
 
     # def imports(self):
     #     self.copy("*.h", "", "include")
