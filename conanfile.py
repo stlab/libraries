@@ -89,8 +89,8 @@ class StlabLibrariesConan(ConanFile):
     def imports(self):
         # self.copy("*.dll", "", "include")
         # self.copy("*.dylib", dst="include", src="include")
-        self.copy("*.dll", "", "bin")
-        self.copy("*.dylib", "", "lib")
+        self.copy("*.dll", "./bin", "bin")
+        self.copy("*.dylib", "./bin", "lib")
 
         # [imports]
         # bin, *.dll -> ./bin # copies package bin folder DLLs to "bin" folder
