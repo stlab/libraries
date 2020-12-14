@@ -20,8 +20,8 @@ class StlabLibrariesConan(ConanFile):
     exports_sources = "CMakeLists.txt", "LICENSE", "stlab/*", "cmake/*", "test/*"
 
     def requirements(self):
-        # self.requires("boost/1.69.0@conan/stable")
-        self.requires("boost/1.74.0@")
+        self.requires("boost/1.69.0@conan/stable")
+        # self.requires("boost/1.74.0@")
 
     def configure(self):
         ConanFile.configure(self)
@@ -31,7 +31,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_system=False
         self.options["boost"].without_timer=False
         self.options["boost"].without_test=False
-        self.options["boost"].without_exception = False # required by Boost.Test
 
         self.options["boost"].without_atomic = True
         self.options["boost"].without_container = True
@@ -40,6 +39,7 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_coroutine = True
         self.options["boost"].without_date_time = True
         self.options["boost"].without_fiber = True
+        self.options["boost"].without_exception = True # required by Boost.Test
         self.options["boost"].without_filesystem = True
         self.options["boost"].without_graph = True
         self.options["boost"].without_graph_parallel = True
