@@ -124,6 +124,7 @@ BOOST_AUTO_TEST_CASE(int_channel_split_int_functor) {
 BOOST_AUTO_TEST_CASE(int_channel_split_int_functor_async) {
     BOOST_TEST_MESSAGE("int channel int functor asynchronous");
     std::vector<stlab::future<void>> inputs;
+    inputs.reserve(10);
     for (auto i = 0; i < 10; ++i) {
         inputs.emplace_back(
             stlab::async(stlab::default_executor, [& _send = _send, i]() { _send[0](i); }));
@@ -176,6 +177,7 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor_async) {
 
     _receive[0].set_ready();
     std::vector<future<void>> f;
+    f.reserve(10);
     for (int i = 0; i < 10; ++i) {
         f.push_back(async(default_executor, [& _send = _send[0]] { _send(move_only(1)); }));
     }
@@ -212,6 +214,7 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor_async) {
 
     _receive[0].set_ready();
     std::vector<future<void>> f;
+    f.reserve(10);
     for (int i = 0; i < 10; ++i) {
         f.push_back(async(default_executor, [& _send = _send[0]] { _send(move_only(1)); }));
     }
