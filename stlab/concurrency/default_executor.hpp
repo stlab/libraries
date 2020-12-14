@@ -29,8 +29,8 @@
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <deque>
