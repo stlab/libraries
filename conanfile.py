@@ -20,7 +20,6 @@ class StlabLibrariesConan(ConanFile):
     exports_sources = "CMakeLists.txt", "LICENSE", "stlab/*", "cmake/*", "test/*"
 
     def requirements(self):
-        # self.requires("boost/1.69.0@conan/stable")
         self.requires("boost/1.75.0@")
 
     def configure(self):
