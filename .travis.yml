@@ -23,7 +23,8 @@ branches:
 matrix:
   include:
     #
-    # Mac Clang, Debug & Release
+    # macOS Clang, Debug & Release
+    # Newer versions of apple-clang are run on Github Actions.
     #
     - os: osx
       compiler: clang
