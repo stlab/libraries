@@ -26,13 +26,13 @@ class StlabLibrariesConan(ConanFile):
         ConanFile.configure(self)
         
         self.options["boost"].shared=True
-        self.options["boost"].without_chrono=False
+        
         self.options["boost"].without_system=False
-        self.options["boost"].without_timer=False
         self.options["boost"].without_test=False
         self.options["boost"].without_exception = False # required by Boost.Test
 
         self.options["boost"].without_atomic = True
+        self.options["boost"].without_chrono = True
         self.options["boost"].without_container = True
         self.options["boost"].without_context = True
         self.options["boost"].without_contract = True
@@ -55,6 +55,7 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_regex = True
         self.options["boost"].without_serialization = True
         self.options["boost"].without_stacktrace = True
+        self.options["boost"].without_timer = True
         self.options["boost"].without_thread = True
         self.options["boost"].without_type_erasure = True
         self.options["boost"].without_wave = True
