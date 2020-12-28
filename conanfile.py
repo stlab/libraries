@@ -25,10 +25,10 @@ class StlabLibrariesConan(ConanFile):
     def configure(self):
         ConanFile.configure(self)
         
-        self.options["boost"].shared=True
+        self.options["boost"].shared = True
         
-        self.options["boost"].without_system=False
-        self.options["boost"].without_test=False
+        self.options["boost"].without_system = False
+        self.options["boost"].without_test = False
         self.options["boost"].without_exception = False # required by Boost.Test
 
         self.options["boost"].without_atomic = True
