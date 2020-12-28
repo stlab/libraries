@@ -57,21 +57,6 @@ matrix:
         options=""
 
     #
-    # Linux GCC, Debug & Release
-    #
-    - os: linux
-      compiler: gcc
-      env:
-        build_type=debug
-        options=""
-
-    - os: linux
-      compiler: gcc
-      env:
-        build_type=release
-        options=""
-
-    #
     # Address sanitizer
     #
     - os: linux
