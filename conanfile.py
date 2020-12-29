@@ -36,16 +36,15 @@ class StlabLibrariesConan(ConanFile):
 
     def configure(self):
         ConanFile.configure(self)
-        
-        self.options["boost"].shared=True
-        self.options["boost"].without_chrono=False
-        self.options["boost"].without_system=False
-        self.options["boost"].without_timer=False
 
+        self.options["boost"].shared = True
+
+        self.options["boost"].without_system = False
         self.options["boost"].without_test = not self.options.tests
         self.options["boost"].without_exception = not self.options.tests # required by Boost.Test
 
         self.options["boost"].without_atomic = True
+        self.options["boost"].without_chrono = True
         self.options["boost"].without_container = True
         self.options["boost"].without_context = True
         self.options["boost"].without_contract = True
@@ -68,6 +67,7 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_regex = True
         self.options["boost"].without_serialization = True
         self.options["boost"].without_stacktrace = True
+        self.options["boost"].without_timer = True
         self.options["boost"].without_thread = True
         self.options["boost"].without_type_erasure = True
         self.options["boost"].without_wave = True
@@ -79,7 +79,9 @@ class StlabLibrariesConan(ConanFile):
             cmake.definitions["CMAKE_CXX_STANDARD"] = 17
         cmake.configure()
         cmake.build()
-        cmake.test(output_on_failure=True)
+        
+        if self.options.tests:
+            cmake.test(output_on_failure=True)
 
     def imports(self):
         self.copy("*.dll", "./bin", "bin")
