@@ -41,9 +41,13 @@ option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
 #
-# On apple we have to force the usage of boost.varianr, because Apple's
+# On apple we have to force the usage of boost.variant, because Apple's
 # implementation of C++17 is not complete
 #
+
+message(STATUS "CMAKE_CXX_COMPILER_ID:      ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
+
 if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
   set( stlab.boost_variant ON )
 endif()
@@ -60,7 +64,7 @@ add_library( stlab INTERFACE )
 add_library( stlab::stlab ALIAS stlab )
 
 #
-# stlab requires C++ 17 support, at a minimum. Setting the `cxx_std_17` compile
+# stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
 # features ensures that the corresponding C++ standard flag is populated in
 # targets linking to stlab.
 #
