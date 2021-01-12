@@ -44,7 +44,7 @@ class StlabLibrariesConan(ConanFile):
                 self.options.boost_variant
 
     def requirements(self):
-        if _use_boost():
+        if self._use_boost():
             self.requires("boost/1.75.0@")
 
     def package_id(self):
@@ -93,9 +93,9 @@ class StlabLibrariesConan(ConanFile):
 
 
     def _check_boost_components(self):
-        conans.output.info(f"self.settings.os:               {self.settings.os}")
-        conans.output.info(f"self.settings.compiler:         {self.settings.compiler}")
-        conans.output.info(f"self.settings.compiler.version: {self.settings.compiler.version}")
+        self.output.info(f"self.settings.os:               {self.settings.os}")
+        self.output.info(f"self.settings.compiler:         {self.settings.compiler}")
+        self.output.info(f"self.settings.compiler.version: {self.settings.compiler.version}")
 
         # "compiler": "apple-clang","version": "12","os": "macos-11.0"
 
@@ -107,10 +107,10 @@ class StlabLibrariesConan(ConanFile):
     def configure(self):
         ConanFile.configure(self)
 
-        _check_boost_components()
+        self._check_boost_components()
 
-        if _use_boost():
-            _configure_boost()
+        if self._use_boost():
+            self._configure_boost()
 
     def build(self):
         cmake = CMake(self)
