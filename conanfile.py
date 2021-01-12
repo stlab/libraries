@@ -94,7 +94,7 @@ class StlabLibrariesConan(ConanFile):
 
     def _fix_boost_components(self):
         if self.settings.os != "Macos": return
-        if self.settings.os != "apple-clang": return
+        if self.settings.compiler != "apple-clang": return
         if float(str(self.settings.compiler.version)) >= 12: return
 
         #
