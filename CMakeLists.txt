@@ -44,17 +44,8 @@ option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 # On apple we have to force the usage of boost.variant, because Apple's
 # implementation of C++17 is not complete
 #
-
-message(STATUS "CMAKE_CXX_COMPILER_ID:      ${CMAKE_CXX_COMPILER_ID}")
-message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
-
-if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 12)
-    message(STATUS "Compiler version is greater or equal than 12")
-else()
-    message(STATUS "Compiler version is less than 12")
-endif()
-
-if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
+  message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
   set( stlab.boost_variant ON )
 endif()
 

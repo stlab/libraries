@@ -92,22 +92,22 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_wave = True
 
 
-    def _check_boost_components(self):
-        self.output.info(f"self.settings.os:               {self.settings.os}")
-        self.output.info(f"self.settings.compiler:         {self.settings.compiler}")
-        self.output.info(f"self.settings.compiler.version: {self.settings.compiler.version}")
+    def _fix_boost_components(self):
+        if self.settings.os != "Macos": return
+        if self.settings.os != "apple-clang": return
+        if float(str(self.settings.compiler.version)) >= 12: return
 
-        # "compiler": "apple-clang","version": "12","os": "macos-11.0"
-
-#     if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-#   set( stlab.boost_variant ON )
-# endif()
-
+        #
+        # On Apple we have to force the usage of boost.variant, because Apple's implementation of C++17 is not complete.
+        #
+        self.output.warn(f"Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
+        self.options.boost_optional = True
+        self.options.boost_variant = True
 
     def configure(self):
         ConanFile.configure(self)
 
-        self._check_boost_components()
+        self._fix_boost_components()
 
         if self._use_boost():
             self._configure_boost()
