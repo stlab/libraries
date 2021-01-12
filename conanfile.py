@@ -100,7 +100,7 @@ class StlabLibrariesConan(ConanFile):
         #
         # On Apple we have to force the usage of boost.variant, because Apple's implementation of C++17 is not complete.
         #
-        self.output.warn(f"Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
+        self.output.warn("Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
         self.options.boost_optional = True
         self.options.boost_variant = True
 
