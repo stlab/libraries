@@ -1562,7 +1562,7 @@ struct common_context : CR {
 
 template <typename C, typename E, typename T>
 void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
-    auto&& hold = std::move(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
+    auto&& hold = std::forward<T>(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception(); ex) {
@@ -1614,7 +1614,7 @@ struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
 
         size_t index(0);
         for (; first != last; ++first) {
-            attach_tasks(index++, executor, context, std::forward<decltype(*first)>(*first));
+            attach_tasks(index++, executor, context, std::move(*first));
         }
 
         return std::move(p.second);
