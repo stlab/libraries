@@ -49,6 +49,7 @@ class StlabLibrariesConan(ConanFile):
 
     def package_id(self):
         ConanFile.package_id(self)
+        self.info.header_only()
         self.info.options.testing = "ANY"
         self.info.options.coverage = "ANY"
         self.info.options.boost_optional = "ANY"
@@ -113,21 +114,23 @@ class StlabLibrariesConan(ConanFile):
             self._configure_boost()
 
     def build(self):
-        cmake = CMake(self)
-        cmake.verbose = True
-        if not self.settings.compiler.cppstd:
-            cmake.definitions["CMAKE_CXX_STANDARD"] = 17
-            cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
-            cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
-            cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
-            cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
-            cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
-
-        cmake.configure()
-        cmake.build()
-        
         if self.options.testing:
+            cmake = CMake(self)
+            cmake.verbose = True
+            if not self.settings.compiler.cppstd:
+                cmake.definitions["CMAKE_CXX_STANDARD"] = 17
+                cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
+                cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
+                cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
+                cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
+                cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
+
+            cmake.configure()
+            cmake.build()
             cmake.test(output_on_failure=True)
+
+    def package(self):
+        self.copy("*.hpp")
 
     def imports(self):
         self.copy("*.dll", "./bin", "bin")
