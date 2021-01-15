@@ -28,6 +28,14 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": [True, False],
         "boost_variant": [True, False],
         "coroutines": [True, False],
+        "task_system": ["portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
+
+#define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_PNACL() 0
+#define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 0
+
     }
 
     default_options = {
@@ -36,6 +44,7 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": False,
         "boost_variant": False,
         "coroutines": False,
+        "task_system": "auto",
     }
 
     def _use_boost(self):
@@ -43,9 +52,17 @@ class StlabLibrariesConan(ConanFile):
                 self.options.boost_optional or \
                 self.options.boost_variant
 
+    def _requires_libdispatch(self):
+        # On macOS it is not necessary to use the libdispatch conan package, because the library is included in the OS.
+        return self.options.task_system == "libdispatch" and \
+               self.settings.os != "Macos"
+
     def requirements(self):
         if self._use_boost():
             self.requires("boost/1.75.0@")
+
+        if self._requires_libdispatch():
+            self.requires("libdispatch/5.3.2@")
 
     def package_id(self):
         ConanFile.package_id(self)
@@ -92,7 +109,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_type_erasure = True
         self.options["boost"].without_wave = True
 
-
     def _fix_boost_components(self):
         if self.settings.os != "Macos": return
         if self.settings.compiler != "apple-clang": return
@@ -105,6 +121,62 @@ class StlabLibrariesConan(ConanFile):
         self.options.boost_optional = True
         self.options.boost_variant = True
 
+    def _default_task_system(self):
+        if self.settings.os == "Macos":
+            return "libdispatch"
+
+        if self.settings.os == "Windows":
+            return "windows"
+
+        if self.settings.os == "Emscripten":
+            return "emscripten"
+
+        return "portable"
+
+        # TODO: pnacl
+
+    def _configure_task_system_auto(self):
+        self.options.task_system = self._default_task_system()
+
+    def _configure_task_system_libdispatch(self):
+        if self.settings.os == "Linux":
+            if self.settings.compiler != "clang":
+                self.options.task_system = self._default_task_system()
+                self.output.warn("Libdispatch requires Clang compiler on Linux. The task system is changed to {}.".format(self.options.task_system))
+                return
+
+            if self.settings.build_type == "Debug":
+                self.options.task_system = self._default_task_system()
+                self.output.warn("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
+                return
+
+        elif self.settings.os != "Macos":
+            self.options.task_system = self._default_task_system()
+            self.output.warn("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
+            return
+
+    def _configure_task_system_windows(self):
+        if self.settings.os != "Windows":
+            self.options.task_system = self._default_task_system()
+            self.output.warn("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
+            return
+
+    def _configure_task_system_emscripten(self):
+        if self.settings.os != "Emscripten":
+            self.options.task_system = self._default_task_system()
+            self.output.warn("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
+            return
+
+    def _configure_task_system(self):
+        if self.options.task_system == "auto":
+            self._configure_task_system_auto()
+        elif self.options.task_system == "libdispatch":
+            self._configure_task_system_libdispatch()
+        elif self.options.task_system == "windows":
+            self._configure_task_system_windows()
+        elif self.options.task_system == "emscripten":
+            self._configure_task_system_emscripten()
+
     def configure(self):
         ConanFile.configure(self)
 
@@ -112,6 +184,11 @@ class StlabLibrariesConan(ConanFile):
 
         if self._use_boost():
             self._configure_boost()
+
+        self._configure_task_system()
+
+        self.output.info("Task System: {}.".format(self.options.task_system))
+
 
     def build(self):
         if self.options.testing:
@@ -124,6 +201,7 @@ class StlabLibrariesConan(ConanFile):
                 cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
                 cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
                 cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
+                cmake.definitions["stlab.task_system"] = self.options.task_system
 
             cmake.configure()
             cmake.build()
