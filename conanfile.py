@@ -132,6 +132,10 @@ class StlabLibrariesConan(ConanFile):
         self.options.task_system = self._default_task_system()
 
     def _configure_task_system_libdispatch(self):
+        self.output.info("_configure_task_system_libdispatch - self.settings.os:         {}.".format(self.settings.os))
+        self.output.info("_configure_task_system_libdispatch - self.settings.compiler:   {}.".format(self.settings.compiler))
+        self.output.info("_configure_task_system_libdispatch - self.settings.build_type: {}.".format(self.settings.build_type))
+
         if self.settings.os == "Linux":
             if self.settings.compiler != "clang":
                 self.options.task_system = self._default_task_system()
