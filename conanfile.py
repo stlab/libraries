@@ -136,13 +136,22 @@ class StlabLibrariesConan(ConanFile):
         self.output.info("_configure_task_system_libdispatch - self.settings.compiler:   {}.".format(self.settings.compiler))
         self.output.info("_configure_task_system_libdispatch - self.settings.build_type: {}.".format(self.settings.build_type))
 
+        self.output.info("_configure_task_system_libdispatch - 1 -")
+
+        self.output.info("_configure_task_system_libdispatch - cond1: {}.".format(self.settings.os == "Linux"))
+        self.output.info("_configure_task_system_libdispatch - cond2: {}.".format(self.settings.compiler != "clang"))
+
         if self.settings.os == "Linux":
+            self.output.info("_configure_task_system_libdispatch - 2 -")
+
             if self.settings.compiler != "clang":
+                self.output.info("_configure_task_system_libdispatch - 3 -")
                 self.options.task_system = self._default_task_system()
                 self.output.warn("Libdispatch requires Clang compiler on Linux. The task system is changed to {}.".format(self.options.task_system))
                 return
 
             if self.settings.build_type == "Debug":
+                self.output.info("_configure_task_system_libdispatch - 4 -")
                 self.options.task_system = self._default_task_system()
                 self.output.warn("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
                 return
