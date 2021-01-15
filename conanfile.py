@@ -40,6 +40,10 @@ class StlabLibrariesConan(ConanFile):
         "task_system": "auto",
     }
 
+    def _log(self, str):
+        self.output.info(str)
+        self.output.warn(str)
+
     def _use_boost(self):
         return self.options.testing or \
                 self.options.boost_optional or \
@@ -110,7 +114,7 @@ class StlabLibrariesConan(ConanFile):
         #
         # On Apple we have to force the usage of boost.variant, because Apple's implementation of C++17 is not complete.
         #
-        self.output.warn("Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
+        self._log("Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
         self.options.boost_optional = True
         self.options.boost_variant = True
 
@@ -132,45 +136,32 @@ class StlabLibrariesConan(ConanFile):
         self.options.task_system = self._default_task_system()
 
     def _configure_task_system_libdispatch(self):
-        self.output.info("_configure_task_system_libdispatch - self.settings.os:         {}.".format(self.settings.os))
-        self.output.info("_configure_task_system_libdispatch - self.settings.compiler:   {}.".format(self.settings.compiler))
-        self.output.info("_configure_task_system_libdispatch - self.settings.build_type: {}.".format(self.settings.build_type))
-
-        self.output.info("_configure_task_system_libdispatch - 1 -")
-
-        self.output.info("_configure_task_system_libdispatch - cond1: {}.".format(self.settings.os == "Linux"))
-        self.output.info("_configure_task_system_libdispatch - cond2: {}.".format(self.settings.compiler != "clang"))
-
         if self.settings.os == "Linux":
-            self.output.info("_configure_task_system_libdispatch - 2 -")
-
             if self.settings.compiler != "clang":
-                self.output.info("_configure_task_system_libdispatch - 3 -")
                 self.options.task_system = self._default_task_system()
-                self.output.warn("Libdispatch requires Clang compiler on Linux. The task system is changed to {}.".format(self.options.task_system))
+                self._log("Libdispatch requires Clang compiler on Linux. The task system is changed to {}.".format(self.options.task_system))
                 return
 
             if self.settings.build_type == "Debug":
-                self.output.info("_configure_task_system_libdispatch - 4 -")
                 self.options.task_system = self._default_task_system()
-                self.output.warn("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
+                self._log("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
                 return
 
         elif self.settings.os != "Macos":
             self.options.task_system = self._default_task_system()
-            self.output.warn("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
+            self._log("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
             return
 
     def _configure_task_system_windows(self):
         if self.settings.os != "Windows":
             self.options.task_system = self._default_task_system()
-            self.output.warn("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
+            self._log("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
             return
 
     def _configure_task_system_emscripten(self):
         if self.settings.os != "Emscripten":
             self.options.task_system = self._default_task_system()
-            self.output.warn("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
+            self._log("Libdispatch is not supported on {}. The task system is changed to {}.".format(self.settings.os, self.options.task_system))
             return
 
     def _configure_task_system(self):
