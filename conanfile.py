@@ -29,13 +29,6 @@ class StlabLibrariesConan(ConanFile):
         "boost_variant": [True, False],
         "coroutines": [True, False],
         "task_system": ["portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
-
-#define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 0
-#define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 0
-#define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 0
-#define STLAB_TASK_SYSTEM_PRIVATE_PNACL() 0
-#define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 0
-
     }
 
     default_options = {
