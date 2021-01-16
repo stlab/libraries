@@ -165,7 +165,8 @@ if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   set_property( TARGET libdispatch::libdispatch  
     APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
 
-  target_link_libraries(${CMAKE_PROJECT_NAME} libdispatch::libdispatch)
+  target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
+  # target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
 endif()
 
 if (${stlab.task_system} STREQUAL "portable")
