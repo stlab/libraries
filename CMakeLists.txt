@@ -106,6 +106,8 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   # conanfile.txt
   #
   conan_basic_setup( TARGETS KEEP_RPATHS )
+
+  find_package(libdispatch REQUIRED)
 endif()
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
