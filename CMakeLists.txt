@@ -16,6 +16,11 @@ endif()
 
 project( stlab VERSION 1.5.4 LANGUAGES CXX )
 
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+find_package(libdispatch REQUIRED)
+
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -44,18 +49,18 @@ set(stlab.task_system "portable" CACHE STRING "Selct the task system (portable|l
 
 
 
-if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-  #
-  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-  # will populate targets for each conan package specified in the
-  # conanfile.txt
-  #
-  # conan_basic_setup( TARGETS KEEP_RPATHS )
-  conan_basic_setup( TARGETS )
+# if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+#   include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+#   #
+#   # using the `TARGETS` keyword in the `conan_basic_setup` invocation
+#   # will populate targets for each conan package specified in the
+#   # conanfile.txt
+#   #
+#   # conan_basic_setup( TARGETS KEEP_RPATHS )
+#   conan_basic_setup( TARGETS )
 
-  find_package(libdispatch REQUIRED)
-endif()
+#   find_package(libdispatch REQUIRED)
+# endif()
 
 
 
