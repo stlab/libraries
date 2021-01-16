@@ -20,7 +20,6 @@ class StlabLibrariesConan(ConanFile):
     description = "Software Technology Lab (stlab) libraries"
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
-    # generators = "cmake_find_package", "cmake"
     exports_sources = "CMakeLists.txt", "LICENSE", "stlab/*", "cmake/*", "test/*"
 
     options = {
@@ -142,11 +141,6 @@ class StlabLibrariesConan(ConanFile):
                 self.options.task_system = self._default_task_system()
                 self._log("Libdispatch requires Clang compiler on Linux. The task system is changed to {}.".format(self.options.task_system))
                 return
-
-            # if self.settings.build_type == "Debug":
-            #     self.options.task_system = self._default_task_system()
-            #     self._log("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
-            #     return
 
         elif self.settings.os != "Macos":
             self.options.task_system = self._default_task_system()
