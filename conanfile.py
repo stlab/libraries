@@ -19,8 +19,8 @@ class StlabLibrariesConan(ConanFile):
     url = "https://github.com/stlab/libraries"
     description = "Software Technology Lab (stlab) libraries"
     settings = "os", "compiler", "build_type", "arch"
-    # generators = "cmake"
-    generators = "cmake_find_package", "cmake"
+    generators = "cmake"
+    # generators = "cmake_find_package", "cmake"
     exports_sources = "CMakeLists.txt", "LICENSE", "stlab/*", "cmake/*", "test/*"
 
     options = {

@@ -16,320 +16,305 @@ endif()
 
 project( stlab VERSION 1.5.4 LANGUAGES CXX )
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
-find_package(libdispatch REQUIRED)
+# include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+# conan_basic_setup()
+# find_package(libdispatch REQUIRED)
 
 
-# set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# include( CTest )
-# include( CMakeDependentOption )
+include( CTest )
+include( CMakeDependentOption )
 
-# #
-# # The `stlab.testing` and `stlab.coverage` options only appear as
-# # cmake-gui and ccmake options iff stlab is the highest level project.
-# # In the case that stlab is a subproject, these options are hidden from
-# # the user interface and set to `OFF`
-# #
-# cmake_dependent_option( stlab.testing
-#   "Compile the stlab tests and integrate with ctest"
-#   ${BUILD_TESTING} "NOT subproject" OFF )
+#
+# The `stlab.testing` and `stlab.coverage` options only appear as
+# cmake-gui and ccmake options iff stlab is the highest level project.
+# In the case that stlab is a subproject, these options are hidden from
+# the user interface and set to `OFF`
+#
+cmake_dependent_option( stlab.testing
+  "Compile the stlab tests and integrate with ctest"
+  ${BUILD_TESTING} "NOT subproject" OFF )
 
-# cmake_dependent_option( stlab.coverage
-#   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
-#   OFF "NOT subproject" OFF )
+cmake_dependent_option( stlab.coverage
+  "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
+  OFF "NOT subproject" OFF )
 
-# option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
-# option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
-# option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
+option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
+option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
+option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
-# set(stlab.task_system "portable" CACHE STRING "Selct the task system (portable|libdispatch|emscripten|pnacl|windows).")
+set(stlab.task_system "portable" CACHE STRING "Selct the task system (portable|libdispatch|emscripten|pnacl|windows).")
 
+#
+# On apple we have to force the usage of boost.variant, because Apple's
+# implementation of C++17 is not complete
+#
+if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
+  message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
+  set( stlab.boost_variant ON )
+endif()
 
+mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
 
-# # if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-# #   include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-# #   #
-# #   # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-# #   # will populate targets for each conan package specified in the
-# #   # conanfile.txt
-# #   #
-# #   # conan_basic_setup( TARGETS KEEP_RPATHS )
-# #   conan_basic_setup( TARGETS )
+#
+# stlab has no compiled components. As such, we declare it as an `INTERFACE`
+# library, which denotes a collection of target propeties to be applied
+# transitively to linking targets. In our case, this ammounts to an include
+# directory, compile flags, linking flags, and links to system libraries.
+#
+add_library( stlab INTERFACE )
+add_library( stlab::stlab ALIAS stlab )
 
-# #   find_package(libdispatch REQUIRED)
-# # endif()
+#
+# stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
+# features ensures that the corresponding C++ standard flag is populated in
+# targets linking to stlab.
+#
+target_compile_features( stlab INTERFACE cxx_std_17 )
 
+#
+# The include directory for stlab can be expected to vary between build
+# and installaion. Here we use a CMake generator expression to dispatch
+# on how the configuration under which this library is being consumed.
+#
+target_include_directories( stlab INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include> )
 
+#
+# As of CMake version 3.1, the FindThreads CMake module supplies an imported
+# target called `Thread::Thread` which transitively supplies inlude directories,
+# compiler flags, and linker flags to CMake targets linking to it.
+#
+set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
+find_package( Threads REQUIRED )
+target_link_libraries( stlab INTERFACE Threads::Threads )
 
-# #
-# # On apple we have to force the usage of boost.variant, because Apple's
-# # implementation of C++17 is not complete
-# #
-# if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
-#   message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
-#   set( stlab.boost_variant ON )
-# endif()
+#
+# Several definitions are specified for the microsoft compiler. These have
+# the following effects.
+#
+# + NOMINMAX
+#    disable the `min` and `max` macros defined in the windows.h header
+#
+target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
 
-# mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
+add_subdirectory( stlab/concurrency )
 
-# #
-# # stlab has no compiled components. As such, we declare it as an `INTERFACE`
-# # library, which denotes a collection of target propeties to be applied
-# # transitively to linking targets. In our case, this ammounts to an include
-# # directory, compile flags, linking flags, and links to system libraries.
-# #
-# add_library( stlab INTERFACE )
-# add_library( stlab::stlab ALIAS stlab )
+if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+  #
+  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
+  # will populate targets for each conan package specified in the
+  # conanfile.txt
+  #
+  conan_basic_setup( TARGETS KEEP_RPATHS )
+  # conan_basic_setup( TARGETS )
 
-# #
-# # stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
-# # features ensures that the corresponding C++ standard flag is populated in
-# # targets linking to stlab.
-# #
-# target_compile_features( stlab INTERFACE cxx_std_17 )
+  # find_package(libdispatch REQUIRED)
+endif()
 
-# #
-# # The include directory for stlab can be expected to vary between build
-# # and installaion. Here we use a CMake generator expression to dispatch
-# # on how the configuration under which this library is being consumed.
-# #
-# target_include_directories( stlab INTERFACE
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-#   $<INSTALL_INTERFACE:include> )
+if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
+  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    #
+    # We provide aliases to the conan target to mimic the native findBoost
+    # functionality
+    #
+    add_library( Boost::boost INTERFACE IMPORTED )
+    add_library( Boost::unit_test_framework INTERFACE IMPORTED )
+    set_property( TARGET Boost::boost Boost::unit_test_framework 
+      APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
+  else()
+    #
+    # Request compiled unit testing component only if testing is `ON`
+    #
+    if( stlab.testing )
+      find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
+    else()
+      find_package( Boost 1.60.0 REQUIRED )
+    endif()
+  endif()
 
-# #
-# # As of CMake version 3.1, the FindThreads CMake module supplies an imported
-# # target called `Thread::Thread` which transitively supplies inlude directories,
-# # compiler flags, and linker flags to CMake targets linking to it.
-# #
-# set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
-# find_package( Threads REQUIRED )
-# target_link_libraries( stlab INTERFACE Threads::Threads )
-
-# #
-# # Several definitions are specified for the microsoft compiler. These have
-# # the following effects.
-# #
-# # + NOMINMAX
-# #    disable the `min` and `max` macros defined in the windows.h header
-# #
-# target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
-
-# add_subdirectory( stlab/concurrency )
-
-# # if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-# #   include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-# #   #
-# #   # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-# #   # will populate targets for each conan package specified in the
-# #   # conanfile.txt
-# #   #
-# #   # conan_basic_setup( TARGETS KEEP_RPATHS )
-# #   conan_basic_setup( TARGETS )
-
-# #   find_package(libdispatch REQUIRED)
-# # endif()
-
-# if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
-#   if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-#     #
-#     # We provide aliases to the conan target to mimic the native findBoost
-#     # functionality
-#     #
-#     add_library( Boost::boost INTERFACE IMPORTED )
-#     add_library( Boost::unit_test_framework INTERFACE IMPORTED )
-#     set_property( TARGET Boost::boost Boost::unit_test_framework 
-#       APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
-#   else()
-#     #
-#     # Request compiled unit testing component only if testing is `ON`
-#     #
-#     if( stlab.testing )
-#       find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
-#     else()
-#       find_package( Boost 1.60.0 REQUIRED )
-#     endif()
-#   endif()
-
-#   if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
-#     message(FATAL_ERROR "Could not find Boost unit test framework.")
-#   endif()
+  if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
+    message(FATAL_ERROR "Could not find Boost unit test framework.")
+  endif()
   
 
-#   string( APPEND either_generator
-#     "$<OR:$<BOOL:${stlab.boost_optional}>,"
-#          "$<BOOL:${stlab.boost_variant}>>" )
+  string( APPEND either_generator
+    "$<OR:$<BOOL:${stlab.boost_optional}>,"
+         "$<BOOL:${stlab.boost_variant}>>" )
 
-#   #
-#   # Link to the `Boost::boost` target is either `stlab.boost_optional`
-#   # or `stlab.boost_variant` are set `ON`, which provides the include
-#   # directory for the boost header.
-#   #
-#   target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
+  #
+  # Link to the `Boost::boost` target is either `stlab.boost_optional`
+  # or `stlab.boost_variant` are set `ON`, which provides the include
+  # directory for the boost header.
+  #
+  target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
 
-#   #
-#   # Conditionally specify the corresponding compiler definitions for
-#   # each boost algebraic data type library. In the case that either
-#   # is specified, a preprocessor definition is used to specify that
-#   # `auto_ptr` should not be used in the boost headers.
-#   #
-#   target_compile_definitions( stlab INTERFACE
-#     $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
-#     $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
+  #
+  # Conditionally specify the corresponding compiler definitions for
+  # each boost algebraic data type library. In the case that either
+  # is specified, a preprocessor definition is used to specify that
+  # `auto_ptr` should not be used in the boost headers.
+  #
+  target_compile_definitions( stlab INTERFACE
+    $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
+    $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
 
-#   unset( either_generator )
-# endif()
+  unset( either_generator )
+endif()
 
-# if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
-#   # find_package(libdispatch REQUIRED)
+if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
+  # find_package(libdispatch REQUIRED)
 
-#   add_library( libdispatch::libdispatch INTERFACE IMPORTED )
-#   set_property( TARGET libdispatch::libdispatch  
-#     APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
+  # add_library( libdispatch::libdispatch INTERFACE IMPORTED )
+  # set_property( TARGET libdispatch::libdispatch  
+  #   APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
 
-#   target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
-#   # target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
-# endif()
+  # target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
+  # # target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
 
-# if (${stlab.task_system} STREQUAL "portable")
-#   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
-# elseif (${stlab.task_system} STREQUAL "libdispatch")
-#   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
-# elseif (${stlab.task_system} STREQUAL "emscripten")
-#   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSRIPTEN )
-# elseif (${stlab.task_system} STREQUAL "pnacl")
-#   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
-# elseif (${stlab.task_system} STREQUAL "windows")
-#   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
-# else()
-#   message(FATAL_ERROR "Invalid Task System: ${stlab.task_system}")
-# endif()
+  target_link_libraries(${CMAKE_PROJECT_NAME} CONAN_PKG::libdispatch)
+endif()
 
-# message(STATUS "stlab: Task System: ${stlab.task_system}")
+if (${stlab.task_system} STREQUAL "portable")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
+elseif (${stlab.task_system} STREQUAL "libdispatch")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
+elseif (${stlab.task_system} STREQUAL "emscripten")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSRIPTEN )
+elseif (${stlab.task_system} STREQUAL "pnacl")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
+elseif (${stlab.task_system} STREQUAL "windows")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
+else()
+  message(FATAL_ERROR "Invalid Task System: ${stlab.task_system}")
+endif()
+
+message(STATUS "stlab: Task System: ${stlab.task_system}")
 
 
-# list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
-# include( stlab/coroutines )
-# target_link_libraries( stlab INTERFACE stlab::coroutines )
+list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
+include( stlab/coroutines )
+target_link_libraries( stlab INTERFACE stlab::coroutines )
 
-# if ( stlab.testing )
-#   include( stlab/development )
+if ( stlab.testing )
+  include( stlab/development )
 
-#   #
-#   # Establish a convenience target to encapsulate the properties common to the
-#   # stlab tests and establish an alias for uniformity.
-#   #
-#   add_library( testing INTERFACE )
-#   add_library( stlab::testing ALIAS testing )
+  #
+  # Establish a convenience target to encapsulate the properties common to the
+  # stlab tests and establish an alias for uniformity.
+  #
+  add_library( testing INTERFACE )
+  add_library( stlab::testing ALIAS testing )
 
-#   #
-#   # CMake targets linking to the stlab::testing target will (transitively)
-#   # link to the Boost::unit_test_framework and to stlab::stlab target.
-#   #
-#   target_link_libraries( testing INTERFACE
-#     Boost::unit_test_framework
-#     stlab::development
-#     stlab::stlab )
+  #
+  # CMake targets linking to the stlab::testing target will (transitively)
+  # link to the Boost::unit_test_framework and to stlab::stlab target.
+  #
+  target_link_libraries( testing INTERFACE
+    Boost::unit_test_framework
+    stlab::development
+    stlab::stlab )
 
-#   #
-#   # Linking to the Boost unit test framework requires an additional
-#   # preprocessor definition when the unit test compiled resources are
-#   # provided by a shared library rather than a static library.
-#   #
-#   target_compile_definitions( testing INTERFACE
-#     $<$<NOT:$<BOOL:${Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK>)
+  #
+  # Linking to the Boost unit test framework requires an additional
+  # preprocessor definition when the unit test compiled resources are
+  # provided by a shared library rather than a static library.
+  #
+  target_compile_definitions( testing INTERFACE
+    $<$<NOT:$<BOOL:${Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK>)
 
-#   add_subdirectory( test )
-# endif()
+  add_subdirectory( test )
+endif()
 
-# include( CMakePackageConfigHelpers ) # provides `write_basic_package_version_file`
+include( CMakePackageConfigHelpers ) # provides `write_basic_package_version_file`
 
-# #
-# # We generate a CMake version file for later installation to be consumed by
-# # CMake's `find_package` intrinsic. Here we specify a semantic version
-# # convention, i.e., backwards compatability can be assumed within a Major
-# # version.
-# #
-# write_basic_package_version_file(
-#   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
-#   VERSION ${stlab_VERSION}
-#   COMPATIBILITY SameMajorVersion )
+#
+# We generate a CMake version file for later installation to be consumed by
+# CMake's `find_package` intrinsic. Here we specify a semantic version
+# convention, i.e., backwards compatability can be assumed within a Major
+# version.
+#
+write_basic_package_version_file(
+  "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
+  VERSION ${stlab_VERSION}
+  COMPATIBILITY SameMajorVersion )
 
-# #
-# # As a header-only library, there are no target components to be installed
-# # directly (the PUBLIC_HEADER property is not white listed for INTERFACE
-# # targets for some reason).
-# #
-# # However, it is worthwhile export our target description in order to later
-# # generate a CMake configuration file for consumption by CMake's `find_package`
-# # intrinsic
-# #
-# install( TARGETS stlab coroutines EXPORT stlabTargets )
+#
+# As a header-only library, there are no target components to be installed
+# directly (the PUBLIC_HEADER property is not white listed for INTERFACE
+# targets for some reason).
+#
+# However, it is worthwhile export our target description in order to later
+# generate a CMake configuration file for consumption by CMake's `find_package`
+# intrinsic
+#
+install( TARGETS stlab coroutines EXPORT stlabTargets )
 
-# #
-# # Non-testing header files (preserving relative paths) are installed to the
-# # `include` subdirectory of the `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`
-# # directory. Source file permissions preserved.
-# #
-# install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/stlab
-#   DESTINATION include
-#   USE_SOURCE_PERMISSIONS
-#   FILES_MATCHING
-#     PATTERN "*.hpp"
-#     PATTERN "*test*" EXCLUDE )
+#
+# Non-testing header files (preserving relative paths) are installed to the
+# `include` subdirectory of the `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`
+# directory. Source file permissions preserved.
+#
+install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/stlab
+  DESTINATION include
+  USE_SOURCE_PERMISSIONS
+  FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*test*" EXCLUDE )
 
-# #
-# # A CMake configuration file is generated describing the stlab exported targets.
-# # This file is included by (and installed with) the cmake/CMakeConfig.cmake file
-# # under version control.
-# #
-# install( EXPORT stlabTargets
-#   FILE stlabTargets.cmake
-#   NAMESPACE stlab::
-#   DESTINATION share/cmake/stlab )
+#
+# A CMake configuration file is generated describing the stlab exported targets.
+# This file is included by (and installed with) the cmake/CMakeConfig.cmake file
+# under version control.
+#
+install( EXPORT stlabTargets
+  FILE stlabTargets.cmake
+  NAMESPACE stlab::
+  DESTINATION share/cmake/stlab )
 
-# #
-# # Install the CMake configuration files to the `share/cmake/stlab` subdirectory
-# # of `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`. This path will be searched by
-# # default by the `find_package` intrinsic, provided
-# # `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}` is an element of the
-# # `CMAKE_PREFIX_PATH` environment variable.
-# #
-# install( FILES
-#   "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake"
-#   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
-#   DESTINATION share/cmake/stlab )
+#
+# Install the CMake configuration files to the `share/cmake/stlab` subdirectory
+# of `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`. This path will be searched by
+# default by the `find_package` intrinsic, provided
+# `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}` is an element of the
+# `CMAKE_PREFIX_PATH` environment variable.
+#
+install( FILES
+  "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake"
+  "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
+  DESTINATION share/cmake/stlab )
 
-# #
-# # Rudimentary CPack support.
-# #
-# # CPack provides a mechanism to generate installation packaging for a project,
-# # e.g., self-extracting shell scripts, compressed tarballs, Debian Package files,
-# # RPM Package Manager files, Windows NSIS installation wizards,
-# # Apple Disk Images (.dmg), etc.
-# #
-# # Any system libraries required (runtimes, threading, etc) should be bundled
-# # with the project for this type of installation. The
-# # `InstallRequiredSystemLibraries` CMake module attempts to provide this
-# # functionality in an automated way. Additional libraries may be specified as
-# #
-# # ```cmake
-# # list(APPEND CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS <library>)
-# # ```
-# #
-# # A packaged installation can be generated by calling
-# #
-# # ```sh
-# # cpack -G <packaging type> --config CPackConfig.cmake
-# # ```
-# #
-# # See `cpack --help` or the CPack documentation for more information.
-# #
-# include( InstallRequiredSystemLibraries )
-# set( CPACK_PACKAGE_VENDOR "Adobe Software Technology Lab" )
-# set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" )
-# set( CMAKE_PROJECT_HOMEPAGE_URL "https://stlab.cc/libraries/" )
-# include( CPack )
+#
+# Rudimentary CPack support.
+#
+# CPack provides a mechanism to generate installation packaging for a project,
+# e.g., self-extracting shell scripts, compressed tarballs, Debian Package files,
+# RPM Package Manager files, Windows NSIS installation wizards,
+# Apple Disk Images (.dmg), etc.
+#
+# Any system libraries required (runtimes, threading, etc) should be bundled
+# with the project for this type of installation. The
+# `InstallRequiredSystemLibraries` CMake module attempts to provide this
+# functionality in an automated way. Additional libraries may be specified as
+#
+# ```cmake
+# list(APPEND CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS <library>)
+# ```
+#
+# A packaged installation can be generated by calling
+#
+# ```sh
+# cpack -G <packaging type> --config CPackConfig.cmake
+# ```
+#
+# See `cpack --help` or the CPack documentation for more information.
+#
+include( InstallRequiredSystemLibraries )
+set( CPACK_PACKAGE_VENDOR "Adobe Software Technology Lab" )
+set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" )
+set( CMAKE_PROJECT_HOMEPAGE_URL "https://stlab.cc/libraries/" )
+include( CPack )
