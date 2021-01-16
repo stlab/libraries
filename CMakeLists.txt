@@ -16,11 +16,6 @@ endif()
 
 project( stlab VERSION 1.5.4 LANGUAGES CXX )
 
-# include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-# conan_basic_setup()
-# find_package(libdispatch REQUIRED)
-
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -111,9 +106,6 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   # conanfile.txt
   #
   conan_basic_setup( TARGETS KEEP_RPATHS )
-  # conan_basic_setup( TARGETS )
-
-  # find_package(libdispatch REQUIRED)
 endif()
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
