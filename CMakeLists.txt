@@ -158,7 +158,7 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   unset( either_generator )
 endif()
 
-if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch")
+if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   find_package(libdispatch REQUIRED)
   target_link_libraries(${CMAKE_PROJECT_NAME} libdispatch::libdispatch)
 endif()
