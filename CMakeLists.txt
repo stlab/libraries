@@ -105,7 +105,8 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   # will populate targets for each conan package specified in the
   # conanfile.txt
   #
-  conan_basic_setup( TARGETS KEEP_RPATHS )
+  # conan_basic_setup( TARGETS KEEP_RPATHS )
+  conan_basic_setup( TARGETS )
 
   find_package(libdispatch REQUIRED)
 endif()
