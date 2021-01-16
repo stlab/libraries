@@ -159,7 +159,12 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
 endif()
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
-  find_package(libdispatch REQUIRED)
+  # find_package(libdispatch REQUIRED)
+
+  add_library( libdispatch::libdispatch INTERFACE IMPORTED )
+  set_property( TARGET libdispatch::libdispatch  
+    APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
+
   target_link_libraries(${CMAKE_PROJECT_NAME} libdispatch::libdispatch)
 endif()
 
