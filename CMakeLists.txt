@@ -42,6 +42,23 @@ option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
 set(stlab.task_system "portable" CACHE STRING "Selct the task system (portable|libdispatch|emscripten|pnacl|windows).")
 
+
+
+if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+  #
+  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
+  # will populate targets for each conan package specified in the
+  # conanfile.txt
+  #
+  # conan_basic_setup( TARGETS KEEP_RPATHS )
+  conan_basic_setup( TARGETS )
+
+  find_package(libdispatch REQUIRED)
+endif()
+
+
+
 #
 # On apple we have to force the usage of boost.variant, because Apple's
 # implementation of C++17 is not complete
@@ -98,18 +115,18 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab/concurrency )
 
-if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-  #
-  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-  # will populate targets for each conan package specified in the
-  # conanfile.txt
-  #
-  # conan_basic_setup( TARGETS KEEP_RPATHS )
-  conan_basic_setup( TARGETS )
+# if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+#   include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+#   #
+#   # using the `TARGETS` keyword in the `conan_basic_setup` invocation
+#   # will populate targets for each conan package specified in the
+#   # conanfile.txt
+#   #
+#   # conan_basic_setup( TARGETS KEEP_RPATHS )
+#   conan_basic_setup( TARGETS )
 
-  find_package(libdispatch REQUIRED)
-endif()
+#   find_package(libdispatch REQUIRED)
+# endif()
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
