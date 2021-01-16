@@ -167,16 +167,16 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
 endif()
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
-  # find_package(libdispatch REQUIRED)
+  message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
 
-  # add_library( libdispatch::libdispatch INTERFACE IMPORTED )
-  # set_property( TARGET libdispatch::libdispatch  
-  #   APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
+  add_library( libdispatch::libdispatch INTERFACE IMPORTED )
+  set_property( TARGET libdispatch::libdispatch  
+    APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
 
-  # target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
-  # # target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
+  target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
+  # target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
 
-  target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE CONAN_PKG::libdispatch)
+  # target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE CONAN_PKG::libdispatch)
 endif()
 
 if (${stlab.task_system} STREQUAL "portable")
