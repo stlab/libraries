@@ -131,7 +131,7 @@ class StlabLibrariesConan(ConanFile):
 
         return "portable"
 
-        # TODO: pnacl
+        # TODO(fernando): pnacl
 
     def _configure_task_system_auto(self):
         self.options.task_system = self._default_task_system()
@@ -143,10 +143,10 @@ class StlabLibrariesConan(ConanFile):
                 self._log("Libdispatch requires Clang compiler on Linux. The task system is changed to {}.".format(self.options.task_system))
                 return
 
-            if self.settings.build_type == "Debug":
-                self.options.task_system = self._default_task_system()
-                self._log("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
-                return
+            # if self.settings.build_type == "Debug":
+            #     self.options.task_system = self._default_task_system()
+            #     self._log("Libdispatch doesn't work in Debug mode. The task system is changed to {}.".format(self.options.task_system))
+            #     return
 
         elif self.settings.os != "Macos":
             self.options.task_system = self._default_task_system()
@@ -184,9 +184,7 @@ class StlabLibrariesConan(ConanFile):
             self._configure_boost()
 
         self._configure_task_system()
-
         self.output.info("Task System: {}.".format(self.options.task_system))
-
 
     def build(self):
         if self.options.testing:
