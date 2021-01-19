@@ -202,3 +202,4 @@ class StlabLibrariesConan(ConanFile):
     def imports(self):
         self.copy("*.dll", "./bin", "bin")
         self.copy("*.dylib", "./bin", "lib")
+
