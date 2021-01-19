@@ -118,6 +118,7 @@ class StlabLibrariesConan(ConanFile):
         self.options.boost_optional = True
         self.options.boost_variant = True
 
+    # TODO(fernando): pnacl
     def _default_task_system(self):
         if self.settings.os == "Macos":
             return "libdispatch"
@@ -129,8 +130,6 @@ class StlabLibrariesConan(ConanFile):
             return "emscripten"
 
         return "portable"
-
-        # TODO(fernando): pnacl
 
     def _configure_task_system_auto(self):
         self.options.task_system = self._default_task_system()
