@@ -629,14 +629,17 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
             if (--_promise_count == 0) {
-                std::unique_lock<std::mutex> lock(this->_mutex);
-                if (!this->_ready) {
-                    this->reset();
-                    _f = function_t();
-                    this->_exception =
-                        std::make_exception_ptr(future_error(future_error_codes::broken_promise));
-                    this->_ready = true;
+                auto was_not_ready{false};
+                {
+                    std::unique_lock<std::mutex> lock(this->_mutex);
+                    if (!this->_ready) {
+                        was_not_ready = true;
+                        _f = function_t();
+                    }
                 }
+                if (was_not_ready)
+                    this->set_exception(
+                        std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
             }
         } else {
             --_promise_count;
