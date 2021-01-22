@@ -9,7 +9,7 @@ if __name__ == "__main__":
     filtered_builds = []
     for settings, options, env_vars, build_requires, reference in builder.items:
     
-        if settings["compiler"] == "clang" and settings["build_type"] == "Release":
+        if settings["compiler"] == "clang":
             opts_libdispatch = copy.deepcopy(options)
             opts_libdispatch["stlab:task_system"] = "libdispatch"
             filtered_builds.append([settings, opts_libdispatch, env_vars, build_requires, reference])
