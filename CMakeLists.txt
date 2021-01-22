@@ -40,7 +40,7 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
-set(stlab.task_system "portable" CACHE STRING "Selct the task system (portable|libdispatch|emscripten|pnacl|windows).")
+set(stlab.task_system "portable" CACHE STRING "Select the task system (portable|libdispatch|emscripten|pnacl|windows).")
 
 #
 # On apple we have to force the usage of boost.variant, because Apple's
