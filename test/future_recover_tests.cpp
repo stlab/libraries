@@ -900,6 +900,7 @@ BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
         auto check{false};
         sut = [&check]() {
             auto [promise, future]{package<int(int)>(immediate_executor, [](int x) { return x; })};
+            (void)promise;
             return future.recover([&check](const auto& f) {
                 check = true;
                 try {
@@ -917,6 +918,7 @@ BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
         auto check{false};
         sut = [&check]() {
             auto [promise, future]{package<int(int)>(immediate_executor, [](int x) { return x; })};
+            (void)promise;
             return future ^ [&check](const auto& f) {
                 check = true;
                 try {
@@ -1158,6 +1160,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
         sut = [&check]() {
             auto [promise, future]{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
+            (void)promise;
             return std::move(future).recover([&check](auto f) {
                 check = true;
                 try {
@@ -1176,6 +1179,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
         sut = [&check]() {
             auto [promise, future]{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
+            (void)promise;
             return std::move(future) ^ [&check](auto f) {
                 check = true;
                 try {
