@@ -60,10 +60,11 @@ void test0(stlab::schedule_mode mode) {
     dq([&]() { strout("           d3           (12)"); });
 
     while (true) {
-        std::lock_guard<std::mutex> l(m);
+        {
+            std::lock_guard<std::mutex> l(m);
 
-        if (output.size() == 13) break;
-
+            if (output.size() == 13) break;
+        }
         rest();
     }
 
