@@ -40,6 +40,8 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
+set(stlab.task_system "portable" CACHE STRING "Select the task system (portable|libdispatch|emscripten|pnacl|windows).")
+
 #
 # On apple we have to force the usage of boost.variant, because Apple's
 # implementation of C++17 is not complete
@@ -155,6 +157,33 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
 
   unset( either_generator )
 endif()
+
+if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
+  message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
+
+  add_library( libdispatch::libdispatch INTERFACE IMPORTED )
+  set_property( TARGET libdispatch::libdispatch  
+    APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
+
+  target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
+endif()
+
+if (${stlab.task_system} STREQUAL "portable")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
+elseif (${stlab.task_system} STREQUAL "libdispatch")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
+elseif (${stlab.task_system} STREQUAL "emscripten")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSRIPTEN )
+elseif (${stlab.task_system} STREQUAL "pnacl")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
+elseif (${stlab.task_system} STREQUAL "windows")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
+else()
+  message(FATAL_ERROR "Invalid Task System: ${stlab.task_system}")
+endif()
+
+message(STATUS "stlab: Task System: ${stlab.task_system}")
+
 
 list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
 include( stlab/coroutines )
