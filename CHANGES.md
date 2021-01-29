@@ -1,6 +1,9 @@
-## v1.5.4 - 2020 - October 08
+
+## v1.5.5 - 2021 - January 29
 - Fixed issues
-    - [#317](https://github.com/stlab/libraries/issues/317): when_all(range) and when_any(range) must not be used with an immediate_executor
+    - [#317](https://github.com/stlab/libraries/issues/346): Recovery continuations not invoked on broken promises
+- Better conan.io support (Many thanks to Fernando Pelliccioni)
+- Fix several minor scripting and configuration issues (Many thanks to Fernando Pelliccioni)
     
 ## v1.5.3 - 2020 - September 16
 - Fixed issues
