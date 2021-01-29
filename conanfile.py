@@ -14,7 +14,7 @@ def option_on_off(option):
 
 class StlabLibrariesConan(ConanFile):
     name = "stlab"
-    version = "1.5.4"       #TODO(fernando): see how to automate the version number
+    version = "1.5.5"       #TODO(fernando): see how to automate the version number
     license = "http://www.boost.org/users/license.html"
     url = "https://github.com/stlab/libraries"
     description = "Software Technology Lab (stlab) libraries"
