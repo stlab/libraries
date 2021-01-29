@@ -14,7 +14,7 @@ else()
   set( subproject OFF )
 endif()
 
-project( stlab VERSION 1.5.4 LANGUAGES CXX )
+project( stlab VERSION 1.5.5 LANGUAGES CXX )
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
