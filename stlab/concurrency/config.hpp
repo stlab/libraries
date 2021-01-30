@@ -42,7 +42,7 @@
     #elif _MSC_FULL_VER >= 191225830 && _MSVC_LANG == 201703L
         #define STLAB_CPP_VERSION_PRIVATE() 17
     #else
-        #warning Unknown version of C++, assuming C++20.
+        #pragma message("Unknown version of C++, assuming C++20.")
         #define STLAB_CPP_VERSION_PRIVATE() 20
     #endif
 
