@@ -537,12 +537,13 @@ BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto p = package<int()>(stlab::immediate_executor, [] { return 42; });
-        p.second.then([a = stlab::annotate(counter), &_check = check](int) { _check = false; }).detach();
+        auto [promise, future] = package<int()>(immediate_executor, [] { return 42; });
+        future.then([a = annotate(counter), &_check = check](int) { _check = false; }).detach();
+        (void)promise;
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE_EQUAL(0, counter.remaining());
     BOOST_REQUIRE(check);
 }
 
@@ -551,13 +552,14 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto p = package<move_only()>(stlab::immediate_executor, [] { return move_only{42}; });
-        auto r = std::move(p.second).then([a = stlab::annotate(counter), &_check = check](auto&&) { _check = false; });
+        auto [promise, future] = package<move_only()>(immediate_executor, [] { return move_only{42}; });
+        auto r = std::move(future).then([a = annotate(counter), &_check = check](auto&&) { _check = false; });
         r.detach();
+        (void)promise;
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE_EQUAL(0, counter.remaining());
     BOOST_REQUIRE(check);
 }
 
@@ -566,12 +568,13 @@ BOOST_AUTO_TEST_CASE(future_void_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto p = package<void()>(stlab::immediate_executor, [] {});
-        p.second.then([a = stlab::annotate(counter), &_check = check]() { _check = false; }).detach();
+        auto [promise, future] = package<void()>(immediate_executor, [] {});
+        future.then([a = annotate(counter), &_check = check]() { _check = false; }).detach();
+        (void)promise;
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
+    BOOST_REQUIRE_EQUAL(0, counter.remaining());
     BOOST_REQUIRE(check);
 }
 

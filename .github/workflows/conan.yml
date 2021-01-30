@@ -1,0 +1,72 @@
+name: CMake
+
+on: [push, pull_request]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+#TODO(fernando): Build with the following options:
+  # options="-Dstlab.coroutines=ON"
+
+jobs:
+  generate-matrix:
+    name: Generate Job Matrix
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Generate Job Matrix
+        id: set-matrix
+        run: |
+          MATRIX=$(cat ./.github/matrix.json)
+          echo "${MATRIX}"
+          echo "::set-output name=matrix::${MATRIX}"
+          
+  builds:
+    needs: generate-matrix
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
+    name: ${{ matrix.config.name }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
+
+      - name: Install Dependencies
+        run: |
+          chmod +x .github/install.sh
+          .github/install.sh
+        shell: bash
+
+      - name: Settting Linux+GCC EnvVars
+        if: ${{ matrix.config.compiler == 'gcc' }}
+        shell: bash
+        run: |
+          echo "CONAN_GCC_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CONAN_DOCKER_IMAGE=conanio/gcc${{ matrix.config.version }}" >> $GITHUB_ENV
+
+      - name: Settting Linux+Clang EnvVars
+        if: ${{ matrix.config.compiler == 'clang' }}
+        shell: bash
+        run: |
+          echo "CONAN_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CONAN_DOCKER_IMAGE=conanio/clang${{ matrix.config.version }}" >> $GITHUB_ENV
+
+      - name: Settting macOS EnvVars
+        if: ${{ matrix.config.compiler == 'apple-clang' }}
+        shell: bash
+        run: |
+          echo "CONAN_APPLE_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+
+      - name: Build
+        shell: bash
+        run: |
+          chmod +x .github/run.sh
+          .github/run.sh

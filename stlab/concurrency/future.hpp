@@ -396,7 +396,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_exception) std::rethrow_exception(_exception);
             return _result;
         }
-        return {};
+        return stlab::nullopt;
     }
 
     auto get_try_r(bool unique) -> stlab::optional<T> {
@@ -411,7 +411,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_exception) std::rethrow_exception(_exception);
             return std::move(_result);
         }
-        return {};
+        return stlab::nullopt;
     }
 };
 
@@ -628,15 +628,9 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
 
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {
-            if (--_promise_count == 0) {
-                std::unique_lock<std::mutex> lock(this->_mutex);
-                if (!this->_ready) {
-                    this->reset();
-                    _f = function_t();
-                    this->_exception =
-                        std::make_exception_ptr(future_error(future_error_codes::broken_promise));
-                    this->_ready = true;
-                }
+            if ((--_promise_count == 0) && _f) {
+                this->set_exception(
+                    std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
             }
         } else {
             --_promise_count;
@@ -1562,7 +1556,7 @@ struct common_context : CR {
 
 template <typename C, typename E, typename T>
 void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
-    auto&& hold = std::move(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
+    auto&& hold = std::forward<T>(a).recover(std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception(); ex) {
@@ -1614,7 +1608,7 @@ struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
 
         size_t index(0);
         for (; first != last; ++first) {
-            attach_tasks(index++, executor, context, std::forward<decltype(*first)>(*first));
+            attach_tasks(index++, executor, context, std::move(*first));
         }
 
         return std::move(p.second);

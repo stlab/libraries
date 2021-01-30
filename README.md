@@ -29,6 +29,17 @@ The complete documentation is available on the [stlab home page](http://stlab.cc
 
 Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
+# Supported Platforms
+- All OS that have a C++17 compliant compiler
+
+# Requirements
+- C++17 Compiler
+-- Visual Studio 2017 (>= 15.9.0), Visual Studio 2019
+-- gcc (>= 7)
+-- clang (>= 6)
+- boost.optional and boost.variant if the compiler's library does not provide them
+- boost.test only for the unit tests
+
 # Building
 
 First, you will need the following tools:

@@ -591,6 +591,7 @@ template <typename Q, typename T, typename R, typename Arg, std::size_t I, typen
 struct shared_process_sender_indexed : public shared_process_sender<Arg> {
     shared_process<Q, T, R, Args...>& _shared_process;
 
+    explicit
     shared_process_sender_indexed(shared_process<Q, T, R, Args...>& sp) : _shared_process(sp) {}
 
     void add_sender() override { ++_shared_process._sender_count; }
@@ -645,6 +646,8 @@ struct shared_process_sender_helper;
 template <typename Q, typename T, typename R, std::size_t... I, typename... Args>
 struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
     : shared_process_sender_indexed<Q, T, R, Args, I, Args...>... {
+    
+    explicit
     shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) :
         shared_process_sender_indexed<Q, T, R, Args, I, Args...>(sp)... {}
 };

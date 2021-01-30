@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.5 )
+cmake_minimum_required( VERSION 3.8 )
 
 #
 # Here we check whether stlab is being configured in isolation or as a component
@@ -14,7 +14,10 @@ else()
   set( subproject OFF )
 endif()
 
-project( stlab VERSION 1.5.4 LANGUAGES CXX )
+project( stlab VERSION 1.5.5 LANGUAGES CXX )
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include( CTest )
 include( CMakeDependentOption )
@@ -37,11 +40,14 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
+set(stlab.task_system "portable" CACHE STRING "Select the task system (portable|libdispatch|emscripten|pnacl|windows).")
+
 #
-# On apple we have to force the usage of boost.varianr, because Apple's
+# On apple we have to force the usage of boost.variant, because Apple's
 # implementation of C++17 is not complete
 #
-if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
+  message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
   set( stlab.boost_variant ON )
 endif()
 
@@ -57,7 +63,7 @@ add_library( stlab INTERFACE )
 add_library( stlab::stlab ALIAS stlab )
 
 #
-# stlab requires C++ 17 support, at a minimum. Setting the `cxx_std_17` compile
+# stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
 # features ensures that the corresponding C++ standard flag is populated in
 # targets linking to stlab.
 #
@@ -92,17 +98,18 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab/concurrency )
 
+if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+  #
+  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
+  # will populate targets for each conan package specified in the
+  # conanfile.txt
+  #
+  conan_basic_setup( TARGETS KEEP_RPATHS )
+endif()
+
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-
-    #
-    # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-    # will populate targets for each conan package specified in the
-    # conanfile.txt
-    #
-    conan_basic_setup( TARGETS )
-
     #
     # We provide aliases to the conan target to mimic the native findBoost
     # functionality
@@ -112,7 +119,6 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     set_property( TARGET Boost::boost Boost::unit_test_framework 
       APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
   else()
-
     #
     # Request compiled unit testing component only if testing is `ON`
     #
@@ -151,6 +157,33 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
 
   unset( either_generator )
 endif()
+
+if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
+  message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
+
+  add_library( libdispatch::libdispatch INTERFACE IMPORTED )
+  set_property( TARGET libdispatch::libdispatch  
+    APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
+
+  target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
+endif()
+
+if (${stlab.task_system} STREQUAL "portable")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
+elseif (${stlab.task_system} STREQUAL "libdispatch")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
+elseif (${stlab.task_system} STREQUAL "emscripten")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSRIPTEN )
+elseif (${stlab.task_system} STREQUAL "pnacl")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
+elseif (${stlab.task_system} STREQUAL "windows")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
+else()
+  message(FATAL_ERROR "Invalid Task System: ${stlab.task_system}")
+endif()
+
+message(STATUS "stlab: Task System: ${stlab.task_system}")
+
 
 list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
 include( stlab/coroutines )

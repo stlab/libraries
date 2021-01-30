@@ -23,7 +23,8 @@ branches:
 matrix:
   include:
     #
-    # Mac Clang, Debug & Release
+    # macOS Clang, Debug & Release
+    # Newer versions of apple-clang are run on Github Actions.
     #
     - os: osx
       compiler: clang
@@ -51,48 +52,6 @@ matrix:
         - export PATH=$PATH:/Users/travis/Library/Python/3.7/bin
         - ./enhance_conan.sh
 
-      env:
-        build_type=release
-        options=""
-
-    #
-    # Linux Clang, Debug & Release, with and without coroutines
-    #
-    - os: linux
-      compiler: clang
-      env:
-        build_type=debug
-        options=""
-
-    - os: linux
-      compiler: clang
-      env:
-        build_type=release
-        options=""
-
-#    - os: linux
-#      compiler: clang
-#      env:
-#        build_type=debug
-#        options="-Dstlab.coroutines=ON"
-#
-#    - os: linux
-#      compiler: clang
-#      env:
-#        build_type=release
-#        options="-Dstlab.coroutines=ON"
-
-    #
-    # Linux GCC, Debug & Release
-    #
-    - os: linux
-      compiler: gcc
-      env:
-        build_type=debug
-        options=""
-
-    - os: linux
-      compiler: gcc
       env:
         build_type=release
         options=""

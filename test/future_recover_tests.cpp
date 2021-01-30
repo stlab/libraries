@@ -20,6 +20,11 @@ using namespace std;
 using namespace stlab;
 using namespace future_test_helper;
 
+// ----------------------------------------------------------------------------
+//                                  void
+// ----------------------------------------------------------------------------
+
+
 BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue) {
     BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on r-value");
@@ -456,6 +461,11 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+// ----------------------------------------------------------------------------
+//                             Copyable Values
+// ----------------------------------------------------------------------------
+
+
 BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 BOOST_AUTO_TEST_CASE(
     future_recover_int_simple_recover_failure_before_recover_initialized_on_rvalue) {
@@ -882,7 +892,55 @@ BOOST_AUTO_TEST_CASE(
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
+    BOOST_TEST_MESSAGE("running future int recover with broken promise");
+
+    {
+        auto check{false};
+        sut = [&check]() {
+            auto [promise, future]{package<int(int)>(immediate_executor, [](int x) { return x; })};
+            (void)promise;
+            return future.recover([&check](const auto& f) {
+                check = true;
+                try {
+                    return *f.get_try();
+                } catch (const exception&) {
+                    throw;
+                }
+            });
+        }();
+
+        check_failure<future_error>(sut, "broken promise");
+        BOOST_REQUIRE(check);
+    }
+    {
+        auto check{false};
+        sut = [&check]() {
+            auto [promise, future]{package<int(int)>(immediate_executor, [](int x) { return x; })};
+            (void)promise;
+            return future ^ [&check](const auto& f) {
+                check = true;
+                try {
+                    return *f.get_try();
+                } catch (const exception&) {
+                    throw;
+                }
+            };
+        }();
+
+        check_failure<future_error>(sut, "broken promise");
+        BOOST_REQUIRE(check);
+    }
+}
+
+
+
 BOOST_AUTO_TEST_SUITE_END()
+
+// ----------------------------------------------------------------------------
+//                             Move-only values
+// ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(future_recover_move_only_type, test_fixture<move_only>)
 BOOST_AUTO_TEST_CASE(
@@ -1092,6 +1150,49 @@ BOOST_AUTO_TEST_CASE(
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
     }
 
+}
+
+BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
+    BOOST_TEST_MESSAGE("running future move-only recover with broken promise");
+
+    {
+        auto check{false};
+        sut = [&check]() {
+            auto [promise, future]{
+                package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
+            (void)promise;
+            return std::move(future).recover([&check](auto f) {
+                check = true;
+                try {
+                    return *std::move(f.get_try());
+                } catch (const exception&) {
+                    throw;
+                }
+            });
+        }();
+
+        check_failure<future_error>(sut, "broken promise");
+        BOOST_REQUIRE(check);
+    }
+    {
+        auto check{false};
+        sut = [&check]() {
+            auto [promise, future]{
+                package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
+            (void)promise;
+            return std::move(future) ^ [&check](auto f) {
+                check = true;
+                try {
+                    return *std::move(f.get_try());
+                } catch (const exception&) {
+                    throw;
+                }
+            };
+        }();
+
+        check_failure<future_error>(sut, "broken promise");
+        BOOST_REQUIRE(check);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

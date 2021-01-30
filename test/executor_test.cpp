@@ -13,6 +13,7 @@
 
 #include <array>
 #include <cmath>
+#include <condition_variable>
 #include <iostream>
 #include <thread>
 

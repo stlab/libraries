@@ -13,10 +13,12 @@
 #include <stlab/concurrency/future.hpp>
 
 #include <atomic>
-#include <boost/test/unit_test.hpp>
+#include <condition_variable>
 #include <exception>
 #include <string>
 #include <thread>
+
+#include <boost/test/unit_test.hpp>
 
 using lock_t = std::unique_lock<std::mutex>;
 

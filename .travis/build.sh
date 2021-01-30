@@ -26,7 +26,7 @@ if [ -z "${coverage+xxx}" ]; then export coverage=FALSE; fi
 
 mkdir build
 cd build
-conan install ./.. --build=missing
+conan install ./.. -o testing=True --build=missing
 
 NPROC=`sysctl -n hw.ncpu`
 if [ "$NPROC" == "" ] ; then
