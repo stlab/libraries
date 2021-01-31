@@ -1,5 +1,15 @@
 [
   {
+    "name": "v1.5.5",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.5",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.5",
+    "commit": {
+      "sha": "31f2c718b832c0683408a9c4b5238294bd10e7de",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/31f2c718b832c0683408a9c4b5238294bd10e7de"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuNQ=="
+  },
+  {
     "name": "v1.5.4",
     "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.4",
     "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.4",
