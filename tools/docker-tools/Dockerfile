@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     rbenv \
     wget \
     zlib1g-dev \
+    curl \
 && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g npm@latest

@@ -9,6 +9,7 @@ example: package_example.cpp
 overloads:
   "template <typename Sig, typename E, typename F>\nauto package(E executor, F f)":
     description: The template function package creates a pair of a promise and a future. Calling the promise will be invoked immediately, not on the provided `executor`. The purpose of the passed `executor` is to have already an executor for an attached continuation.
+      If the promise is destructed and have not been called, then the associated future contains a std::exception with the error code `stlab::broken_promise`.
     arguments:
       - description: The executor is the default executor for a possible attached continuation
         name: executor
