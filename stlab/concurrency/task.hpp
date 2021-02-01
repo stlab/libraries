@@ -36,22 +36,19 @@ class task;
 
 template <class R, class... Args>
 class task<R(Args...)> {
-    // REVISIT (sean.parent) : Use `if constexpr` here when we move to C++17
-    template <class F>
-    using possibly_empty_t =
-        std::integral_constant<bool,
-                               std::is_pointer<std::decay_t<F>>::value ||
-                                   std::is_member_pointer<std::decay_t<F>>::value ||
-                                   std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value>;
 
-    template <class F>
-    static auto is_empty(const F& f) -> std::enable_if_t<possibly_empty_t<F>::value, bool> {
-        return !f;
-    }
-
-    template <class F>
-    static auto is_empty(const F&) -> std::enable_if_t<!possibly_empty_t<F>::value, bool> {
-        return false;
+    template <typename F>
+    constexpr static auto is_empty(const F& f){
+        if constexpr (std::is_pointer<std::decay_t<F>>::value ||
+                      std::is_member_pointer<std::decay_t<F>>::value ||
+                      std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value)
+        {
+            return !f;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     struct concept_t {
