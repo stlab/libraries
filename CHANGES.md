@@ -1,9 +1,14 @@
+## v1.5.6 - 2021 - February 1
+ - Fixed issues
+   = [#352]:(https://github.com/stlab/libraries/issues/352) Non portable 'warning' preprocessor command
+   - [#354]:(https://github.com/stlab/libraries/issues/354) Visual Studio 2017 fails to compiler async with std::function as argument
 
 ## v1.5.5 - 2021 - January 29
 - Fixed issues
     - [#317](https://github.com/stlab/libraries/issues/346): Recovery continuations not invoked on broken promises
 - Better conan.io support (Many thanks to Fernando Pelliccioni)
 - Fix several minor scripting and configuration issues (Many thanks to Fernando Pelliccioni)
+- Fix in SerialQueue UnitTest that could lead to dead lock on systems with few cores  
     
 ## v1.5.3 - 2020 - September 16
 - Fixed issues
