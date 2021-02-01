@@ -1,8 +1,7 @@
-## 
+## v1.5.6 - 2021 - February 1
  - Fixed issues
    = [#352]:(https://github.com/stlab/libraries/issues/352) Non portable 'warning' preprocessor command
-
-
+   - [#354]:(https://github.com/stlab/libraries/issues/354) Visual Studio 2017 fails to compiler async with std::function as argument
 
 ## v1.5.5 - 2021 - January 29
 - Fixed issues
