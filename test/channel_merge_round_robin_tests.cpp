@@ -16,17 +16,14 @@
 
 #include "channel_test_helper.hpp"
 
-using namespace stlab;
-using namespace channel_test_helper;
-
-using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
+using channel_test_fixture_int_1 = channel_test_helper::channel_test_fixture<int, 1>;
 
 BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_void_functor_one_value, channel_test_fixture_int_1) {
     BOOST_TEST_MESSAGE("int merge round robin channel void functor one value one value");
 
     std::atomic_int result{0};
 
-    auto check = merge_channel<round_robin_t>(default_executor, [&](int x) { result = x; }, _receive[0]);
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
     _send[0](1);
@@ -41,10 +38,10 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_void_functor_one_value_asy
 
     std::atomic_int result{0};
 
-    auto check = merge_channel<round_robin_t>(default_executor, [&](int x) { result = x; }, _receive[0]);
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor, [&](int x) { result = x; }, _receive[0]);
 
     _receive[0].set_ready();
-    auto f = async(default_executor, [_sender = _send[0]] { _sender(1); });
+    auto f = stlab::async(stlab::default_executor, [_sender = _send[0]] { _sender(1); });
 
     wait_until_done([&]() { return result != 0; });
 
@@ -56,7 +53,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_void_functor_many_values, 
 
     std::atomic_int result{0};
 
-    auto check = merge_channel<round_robin_t>(default_executor, [&](int x) { result += x; }, _receive[0]);
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
     for (auto i = 1; i <= 100; ++i)
@@ -75,12 +72,12 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_void_functor_many_values_a
 
     std::atomic_int result{0};
 
-    auto check = merge_channel<round_robin_t>(default_executor, [&](int x) { result += x; }, _receive[0]);
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor, [&](int x) { result += x; }, _receive[0]);
 
     _receive[0].set_ready();
-    std::vector<future<void>> f(100);
+    std::vector<stlab::future<void>> f(100);
     for (auto i = 1; i <= 100; ++i) {
-        f.push_back(async(default_executor, [_sender = _send[0], i] { _sender(i); }));
+        f.push_back(stlab::async(stlab::default_executor, [_sender = _send[0], i] { _sender(i); }));
     }
 
     auto expected = 100 * (100 + 1) / 2;
@@ -89,7 +86,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_void_functor_many_values_a
     BOOST_REQUIRE_EQUAL(expected, result);
 }
 
-using channel_test_fixture_int_2 = channel_test_fixture<int, 2>;
+using channel_test_fixture_int_2 = channel_test_helper::channel_test_fixture<int, 2>;
 
 BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_one_value,
                         channel_test_fixture_int_2) {
@@ -97,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_one
 
     std::atomic_int result{0};
     int incrementer{1};
-    auto check = merge_channel<round_robin_t>(default_executor,
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor,
                      [&](int x) {
                          result += incrementer * x;
                          ++incrementer;
@@ -121,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_one
 
     std::atomic_int result{0};
     int incrementer{1};
-    auto check = merge_channel<round_robin_t>(default_executor,
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor,
                      [&](int x) {
                          result += incrementer * x;
                          ++incrementer;
@@ -131,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_one
     _receive[0].set_ready();
     _receive[1].set_ready();
     auto f =
-        async(default_executor, [_send1 = _send[0], &_send2 = _send[1]] { // one copy,one reference
+      stlab::async(stlab::default_executor, [_send1 = _send[0], &_send2 = _send[1]] { // one copy,one reference
             _send1(2);
             _send2(3);
         });
@@ -148,7 +145,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_man
 
     std::atomic_int result{0};
     int incrementer{1};
-    auto check = merge_channel<round_robin_t>(default_executor,
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor,
                      [&](int x) {
                          result += incrementer * x;
                          ++incrementer;
@@ -170,7 +167,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_man
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
 
-using channel_test_fixture_pair_2 = channel_test_fixture<std::pair<int, std::size_t>, 5>;
+using channel_test_fixture_pair_2 = channel_test_helper::channel_test_fixture<std::pair<int, std::size_t>, 5>;
 
 BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_many_values_async,
                         channel_test_fixture_pair_2) {
@@ -180,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_man
     std::atomic_bool zipped_ok{true};
     std::size_t expected_input{0};
 
-    auto check = merge_channel<round_robin_t>(default_executor,
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor,
                      [&](std::pair<int, std::size_t> x) {
                          result += x.first;
                          zipped_ok = zipped_ok && (x.second == expected_input);
@@ -190,12 +187,12 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_man
 
     _receive[0].set_ready();
     _receive[1].set_ready();
-    std::vector<future<void>> f(200);
+    std::vector<stlab::future<void>> f(200);
     for (auto i = 1; i <= 200; i += 2) {
-        f.push_back(async(default_executor, [& _send1 = _send[0], _i = i] {
+        f.push_back(stlab::async(stlab::default_executor, [& _send1 = _send[0], _i = i] {
             _send1(std::make_pair(_i, std::size_t(0)));
         }));
-        f.push_back(async(default_executor, [& _send2 = _send[1], _i = i] {
+        f.push_back(stlab::async(stlab::default_executor, [& _send2 = _send[1], _i = i] {
             _send2(std::make_pair(_i + 1, std::size_t(1)));
         }));
     }
@@ -208,7 +205,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_man
     BOOST_REQUIRE_EQUAL(expectation, result);
 }
 
-using channel_test_fixture_int_5 = channel_test_fixture<int, 5>;
+using channel_test_fixture_int_5 = channel_test_helper::channel_test_fixture<int, 5>;
 
 BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor, channel_test_fixture_int_5) {
     BOOST_TEST_MESSAGE("int merge round robin channel same type void functor");
@@ -216,12 +213,12 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor, ch
     std::atomic_int result{0};
     std::atomic_int incrementer{1};
 
-    auto check = merge_channel<round_robin_t>(default_executor,
-                     [&](int x) {
-                         result += incrementer * x;
-                         ++incrementer;
-                     },
-                     _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor,
+                                                     [&](int x) {
+                                                         result += incrementer * x;
+                                                         ++incrementer;
+                                                     },
+                                                     _receive[0], _receive[1], _receive[2], _receive[3], _receive[4]);
 
     for (auto& r : _receive)
         r.set_ready();
@@ -242,7 +239,7 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_asy
     std::atomic_int result{0};
     std::atomic_int incrementer{1};
 
-    auto check = merge_channel<round_robin_t>(default_executor,
+    auto check = stlab::merge_channel<stlab::round_robin_t>(stlab::default_executor,
                      [&](int x) {
                          result += incrementer * x;
                          ++incrementer;
@@ -252,9 +249,9 @@ BOOST_FIXTURE_TEST_CASE(int_merge_round_robin_channel_same_type_void_functor_asy
     for (auto& r : _receive)
         r.set_ready();
 
-    std::vector<future<void>> f(5);
+    std::vector<stlab::future<void>> f(5);
     for (auto i = 0; i < 5; i++) {
-        f.push_back(async(default_executor, [_send = _send[i], _i = i] { _send(_i + 2); }));
+        f.push_back(stlab::async(stlab::default_executor, [_send = _send[i], _i = i] { _send(_i + 2); }));
     }
 
     const auto expected = 2 * 1 + 3 * 2 + 4 * 3 + 5 * 4 + 6 * 5;
