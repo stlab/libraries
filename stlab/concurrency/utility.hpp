@@ -165,7 +165,7 @@ inline void blocking_get(future<void> x) {
     std::condition_variable condition;
     std::mutex m;
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (auto ex = std::forward<decltype(r)>(r).exception(); ex) error = ex;
+        if (auto ex = std::forward<decltype(r)>(r).exception()) error = ex;
         {
             std::unique_lock<std::mutex> lock(m);
             flag = true;
@@ -190,7 +190,7 @@ inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout
             if (!state) {
                 return;
             }
-            if (auto ex = r.exception(); ex) state->error = ex;
+            if (auto ex = r.exception()) state->error = ex;
             {
                 std::unique_lock<std::mutex> lock(state->m);
                 state->flag = true;

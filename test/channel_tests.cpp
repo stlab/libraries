@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(int_channel_with_2_sized_buffer) {
     auto receive = channel<void>(q.executor());
     queue<int> valuesInFlight;
 
-    generator myGenerator(valuesInFlight);
+    generator<queue<int>> myGenerator(valuesInFlight);
     echo myEcho;
 
     auto r2 = move(receive) | ref(myGenerator) |
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(int_channel_with_3_sized_buffer) {
     auto receive = channel<void>(q.executor());
     queue<int> valuesInFlight;
 
-    generator myGenerator(valuesInFlight);
+    generator<queue<int>> myGenerator(valuesInFlight);
     echo myEcho;
 
     auto r2 = move(receive) | ref(myGenerator) |
@@ -454,12 +454,13 @@ BOOST_AUTO_TEST_CASE(int_channel_with_split_different_sized_buffer) {
         queue<int> valuesInFlight1;
         queue<int> valuesInFlight2;
 
-        generator myGenerator1(valuesInFlight1);
-        generator myGenerator2(valuesInFlight2);
+        generator<queue<int>> myGenerator1(valuesInFlight1);
+        generator<queue<int>> myGenerator2(valuesInFlight2);
 
         auto receive = channel<void>(q.executor());
 
-        auto g = move(receive) | generator(valuesInFlight1, valuesInFlight2);
+        auto g =
+            move(receive) | generator<queue<int>, queue<int>>(valuesInFlight1, valuesInFlight2);
 
         auto r1 = g | (buffer_size{ bs.first } &echo()) | [&valuesInFlight1](auto x) {
             BOOST_REQUIRE_EQUAL(x, valuesInFlight1.front());

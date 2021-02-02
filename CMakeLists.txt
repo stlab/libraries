@@ -16,7 +16,8 @@ endif()
 
 project( stlab VERSION 1.5.6 LANGUAGES CXX )
 
-set(CMAKE_CXX_STANDARD 17)
+# Overriden from Conan?
+# set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include( CTest )
@@ -67,7 +68,7 @@ add_library( stlab::stlab ALIAS stlab )
 # features ensures that the corresponding C++ standard flag is populated in
 # targets linking to stlab.
 #
-target_compile_features( stlab INTERFACE cxx_std_17 )
+# target_compile_features( stlab INTERFACE cxx_std_14)
 
 #
 # The include directory for stlab can be expected to vary between build
@@ -106,6 +107,9 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   # conanfile.txt
   #
   conan_basic_setup( TARGETS KEEP_RPATHS )
+
+  # REVISIT (sparent) : This should not be necessary but appears to be
+  set(CMAKE_CXX_STANDARD ${CONAN_SETTINGS_COMPILER_CPPSTD})
 endif()
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )

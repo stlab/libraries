@@ -109,7 +109,8 @@ class StlabLibrariesConan(ConanFile):
     def _fix_boost_components(self):
         if self.settings.os != "Macos": return
         if self.settings.compiler != "apple-clang": return
-        if float(str(self.settings.compiler.version)) >= 12: return
+
+        if (float(str(self.settings.compiler.version)) >= 12) and not ((self.settings.compiler.cppstd == "14") or (self.settings.compiler.cppstd == "gnu14")): return
 
         #
         # On Apple we have to force the usage of boost.variant, because Apple's implementation of C++17 is not complete.
@@ -171,6 +172,8 @@ class StlabLibrariesConan(ConanFile):
     def configure(self):
         ConanFile.configure(self)
 
+        tools.check_min_cppstd(self, "14")
+
         self._fix_boost_components()
 
         if self._use_boost():
@@ -195,11 +198,10 @@ class StlabLibrariesConan(ConanFile):
             cmake.configure()
             cmake.build()
             cmake.test(output_on_failure=True)
-
+ 
     def package(self):
         self.copy("*.hpp")
 
     def imports(self):
         self.copy("*.dll", "./bin", "bin")
         self.copy("*.dylib", "./bin", "lib")
-
