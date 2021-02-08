@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(int_channel_move_assignment_sender) {
     std::atomic_int result{0};
 
     auto check = _receive[0] | [&](int x) { result = x; };
-    sut = boost::move(_send[0]);
+    sut = std::move(_send[0]);
 
     _receive[0].set_ready();
     sut(42);
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(int_channel_move_ctor_receiver) {
 
     std::atomic_int result{0};
 
-    auto sut = boost::move(_receive[0]);
+    auto sut = std::move(_receive[0]);
 
     auto check = sut | [&](int x) { result = x; };
     sut.set_ready();
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(int_channel_move_assignment_receiver) {
     stlab::receiver<int> sut;
     std::atomic_int result{0};
 
-    sut = boost::move(_receive[0]);
+    sut = std::move(_receive[0]);
     auto check = sut | [&](int x) { result = x; };
 
     sut.set_ready();
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE(int_channel_with_2_sized_buffer) {
     generator<std::queue<int>> myGenerator(valuesInFlight);
     echo myEcho;
 
-    auto r2 = boost::move(receive) | ref(myGenerator) |
+    auto r2 = std::move(receive) | ref(myGenerator) |
               (stlab::buffer_size{2} & std::ref(myEcho)) | [&valuesInFlight](auto x) {
                   BOOST_REQUIRE_EQUAL(x, valuesInFlight.front());
                   valuesInFlight.pop();
