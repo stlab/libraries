@@ -1,5 +1,25 @@
 [
   {
+    "name": "v1.6.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.6.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.6.0",
+    "commit": {
+      "sha": "8bec44964e6d477237d230d826b73cb54860068e",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/8bec44964e6d477237d230d826b73cb54860068e"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjYuMA=="
+  },
+  {
+    "name": "v1.5.6",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.6",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.6",
+    "commit": {
+      "sha": "c9d5de0b2ab5ef6b16bfee1d9e7e83a28246ae1f",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/c9d5de0b2ab5ef6b16bfee1d9e7e83a28246ae1f"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuNg=="
+  },
+  {
     "name": "v1.5.5",
     "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.5",
     "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.5",
