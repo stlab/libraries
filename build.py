@@ -9,6 +9,12 @@ if __name__ == "__main__":
     filtered_builds = []
     for settings, options, env_vars, build_requires, reference in builder.items:
     
+        #TODO(fernando): auto and portable Task Systems are disabled until we fix the deadlock 
+        #                using portable in Windows.
+        # opts_auto = copy.deepcopy(options)
+        # opts_auto["stlab:task_system"] = "auto"
+        # filtered_builds.append([settings, opts_auto, env_vars, build_requires, reference])
+
         if settings["compiler"] == "clang":
             opts_libdispatch = copy.deepcopy(options)
             opts_libdispatch["stlab:task_system"] = "libdispatch"

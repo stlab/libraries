@@ -229,15 +229,21 @@ struct invoke_variant_dispatcher {
 template <>
 struct invoke_variant_dispatcher<1> {
     template <typename F, typename T, typename Arg>
-    static auto invoke_(F&& f, T& t) {
-        if constexpr (std::is_same<Arg, void>::value) {
-            return;
-        } else if constexpr (std::is_same<Arg, detail::avoid_>::value) {
-            return std::forward<F>(f)();
-        } else {
-            return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
-        }
+    static auto invoke_(F&&, T&) -> std::enable_if_t<std::is_same<Arg, void>::value, void> {
+        return;
     }
+    template <typename F, typename T, typename Arg>
+    static auto invoke_(F&& f, T&) -> std::enable_if_t<std::is_same<Arg, detail::avoid_>::value,
+                                                       decltype(std::forward<F>(f)())> {
+        return std::forward<F>(f)();
+    }
+    template <typename F, typename T, typename Arg>
+    static auto invoke_(F&& f, T& t) -> std::enable_if_t<
+        !(std::is_same<Arg, detail::avoid_>::value || std::is_same<Arg, detail::avoid_>::value),
+        decltype(std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t)))))> {
+        return std::forward<F>(f)(std::move(stlab::get<Arg>(std::get<0>(t))));
+    }
+
     template <typename F, typename T, typename... Args>
     static auto invoke(F&& f, T& t) {
         return invoke_<F, T, first_t<Args...>>(std::forward<F>(f), t);
@@ -699,7 +705,7 @@ struct downstream<
         _data = std::forward<F>(f);
     }
 
-    void clear() { _data = nullopt; }
+    void clear() { _data = stlab::nullopt; }
 
     std::size_t size() const { return 1; }
 
@@ -828,7 +834,7 @@ struct shared_process
         if (do_final) {
             std::unique_lock<std::mutex> lock(_downstream_mutex);
             _downstream.clear(); // This will propagate the close to anything downstream
-            _process = nullopt;
+            _process = stlab::nullopt;
         }
     }
 
@@ -910,8 +916,14 @@ struct shared_process
         return bool(message);
     }
 
+    /*
+        REVISIT (sparent) : Next two cases are nearly identical, complicated by the need to
+        remove constexpr if to support C++14.
+    */
+
     template <typename U>
-    auto step() -> std::enable_if_t<has_process_yield_v<unwrap_reference_t<U>>> {
+    auto step() -> std::enable_if_t<has_process_yield_v<unwrap_reference_t<U>> &&
+                                    !has_process_await_v<unwrap_reference_t<T>, Args...>> {
         // in case that the timeout function is just been executed then we have to re-schedule
         // the current run
         lock_t lock(_timeout_function_control, std::try_to_lock);
@@ -926,13 +938,7 @@ struct shared_process
             is done on yield()
         */
         try {
-            if constexpr (has_process_await_v<unwrap_reference_t<T>, Args...>) {
-                while (get_process_state(_process).first == process_state::await) {
-                    if (!dequeue()) break;
-                }
-            } else {
-                if (get_process_state(_process).first == process_state::await) return;
-            }
+            if (get_process_state(_process).first == process_state::await) return;
 
             // Workaround until we can use structured bindings
             auto tmp = get_process_state(_process);
@@ -944,7 +950,8 @@ struct shared_process
                This process will be considered running until it executes.
             */
             if (state == process_state::yield) {
-                if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <= std::chrono::nanoseconds::min())
+                if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <=
+                    std::chrono::nanoseconds::min())
                     broadcast(unwrap(*_process).yield());
                 else
                     execute_at(duration,
@@ -962,14 +969,101 @@ struct shared_process
                 else if we await with an expired timeout then go ahead and yield now.
                 else schedule a timeout when we will yield if not canceled by intervening await.
             */
-            else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) == std::chrono::nanoseconds::max()) {
+            else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) ==
+                     std::chrono::nanoseconds::max()) {
                 task_done();
-            } else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <= std::chrono::nanoseconds::min()) {
+            } else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <=
+                       std::chrono::nanoseconds::min()) {
                 broadcast(unwrap(*_process).yield());
             } else {
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
-                execute_at(duration, _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
+                execute_at(duration,
+                           _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
+                    auto _this = _weak_this.lock();
+                    // It may be that the complete channel is gone in the meanwhile
+                    if (!_this) return;
+
+                    // try_lock can fail spuriously
+                    while (true) {
+                        lock_t lock(_this->_timeout_function_control, std::try_to_lock);
+                        if (!lock) continue;
+
+                        // we were cancelled
+                        if (get_process_state(_this->_process).first != process_state::yield) {
+                            _this->try_broadcast();
+                            _this->_timeout_function_active = false;
+                        }
+                        return;
+                    }
+                });
+            }
+        } catch (...) { // this catches exceptions during _process.await() and _process.yield()
+            broadcast(std::move(std::current_exception()));
+        }
+    }
+
+    template <typename U>
+    auto step() -> std::enable_if_t<has_process_yield_v<unwrap_reference_t<U>> &&
+                                    has_process_await_v<unwrap_reference_t<T>, Args...>> {
+        // in case that the timeout function is just been executed then we have to re-schedule
+        // the current run
+        lock_t lock(_timeout_function_control, std::try_to_lock);
+        if (!lock) {
+            run();
+            return;
+        }
+        _timeout_function_active = false;
+
+        /*
+            While we are waiting we will flush the queue. The assumption here is that work
+            is done on yield()
+        */
+        try {
+            while (get_process_state(_process).first == process_state::await) {
+                if (!dequeue()) break;
+            }
+
+            // Workaround until we can use structured bindings
+            auto tmp = get_process_state(_process);
+            const auto& state = tmp.first;
+            const auto& duration = tmp.second;
+
+            /*
+                Once we hit yield, go ahead and call it. If the yield is delayed then schedule it.
+               This process will be considered running until it executes.
+            */
+            if (state == process_state::yield) {
+                if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <=
+                    std::chrono::nanoseconds::min())
+                    broadcast(unwrap(*_process).yield());
+                else
+                    execute_at(duration,
+                               _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
+                        auto _this = _weak_this.lock();
+                        if (!_this) return;
+                        _this->try_broadcast();
+                    });
+            }
+
+            /*
+                We are in an await state and the queue is empty.
+
+                If we await forever then task_done() leaving us in an await state.
+                else if we await with an expired timeout then go ahead and yield now.
+                else schedule a timeout when we will yield if not canceled by intervening await.
+            */
+            else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) ==
+                     std::chrono::nanoseconds::max()) {
+                task_done();
+            } else if (std::chrono::duration_cast<std::chrono::nanoseconds>(duration) <=
+                       std::chrono::nanoseconds::min()) {
+                broadcast(unwrap(*_process).yield());
+            } else {
+                /* Schedule a timeout. */
+                _timeout_function_active = true;
+                execute_at(duration,
+                           _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
                     auto _this = _weak_this.lock();
                     // It may be that the complete channel is gone in the meanwhile
                     if (!_this) return;
@@ -1367,7 +1461,7 @@ detail::annotated_process<F> operator&(detail::annotated_process<F>&& a, buffer_
 /**************************************************************************************************/
 
 template <typename T>
-class [[nodiscard]] receiver {
+class STLAB_NODISCARD() receiver {
     using ptr_t = std::shared_ptr<detail::shared_process_receiver<T>>;
 
     ptr_t _p;

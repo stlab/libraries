@@ -899,9 +899,8 @@ BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
     {
         auto check{false};
         sut = [&check]() {
-            auto [promise, future]{package<int(int)>(immediate_executor, [](int x) { return x; })};
-            (void)promise;
-            return future.recover([&check](const auto& f) {
+            auto p{package<int(int)>(immediate_executor, [](int x) { return x; })};
+            return p.second.recover([&check](const auto& f) {
                 check = true;
                 try {
                     return *f.get_try();
@@ -917,9 +916,8 @@ BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
     {
         auto check{false};
         sut = [&check]() {
-            auto [promise, future]{package<int(int)>(immediate_executor, [](int x) { return x; })};
-            (void)promise;
-            return future ^ [&check](const auto& f) {
+            auto p{package<int(int)>(immediate_executor, [](int x) { return x; })};
+            return p.second ^ [&check](const auto& f) {
                 check = true;
                 try {
                     return *f.get_try();
@@ -1158,10 +1156,9 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
     {
         auto check{false};
         sut = [&check]() {
-            auto [promise, future]{
+            auto p{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
-            (void)promise;
-            return std::move(future).recover([&check](auto f) {
+            return std::move(p.second).recover([&check](auto f) {
                 check = true;
                 try {
                     return *std::move(f.get_try());
@@ -1177,10 +1174,9 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
     {
         auto check{false};
         sut = [&check]() {
-            auto [promise, future]{
+            auto p{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
-            (void)promise;
-            return std::move(future) ^ [&check](auto f) {
+            return std::move(p.second) ^ [&check](auto f) {
                 check = true;
                 try {
                     return *std::move(f.get_try());
