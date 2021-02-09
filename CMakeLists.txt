@@ -41,7 +41,7 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
-set(stlab.task_system "portable" CACHE STRING "Select the task system (portable|libdispatch|emscripten|pnacl|windows).")
+set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
 
 #
 # On apple we have to force the usage of boost.variant, because Apple's
@@ -172,7 +172,10 @@ if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
 endif()
 
-if (${stlab.task_system} STREQUAL "portable")
+if (${stlab.task_system} STREQUAL "header")
+  # Task System is selected in concurrency/config_task_system.hpp
+  # Nothing to define.
+elseif (${stlab.task_system} STREQUAL "portable")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
 elseif (${stlab.task_system} STREQUAL "libdispatch")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
