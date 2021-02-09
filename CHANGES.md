@@ -1,3 +1,8 @@
+## v1.6.0 - 2021 - February 9
+ - Backport the library to support C++14 and later
+ - Better auto-configuration - no need for compiler flags.
+ - Supported for threaded wasm using the portable tasking system (auto-configured).
+
 ## v1.5.6 - 2021 - February 1
  - Fixed issues
    = [#352]:(https://github.com/stlab/libraries/issues/352) Non portable 'warning' preprocessor command
