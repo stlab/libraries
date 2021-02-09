@@ -28,7 +28,7 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": [True, False],
         "boost_variant": [True, False],
         "coroutines": [True, False],
-        "task_system": ["portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
+        "task_system": ["header", "portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
     }
 
     default_options = {
@@ -37,7 +37,7 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": False,
         "boost_variant": False,
         "coroutines": False,
-        "task_system": "auto",
+        "task_system": "header",
     }
 
     def _log(self, str):
