@@ -628,14 +628,11 @@ template <typename R, typename... Args>
 struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
     using function_t = task<R(Args...)>;
 
-    std::atomic_size_t _promise_count;
+    std::atomic_size_t _promise_count{1};
     function_t _f;
 
     template <typename F>
-    shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {
-        _promise_count = 1;
-    }
-
+    shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) { }
 
     void remove_promise() override {
         if (std::is_same<R, reduced_t<R>>::value) {

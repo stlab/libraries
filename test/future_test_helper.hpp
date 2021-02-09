@@ -150,7 +150,7 @@ struct test_fixture {
         }
     }
 
-    std::atomic_int _task_counter;
+    std::atomic_int _task_counter{0};
 
 private:
     template <typename F>
