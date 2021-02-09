@@ -87,12 +87,14 @@ jobs:
           echo "CMAKE_TOOLSET=${{ matrix.config.cmake_toolset }}" >> $Env:GITHUB_ENV
 
       - name: Build (Unix)
+        if: ${{ matrix.config.compiler != 'Visual Studio' }}
         shell: bash
         run: |
           chmod +x .github/run.sh
           .github/run.sh
 
       - name: Build (Windows)
+        if: ${{ matrix.config.compiler == 'Visual Studio' }}
         shell: bash
         run: |
           Write-Host "CONAN_VISUAL_VERSIONS: $Env:CONAN_VISUAL_VERSIONS"
