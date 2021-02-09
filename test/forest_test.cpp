@@ -129,7 +129,7 @@ auto to_string(const std::string& x) {
 }
 
 template <>
-auto to_string(const std::optional<std::string>& x) {
+auto to_string(const stlab::optional<std::string>& x) {
     return x ? to_string(*x) : "?";
 }
 
@@ -285,12 +285,13 @@ BOOST_AUTO_TEST_CASE(child_traversal) {
 
     BOOST_CHECK(to_string(child_range(parent)) == expected);
 
-    if constexpr (false) { // I'm not sure reverse_child_iterator ever worked.
+    #if 0
+        // I'm not sure reverse_child_iterator ever worked.
         forest<std::string>::reverse_child_iterator first{child_begin(parent)};
         forest<std::string>::reverse_child_iterator last{child_end(parent)};
         std::string result{to_string(first, last)};
         BOOST_CHECK(result == expected);
-    }
+    #endif
 }
 
 /**************************************************************************************************/
@@ -460,7 +461,7 @@ BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
 
 BOOST_AUTO_TEST_CASE(test_flatten) {
     auto f1{big_test_forest()};
-    std::vector<std::optional<std::string>> flat;
+    std::vector<stlab::optional<std::string>> flat;
 
     forests::flatten(f1.begin(), f1.end(), std::back_inserter(flat));
 

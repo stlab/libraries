@@ -10,12 +10,14 @@
 #define CHANNEL_TEST_HELPER
 
 #include <stlab/concurrency/channel.hpp>
+
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/scope.hpp>
 
 #include <queue>
 #include <thread>
+
 
 using lock_t = std::unique_lock<std::mutex>;
 

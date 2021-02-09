@@ -37,18 +37,19 @@ class task;
 template <class R, class... Args>
 class task<R(Args...)> {
 
-    template <typename F>
-    constexpr static auto is_empty(const F& f){
-        if constexpr (std::is_pointer<std::decay_t<F>>::value ||
+    template <class F>
+    constexpr static bool maybe_empty = std::is_pointer<std::decay_t<F>>::value ||
                       std::is_member_pointer<std::decay_t<F>>::value ||
-                      std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value)
-        {
-            return !f;
-        }
-        else
-        {
-            return false;
-        }
+                      std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value;
+
+    template <class F>
+    constexpr static auto is_empty(const F& f) -> std::enable_if_t<maybe_empty<F>, bool> {
+        return !f;
+    }
+
+    template <class F>
+    constexpr static auto is_empty(const F&) -> std::enable_if_t<!maybe_empty<F>, bool> {
+        return false;
     }
 
     struct concept_t {
