@@ -203,3 +203,5 @@ class StlabLibrariesConan(ConanFile):
         self.copy("*.dll", "./bin", "bin")
         self.copy("*.dylib", "./bin", "lib")
 
+    def package_info(self):
+        self.cpp_info.includedirs = ['.']
