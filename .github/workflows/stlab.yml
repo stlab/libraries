@@ -95,7 +95,7 @@ jobs:
 
       - name: Build (Windows)
         if: ${{ matrix.config.compiler == 'Visual Studio' }}
-        shell: bash
+        shell: powershell
         run: |
           Write-Host "CONAN_VISUAL_VERSIONS: $Env:CONAN_VISUAL_VERSIONS"
           Write-Host "CMAKE_TOOLSET:         $Env:CMAKE_TOOLSET"
