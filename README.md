@@ -30,7 +30,7 @@ The complete documentation is available on the [stlab home page](http://stlab.cc
 Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 # Supported Platforms
-- All OS that have a C++17 compliant compiler
+- All OS that have a C++14 compliant compiler
 
 # Requirements
 - C++17 Compiler
