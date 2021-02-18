@@ -72,7 +72,7 @@ private:
 
 template <class Container>
 auto transcriber(Container& c) {
-    return transcribe_iterator(c, c.begin());
+    return transcribe_iterator<Container>(c, c.begin());
 }
 
 /**************************************************************************************************/
@@ -115,7 +115,7 @@ auto flatten(I first, I last, O out) {
         if (is_leading(first)) {
             *out++ = *first;
         } else {
-            *out++ = std::nullopt;
+            *out++ = nullopt;
         }
     }
     return out;

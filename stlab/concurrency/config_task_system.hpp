@@ -46,31 +46,48 @@
 
 #else
 
-    #if __APPLE__
+    #if defined(__APPLE__)
 
         #undef STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH
         #define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 1
 
-    #elif __EMSCRIPTEN__
+    #elif defined(__EMSCRIPTEN__)
 
-        #undef STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN
-        #define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 1
+        #if defined(__EMSCRIPTEN_PTHREADS__)
 
-    #elif __pnacl__
+            #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
+            #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
+
+        #else
+
+            #undef STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN
+            #define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 1
+
+        #endif
+
+    #elif defined(__pnacl__)
 
         #undef STLAB_TASK_SYSTEM_PRIVATE_PNACL
         #define STLAB_TASK_SYSTEM_PRIVATE_PNACL() 1
 
-    #elif _MSC_VER
+    #elif defined(_MSC_VER)
 
         #undef STLAB_TASK_SYSTEM_PRIVATE_WINDOWS
         #define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 1
 
     #else
-
-        #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
-        #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
-
+        #if defined(__has_include)
+            #if __has_include(<dispatch/dispatch.h>)
+                #undef STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH
+                #define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 1
+            #else
+                #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
+                #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
+            #endif
+        #else
+            #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
+            #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
+        #endif
     #endif
 
 #endif

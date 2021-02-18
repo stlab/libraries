@@ -537,9 +537,8 @@ BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto [promise, future] = package<int()>(immediate_executor, [] { return 42; });
-        future.then([a = annotate(counter), &_check = check](int) { _check = false; }).detach();
-        (void)promise;
+        auto p = package<int()>(immediate_executor, [] { return 42; });
+        p.second.then([a = annotate(counter), &_check = check](int) { _check = false; }).detach();
     }
     std::cout << counter;
 
@@ -552,10 +551,9 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto [promise, future] = package<move_only()>(immediate_executor, [] { return move_only{42}; });
-        auto r = std::move(future).then([a = annotate(counter), &_check = check](auto&&) { _check = false; });
+        auto p = package<move_only()>(immediate_executor, [] { return move_only{42}; });
+        auto r = std::move(p.second).then([a = annotate(counter), &_check = check](auto&&) { _check = false; });
         r.detach();
-        (void)promise;
     }
     std::cout << counter;
 
@@ -568,9 +566,8 @@ BOOST_AUTO_TEST_CASE(future_void_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto [promise, future] = package<void()>(immediate_executor, [] {});
-        future.then([a = annotate(counter), &_check = check]() { _check = false; }).detach();
-        (void)promise;
+        auto p = package<void()>(immediate_executor, [] {});
+        p.second.then([a = annotate(counter), &_check = check]() { _check = false; }).detach();
     }
     std::cout << counter;
 

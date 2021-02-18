@@ -16,7 +16,8 @@ endif()
 
 project( stlab VERSION 1.5.6 LANGUAGES CXX )
 
-set(CMAKE_CXX_STANDARD 17)
+# Overriden from Conan?
+# set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include( CTest )
@@ -40,7 +41,7 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
-set(stlab.task_system "portable" CACHE STRING "Select the task system (portable|libdispatch|emscripten|pnacl|windows).")
+set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
 
 #
 # On apple we have to force the usage of boost.variant, because Apple's
@@ -67,7 +68,7 @@ add_library( stlab::stlab ALIAS stlab )
 # features ensures that the corresponding C++ standard flag is populated in
 # targets linking to stlab.
 #
-target_compile_features( stlab INTERFACE cxx_std_17 )
+# target_compile_features( stlab INTERFACE cxx_std_14)
 
 #
 # The include directory for stlab can be expected to vary between build
@@ -106,6 +107,9 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   # conanfile.txt
   #
   conan_basic_setup( TARGETS KEEP_RPATHS )
+
+  # REVISIT (sparent) : This should not be necessary but appears to be
+  set(CMAKE_CXX_STANDARD ${CONAN_SETTINGS_COMPILER_CPPSTD})
 endif()
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
@@ -168,7 +172,10 @@ if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
 endif()
 
-if (${stlab.task_system} STREQUAL "portable")
+if (${stlab.task_system} STREQUAL "header")
+  # Task System is selected in concurrency/config_task_system.hpp
+  # Nothing to define.
+elseif (${stlab.task_system} STREQUAL "portable")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
 elseif (${stlab.task_system} STREQUAL "libdispatch")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )

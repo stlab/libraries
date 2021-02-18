@@ -27,7 +27,13 @@
         #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_STD()
     #elif __has_include(<experimental/optional>)
         #include <experimental/optional>
-        #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_STD_EXPERIMENTAL()
+        #if defined(__cpp_lib_experimental_optional)
+            #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_STD_EXPERIMENTAL()
+        #else
+            #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_BOOST()
+        #endif
+    #else
+        #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_BOOST()
     #endif
 #else
     #define STLAB_OPTIONAL_PRIVATE_SELECTION() STLAB_OPTIONAL_PRIVATE_BOOST()
