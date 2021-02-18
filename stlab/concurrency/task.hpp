@@ -165,7 +165,7 @@ public:
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
 
-    template <class F>
+    template <class F, std::enable_if_t<!std::is_same<std::decay_t<F>, task>::value, bool> = true>
     task(F&& f) {
         using f_t = std::decay_t<F>;
         using model_t = model<f_t, sizeof(model<f_t, true>) <= small_object_size>;

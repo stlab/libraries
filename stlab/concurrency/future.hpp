@@ -440,9 +440,10 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     template <typename E, typename F>
     auto then_r(bool unique, E&& executor, F&& f) {
-        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) {
-            return std::move(_f)(std::move(*std::forward<decltype(x)>(x).get_try()));
-        });
+        return recover_r(
+            unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) mutable {
+                return std::move(_f)(std::move(*std::forward<decltype(x)>(x).get_try()));
+            });
     }
 
     template <typename F>
@@ -453,8 +454,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     template <typename E, typename F>
     auto recover_r(bool, E executor, F&& f) {
         // rvalue case unique is assumed.
-        auto p = package<std::invoke_result_t<F, future<T>>()>(
-            executor, [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() {
+        auto p = package<detail::result_t<F, future<T>>()>(
+            executor,
+            [_f = std::forward<F>(f), _p = future<T>(this->shared_from_this())]() mutable {
                 return _f(std::move(_p));
             });
 
@@ -640,15 +642,22 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
     void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) override {
-        if (_f) try {
-                this->set_value(_f, std::move(args)...);
-            } catch (...) {
-                this->set_exception(std::current_exception());
+        if (!_f) return;
+
+        try {
+            this->set_value(_f, std::move(args)...);
+        } catch (...) {
+            this->set_exception(std::current_exception());
         }
         _f = function_t();
     }
 
-    void set_error(std::exception_ptr error) override { this->set_exception(std::move(error)); }
+    void set_error(std::exception_ptr error) override {
+        if (!_f) return;
+
+        this->set_exception(std::move(error));
+        _f = function_t();
+    }
 };
 
 /**************************************************************************************************/

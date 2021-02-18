@@ -92,17 +92,12 @@ future<void> make_exceptional_future(std::exception_ptr error, E executor) {
 
 template <typename T>
 T blocking_get(future<T> x) {
-    stlab::optional<T> result;
-    std::exception_ptr error = nullptr;
-
     bool flag{false};
     std::condition_variable condition;
     std::mutex m;
+
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (r.exception())
-            error = std::forward<decltype(r)>(r).exception();
-        else
-            result = std::move(*std::forward<decltype(r)>(r).get_try());
+        x = std::forward<decltype(r)>(r);
 
         {
             std::unique_lock<std::mutex> lock{m};
@@ -110,6 +105,25 @@ T blocking_get(future<T> x) {
             condition.notify_one();
         }
     });
+
+    #if STLAB_TASK_SYSTEM(PORTABLE)
+
+    /*
+        Steal tasks from the default executor to help avoid deadlocks. We should also do this for
+        the single threaded emscripten case but that will require adding a queue to steal
+        from.
+    */
+    
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock{m};
+            if (flag) break;
+        }
+        if (!detail::pts().steal()) break;
+    }
+
+    #endif
+
     {
         std::unique_lock<std::mutex> lock{m};
         while (!flag) {
@@ -117,9 +131,7 @@ T blocking_get(future<T> x) {
         }
     }
 
-    if (error) std::rethrow_exception(error);
-
-    return std::move(*result);
+    return *x.get_try();
 }
 
 template <typename T>
