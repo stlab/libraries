@@ -79,30 +79,31 @@ constexpr auto platform_priority(executor_priority p)
     return DISPATCH_QUEUE_PRIORITY_DEFAULT;
 }
 
+struct group_t {
+    dispatch_group_t _group = dispatch_group_create();
+    ~group_t() {
+        std::cout << "dispatch_group_wait: " <<
+        dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+#if !STLAB_FEATURE(OBJC_ARC)
+        dispatch_release(_group);
+#endif
+    }
+};
+
+inline group_t& group() {
+    static group_t g;
+    return g;
+}
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
-private:
-    struct group {
-        dispatch_group_t _group = dispatch_group_create();
-        ~group() {
-            dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
-#if !STLAB_FEATURE(OBJC_ARC)
-            dispatch_release(_group);
-#endif
-        }
-    };
-
-public:
-
     using result_type = void;
+
     template <typename F>
     void operator()(F f) const {
         using f_t = decltype(f);
 
-        static group g;
-
-        dispatch_group_async_f(g._group,
+        dispatch_group_async_f(detail::group()._group,
                                dispatch_get_global_queue(platform_priority(P), 0),
                                new f_t(std::move(f)), [](void* f_) {
                                    auto f = static_cast<f_t*>(f_);
@@ -395,8 +396,6 @@ inline priority_task_system& pts() {
 template <executor_priority P = executor_priority::medium>
 struct task_system
 {
-
-
     using result_type = void;
 
     void operator()(task<void()> f) const {
@@ -415,7 +414,7 @@ struct executor_type {
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        static task_system<P> only_task_system;
+        constexpr task_system<P> only_task_system;
         only_task_system(std::move(f));
     }
 };
