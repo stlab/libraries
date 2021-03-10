@@ -210,7 +210,7 @@ public:
     }
 
     template <typename F>
-    void operator()(F&& f) {
+    void operator()(F&& f) const {
         auto work = CreateThreadpoolWork(&callback_impl<F>, new F(std::forward<F>(f)),
                                          &_callBackEnvironment);
 
@@ -413,7 +413,7 @@ struct executor_type {
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        constexpr task_system<P> only_task_system;
+        static const task_system<P> only_task_system;
         only_task_system(std::move(f));
     }
 };
