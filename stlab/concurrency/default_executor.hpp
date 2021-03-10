@@ -82,7 +82,6 @@ constexpr auto platform_priority(executor_priority p)
 struct group_t {
     dispatch_group_t _group = dispatch_group_create();
     ~group_t() {
-        std::cout << "dispatch_group_wait: " <<
         dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
 #if !STLAB_FEATURE(OBJC_ARC)
         dispatch_release(_group);
