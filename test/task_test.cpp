@@ -21,6 +21,132 @@ using namespace stlab;
 
 /**************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(task_argument_test) {
+    {
+        task<void(const regular&)> t([](const regular& a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        t(regular{42}); // rvalue->const &
+        regular a{42};
+        t(a);           // lvalue->const &
+        const regular b{42};
+        t(b);           // const lvalue->const &
+    }
+
+    {
+        task<void(regular&)> t([](regular& a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        regular a{42};
+        t(a);           // lvalue->&
+    }
+
+    {
+        task<void(move_only&&)> t([](move_only&& a) {
+            BOOST_CHECK_EQUAL(a.member(), 42);
+        });
+        t(move_only{42}); // rvalue->&&
+    }
+
+    {
+        task<void(move_only)> t([](move_only a) {
+            BOOST_CHECK_EQUAL(a.member(), 42);
+        });
+        t(move_only{42}); // rvalue->value
+    }
+
+    {
+        task<void(regular)> t([](regular a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        t(regular{42}); // rvalue->value
+        regular a{42};
+        t(a);           // lvalue->value
+        const regular b{42};
+        t(b);           // const lvalue->value
+    }
+    
+    // These test mismatched task signature to lambda signature
+    {
+        task<void(const regular&)> t([](regular a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        t(regular{42}); // rvalue->const &
+        regular a{42};
+        t(a);           // lvalue->const &
+        const regular b{42};
+        t(b);           // const lvalue->const &
+    }
+
+    {
+        task<void(regular&)> t([](const regular& a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        regular a{42};
+        t(a);           // lvalue->&
+    }
+
+    {
+        task<void(regular&)> t([](regular a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        regular a{42};
+        t(a);           // lvalue->&
+    }
+
+    {
+        task<void(move_only&&)> t([](const move_only& a) {
+            BOOST_CHECK_EQUAL(a.member(), 42);
+        });
+        t(move_only{42}); // rvalue->&&
+    }
+
+    {
+        task<void(move_only&&)> t([](move_only a) {
+            BOOST_CHECK_EQUAL(a.member(), 42);
+        });
+        t(move_only{42}); // rvalue->&&
+    }
+
+    {
+        task<void(move_only)> t([](const move_only& a) {
+            BOOST_CHECK_EQUAL(a.member(), 42);
+        });
+        t(move_only{42}); // rvalue->value
+    }
+
+    {
+        task<void(move_only)> t([](move_only&& a) {
+            BOOST_CHECK_EQUAL(a.member(), 42);
+        });
+        t(move_only{42}); // rvalue->value
+    }
+
+    {
+        task<void(regular)> t([](const regular& a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        t(regular{42}); // rvalue->value
+        regular a{42};
+        t(a);           // lvalue->value
+        const regular b{42};
+        t(b);           // const lvalue->value
+    }
+
+    {
+        task<void(regular)> t([](regular&& a) {
+            BOOST_CHECK_EQUAL(a._x, 42);
+        });
+        t(regular{42}); // rvalue->value
+        regular a{42};
+        t(a);           // lvalue->value
+        const regular b{42};
+        t(b);           // const lvalue->value
+    }
+}
+
+/**************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(task_nullary_tests) {
     {
         task<regular()> t([] { return regular(42); });
@@ -139,22 +265,22 @@ BOOST_AUTO_TEST_CASE(task_n_ary_tests) {
 
     {
         task<int(int, float)> t([](int x, float y) { return x + static_cast<int>(y); });
-        BOOST_CHECK_EQUAL(t(21, 21.), 42);
+        BOOST_CHECK_EQUAL(t(21, 21.f), 42);
     }
 
     {
         task<int(int, float)> x([](int x, float y) { return x + static_cast<int>(y); });
         task<int(int, float)> y([](int x, float y) { return x * static_cast<int>(y); });
         swap(x, y);
-        BOOST_CHECK_EQUAL(x(10, 10.), 100);
-        BOOST_CHECK_EQUAL(y(10, 10.), 20);
+        BOOST_CHECK_EQUAL(x(10, 10.f), 100);
+        BOOST_CHECK_EQUAL(y(10, 10.f), 20);
     }
 
     {
         task<int(int, float, std::string)> t([](int x, float y, std::string z) {
             return x + static_cast<int>(y) + static_cast<int>(z.size());
         });
-        BOOST_CHECK_EQUAL(t(20, 20., "00"), 42);
+        BOOST_CHECK_EQUAL(t(20, 20.f, "00"), 42);
     }
 
     {

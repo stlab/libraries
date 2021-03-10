@@ -9,15 +9,16 @@
 #ifndef STLAB_CONCURRENCY_UTILITY_HPP
 #define STLAB_CONCURRENCY_UTILITY_HPP
 
+#include <chrono>
 #include <condition_variable>
 #include <exception>
 #include <mutex>
-#include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/immediate_executor.hpp>
-#include <stlab/concurrency/optional.hpp>
 #include <type_traits>
 
 #include <stlab/memory.hpp>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/concurrency/optional.hpp>
 
 /**************************************************************************************************/
 
@@ -92,17 +93,12 @@ future<void> make_exceptional_future(std::exception_ptr error, E executor) {
 
 template <typename T>
 T blocking_get(future<T> x) {
-    stlab::optional<T> result;
-    std::exception_ptr error = nullptr;
-
     bool flag{false};
     std::condition_variable condition;
     std::mutex m;
+
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (r.exception())
-            error = std::forward<decltype(r)>(r).exception();
-        else
-            result = std::move(*std::forward<decltype(r)>(r).get_try());
+        x = std::forward<decltype(r)>(r);
 
         {
             std::unique_lock<std::mutex> lock{m};
@@ -110,6 +106,35 @@ T blocking_get(future<T> x) {
             condition.notify_one();
         }
     });
+
+    #if STLAB_TASK_SYSTEM(PORTABLE)
+
+    /*
+        Steal tasks from the default executor to help avoid deadlocks. We should also do this for
+        the single threaded emscripten case but that will require adding a queue to steal
+        from.
+
+        If no tasks are available we wait for one tick of the system clock and exponentially
+        back off on the wait as long as no tasks are available.
+    */
+
+    for (auto backoff{std::chrono::steady_clock::duration::zero()}; true;) {
+        {
+            std::unique_lock<std::mutex> lock{m};
+            if (condition.wait_for(lock, backoff, [&] { return flag; })) break;
+        }
+
+        if (detail::pts().steal()) {
+            backoff = std::chrono::steady_clock::duration::zero();
+        } else {
+            backoff = (backoff == std::chrono::steady_clock::duration::zero()) ?
+                          std::chrono::steady_clock::duration::min() :
+                          backoff * 2;
+        }
+    }
+
+    #else
+
     {
         std::unique_lock<std::mutex> lock{m};
         while (!flag) {
@@ -117,9 +142,9 @@ T blocking_get(future<T> x) {
         }
     }
 
-    if (error) std::rethrow_exception(error);
+    #endif
 
-    return std::move(*result);
+    return *x.get_try();
 }
 
 template <typename T>
