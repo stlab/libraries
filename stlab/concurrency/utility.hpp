@@ -166,6 +166,7 @@ T blocking_get(future<T> x) {
     return detail::_get_ready_future<T>{}(std::move(x));
 }
 
+#if 0
 template <typename T>
 auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
     future<T> guarded;
@@ -185,6 +186,46 @@ auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
     }
 
     return valid ? guarded.get_try() : decltype(guarded.get_try()){};
+}
+#endif
+
+namespace detail {
+
+template <class T>
+struct blocking_get_guarded {
+    future<T> _result;
+    std::condition_variable _condition;
+    std::mutex _mutex;
+
+    template <class F>
+    void set(F&& r) {
+        std::unique_lock<std::mutex> lock{_mutex};
+        _result = std::forward<F>(r);
+        _condition.notify_one();
+    }
+
+    auto wait_for(const std::chrono::nanoseconds& timeout) {
+        bool valid;
+        {
+            std::unique_lock<std::mutex> lock{_mutex};
+            valid = _condition.wait_for(lock, timeout, [&] { return _result.valid(); });
+        }
+        return valid ? _result.get_try() : decltype(_result.get_try()){};
+    }
+};
+
+} // namespace detail
+
+template <typename T>
+auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
+    auto p = std::make_shared<detail::blocking_get_guarded<T>>();
+
+    auto hold = std::move(x).recover(
+        immediate_executor, [_p = std::weak_ptr<detail::blocking_get_guarded<T>>(p)](auto&& r) {
+            if (auto p = _p.lock()) p->set(std::forward<decltype(r)>(r));
+        });
+
+    return p->wait_for(timeout);
 }
 
 /**************************************************************************************************/
