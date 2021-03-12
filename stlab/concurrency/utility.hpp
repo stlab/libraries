@@ -16,6 +16,7 @@
 #include <type_traits>
 
 #include <stlab/memory.hpp>
+#include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/optional.hpp>

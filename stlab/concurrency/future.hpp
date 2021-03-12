@@ -19,7 +19,6 @@
 
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
-#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
@@ -36,12 +35,14 @@
 #define STLAB_FUTURE_COROUTINES_SUPPORT() 1
 #include <experimental/coroutine>
 #include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 #endif
 #endif
 
 #if !defined(STLAB_FUTURE_COROUTINES_SUPPORT)
 #define STLAB_FUTURE_COROUTINES_SUPPORT() 0
 #endif
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -49,6 +50,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 enum class future_error_codes { // names for futures errors
@@ -356,6 +358,11 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         return reduce(std::move(p.second));
     }
 
+    void _detach() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
+    }
+
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
@@ -482,6 +489,11 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return reduce(std::move(p.second));
     }
 
+    void _detach() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (!_ready) _then = then_t([](auto&&){}, [_p = this->shared_from_this()] {});
+    }
+
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
@@ -574,6 +586,11 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     template <typename F>
     auto recover_r(bool, F&& f) {
         return recover(_executor, std::forward<F>(f));
+    }
+
+    void _detach() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
     }
 
     template <typename E, typename F>
@@ -841,7 +858,7 @@ public:
     }
 
     void detach() const {
-        (void)then(stlab::immediate_executor, [_hold = _p](const auto&) {});
+        _p->_detach();
     }
 
     void reset() { _p.reset(); }
@@ -977,7 +994,7 @@ public:
     }
 
     void detach() const {
-        (void)then(stlab::immediate_executor, [_hold = _p]{});
+        _p->_detach();
     }
 
     void reset() { _p.reset(); }
@@ -1075,7 +1092,7 @@ public:
     }
 
     void detach() const {
-        (void)_p->then_r(unique_usage(_p), stlab::immediate_executor, [_hold = _p](auto&&) {});
+        _p->_detach();
     }
 
     void reset() { _p.reset(); }
@@ -1933,7 +1950,7 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
 
         promise_type() {
-            _promise = stlab::package<T(T)>(stlab::immediate_executor, [](auto&& x) -> decltype(x) {
+            _promise = stlab::package<T(T)>([](auto&&){}, [](auto&& x) -> decltype(x) {
                 return std::forward<decltype(x)>(x);
             });
         }
