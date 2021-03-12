@@ -92,6 +92,26 @@ future<void> make_exceptional_future(std::exception_ptr error, E executor) {
     return p.second;
 }
 
+namespace detail {
+
+template <class T>
+struct _get_ready_future {
+    template <class F>
+    auto operator()(F&& f) {
+        return *std::forward<F>(f).get_try();
+    }
+};
+
+template <>
+struct _get_ready_future<void> {
+    template <class F>
+    void operator()(F&& f) {
+        std::forward<F>(f).get_try();
+    }
+};
+
+} // namespace detail
+
 template <typename T>
 T blocking_get(future<T> x) {
     bool flag{false};
@@ -138,104 +158,33 @@ T blocking_get(future<T> x) {
 
     {
         std::unique_lock<std::mutex> lock{m};
-        while (!flag) {
-            condition.wait(lock);
-        }
+        condition.wait(lock, [&] { return flag; });
     }
 
     #endif
 
-    return *x.get_try();
+    return detail::_get_ready_future<T>{}(std::move(x));
 }
 
 template <typename T>
-stlab::optional<T> blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
-    std::exception_ptr error = nullptr;
-    auto state = std::make_shared<detail::shared_state_result<T>>();
-    auto hold =
-        std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
-            auto state = _weak_state.lock();
-            if (!state) {
-                return;
-            }
-            if (r.exception())
-                state->error = std::forward<decltype(r)>(r).exception();
-            else
-                state->result = std::move(*std::forward<decltype(r)>(r).get_try());
-            {
-                std::unique_lock<std::mutex> lock{state->m};
-                state->flag = true;
-                state->condition.notify_one();
-            }
-        });
-
-    {
-        std::unique_lock<std::mutex> lock{state->m};
-        while (!state->flag) {
-            if (state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
-                hold.reset();
-                return stlab::optional<T>{};
-            }
-        }
-    }
-
-    if (state->error) std::rethrow_exception(state->error);
-
-    return std::move(state->result);
-}
-
-inline void blocking_get(future<void> x) {
-    std::exception_ptr error = nullptr;
-
-    bool flag{false};
+auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) {
+    future<T> guarded;
     std::condition_variable condition;
     std::mutex m;
+
     auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        if (auto ex = std::forward<decltype(r)>(r).exception()) error = ex;
-        {
-            std::unique_lock<std::mutex> lock(m);
-            flag = true;
-            condition.notify_one();
-        }
+        std::unique_lock<std::mutex> lock{m};
+        guarded = std::forward<decltype(r)>(r);
+        condition.notify_one();
     });
+
+    bool valid;
     {
-        std::unique_lock<std::mutex> lock(m);
-        while (!flag) {
-            condition.wait(lock);
-        }
+        std::unique_lock<std::mutex> lock{m};
+        valid = condition.wait_for(lock, timeout, [&] { return guarded.valid(); });
     }
 
-    if (error) std::rethrow_exception(error);
-}
-
-inline bool blocking_get(future<void> x, const std::chrono::nanoseconds& timeout) {
-    auto state = std::make_shared<detail::shared_state>();
-    auto hold =
-        std::move(x).recover(immediate_executor, [_weak_state = make_weak_ptr(state)](auto&& r) {
-            auto state = _weak_state.lock();
-            if (!state) {
-                return;
-            }
-            if (auto ex = r.exception()) state->error = ex;
-            {
-                std::unique_lock<std::mutex> lock(state->m);
-                state->flag = true;
-                state->condition.notify_one();
-            }
-        });
-
-    {
-        std::unique_lock<std::mutex> lock(state->m);
-        while (!state->flag) {
-            if (state->condition.wait_for(lock, timeout) == std::cv_status::timeout) {
-                hold.reset();
-                return false;
-            }
-        }
-    }
-
-    if (state->error) std::rethrow_exception(state->error);
-    return true;
+    return valid ? guarded.get_try() : decltype(guarded.get_try()){};
 }
 
 /**************************************************************************************************/
