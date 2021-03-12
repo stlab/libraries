@@ -33,16 +33,9 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
-#include <deque>
 #include <thread>
 #include <vector>
 
-#include <stlab/concurrency/task.hpp>
-
-// REVISIT (sparent) : for testing only
-#if 0 && __APPLE__
-#include <dispatch/dispatch.h>
-#endif
 #endif
 
 /**************************************************************************************************/
@@ -86,30 +79,30 @@ constexpr auto platform_priority(executor_priority p)
     return DISPATCH_QUEUE_PRIORITY_DEFAULT;
 }
 
+struct group_t {
+    dispatch_group_t _group = dispatch_group_create();
+    ~group_t() {
+        dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+#if !STLAB_FEATURE(OBJC_ARC)
+        dispatch_release(_group);
+#endif
+    }
+};
+
+inline group_t& group() {
+    static group_t g;
+    return g;
+}
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
-private:
-    struct group {
-        dispatch_group_t _group = dispatch_group_create();
-        ~group() {
-            dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
-#if !STLAB_FEATURE(OBJC_ARC)
-            dispatch_release(_group);
-#endif
-        }
-    };
-
-public:
-
     using result_type = void;
+
     template <typename F>
     void operator()(F f) const {
         using f_t = decltype(f);
 
-        static group g;
-
-        dispatch_group_async_f(g._group,
+        dispatch_group_async_f(detail::group()._group,
                                dispatch_get_global_queue(platform_priority(P), 0),
                                new f_t(std::move(f)), [](void* f_) {
                                    auto f = static_cast<f_t*>(f_);
@@ -247,56 +240,84 @@ inline auto queue_size() {
     // The test cannot run with less than two cores
     return std::max(2u, std::thread::hardware_concurrency());
 #else
-    return std::thread::hardware_concurrency();
+    return std::max(1u, std::thread::hardware_concurrency());
 #endif
 }
 
 class notification_queue {
     using lock_t = std::unique_lock<std::mutex>;
-    std::deque<task<void()>> _q;
-    std::mutex _queue_mutex;
-    std::condition_variable* _ready{nullptr};
 
-public:
-    void set_context(std::condition_variable& cv) {
-        _ready = &cv;
+    struct element_t {
+        unsigned _priority;
+        task<void()> _task;
+
+        template <class F>
+        element_t(F&& f, unsigned priority) : _priority{priority}, _task{std::forward<F>(f)} { }
+
+        struct greater {
+            bool operator()(const element_t& a, const element_t& b) const {
+                return b._priority < a._priority;
+            }
+        };
+    };
+
+    std::vector<element_t> _q; // can't use priority queue because top() is const
+    bool _done{false};
+    std::mutex _mutex;
+    std::condition_variable _ready;
+
+    // This must be called under a lock with a non-empty _q
+    task<void()> pop_not_empty() {
+        auto result = std::move(_q.front()._task);
+        std::pop_heap(begin(_q), end(_q), element_t::greater());
+        _q.pop_back();
+        return result;
     }
 
+public:
     bool try_pop(task<void()>& x) {
-        lock_t lock{_queue_mutex, std::try_to_lock};
+        lock_t lock{_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return false;
-        x = std::move(_q.front());
-        _q.pop_front();
+        x = pop_not_empty();
         return true;
     }
 
     bool pop(task<void()>& x) {
-        lock_t lock{_queue_mutex};
+        lock_t lock{_mutex};
+        while (_q.empty() && !_done) _ready.wait(lock);
         if (_q.empty()) return false;
-        x = std::move(_q.front());
-        _q.pop_front();
+        x = pop_not_empty();
         return true;
     }
 
+    void done() {
+        {
+            lock_t lock{_mutex};
+            _done = true;
+        }
+        _ready.notify_all();
+    }
 
     template <typename F>
-    bool try_push(F&& f) {
+    bool try_push(F&& f, unsigned priority) {
         {
-            lock_t lock{_queue_mutex, std::try_to_lock};
+            lock_t lock{_mutex, std::try_to_lock};
             if (!lock) return false;
-            _q.emplace_back(std::forward<F>(f));
+            _q.emplace_back(std::forward<F>(f), priority);
+            std::push_heap(begin(_q), end(_q), element_t::greater());
         }
-        _ready->notify_all();
+        _ready.notify_one();
         return true;
     }
 
     template <typename F>
-    void push(F&& f) {
+    void push(F&& f, unsigned priority) {
         {
-            lock_t lock{_queue_mutex};
-            _q.emplace_back(std::forward<F>(f));
+            lock_t lock{_mutex};
+            _q.emplace_back(std::forward<F>(f), priority);
+            std::push_heap(begin(_q), end(_q), element_t::greater());
         }
-        _ready->notify_all();
+        _ready.notify_one();
     }
 };
 
@@ -306,80 +327,63 @@ class priority_task_system {
     using lock_t = std::unique_lock<std::mutex>;
 
     const unsigned _count{queue_size()};
-    // The 64 for spinning over the queues is a value of current experience.
-    const unsigned _spin{queue_size()<64? 64 : queue_size()};
 
-    struct thread_context
-    {
-        std::mutex _mutex;
-        std::condition_variable _ready;
-        std::thread _thread;
-    };
-    std::vector<thread_context> _thread_contexts{_count};
-    std::array<std::vector<notification_queue>, 3> _q;
+    std::vector<std::thread> _threads;
+    std::vector<notification_queue> _q{_count};
     std::atomic<unsigned> _index{0};
     std::atomic_bool _done{false};
 
     void run(unsigned i) {
         while (true) {
-            begin:
             task<void()> f;
 
-            for (auto& q : _q) {
-                // As less cores are available as more spinning over
-                // the individual queues seems to be better
-                for (unsigned n = 0; n != _spin / _count; ++n) {
-                    if (q[(i + n) % _count].try_pop(f)) {
-                        f();
-                        goto begin;
-                    };
-                }
+            for (unsigned n = 0; n != _count; ++n) {
+                if (_q[(i + n) % _count].try_pop(f)) break;
             }
+            if (!f && !_q[i].pop(f)) break;
 
-            {
-                lock_t lock{_thread_contexts[i]._mutex};
-                if (!_done) {
-                    _thread_contexts[i]._ready.wait(lock);
-                    goto begin;
-                }
-            }
-            if (_done) return;
+            f();
         }
     }
 
 public:
     priority_task_system() {
-        for (auto& q : _q) {
-            std::vector<notification_queue> queues{_count};
-            std::swap(q, queues);
-            for (unsigned n = 0; n != _count; ++n) {
-                q[n].set_context(_thread_contexts[n]._ready);
-            }
-        }
+        _threads.reserve(_count);
         for (unsigned n = 0; n != _count; ++n) {
-            _thread_contexts[n]._thread = std::thread([&, n] { run(n); });
+            _threads.emplace_back([&, n]{ run(n); });
         }
     }
 
     ~priority_task_system() {
-        _done = true;
-        for (auto& context : _thread_contexts)
-            context._ready.notify_all();
-
-        for (auto& context : _thread_contexts)
-            context._thread.join();
+        for (auto& e : _q) e.done();
+        for (auto& e : _threads) e.join();
     }
+
+
 
     template <std::size_t P, typename F>
     void execute(F&& f) {
         static_assert(P < 3, "More than 3 priorities are not known!");
         auto i = _index++;
 
-        for (unsigned n = 0; n != _spin / _count; ++n) {
-            if (_q[P][(i + n) % _count].try_push(std::forward<F>(f))) return;
+        for (unsigned n = 0; n != _count; ++n) {
+            if (_q[(i + n) % _count].try_push(std::forward<F>(f), P)) return;
         }
 
-        _q[P][i % _count].push(std::forward<F>(f));
+        _q[i % _count].push(std::forward<F>(f), P);
+    }
+
+    bool steal() {
+        task<void()> f;
+
+        for (unsigned n = 0; n != _count; ++n) {
+            if (_q[n].try_pop(f)) break;
+        }
+        if (!f) return false;
+
+        f();
+
+        return true;
     }
 };
 
@@ -397,7 +401,6 @@ struct task_system
         pts().execute<static_cast<std::size_t>(P)>(std::move(f));
     }
 };
-
 
 #endif
 
