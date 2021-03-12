@@ -19,11 +19,12 @@
 
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/optional.hpp>
-#include <stlab/memory.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
+#include <stlab/memory.hpp>
 
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
@@ -35,7 +36,6 @@
 #define STLAB_FUTURE_COROUTINES_SUPPORT() 1
 #include <experimental/coroutine>
 #include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/immediate_executor.hpp>
 #endif
 #endif
 
@@ -841,7 +841,7 @@ public:
     }
 
     void detach() const {
-        (void)then([_hold = _p](auto) {}, [](const auto&) {});
+        (void)then(stlab::immediate_executor, [_hold = _p](const auto&) {});
     }
 
     void reset() { _p.reset(); }
@@ -977,7 +977,7 @@ public:
     }
 
     void detach() const {
-        (void)then([_hold = _p](auto) {}, []() {});
+        (void)then(stlab::immediate_executor, [_hold = _p]{});
     }
 
     void reset() { _p.reset(); }
@@ -1075,7 +1075,7 @@ public:
     }
 
     void detach() const {
-        (void)_p->then_r(unique_usage(_p), [_hold = _p](auto) {}, [](auto&&) {});
+        (void)_p->then_r(unique_usage(_p), stlab::immediate_executor, [_hold = _p](auto&&) {});
     }
 
     void reset() { _p.reset(); }
