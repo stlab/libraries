@@ -378,7 +378,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         then_t then;
         {
             std::unique_lock<std::mutex> lock(_mutex);
-            then = move(_then);
+            then = std::move(_then);
             _ready = true;
         }
         // propagate exception with scheduling
