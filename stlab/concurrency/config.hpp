@@ -16,6 +16,9 @@
 #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 0
 #define STLAB_FEATURE_PRIVATE_COROUTINES() 0
 
+#define STLAB_FEATURE_PRIVATE_THREAD_NAME_APPLE() 0
+#define STLAB_FEATURE_PRIVATE_THREAD_NAME_POSIX() 0
+
 #define STLAB_FEATURE(X) (STLAB_FEATURE_PRIVATE_##X())
 
 /**************************************************************************************************/
@@ -33,6 +36,7 @@
         #endif
     #endif
 
+
 #elif _MSC_VER
 
     #if _MSVC_LANG == 201103L
@@ -45,6 +49,18 @@
         #pragma message("Unknown version of C++, assuming C++20.")
         #define STLAB_CPP_VERSION_PRIVATE() 20
     #endif
+
+#endif
+
+#if __APPLE__
+
+#undef STLAB_FEATURE_PRIVATE_THREAD_NAME_APPLE
+#define STLAB_FEATURE_PRIVATE_THREAD_NAME_APPLE() 1
+
+#elif defined(__has_include) && __has_include(<pthread.h>)
+
+#undef STLAB_FEATURE_PRIVATE_THREAD_NAME_POSIX
+#define STLAB_FEATURE_PRIVATE_THREAD_NAME_POSIX() 1
 
 #endif
 

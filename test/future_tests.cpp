@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout_reached) {
 
     stlab::future<void> f = stlab::async(stlab::default_executor, answer);
 
-    BOOST_REQUIRE_NO_THROW(stlab::blocking_get_for(f, std::chrono::milliseconds(100)));
+    BOOST_REQUIRE_NO_THROW(stlab::blocking_get_for(f, std::chrono::milliseconds(100)).get_try());
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case) {

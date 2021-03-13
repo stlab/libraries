@@ -15,10 +15,10 @@
 #include <mutex>
 #include <type_traits>
 
-#include <stlab/memory.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/memory.hpp>
 
 /**************************************************************************************************/
 
@@ -194,12 +194,11 @@ template <class T>
 auto blocking_get_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
     auto p = std::make_shared<detail::blocking_get_guarded<T>>();
 
-    auto hold = std::move(x).recover(
-        immediate_executor, [_p = std::weak_ptr<detail::blocking_get_guarded<T>>(p)](auto&& r) {
-            if (auto p = _p.lock()) return p->set(std::forward<decltype(r)>(r));
-            return make_exceptional_future<T>(
-                std::make_exception_ptr(std::runtime_error("not an error")), immediate_executor);
-        });
+    auto hold = std::move(x).recover(immediate_executor, [_p = stlab::make_weak_ptr(p)](auto&& r) {
+        if (auto p = _p.lock()) return p->set(std::forward<decltype(r)>(r));
+        return make_exceptional_future<T>(
+            std::make_exception_ptr(std::runtime_error("not an error")), immediate_executor);
+    });
 
     auto result = p->wait_for(timeout);
     return result.valid() ? std::move(result) : std::move(hold);
