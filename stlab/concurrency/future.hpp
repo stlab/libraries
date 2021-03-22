@@ -283,7 +283,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    void reset() { _then.clear(); }
+    void reset() { _then.clear(); } // NEEDS MUTEX
 
     template <typename F>
     auto then(F f) {
@@ -1305,7 +1305,7 @@ auto apply_when_any_arg(F& f, P& p) {
 
 template <std::size_t i, typename E, typename P, typename T>
 void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
-    auto&& holds = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
+    auto holds = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
         auto p = _w.lock();
         if (!p) return;
 

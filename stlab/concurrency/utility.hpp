@@ -145,7 +145,7 @@ T blocking_get(future<T> x) {
             backoff = std::chrono::steady_clock::duration::zero();
         } else {
             backoff = (backoff == std::chrono::steady_clock::duration::zero()) ?
-                          std::chrono::steady_clock::duration::min() :
+                          backoff = std::chrono::steady_clock::duration{1} :
                           backoff * 2;
         }
     }
@@ -218,4 +218,4 @@ template <class T>
 
 } // namespace stlab
 
-#endif // SLABFUTURE_UTILITY_HPP
+#endif // STLAB_CONCURRENCY_UTILITY_HPP
