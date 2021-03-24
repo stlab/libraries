@@ -124,7 +124,7 @@ T blocking_get(future<T> x) {
         }
     });
 
-    #if STLAB_TASK_SYSTEM(PORTABLE)
+#if STLAB_TASK_SYSTEM(PORTABLE)
 
     /*
         Steal tasks from the default executor to help avoid deadlocks. We should also do this for
@@ -145,19 +145,19 @@ T blocking_get(future<T> x) {
             backoff = std::chrono::steady_clock::duration::zero();
         } else {
             backoff = (backoff == std::chrono::steady_clock::duration::zero()) ?
-                          backoff = std::chrono::steady_clock::duration{1} :
+                          std::chrono::steady_clock::duration{1} :
                           backoff * 2;
         }
     }
 
-    #else
+#else
 
     {
         std::unique_lock<std::mutex> lock{m};
         condition.wait(lock, [&] { return flag; });
     }
 
-    #endif
+#endif
 
     return detail::_get_ready_future<T>{}(std::move(x));
 }
