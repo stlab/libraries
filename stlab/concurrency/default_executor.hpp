@@ -40,6 +40,12 @@
 
 /**************************************************************************************************/
 
+#if STLAB_FEATURE(THREAD_NAME_POSIX) || STLAB_FEATURE(THREAD_NAME_APPLE)
+#include <pthread.h>
+#endif
+
+/**************************************************************************************************/
+
 namespace stlab {
 
 /**************************************************************************************************/
@@ -334,6 +340,11 @@ class priority_task_system {
     std::atomic_bool _done{false};
 
     void run(unsigned i) {
+        #if STLAB_FEATURE(THREAD_NAME_POSIX)
+        pthread_setname_np(pthread_self(), "cc.stlab.default_executor");
+        #elif STLAB_FEATURE(THREAD_NAME_APPLE)
+        pthread_setname_np("cc.stlab.default_executor");
+        #endif
         while (true) {
             task<void()> f;
 

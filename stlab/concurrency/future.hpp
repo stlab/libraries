@@ -20,10 +20,10 @@
 #include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/optional.hpp>
-#include <stlab/memory.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
+#include <stlab/memory.hpp>
 
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
@@ -42,6 +42,7 @@
 #if !defined(STLAB_FUTURE_COROUTINES_SUPPORT)
 #define STLAB_FUTURE_COROUTINES_SUPPORT() 0
 #endif
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -49,6 +50,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 enum class future_error_codes { // names for futures errors
@@ -281,7 +283,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    void reset() { _then.clear(); }
+    void reset() { _then.clear(); } // NEEDS MUTEX
 
     template <typename F>
     auto then(F f) {
@@ -356,6 +358,11 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         return reduce(std::move(p.second));
     }
 
+    void _detach() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
+    }
+
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
@@ -371,7 +378,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         then_t then;
         {
             std::unique_lock<std::mutex> lock(_mutex);
-            then = move(_then);
+            then = std::move(_then);
             _ready = true;
         }
         // propagate exception with scheduling
@@ -482,6 +489,11 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return reduce(std::move(p.second));
     }
 
+    void _detach() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (!_ready) _then = then_t([](auto&&){}, [_p = this->shared_from_this()] {});
+    }
+
     template <typename R>
     auto reduce(R&& r) {
         return std::forward<R>(r);
@@ -574,6 +586,11 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     template <typename F>
     auto recover_r(bool, F&& f) {
         return recover(_executor, std::forward<F>(f));
+    }
+
+    void _detach() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
     }
 
     template <typename E, typename F>
@@ -841,7 +858,7 @@ public:
     }
 
     void detach() const {
-        (void)then([_hold = _p](auto) {}, [](const auto&) {});
+        _p->_detach();
     }
 
     void reset() { _p.reset(); }
@@ -977,7 +994,7 @@ public:
     }
 
     void detach() const {
-        (void)then([_hold = _p](auto) {}, []() {});
+        _p->_detach();
     }
 
     void reset() { _p.reset(); }
@@ -1075,7 +1092,7 @@ public:
     }
 
     void detach() const {
-        (void)_p->then_r(unique_usage(_p), [_hold = _p](auto) {}, [](auto&&) {});
+        _p->_detach();
     }
 
     void reset() { _p.reset(); }
@@ -1288,7 +1305,7 @@ auto apply_when_any_arg(F& f, P& p) {
 
 template <std::size_t i, typename E, typename P, typename T>
 void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
-    auto&& holds = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
+    auto holds = std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
         auto p = _w.lock();
         if (!p) return;
 
