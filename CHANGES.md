@@ -1,3 +1,22 @@
+## v.1.6.2 - 2021 - March 25
+ - Fixed issues
+   - [#371]:(https://github.com/stlab/libraries/issues/371)Missing include in concurrency/utility.hpp
+   - The _hold for detach was being done on the executor instead of the continuation. The result was a (silenced) broken exception getting thrown if detach() is called on a ready exception.
+   This would trigger an exception which is caught internally in a packaged task and dropped.
+   ```cpp
+    stlab::make_ready_future(stlab::immediate_executor).detach();
+   ```
+   - Fixed an issue with the serial queue using a "temporary" executor which was copied into the future shared state.
+   - Added stealing to blocking_get<void>
+   - Also cleaned up blocking_get implementation.
+   - blocking_get_for() added
+   - Fix for make_exceptional_future<void> and improvements blocking_get_for added
+   - deprecated blocking_get() with timeout
+   - Fixing bugs and naming our threads
+   - Fixed issue with backoff
+   - min() duration on a clock apparently is not a minimum length duration as documented, but is a negative duration... instead we us a single tick.
+   - Update utility.hpp
+
 ## v.1.6.1 - 2021 - February 10
  - Fixed issues
    - [#363]:(https://github.com/stlab/libraries/issues/363) Wrong version in the 1.6.0 release
