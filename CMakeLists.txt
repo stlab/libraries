@@ -14,7 +14,7 @@ else()
   set( subproject OFF )
 endif()
 
-project( stlab VERSION 1.6.1 LANGUAGES CXX )
+project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
 # Overriden from Conan?
 # set(CMAKE_CXX_STANDARD 17)
