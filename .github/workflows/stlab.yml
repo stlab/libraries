@@ -1,4 +1,4 @@
-name: CMake
+name: Build and Tests
 
 on: [push, pull_request]
 
@@ -39,34 +39,64 @@ jobs:
         with:
           python-version: "3.8"
 
-      - name: Install Dependencies
+      - name: Install Dependencies (Unix)
+        if: ${{ matrix.config.compiler != 'Visual Studio' }}
         run: |
           chmod +x .github/install.sh
           .github/install.sh
         shell: bash
 
-      - name: Settting Linux+GCC EnvVars
+      - name: Install Dependencies (Windows)
+        if: ${{ matrix.config.compiler == 'Visual Studio' }}
+        run: |
+          set PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;
+          python.exe --version
+          cmake --version
+          python.exe -m pip install --upgrade pip
+          pip.exe install conan_package_tools==0.35.0
+          pip.exe install conan==1.32.0
+          conan --version
+          conan user
+        shell: cmd
+
+      - name: Settting EnvVars (Linux+GCC)
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
           echo "CONAN_GCC_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
           echo "CONAN_DOCKER_IMAGE=conanio/gcc${{ matrix.config.version }}" >> $GITHUB_ENV
 
-      - name: Settting Linux+Clang EnvVars
+      - name: Settting EnvVars (Linux+Clang)
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
           echo "CONAN_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
           echo "CONAN_DOCKER_IMAGE=conanio/clang${{ matrix.config.version }}" >> $GITHUB_ENV
 
-      - name: Settting macOS EnvVars
+      - name: Settting EnvVars (macOS)
         if: ${{ matrix.config.compiler == 'apple-clang' }}
         shell: bash
         run: |
           echo "CONAN_APPLE_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
 
-      - name: Build
+      - name: Settting EnvVars (Windows)
+        if: ${{ matrix.config.compiler == 'Visual Studio' }}
+        shell: powershell
+        run: |
+          echo "CONAN_VISUAL_VERSIONS=${{ matrix.config.version }}" >> $Env:GITHUB_ENV
+          echo "CMAKE_TOOLSET=${{ matrix.config.cmake_toolset }}" >> $Env:GITHUB_ENV
+
+      - name: Build (Unix)
+        if: ${{ matrix.config.compiler != 'Visual Studio' }}
         shell: bash
         run: |
           chmod +x .github/run.sh
           .github/run.sh
+
+      - name: Build (Windows)
+        if: ${{ matrix.config.compiler == 'Visual Studio' }}
+        shell: powershell
+        run: |
+          Write-Host "CONAN_VISUAL_VERSIONS: $Env:CONAN_VISUAL_VERSIONS"
+          Write-Host "CMAKE_TOOLSET:         $Env:CMAKE_TOOLSET"
+          python build.py
