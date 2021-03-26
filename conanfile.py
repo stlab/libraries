@@ -198,10 +198,13 @@ class StlabLibrariesConan(ConanFile):
             cmake.configure()
             cmake.build()
             cmake.test(output_on_failure=True)
- 
+
     def package(self):
         self.copy("*.hpp")
 
     def imports(self):
         self.copy("*.dll", "./bin", "bin")
         self.copy("*.dylib", "./bin", "lib")
+
+    def package_info(self):
+        self.cpp_info.includedirs = ['.']
