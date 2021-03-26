@@ -113,6 +113,7 @@ struct test_fixture {
     auto wait_until_future_r_completed(F& f) {
         auto result = f.get_try();
         while (!result) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             result = f.get_try();
         }
         return result;
@@ -150,7 +151,7 @@ struct test_fixture {
         }
     }
 
-    std::atomic_int _task_counter;
+    std::atomic_int _task_counter{0};
 
 private:
     template <typename F>

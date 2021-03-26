@@ -14,7 +14,7 @@ def option_on_off(option):
 
 class StlabLibrariesConan(ConanFile):
     name = "stlab"
-    version = "1.5.6"       #TODO(fernando): see how to automate the version number
+    version = "1.6.2"       #TODO(fernando): see how to automate the version number
     license = "http://www.boost.org/users/license.html"
     url = "https://github.com/stlab/libraries"
     description = "Software Technology Lab (stlab) libraries"
@@ -28,7 +28,7 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": [True, False],
         "boost_variant": [True, False],
         "coroutines": [True, False],
-        "task_system": ["portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
+        "task_system": ["header", "portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
     }
 
     default_options = {
@@ -37,7 +37,7 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": False,
         "boost_variant": False,
         "coroutines": False,
-        "task_system": "auto",
+        "task_system": "header",
     }
 
     def _log(self, str):
@@ -109,7 +109,8 @@ class StlabLibrariesConan(ConanFile):
     def _fix_boost_components(self):
         if self.settings.os != "Macos": return
         if self.settings.compiler != "apple-clang": return
-        if float(str(self.settings.compiler.version)) >= 12: return
+
+        if (float(str(self.settings.compiler.version)) >= 12) and not ((self.settings.compiler.cppstd == "14") or (self.settings.compiler.cppstd == "gnu14")): return
 
         #
         # On Apple we have to force the usage of boost.variant, because Apple's implementation of C++17 is not complete.
@@ -170,6 +171,8 @@ class StlabLibrariesConan(ConanFile):
 
     def configure(self):
         ConanFile.configure(self)
+
+        tools.check_min_cppstd(self, "14")
 
         self._fix_boost_components()
 

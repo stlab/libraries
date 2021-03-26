@@ -54,4 +54,5 @@ build_script:
   - cd build
   - cmake -G "%CMAKE_TOOLSET%" -D BOOST_ROOT="%BOOST_ROOT%" -D Boost_USE_STATIC_LIBS=ON ..
   - cmake --build . --config Release
-  - ctest -C Release
+  - set TESTS_ARGUMENTS=--log_level=message
+  - ctest -C Release --verbose --no-compress-output

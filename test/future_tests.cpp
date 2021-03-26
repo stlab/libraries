@@ -428,9 +428,9 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout) {
 
     stlab::future<void> f = stlab::async(stlab::default_executor, answer);
 
-    auto r = stlab::blocking_get(f, std::chrono::seconds(2));
+    auto r = stlab::blocking_get_for(f, std::chrono::seconds(2));
     BOOST_REQUIRE_EQUAL(42, v);
-    BOOST_REQUIRE_EQUAL(true, r);
+    BOOST_REQUIRE_EQUAL(true, r.is_ready());
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout_reached) {
@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_with_timeout_reached) {
 
     stlab::future<void> f = stlab::async(stlab::default_executor, answer);
 
-    BOOST_REQUIRE_NO_THROW(stlab::blocking_get(f, std::chrono::milliseconds(100)));
+    BOOST_REQUIRE_NO_THROW(stlab::blocking_get_for(f, std::chrono::milliseconds(100)).get_try());
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_error_case) {
@@ -487,7 +487,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_void_error_case_with_timeout) {
     stlab::future<void> f = stlab::async(stlab::default_executor, answer);
 
     BOOST_REQUIRE_EXCEPTION(
-        stlab::blocking_get(f, std::chrono::seconds(60)), test_exception,
+        stlab::blocking_get_for(f, std::chrono::seconds(60)).get_try(), test_exception,
         ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
 }
 
@@ -500,9 +500,9 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_copyable_value_timeout) {
 
     stlab::future<int> f = stlab::async(stlab::default_executor, answer);
 
-    auto r = stlab::blocking_get(f, std::chrono::milliseconds(500));
+    auto r = stlab::blocking_get_for(f, std::chrono::milliseconds(500));
     // timeout should have been reached
-    BOOST_REQUIRE(!r);
+    BOOST_REQUIRE(!r.is_ready());
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_and_timeout) {
@@ -513,9 +513,9 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_and_timeout) {
     };
 
     stlab::future<stlab::move_only> f = stlab::async(stlab::default_executor, answer);
-    auto r = stlab::blocking_get(std::move(f), std::chrono::milliseconds(500));
-    BOOST_REQUIRE(r);
-    BOOST_REQUIRE_EQUAL(42, (*r).member());
+    auto r = stlab::blocking_get_for(std::move(f), std::chrono::milliseconds(500));
+    BOOST_REQUIRE(r.is_ready());
+    BOOST_REQUIRE_EQUAL(42, r.get_try()->member());
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case_and_timeout) {
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case_and_timeout) 
     stlab::future<stlab::move_only> f = stlab::async(stlab::default_executor, answer);
 
     BOOST_REQUIRE_EXCEPTION(
-        stlab::blocking_get(std::move(f), std::chrono::seconds(500)), test_exception,
+        stlab::blocking_get_for(std::move(f), std::chrono::seconds(500)).get_try(), test_exception,
         ([](const auto& e) { return std::string(e.what()) == std::string("failure"); }));
 }
 
@@ -537,9 +537,8 @@ BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto [promise, future] = package<int()>(immediate_executor, [] { return 42; });
-        future.then([a = annotate(counter), &_check = check](int) { _check = false; }).detach();
-        (void)promise;
+        auto p = package<int()>(immediate_executor, [] { return 42; });
+        p.second.then([a = annotate(counter), &_check = check](int) { _check = false; }).detach();
     }
     std::cout << counter;
 
@@ -552,10 +551,9 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto [promise, future] = package<move_only()>(immediate_executor, [] { return move_only{42}; });
-        auto r = std::move(future).then([a = annotate(counter), &_check = check](auto&&) { _check = false; });
+        auto p = package<move_only()>(immediate_executor, [] { return move_only{42}; });
+        auto r = std::move(p.second).then([a = annotate(counter), &_check = check](auto&&) { _check = false; });
         r.detach();
-        (void)promise;
     }
     std::cout << counter;
 
@@ -568,9 +566,8 @@ BOOST_AUTO_TEST_CASE(future_void_detach_without_execution) {
     annotate_counters counter;
     bool check = true;
     {
-        auto [promise, future] = package<void()>(immediate_executor, [] {});
-        future.then([a = annotate(counter), &_check = check]() { _check = false; }).detach();
-        (void)promise;
+        auto p = package<void()>(immediate_executor, [] {});
+        p.second.then([a = annotate(counter), &_check = check]() { _check = false; }).detach();
     }
     std::cout << counter;
 

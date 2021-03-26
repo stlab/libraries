@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
 
     for (auto i = 0; i < 10; ++i) {
         queue.executor()([_i = i, &m, &results] {
-            unique_lock block{m};
+            unique_lock<mutex> block{m};
             results.push_back(_i);
         });
     }
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
 
     for (auto i = 0; i < 10; ++i) {
         queue.executor()([_i = i, &m, &results] {
-            unique_lock block{m};
+            unique_lock<mutex> block{m};
             results.push_back(_i);
         });
     }
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
 
     for (auto i = 0; i < 10; ++i) {
         queue.executor()([_i = i, &m, &results] {
-            unique_lock block{m};
+            unique_lock<mutex> block{m};
             results.push_back(_i);
         });
     }
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     default_executor([&]{
         rest();
         {
-            unique_lock block{m};
+            unique_lock<mutex> block{m};
             done = true;
         }
         cv.notify_one();
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
 
 
     {
-        unique_lock block{m};
+        unique_lock<mutex> block{m};
         while (!done) {
             cv.wait(block);
         }
@@ -170,14 +170,14 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     default_executor([&] {
         rest();
         {
-            unique_lock block{m};
+            unique_lock<mutex> block{m};
             done = false;
             cv.notify_one();
         }
     });
 
     {
-        unique_lock block{m};
+        unique_lock<mutex> block{m};
         while (done) {
             cv.wait(block);
         }
@@ -191,7 +191,7 @@ namespace
     auto fiboN{ 1000 };
     const auto iterations = 100'000;
     const auto startCount = 100;
-    atomic_int workToDo = (iterations - startCount) * 3;
+    atomic_int workToDo{(iterations - startCount) * 3};
     const auto expectedWork = startCount * 3 + workToDo;
     atomic_int highCount{0};
     atomic_int defaultCount{0};
@@ -218,17 +218,27 @@ namespace
             ++_currentPrioCount;
         }
 
+        template <stlab::detail::executor_priority Q>
+        auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::low, int> {
+            return static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
+        }
+
+        template <stlab::detail::executor_priority Q>
+        auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::medium, int> {
+            return static_cast<int>(highCount <= taskRunning);
+        }
+
+        template <stlab::detail::executor_priority Q>
+        auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::high, int> {
+            return 0;
+        }
+
         void operator()() {
             --_currentPrioCount;
 
             ++taskRunning;
 
-            if constexpr (P == stlab::detail::executor_priority::low)
-                _correctScheduleCount += static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
-
-            if constexpr (P == stlab::detail::executor_priority::medium) {
-                _correctScheduleCount += static_cast<int>(highCount <= taskRunning);
-            }
+            _correctScheduleCount += schedule_increment<P>();
 
             fibonacci<mp::cpp_int>(fiboN);
 
@@ -279,7 +289,7 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::vector<int> results;
     const auto iterations = 300'000;
     results.resize(iterations * 3);
-    atomic_bool done = false;
+    atomic_bool done{false};
     condition_variable ready;
     atomic_int counter{0};
 
@@ -306,7 +316,7 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     mutex block;
     low_executor([&] {
         {
-            unique_lock lock{block};
+            unique_lock<mutex> lock{block};
             done = true;
 
             ready.notify_one();
@@ -314,7 +324,7 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     });
 
 
-    unique_lock lock{block};
+    unique_lock<mutex> lock{block};
     while (!done) ready.wait(lock);
 
     auto stop = std::chrono::high_resolution_clock::now();

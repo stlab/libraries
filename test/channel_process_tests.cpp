@@ -17,10 +17,7 @@
 
 #include "channel_test_helper.hpp"
 
-using namespace stlab;
-using namespace channel_test_helper;
-
-using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
+using channel_test_fixture_int_1 = channel_test_helper::channel_test_fixture<int, 1>;
 
 BOOST_FIXTURE_TEST_SUITE(int_channel_process_void_functor, channel_test_fixture_int_1)
 
@@ -30,7 +27,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_one_step) {
     std::atomic_int index{0};
     std::vector<int> results(10, 0);
 
-    auto check = _receive[0] | sum<1>() | [&](int x) {
+    auto check = _receive[0] | channel_test_helper::sum<1>() | [&](int x) {
         results[index] = x;
         ++index;
     };
@@ -52,15 +49,15 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_one_step_async) {
     std::atomic_int index{0};
     std::vector<int> results(10, 0);
 
-    auto check = _receive[0] | sum<1>() | [&](int x) {
+    auto check = _receive[0] | channel_test_helper::sum<1>() | [&](int x) {
         results[x] = x;
         ++index;
     };
 
     _receive[0].set_ready();
-    std::vector<future<void>> f(10);
+    std::vector<stlab::future<void>> f(10);
     for (auto i = 0; i < 10; ++i) {
-        f.push_back(async(default_executor, [_send = _send[0], i] { _send(i); }));
+        f.push_back(stlab::async(stlab::default_executor, [_send = _send[0], i] { _send(i); }));
     }
 
     wait_until_done([&] { return index == 10; });
@@ -76,7 +73,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps) {
     std::atomic_int index{0};
     std::vector<int> results(5, 0);
 
-    auto check = _receive[0] | sum<2>() | [&](int x) {
+    auto check = _receive[0] | channel_test_helper::sum<2>() | [&](int x) {
         results[index] = x;
         ++index;
     };
@@ -99,15 +96,15 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_async) {
     std::atomic_int index{0};
     std::vector<std::vector<int>> results;
 
-    auto check = _receive[0] | collector<2>() | [&](std::vector<int> x) {
+    auto check = _receive[0] | channel_test_helper::collector<2>() | [&](std::vector<int> x) {
         results.push_back(x);
         ++index;
     };
 
     _receive[0].set_ready();
-    std::vector<future<void>> f(10);
+    std::vector<stlab::future<void>> f(10);
     for (auto i = 0; i < 10; ++i) {
-        f.push_back(async(default_executor, [_send = _send[0], i] { _send(i); }));
+        f.push_back(stlab::async(stlab::default_executor, [_send = _send[0], i] { _send(i); }));
     }
 
     wait_until_done([&] { return index == 5; });
@@ -130,7 +127,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_many_steps) {
 
     std::atomic_int result{0};
 
-    auto check = _receive[0] | sum<10>() | [&](int x) { result = x; };
+    auto check = _receive[0] | channel_test_helper::sum<10>() | [&](int x) { result = x; };
 
     _receive[0].set_ready();
     for (auto i = 0; i < 10; ++i)
@@ -146,12 +143,12 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_many_steps_async) {
 
     std::atomic_int result{0};
 
-    auto check = _receive[0] | sum<10>() | [&](int x) { result = x; };
+    auto check = _receive[0] | channel_test_helper::sum<10>() | [&](int x) { result = x; };
 
     _receive[0].set_ready();
-    std::vector<future<void>> f(10);
+    std::vector<stlab::future<void>> f(10);
     for (auto i = 0; i < 10; ++i) {
-        f.push_back(async(default_executor, [_send = _send[0], i] { _send(i); }));
+        f.push_back(stlab::async(stlab::default_executor, [_send = _send[0], i] { _send(i); }));
     }
 
     wait_until_done([&] { return result != 0; });
@@ -167,11 +164,11 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_one_step) {
     std::atomic_int index2{0};
     std::vector<int> results2(10, 0);
 
-    auto check1 = _receive[0] | sum<1>() | [& _index = index1, &_results = results1](int x) {
+    auto check1 = _receive[0] | channel_test_helper::sum<1>() | [& _index = index1, &_results = results1](int x) {
         _results[x] = x;
         ++_index;
     };
-    auto check2 = _receive[0] | sum<1>() | [& _index = index2, &_results = results2](int x) {
+    auto check2 = _receive[0] | channel_test_helper::sum<1>() | [& _index = index2, &_results = results2](int x) {
         _results[x] = x;
         ++_index;
     };
@@ -196,11 +193,11 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_two_steps) {
     std::atomic_int index2{0};
     std::vector<int> results2(5);
 
-    auto check1 = _receive[0] | sum<2>() | [& _index = index1, &_results = results1](int x) {
+    auto check1 = _receive[0] | channel_test_helper::sum<2>() | [& _index = index1, &_results = results1](int x) {
         _results[_index] = x;
         ++_index;
     };
-    auto check2 = _receive[0] | sum<2>() | [& _index = index2, &_results = results2](int x) {
+    auto check2 = _receive[0] | channel_test_helper::sum<2>() | [& _index = index2, &_results = results2](int x) {
         _results[_index] = x;
         ++_index;
     };
@@ -224,8 +221,8 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_many_steps) {
     std::atomic_int result1{0};
     std::atomic_int result2{0};
 
-    auto check1 = _receive[0] | sum<10>() | [& _result = result1](int x) { _result = x; };
-    auto check2 = _receive[0] | sum<10>() | [& _result = result2](int x) { _result = x; };
+    auto check1 = _receive[0] | channel_test_helper::sum<10>() | [& _result = result1](int x) { _result = x; };
+    auto check2 = _receive[0] | channel_test_helper::sum<10>() | [& _result = result2](int x) { _result = x; };
 
     _receive[0].set_ready();
     for (auto i = 0; i < 10; ++i)
@@ -242,26 +239,26 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed) {
     BOOST_TEST_MESSAGE("int channel process with two steps timed");
 
     std::atomic_int result{0};
-    sender<int> send;
-    receiver<int> receive;
+    stlab::sender<int> send;
+    stlab::receiver<int> receive;
 
-    std::tie(send, receive) = channel<int>(manual_scheduler());
+    std::tie(send, receive) = stlab::channel<int>(channel_test_helper::manual_scheduler());
 
-    auto check = receive | timed_sum() | [&](int x) { result = x; };
+    auto check = receive | channel_test_helper::timed_sum() | [&](int x) { result = x; };
 
     receive.set_ready();
     send(42);
 
-    manual_scheduler::run_next_task();
+    channel_test_helper::manual_scheduler::run_next_task();
 
-    manual_scheduler::wait_until_queue_size_of(1);
-    manual_scheduler::run_next_task();
+    channel_test_helper::manual_scheduler::wait_until_queue_size_of(1);
+    channel_test_helper::manual_scheduler::run_next_task();
 
-    manual_scheduler::wait_until_queue_size_of(1);
-    manual_scheduler::run_next_task();
+    channel_test_helper::manual_scheduler::wait_until_queue_size_of(1);
+    channel_test_helper::manual_scheduler::run_next_task();
 
-    manual_scheduler::wait_until_queue_size_of(1);
-    manual_scheduler::run_next_task();
+    channel_test_helper::manual_scheduler::wait_until_queue_size_of(1);
+    channel_test_helper::manual_scheduler::run_next_task();
 
     while (result == 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -274,17 +271,17 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
     BOOST_TEST_MESSAGE("int channel process with two steps timed w/o timeout");
 
     std::atomic_int result{0};
-    sender<int> send;
-    receiver<int> receive;
+    stlab::sender<int> send;
+    stlab::receiver<int> receive;
 
-    std::tie(send, receive) = channel<int>(default_executor);
+    std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
 
-    auto check = receive | timed_sum(2) | [&](int x) { result = x; };
+    auto check = receive | channel_test_helper::timed_sum(2) | [&](int x) { result = x; };
 
     receive.set_ready();
     send(42);
 
-    while (timed_sum::current_sum() != 42) {
+    while (channel_test_helper::timed_sum::current_sum() != 42) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
@@ -309,7 +306,7 @@ struct process_with_set_error {
 
     int yield() { return 42; }
 
-    auto state() const { return await_forever; }
+    auto state() const { return stlab::await_forever; }
 };
 } // namespace
 
@@ -317,10 +314,10 @@ BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) 
     BOOST_TEST_MESSAGE("int channel process set_error is called on upstream error");
 
     std::atomic_bool check{false};
-    sender<int> send;
-    receiver<int> receive;
+    stlab::sender<int> send;
+    stlab::receiver<int> receive;
 
-    std::tie(send, receive) = channel<int>(default_executor);
+    std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
 
     auto result = receive |
                   [](auto v) {
@@ -351,7 +348,7 @@ struct process_with_close {
 
     int yield() { return 42; }
 
-    auto state() const { return await_forever; }
+    auto state() const { return stlab::await_forever; }
 };
 } // namespace
 
@@ -359,10 +356,10 @@ BOOST_AUTO_TEST_CASE(int_channel_process_close_is_called_on_upstream_error) {
     BOOST_TEST_MESSAGE("int channel process close is called when an upstream eeror happened");
 
     std::atomic_bool check{false};
-    sender<int> send;
-    receiver<int> receive;
+    stlab::sender<int> send;
+    stlab::receiver<int> receive;
 
-    std::tie(send, receive) = channel<int>(default_executor);
+    std::tie(send, receive) = stlab::channel<int>(stlab::default_executor);
 
     auto result = receive |
                   [](auto v) {

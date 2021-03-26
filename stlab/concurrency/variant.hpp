@@ -24,6 +24,8 @@
     #if __has_include(<variant>) && STLAB_CPP_VERSION_AT_LEAST(17)
         #include <variant>
         #define STLAB_VARIANT_PRIVATE_SELECTION() STLAB_VARIANT_PRIVATE_STD()
+    #else
+        #define STLAB_VARIANT_PRIVATE_SELECTION() STLAB_VARIANT_PRIVATE_BOOST()
     #endif
 #else
     #define STLAB_VARIANT_PRIVATE_SELECTION() STLAB_VARIANT_PRIVATE_BOOST()

@@ -11,6 +11,8 @@
 
 /**************************************************************************************************/
 
+#include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -25,6 +27,7 @@ namespace stlab {
 /**************************************************************************************************/
 
 inline namespace v1 {
+
 /**************************************************************************************************/
 
 /*
@@ -36,29 +39,30 @@ class task;
 
 template <class R, class... Args>
 class task<R(Args...)> {
+    template <class F>
+    constexpr static bool maybe_empty =
+        std::is_pointer<std::decay_t<F>>::value || std::is_member_pointer<std::decay_t<F>>::value ||
+        std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value;
 
-    template <typename F>
-    constexpr static auto is_empty(const F& f){
-        if constexpr (std::is_pointer<std::decay_t<F>>::value ||
-                      std::is_member_pointer<std::decay_t<F>>::value ||
-                      std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value)
-        {
-            return !f;
-        }
-        else
-        {
-            return false;
-        }
+    template <class F>
+    constexpr static auto is_empty(const F& f) -> std::enable_if_t<maybe_empty<F>, bool> {
+        return !f;
+    }
+
+    template <class F>
+    constexpr static auto is_empty(const F&) -> std::enable_if_t<!maybe_empty<F>, bool> {
+        return false;
     }
 
     struct concept_t {
         void (*dtor)(void*);
         void (*move_ctor)(void*, void*) noexcept;
-        R (*invoke)(void*, Args&&...);
         const std::type_info& (*target_type)() noexcept;
-        void* (*pointer)(void*)noexcept;
-        const void* (*const_pointer)(const void*)noexcept;
+        void* (*pointer)(void*) noexcept;
+        const void* (*const_pointer)(const void*) noexcept;
     };
+
+    using invoke_t = R (*)(void*, Args...);
 
     template <class F, bool Small>
     struct model;
@@ -73,9 +77,18 @@ class task<R(Args...)> {
         static void move_ctor(void* self, void* p) noexcept {
             new (p) model(std::move(static_cast<model*>(self)->_f));
         }
-        static auto invoke(void* self, Args&&... args) -> R {
-            return std::move(static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
+
+        /*
+            NOTE (sean-parent): `Args` are _not_ universal references. This is a `concrete`
+            interface for the model. Do not add `&&`, that would make it an rvalue reference.
+            The `forward<Args>` here is correct. We are forwarding from the client defined
+            signature to the actual captured model.
+        */
+
+        static auto invoke(void* self, Args... args) -> R {
+            return (static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
         }
+
         static auto target_type() noexcept -> const std::type_info& { return typeid(F); }
         static auto pointer(void* self) noexcept -> void* { return &static_cast<model*>(self)->_f; }
         static auto const_pointer(const void* self) noexcept -> const void* {
@@ -83,9 +96,10 @@ class task<R(Args...)> {
         }
 #if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
         static const concept_t _vtable;
+        static const invoke_t _invoke;
 #else
-        static constexpr concept_t _vtable = { dtor, move_ctor, invoke,
-                                             target_type, pointer, const_pointer };
+        static constexpr concept_t _vtable = {dtor, move_ctor, target_type, pointer, const_pointer};
+        static constexpr invoke_t _invoke = invoke;
 #endif
         F _f;
     };
@@ -100,9 +114,19 @@ class task<R(Args...)> {
         static void move_ctor(void* self, void* p) noexcept {
             new (p) model(std::move(*static_cast<model*>(self)));
         }
-        static auto invoke(void* self, Args&&... args) -> R {
-            return std::move(*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
+
+        /*
+            NOTE (sean-parent): `Args` are _not_ universal references. This is a `concrete`
+            interface for the model. Do not add `&&`, that would make it an rvalue reference.
+            The `forward<Args>` here is correct. We are forwarding from the client defined
+            signature to the actual captured model.
+        */
+
+        static auto invoke(void* self, Args... args) -> R {
+            return (*static_cast<model*>(self)->_p)(std::forward<Args>(args)...);
         }
+
+
         static auto target_type() noexcept -> const std::type_info& { return typeid(F); }
         static auto pointer(void* self) noexcept -> void* {
             return static_cast<model*>(self)->_p.get();
@@ -113,9 +137,10 @@ class task<R(Args...)> {
 
 #if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
         static const concept_t _vtable;
+        static const invoke_t _invoke;
 #else
-        static constexpr concept_t _vtable = { dtor, move_ctor, invoke,
-                                             target_type, pointer, const_pointer };
+        static constexpr concept_t _vtable = {dtor, move_ctor, target_type, pointer, const_pointer};
+        static constexpr invoke_t _invoke = invoke;
 #endif
 
         std::unique_ptr<F> _p;
@@ -124,7 +149,7 @@ class task<R(Args...)> {
     // empty (default) vtable
     static void dtor(void*) {}
     static void move_ctor(void*, void*) noexcept {}
-    static auto invoke(void*, Args&&...) -> R { throw std::bad_function_call(); }
+    static auto invoke(void*, Args...) -> R { throw std::bad_function_call(); }
     static auto target_type_() noexcept -> const std::type_info& { return typeid(void); }
     static auto pointer(void*) noexcept -> void* { return nullptr; }
     static auto const_pointer(const void*) noexcept -> const void* { return nullptr; }
@@ -132,28 +157,32 @@ class task<R(Args...)> {
 #if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
     static const concept_t _vtable;
 #else
-    static constexpr concept_t _vtable = { dtor, move_ctor, invoke,
-                                         target_type_, pointer, const_pointer };
+    static constexpr concept_t _vtable = {dtor, move_ctor, target_type_, pointer, const_pointer};
 #endif
 
-    const concept_t* _vtable_ptr = &_vtable;
-
     /*
-        REVISIT (sean.parent) : The size of 256 was an arbitrary choice with no data to back it up.
-        Desire is to have something large enough to hold the vast majority of lamda expressions.
-        A single small heap allocation/deallocation takes about as much time as copying 10K of POD
-        data on my MacBook Pro. tasks are move only object so the exepectation is that moving the
-        funciton object is proportional to the sizeof the object. We try to construct tasks emplace
-        and so they are rarely moved (need to review the code to make sure that is true). The
-        concept_t will consume one word so this gives us 31 words (on a 64 bit machine) for the model.
-        Probably excessive but still allows 16 tasks on a cache line
+    The layout of this object is going to be:
+        _vtable_ptr
+        _invoke
+        _model
 
-        I welcome empirical data from an actual system on a better size.
+    Because the model is going to be max-aligned, it will leave a gap between the vtable_ptr and
+    the _model, we fill that gap by lifting the _invoke pointer into it from the vtable. This means
+    invoke calls require one less indirection.
 
-        sizeof(std::function<R(Args...)>)
+    The size of the model is big enough for 6 pointers or (2 max aligned object - 2 pointers)
+    (which would typically be 2 pointers). The rational here is that we want the total object size
+    to be a power of 2, for the object but the model store to be large enough to hold 2
+    weak-pointers (which is 4 pointers total), so we give things a little extra room.
     */
-    static constexpr std::size_t small_object_size = 256 - sizeof(void*);
-    std::aligned_storage_t<small_object_size> _model;
+
+    static constexpr size_t max_align = alignof(std::max_align_t);
+    static constexpr size_t small_size =
+        std::max(max_align * 2, sizeof(void*) * 8) - std::max(max_align, sizeof(void*) * 2);
+
+    const concept_t* _vtable_ptr = &_vtable;
+    invoke_t _invoke = invoke;
+    std::aligned_storage_t<small_size> _model;
 
 public:
     using result_type = R;
@@ -161,19 +190,23 @@ public:
     constexpr task() noexcept = default;
     constexpr task(std::nullptr_t) noexcept : task() {}
     task(const task&) = delete;
-    task(task&& x) noexcept : _vtable_ptr(x._vtable_ptr) {
+    task(task&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
 
-    template <class F>
+    template <class F, std::enable_if_t<!std::is_same<std::decay_t<F>, task>::value, bool> = true>
     task(F&& f) {
-        using f_t = std::decay_t<F>;
-        using model_t = model<f_t, sizeof(model<f_t, true>) <= small_object_size>;
+        using small_t = model<std::decay_t<F>, true>;
+        using large_t = model<std::decay_t<F>, false>;
+        using model_t = std::conditional_t<(sizeof(small_t) <= small_size) &&
+                                               (alignof(small_t) <= alignof(decltype(_model))),
+                                           small_t, large_t>;
 
         if (is_empty(f)) return;
 
         new (&_model) model_t(std::forward<F>(f));
         _vtable_ptr = &model_t::_vtable;
+        _invoke = &model_t::invoke;
     }
 
     ~task() { _vtable_ptr->dtor(&_model); };
@@ -183,6 +216,7 @@ public:
     task& operator=(task&& x) noexcept {
         _vtable_ptr->dtor(&_model);
         _vtable_ptr = x._vtable_ptr;
+        _invoke = x._invoke;
         _vtable_ptr->move_ctor(&x._model, &_model);
         return *this;
     }
@@ -213,7 +247,8 @@ public:
                    nullptr;
     }
 
-    R operator()(Args... args) { return _vtable_ptr->invoke(&_model, std::forward<Args>(args)...); }
+    template <class... Brgs>
+    auto operator()(Brgs&&... brgs) { return _invoke(&_model, std::forward<Brgs>(brgs)...); }
 
     friend inline void swap(task& x, task& y) { return x.swap(y); }
     friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
@@ -227,12 +262,15 @@ public:
 // In C++17 constexpr implies inline and these definitions are deprecated
 
 #if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
-    template <class R, class... Args>
-    const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable = { dtor, move_ctor, invoke,
-                                                                           target_type_, pointer, const_pointer };
+template <class R, class... Args>
+const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable = {
+    dtor, move_ctor, target_type_, pointer, const_pointer};
+
+template <class R, class... Args>
+const typename task<R(Args...)>::invoke_t task<R(Args...)>::_invoke = _invoke;
 #else
-    template <class R, class... Args>
-    const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable;
+template <class R, class... Args>
+const typename task<R(Args...)>::concept_t task<R(Args...)>::_vtable;
 #endif
 
 #ifdef _MSC_VER
@@ -251,13 +289,14 @@ const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, true>::_vt
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, false>::_vtable = { dtor, move_ctor, invoke,
-                                                                                                 target_type, pointer, const_pointer };
+const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, false>::_vtable = {
+    dtor, move_ctor, target_type, pointer, const_pointer};
 
 template <class R, class... Args>
 template <class F>
-const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, true>::_vtable = { dtor, move_ctor, invoke,
-                                                                                                target_type, pointer, const_pointer };
+const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, true>::_vtable = {
+    dtor, move_ctor, target_type, pointer, const_pointer};
+
 #else
 
 template <class R, class... Args>

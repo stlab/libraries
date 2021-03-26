@@ -17,10 +17,9 @@
 
 #include "channel_test_helper.hpp"
 
-using namespace stlab;
-using namespace channel_test_helper;
 
-using channel_test_fixture_int_1 = channel_test_fixture<int, 1>;
+
+using channel_test_fixture_int_1 = channel_test_helper::channel_test_fixture<int, 1>;
 
 BOOST_FIXTURE_TEST_SUITE(int_channel_void_functor, channel_test_fixture_int_1)
 
@@ -148,20 +147,22 @@ BOOST_AUTO_TEST_CASE(int_channel_split_int_functor_async) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-using channel_test_fixture_move_only_1 = channel_test_fixture<stlab::move_only, 1>;
+
+using channel_test_fixture_move_only_1 = channel_test_helper::channel_test_fixture<stlab::move_only, 1>;
 
 BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_move_only_1)
+
 
 BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor) {
     BOOST_TEST_MESSAGE("move only int channel void functor");
 
     std::atomic_int result{0};
 
-    auto check = _receive[0] | [&](move_only x) { result += x.member(); };
+    auto check = _receive[0] | [&](stlab::move_only x) { result += x.member(); };
 
     _receive[0].set_ready();
     for (int i = 0; i < 10; ++i) {
-        _send[0](move_only(1));
+        _send[0](stlab::move_only(1));
     }
 
     wait_until_done([&]() { return result == 10; });
@@ -173,13 +174,13 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor_async) {
 
     std::atomic_int result{0};
 
-    auto check = _receive[0] | [&](move_only x) { result += x.member(); };
+    auto check = _receive[0] | [&](stlab::move_only x) { result += x.member(); };
 
     _receive[0].set_ready();
-    std::vector<future<void>> f;
+    std::vector<stlab::future<void>> f;
     f.reserve(10);
     for (int i = 0; i < 10; ++i) {
-        f.push_back(async(default_executor, [& _send = _send[0]] { _send(move_only(1)); }));
+        f.push_back(stlab::async(stlab::default_executor, [& _send = _send[0]] { _send(stlab::move_only(1)); }));
     }
 
     wait_until_done([&]() { return result == 10; });
@@ -191,37 +192,39 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor) {
 
     std::atomic_int result{0};
 
-    auto check = _receive[0] | [](move_only x) { return move_only(2 * x.member()); } |
-                 [&](move_only x) { result += x.member(); };
+    auto check = _receive[0] | [](stlab::move_only x) { return stlab::move_only(2 * x.member()); } |
+                 [&](stlab::move_only x) { result += x.member(); };
 
     _receive[0].set_ready();
     for (int i = 0; i < 10; ++i) {
-        _send[0](move_only(1));
+        _send[0](stlab::move_only(1));
     }
 
     wait_until_done([&]() { return result >= 20; });
 
     BOOST_REQUIRE_EQUAL(20, result);
 }
+
 
 BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor_async) {
     BOOST_TEST_MESSAGE("move only int channel int functor asynchronously");
 
     std::atomic_int result{0};
 
-    auto check = _receive[0] | [](move_only x) { return move_only(2 * x.member()); } |
-                 [&](move_only x) { result += x.member(); };
+    auto check = _receive[0] | [](stlab::move_only x) { return stlab::move_only(2 * x.member()); } |
+                 [&](stlab::move_only x) { result += x.member(); };
 
     _receive[0].set_ready();
-    std::vector<future<void>> f;
+    std::vector<stlab::future<void>> f;
     f.reserve(10);
     for (int i = 0; i < 10; ++i) {
-        f.push_back(async(default_executor, [& _send = _send[0]] { _send(move_only(1)); }));
+        f.push_back(stlab::async(stlab::default_executor, [& _send = _send[0]] { _send(stlab::move_only(1)); }));
     }
 
     wait_until_done([&]() { return result >= 20; });
 
     BOOST_REQUIRE_EQUAL(20, result);
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()

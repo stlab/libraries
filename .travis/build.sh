@@ -42,7 +42,8 @@ if [ $? -ne 0 ]; then exit 1; fi
 
 if $coverage; then lcov -c -i -b .. -d . -o Coverage.baseline; fi
 
-ctest --output-on-failure -j$NPROC
+export TESTS_ARGUMENTS=--log_level=message 
+ctest -C Release -j$NPROC --verbose --no-compress-output
 if [ $? -ne 0 ]; then exit 1; fi
 
 if $coverage; then

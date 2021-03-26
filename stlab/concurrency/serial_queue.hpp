@@ -155,9 +155,8 @@ public:
     }
 
     template <typename F, typename... Args>
-    auto operator()(F&& f, Args&&... args) {
-        return async([&_impl = _impl](auto&& f) { _impl->enqueue(std::forward<decltype(f)>(f)); },
-                     std::forward<F>(f), std::forward<Args>(args)...);
+    auto operator()(F&& f, Args&&... args) const {
+        return async(executor(), std::forward<F>(f), std::forward<Args>(args)...);
     }
 };
 
