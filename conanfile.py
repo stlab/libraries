@@ -172,8 +172,6 @@ class StlabLibrariesConan(ConanFile):
     def configure(self):
         ConanFile.configure(self)
 
-        tools.check_min_cppstd(self, "14")
-
         self._fix_boost_components()
 
         if self._use_boost():
