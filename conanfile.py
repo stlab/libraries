@@ -181,10 +181,14 @@ class StlabLibrariesConan(ConanFile):
         self.output.info("Task System: {}.".format(self.options.task_system))
 
     def build(self):
+        self.output.info("self.options.testing: {}.".format(self.options.testing))
         if self.options.testing:
             cmake = CMake(self)
             cmake.verbose = True
+            self.output.info("*********** self.settings.compiler.cppstd: {}.".format(self.settings.compiler.cppstd))
+            self.output.info("*********** not self.settings.compiler.cppstd: {}.".format(not self.settings.compiler.cppstd))
             if not self.settings.compiler.cppstd:
+                self.output.info("*********** INSIDE IF.")
                 cmake.definitions["CMAKE_CXX_STANDARD"] = 17
                 cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
                 cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
