@@ -181,21 +181,16 @@ class StlabLibrariesConan(ConanFile):
         self.output.info("Task System: {}.".format(self.options.task_system))
 
     def build(self):
-        self.output.info("self.options.testing: {}.".format(self.options.testing))
         if self.options.testing:
             cmake = CMake(self)
             cmake.verbose = True
-            self.output.info("*********** self.settings.compiler.cppstd: {}.".format(self.settings.compiler.cppstd))
-            self.output.info("*********** not self.settings.compiler.cppstd: {}.".format(not self.settings.compiler.cppstd))
-            if not self.settings.compiler.cppstd:
-                self.output.info("*********** INSIDE IF.")
-                cmake.definitions["CMAKE_CXX_STANDARD"] = 14
-                cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
-                cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
-                cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
-                cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
-                cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
-                cmake.definitions["stlab.task_system"] = self.options.task_system
+            cmake.definitions["CMAKE_CXX_STANDARD"] = 14
+            cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
+            cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
+            cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
+            cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
+            cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
+            cmake.definitions["stlab.task_system"] = self.options.task_system
 
             self.output.info("*********** BEFORE configure().")
             cmake.configure()
