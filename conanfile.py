@@ -189,7 +189,7 @@ class StlabLibrariesConan(ConanFile):
             self.output.info("*********** not self.settings.compiler.cppstd: {}.".format(not self.settings.compiler.cppstd))
             if not self.settings.compiler.cppstd:
                 self.output.info("*********** INSIDE IF.")
-                cmake.definitions["CMAKE_CXX_STANDARD"] = 17
+                cmake.definitions["CMAKE_CXX_STANDARD"] = 14
                 cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
                 cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
                 cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
@@ -197,9 +197,13 @@ class StlabLibrariesConan(ConanFile):
                 cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
                 cmake.definitions["stlab.task_system"] = self.options.task_system
 
+            self.output.info("*********** BEFORE configure().")
             cmake.configure()
+            self.output.info("*********** BEFORE build().")
             cmake.build()
+            self.output.info("*********** BEFORE test().")
             cmake.test(output_on_failure=True)
+            self.output.info("*********** AFTER test().")
 
     def package(self):
         self.copy("*.hpp")
