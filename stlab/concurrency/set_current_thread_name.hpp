@@ -46,7 +46,7 @@ inline void set_current_thread_name(const char* name) {
     /* Should string->wstring be split out to a utility? */
     int count = MultiByteToWideChar(CP_UTF8, 0, name, (int)std::strlen(name), NULL, 0);
     if (count <= 0) return;
-    std::wstring str(count, std::wchar_t());
+    std::wstring str(count, wchar_t{});
     count = MultiByteToWideChar(CP_UTF8, 0, name, (int)std::strlen(name), &str[0], str.size());
     if (count <= 0) return;
 
