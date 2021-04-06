@@ -12,6 +12,8 @@
 #include <cstring>
 #include <string>
 
+#include <windows.h>
+
 #include <processthreadsapi.h>
 #include <stringapiset.h>
 
