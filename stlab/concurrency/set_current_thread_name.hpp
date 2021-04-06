@@ -44,10 +44,11 @@ inline void set_current_thread_name(const char* name) { pthread_setname_np(name)
 
 inline void set_current_thread_name(const char* name) {
     /* Should string->wstring be split out to a utility? */
-    int count = MultiByteToWideChar(CP_UTF8, 0, name, (int)std::strlen(name), NULL, 0);
+    int count = MultiByteToWideChar(CP_UTF8, 0, name, static_cast<int>(std::strlen(name)), NULL, 0);
     if (count <= 0) return;
     std::wstring str(count, wchar_t{});
-    count = MultiByteToWideChar(CP_UTF8, 0, name, (int)std::strlen(name), &str[0], str.size());
+    count = MultiByteToWideChar(CP_UTF8, 0, name, static_cast<int>(std::strlen(name)), &str[0],
+                                static_cast<int>(str.size()));
     if (count <= 0) return;
 
     (void)SetThreadDescription(GetCurrentThread(), str.c_str());
