@@ -37,12 +37,12 @@ namespace stlab {
 /**************************************************************************************************/
 #if defined(__APPLE__)
 
-void set_current_thread_name(const char* name) { pthread_setname_np(name); }
+inline void set_current_thread_name(const char* name) { pthread_setname_np(name); }
 
 /**************************************************************************************************/
 #elif defined(_MSC_VER)
 
-void set_current_thread_name(const char* name) {
+inline void set_current_thread_name(const char* name) {
     /* Should string->wstring be split out to a utility? */
     int count = MultiByteToWideChar(CP_UTF8, 0, name, (int)std::strlen(name), NULL, 0);
     if (count <= 0) return;
@@ -56,17 +56,19 @@ void set_current_thread_name(const char* name) {
 /**************************************************************************************************/
 #elif defined(__EMSCRIPTEN__) && defined(__EMSCRIPTEN_PTHREADS__)
 
-void set_current_thread_name(const char* name) { emscripten_set_thread_name(pthread_self(), name); }
+inline void set_current_thread_name(const char* name) {
+    emscripten_set_thread_name(pthread_self(), name);
+}
 
 /**************************************************************************************************/
 #elif defined(__has_include) && __has_include(<pthread.h>)
 
-void set_current_thread_name(const char* name) { pthread_setname_np(pthread_self(), name); }
+inline void set_current_thread_name(const char* name) { pthread_setname_np(pthread_self(), name); }
 
 /**************************************************************************************************/
 #else
 
-void set_current_thread_name(const char*) {}
+inline void set_current_thread_name(const char*) {}
 
 /**************************************************************************************************/
 #endif
