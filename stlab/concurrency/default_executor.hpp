@@ -10,6 +10,7 @@
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
 #include <stlab/concurrency/config.hpp>
+#include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
 
 #include <cassert>
@@ -36,12 +37,6 @@
 #include <thread>
 #include <vector>
 
-#endif
-
-/**************************************************************************************************/
-
-#if STLAB_FEATURE(THREAD_NAME_POSIX) || STLAB_FEATURE(THREAD_NAME_APPLE)
-#include <pthread.h>
 #endif
 
 /**************************************************************************************************/
@@ -340,11 +335,7 @@ class priority_task_system {
     std::atomic_bool _done{false};
 
     void run(unsigned i) {
-        #if STLAB_FEATURE(THREAD_NAME_POSIX)
-        pthread_setname_np(pthread_self(), "cc.stlab.default_executor");
-        #elif STLAB_FEATURE(THREAD_NAME_APPLE)
-        pthread_setname_np("cc.stlab.default_executor");
-        #endif
+        stlab::set_current_thread_name("cc.stlab.default_executor");
         while (true) {
             task<void()> f;
 
