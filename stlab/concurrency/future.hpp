@@ -520,8 +520,6 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     bool is_ready() const { return _ready; }
 
-    auto get_try() -> stlab::optional<T> { return get_try_r(true); }
-
     auto get_try_r(bool) -> stlab::optional<T> {
         bool ready = false;
         {
@@ -1099,7 +1097,6 @@ public:
 
     bool is_ready() const& { return _p && _p->is_ready(); }
 
-    auto get_try() const& { return _p->get_try(); }
 
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
@@ -1772,9 +1769,8 @@ struct value_<T, enable_if_copyable<T>> {
                         proceed(*_p);
                         throw future_error(future_error_codes::reduction_failed);
                     }
-                    return *f.get_try();
                 })
-                .then([_p = sb.shared_from_this()](auto) { proceed(*_p); });
+                .then([_p = sb.shared_from_this()]() { proceed(*_p); });
     }
 
     template <typename F, typename... Args>
@@ -1824,9 +1820,10 @@ struct value_<T, enable_if_not_copyable<T>> {
                         proceed(*_p);
                         throw future_error(future_error_codes::reduction_failed);
                     }
-                    return *f.get_try();
+                    // We could move out the data to put it back in place in the
+                    // next 'then' call or just leave it in place and do nothing.
                 })
-                .then([_p = sb.shared_from_this()](auto) { proceed(*_p); });
+                .then([_p = sb.shared_from_this()]() { proceed(*_p); });
     }
 };
 

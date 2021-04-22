@@ -269,11 +269,11 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.exception());
 
-        while (!sut.get_try()) {
+        while (!sut.is_ready()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
-        BOOST_REQUIRE_EQUAL(42, sut.get_try()->member());
+        BOOST_REQUIRE_EQUAL(42, std::move(sut).get_try()->member());
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
@@ -366,8 +366,8 @@ BOOST_AUTO_TEST_CASE(future_swap_tests) {
         a.first(1);
         b.first(2);
 
-        BOOST_REQUIRE_EQUAL(5, a.second.get_try()->member());
-        BOOST_REQUIRE_EQUAL(4, b.second.get_try()->member());
+        BOOST_REQUIRE_EQUAL(5, std::move(a.second).get_try()->member());
+        BOOST_REQUIRE_EQUAL(4, std::move(b.second).get_try()->member());
     }
 }
 
@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_and_timeout) {
     stlab::future<stlab::move_only> f = stlab::async(stlab::default_executor, answer);
     auto r = stlab::blocking_get_for(std::move(f), std::chrono::milliseconds(500));
     BOOST_REQUIRE(r.is_ready());
-    BOOST_REQUIRE_EQUAL(42, r.get_try()->member());
+    BOOST_REQUIRE_EQUAL(42, std::move(r).get_try()->member());
 }
 
 BOOST_AUTO_TEST_CASE(future_blocking_get_moveonly_value_error_case_and_timeout) {
@@ -698,4 +698,42 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_void_task) {
     static_cast<void>(stlab::blocking_get(std::move(result)));
 
     BOOST_REQUIRE_EQUAL(3, check);
+}
+
+BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_type) {
+    BOOST_TEST_MESSAGE("future reduction with move only type");
+
+    class move_issue_catcher {
+    public:
+        move_issue_catcher() = default;
+        move_issue_catcher(move_issue_catcher const&) = delete;
+        move_issue_catcher& operator=(move_issue_catcher const&) = delete;
+        move_issue_catcher(move_issue_catcher&& other) :
+            defused_(std::exchange(other.defused_, true)) {}
+        move_issue_catcher& operator=(move_issue_catcher&& other) {
+            defused_ = std::exchange(other.defused_, true);
+            return *this;
+        }
+        ~move_issue_catcher() {
+            // uncomment the assert to find where the data was lost.
+            // assert(defused_);
+        }
+
+        bool defuse() { return !std::exchange(defused_, true); }
+
+    private:
+        bool defused_ = false;
+    };
+
+    auto result = stlab::async(stlab::default_executor,
+                               [] {
+                                   return stlab::async(stlab::default_executor,
+                                                       [] { return move_issue_catcher{}; });
+                               })
+                      // force reduction (call reduce)
+                      // TODO (sguy): reduction should be automatic, just like
+                      // with `then` and `reduce`
+                      .then(stlab::immediate_executor, [](auto v) { return v; });
+
+    BOOST_REQUIRE(stlab::blocking_get(std::move(result)).defuse());
 }
