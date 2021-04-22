@@ -637,7 +637,7 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_task) {
                             [func = std::move(func)]() mutable { return func(); });
     });
 
-    BOOST_REQUIRE_EQUAL(2, *stlab::blocking_get(result).get_try());
+    BOOST_REQUIRE_EQUAL(2, stlab::blocking_get(result));
 }
 
 BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_void_task) {
@@ -676,7 +676,7 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_task) {
                             [func = std::move(func)]() mutable { return func(); });
     });
 
-    BOOST_REQUIRE_EQUAL(2, (*stlab::blocking_get(std::move(result)).get_try()).member());
+    BOOST_REQUIRE_EQUAL(2, stlab::blocking_get(std::move(result)).member());
 }
 
 BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_void_task) {
@@ -725,15 +725,9 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_type) {
         bool defused_ = false;
     };
 
-    auto result = stlab::async(stlab::default_executor,
-                               [] {
-                                   return stlab::async(stlab::default_executor,
-                                                       [] { return move_issue_catcher{}; });
-                               })
-                      // force reduction (call reduce)
-                      // TODO (sguy): reduction should be automatic, just like
-                      // with `then` and `reduce`
-                      .then(stlab::immediate_executor, [](auto v) { return v; });
+    auto result = stlab::async(stlab::default_executor, [] {
+        return stlab::async(stlab::default_executor, [] { return move_issue_catcher{}; });
+    });
 
     BOOST_REQUIRE(stlab::blocking_get(std::move(result)).defuse());
 }
