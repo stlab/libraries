@@ -99,6 +99,15 @@ add_test(
 
 ################################################################################
 
+add_executable( stlab.test.std_future_adaptor
+  std_future_adaptor_test.cpp
+  main.cpp )
+
+target_link_libraries( stlab.test.std_future_adaptor PUBLIC stlab::testing )
+add_test( NAME stlab.test.std_future_adaptor COMMAND stlab.test.std_future_adaptor )
+
+################################################################################
+
 add_executable( stlab.test.task
   task_test.cpp
   main.cpp )
@@ -162,12 +171,13 @@ add_test(
 #
 set_target_properties(
   stlab.test.channel
+  stlab.test.cow
   stlab.test.future
   stlab.test.serial_queue
-  stlab.test.cow
+  stlab.test.std_future_adaptor
   stlab.test.task
-  stlab.test.tuple
   stlab.test.traits
+  stlab.test.tuple
   PROPERTIES CXX_EXTENSIONS OFF )
 
 #
@@ -186,10 +196,11 @@ ProcessorCount(nProcessors)
 if(nProcessors)
   set_tests_properties(
     stlab.test.channel
+    stlab.test.cow
     stlab.test.executor
     stlab.test.future
     stlab.test.serial_queue
-    stlab.test.cow
+    stlab.test.std_future_adaptor
     stlab.test.task
     stlab.test.tuple
     PROPERTIES PROCESSORS ${nProcessors})
