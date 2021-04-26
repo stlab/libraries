@@ -201,6 +201,29 @@ using packaged_task_from_signature_t = typename packaged_task_from_signature<T>:
 
 /**************************************************************************************************/
 
+template <typename R>
+R get_ready(future<R>&& f) {
+    assert(f.is_ready());
+    return *std::move(f).get_try();
+}
+
+template <typename R>
+R get_ready(future<R> const& f) {
+    assert(f.is_ready());
+    return *f.get_try();
+}
+
+struct forward_future_content {
+    template <typename F>
+    auto operator()(F&& f) const {
+        return get_ready(std::forward<F>(f));
+    }
+    void operator()(future<void>&&) const {}
+    void operator()(future<void> const&) const {}
+};
+
+/**************************************************************************************************/
+
 template <typename>
 struct reduced_;
 
@@ -230,12 +253,9 @@ R&& reduce(R&& r) {
     return std::forward<R>(r);
 }
 
-static inline auto reduce(future<future<void>>&& r) -> future<void>;
-
 template <typename R>
 auto reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then(stlab::immediate_executor,
-                             [](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
+    return std::move(r).then(stlab::immediate_executor, forward_future_content{});
 }
 
 /**************************************************************************************************/
@@ -341,9 +361,10 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     template <typename E, typename F>
     auto then_r(bool unique, E&& executor, F&& f) {
-        return recover_r(unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) mutable {
-            return std::move(_f)(std::move(*(std::forward<decltype(x)>(x).get_try())));
-        });
+        return recover_r(unique, std::forward<E>(executor),
+                         [_f = std::forward<F>(f)](auto&& x) mutable {
+                             return std::move(_f)(detail::get_ready(std::forward<decltype(x)>(x)));
+                         });
     }
 
     template <typename F>
@@ -461,10 +482,10 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     template <typename E, typename F>
     auto then_r(bool unique, E&& executor, F&& f) {
-        return recover_r(
-            unique, std::forward<E>(executor), [_f = std::forward<F>(f)](auto&& x) mutable {
-                return std::move(_f)(std::move(*std::forward<decltype(x)>(x).get_try()));
-            });
+        return recover_r(unique, std::forward<E>(executor),
+                         [_f = std::forward<F>(f)](auto&& x) mutable {
+                             return std::move(_f)(detail::get_ready(std::forward<decltype(x)>(x)));
+                         });
     }
 
     template <typename F>
@@ -1080,7 +1101,6 @@ public:
 
     bool is_ready() const& { return _p && _p->is_ready(); }
 
-
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
     [[deprecated("Use exception() instead")]]
@@ -1119,7 +1139,7 @@ template <typename F>
 struct assign_ready_future {
     template <typename T>
     static void assign(T& x, F f) {
-        x = std::move(*(std::move(f).get_try()));
+        x = detail::get_ready(std::move(f));
     }
 };
 
@@ -1199,7 +1219,7 @@ struct when_any_shared {
         {
             std::unique_lock<std::mutex> lock{ _guard };
             if (_index == std::numeric_limits<std::size_t>::max()) {
-                _arg = std::move(*std::forward<FF>(f).get_try());
+                _arg = detail::get_ready(std::forward<FF>(f));
                 _index = index;
                 run = true;
             }
@@ -1385,7 +1405,7 @@ template <typename T>
 struct value_storer {
     template <typename C, typename F>
     static void store(C& context, F&& f, std::size_t index) {
-        context._results = std::move(*std::forward<F>(f).get_try());
+        context._results = detail::get_ready(std::forward<F>(f));
         context._index = index;
     }
 };
@@ -1394,7 +1414,7 @@ template <typename T>
 struct value_storer<std::vector<T>> {
     template <typename C, typename F>
     static void store(C& context, F&& f, std::size_t index) {
-        context._results[index] = std::move(*std::forward<F>(f).get_try());
+        context._results[index] = detail::get_ready(std::forward<F>(f));
     }
 };
 
@@ -1718,10 +1738,6 @@ template <>
 struct reduction_helper<future<void>> {
     future<void> value;
 };
-
-static inline auto reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then(stlab::immediate_executor, [](auto) {});
-}
 
 /**************************************************************************************************/
 
