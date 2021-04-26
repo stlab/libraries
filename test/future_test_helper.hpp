@@ -111,12 +111,10 @@ struct test_fixture {
 
     template <typename F>
     auto wait_until_future_r_completed(F& f) {
-        auto result = f.get_try();
-        while (!result) {
+        while (!f.is_ready()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            result = f.get_try();
         }
-        return result;
+        return std::move(f).get_try();
     }
 
     void check_valid_future() {}
@@ -135,7 +133,7 @@ struct test_fixture {
 
     template <typename E, typename F>
     static void check_failure(F& f, const char* message) {
-        BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) {
+        BOOST_REQUIRE_EXCEPTION(std::move(f).get_try(), E, ([_m = message](const auto& e) {
                                     return std::string(_m) == std::string(e.what());
                                 }));
     }
@@ -156,7 +154,7 @@ struct test_fixture {
 private:
     template <typename F>
     void wait_until_future_is_ready(F& f) {
-        while (!f.get_try()) {
+        while (!f.is_ready()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
@@ -164,7 +162,7 @@ private:
     template <typename E, typename F>
     void wait_until_this_future_fails(F& f) {
         try {
-            while (!f.get_try()) {
+            while (!f.is_ready()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         } catch (const E&) {

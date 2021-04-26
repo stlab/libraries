@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
   wait_until_all_tasks_completed();
 
   BOOST_REQUIRE_EQUAL(size_t(1), index);
-  BOOST_REQUIRE_EQUAL(4711 + 2, (*sut.get_try()).member());
+  BOOST_REQUIRE_EQUAL(4711 + 2, (*std::move(sut).get_try()).member());
   BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
   BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }

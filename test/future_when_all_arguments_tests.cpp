@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_args_move_only_with_one_element) {
   check_valid_future(sut);
   wait_until_future_completed(sut);
 
-  BOOST_REQUIRE_EQUAL(42 + 42, (*sut.get_try()).member());
+  BOOST_REQUIRE_EQUAL(42 + 42, (*std::move(sut).get_try()).member());
   BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
   BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_args_move_only_with_many_elements) {
   check_valid_future(sut);
   wait_until_future_completed(sut);
 
-  BOOST_REQUIRE_EQUAL(1 * 7 + 2 * 11 + 3 * 13 + 5 * 17, (*sut.get_try()).member());
+  BOOST_REQUIRE_EQUAL(1 * 7 + 2 * 11 + 3 * 13 + 5 * 17, (*std::move(sut).get_try()).member());
   BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
   BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }

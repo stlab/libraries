@@ -1161,7 +1161,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
             return std::move(p.second).recover([&check](auto f) {
                 check = true;
                 try {
-                    return *std::move(f.get_try());
+                    return *std::move(f).get_try();
                 } catch (const exception&) {
                     throw;
                 }
@@ -1179,7 +1179,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
             return std::move(p.second) ^ [&check](auto f) {
                 check = true;
                 try {
-                    return *std::move(f.get_try());
+                    return *std::move(f).get_try();
                 } catch (const exception&) {
                     throw;
                 }
