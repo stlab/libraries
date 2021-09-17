@@ -14,20 +14,17 @@
 #include <stlab/concurrency/task.hpp>
 
 #include <cassert>
-#include <chrono>
 #include <functional>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM(PNACL)
-#include <ppapi/cpp/completion_callback.h>
-#include <ppapi/cpp/core.h>
-#include <ppapi/cpp/module.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
+#elif STLAB_TASK_SYSTEM(INTEL_TBB)
+#include <tbb/task_arena.h>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
 #include <algorithm>
@@ -57,6 +54,7 @@ enum class executor_priority
 {
     high,
     medium,
+    normal = medium,
     low
 };
 
@@ -70,7 +68,7 @@ constexpr auto platform_priority(executor_priority p)
     {
         case executor_priority::high:
             return DISPATCH_QUEUE_PRIORITY_HIGH;
-        case executor_priority::medium:
+        case executor_priority::normal:
           return DISPATCH_QUEUE_PRIORITY_DEFAULT;
         case executor_priority::low:
             return DISPATCH_QUEUE_PRIORITY_LOW;
@@ -95,7 +93,7 @@ inline group_t& group() {
     return g;
 }
 
-template <executor_priority P = executor_priority::medium>
+template <executor_priority P = executor_priority::normal>
 struct executor_type {
     using result_type = void;
 
@@ -115,9 +113,55 @@ struct executor_type {
 
 /**************************************************************************************************/
 
+#elif STLAB_TASK_SYSTEM(INTEL_TBB)
+
+constexpr auto platform_priority(executor_priority p)
+{
+    switch (p)
+    {
+        case executor_priority::high:
+            return tbb::task_arena::priority::high;
+        case executor_priority::normal:
+          return tbb::task_arena::priority::normal;
+        case executor_priority::low:
+            return tbb::task_arena::priority::low;
+        default:
+            assert(!"Unknown value!");
+    }
+    return tbb::task_arena::priority::normal;
+}
+
+template <executor_priority P = executor_priority::normal>
+struct executor_type {
+    using result_type = void;
+
+    static tbb::task_arena& arena() {
+        static tbb::task_arena _arena{tbb::task_arena::automatic, 1, platform_priority(P)};
+        return _arena;
+    }
+
+    template <typename F>
+    void operator()(F f) const {
+        /*
+        REVISIT (sparent) : task_arena executes the task as a constant - which doesn't allow
+        for mutable lambdas or `stlab::task`. As a hack we wrap the function in a struct with
+        a mutable member. File a bug against TBB?
+        */
+
+        struct strip_const {
+            mutable F _f;
+            void operator()() const { _f(); }
+        };
+
+        arena().enqueue(strip_const{std::move(f)});
+    }
+};
+
+/**************************************************************************************************/
+
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
-template <executor_priority P = executor_priority::medium>
+template <executor_priority P = executor_priority::normal>
 struct executor_type {
     using result_type = void;
 
@@ -138,30 +182,6 @@ struct executor_type {
 
 /**************************************************************************************************/
 
-#elif STLAB_TASK_SYSTEM(PNACL)
-
-template <executor_priority P = executor_priority::medium>
-struct executor_type {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        pp::Module::Get()->core()->CallOnMainThread(0,
-                                                    pp::CompletionCallback(
-                                                        [](void* f_, int32_t) {
-                                                            auto f = static_cast<f_t*>(f_);
-                                                            (*f)();
-                                                            delete f;
-                                                        },
-                                                        new f_t(std::move(f))),
-                                                    0);
-    }
-};
-
-/**************************************************************************************************/
-
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 
 constexpr auto platform_priority(executor_priority p)
@@ -170,7 +190,7 @@ constexpr auto platform_priority(executor_priority p)
     {
         case executor_priority::high:
             return TP_CALLBACK_PRIORITY_HIGH;
-        case executor_priority::medium:
+        case executor_priority::normal:
             return TP_CALLBACK_PRIORITY_NORMAL;
         case executor_priority::low:
             return TP_CALLBACK_PRIORITY_LOW;
@@ -181,7 +201,7 @@ constexpr auto platform_priority(executor_priority p)
     return TP_CALLBACK_PRIORITY_NORMAL;
 }
 
-template <executor_priority P = executor_priority::medium>
+template <executor_priority P = executor_priority::normal>
 class task_system {
     PTP_POOL _pool = nullptr;
     TP_CALLBACK_ENVIRON _callBackEnvironment;
@@ -237,12 +257,23 @@ private:
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
 inline auto queue_size() {
+    unsigned hc = std::thread::hardware_concurrency();
+
+    /*
+        REVISIT (sparent) : If there is no hardware concurrency, the default_executor should
+        be implemented in terms of the main_executor and queue_size() should return 0.
+
+        Whatever test case is requiring two threads should be reworked.
+    */
+
 #ifdef STLAB_UNIT_TEST
-    // The test cannot run with less than two cores
-    return std::max(2u, std::thread::hardware_concurrency());
+    constexpr unsigned hc_min = 2u;
 #else
-    return std::max(1u, std::thread::hardware_concurrency());
+    constexpr unsigned hc_min = 1u;
 #endif
+
+    // hc - 1 is used so with the main thread, the system is not overcommitted.
+    return std::max(hc_min, hc ? hc - 1 : 0);
 }
 
 class notification_queue {
@@ -394,7 +425,7 @@ inline priority_task_system& pts() {
     return only_task_system;
 }
 
-template <executor_priority P = executor_priority::medium>
+template <executor_priority P = executor_priority::normal>
 struct task_system
 {
     using result_type = void;
@@ -410,7 +441,7 @@ struct task_system
 
 #if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
 
-template <executor_priority P = executor_priority::medium>
+template <executor_priority P = executor_priority::normal>
 struct executor_type {
     using result_type = void;
 
@@ -429,7 +460,7 @@ struct executor_type {
 /**************************************************************************************************/
 
 constexpr auto low_executor = detail::executor_type<detail::executor_priority::low>{};
-constexpr auto default_executor = detail::executor_type<detail::executor_priority::medium>{};
+constexpr auto default_executor = detail::executor_type<detail::executor_priority::normal>{};
 constexpr auto high_executor = detail::executor_type<detail::executor_priority::high>{};
 
 /**************************************************************************************************/

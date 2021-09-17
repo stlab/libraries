@@ -41,7 +41,7 @@ option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
-set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
+set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|intel_tbb|windows).")
 
 #
 # On apple we have to force the usage of boost.variant, because Apple's
@@ -179,10 +179,10 @@ elseif (${stlab.task_system} STREQUAL "portable")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
 elseif (${stlab.task_system} STREQUAL "libdispatch")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
+elseif (${stlab.task_system} STREQUAL "intel_tbb")
+  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_INTEL_TBB )
 elseif (${stlab.task_system} STREQUAL "emscripten")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSCRIPTEN )
-elseif (${stlab.task_system} STREQUAL "pnacl")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
 elseif (${stlab.task_system} STREQUAL "windows")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
 else()

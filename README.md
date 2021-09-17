@@ -49,6 +49,16 @@ Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the pla
 - If you are using `conan` for the first time, add `--build missing` to conan command call in `setup_msvc.bat` script
 - Use administrator command prompt if you get issues in manifest creation during `setup_msvc.bat` run (ex: `mt : general error c101008d`)
 
+# Building wasm (draft)
+
+```zsh
+source ~/Projects/github.com/emscripten-core/emsdk/emsdk_env.sh
+
+cd ./build
+conan install .. --build=missing -s build_type=Debug -o testing=True -s compiler.cppstd=17 --profile ../wasm.conan-profile
+emcmake cmake ..
+```
+
 # Upcomming Changes in Version 2
 * Currently we are redesigning the interface of the `future` class. We will make the associated executor of a task more explicit by removing the implicit "inheritance" of the executors from the previous future. So a continuation will not get automatically the same executor from its predecessor. If non is provided, then it will be automatically be executed via the `immediate_executor`.
 * As well we will remove all `.then()` and `.recover()` functions from the `future` interface. Only the `operator|()` and `operator^()` will remain. So the pipe notation, as it is comming with C++20 ranges, will become the only choice. Obviously this will be a breaking change.

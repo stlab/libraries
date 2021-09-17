@@ -28,7 +28,7 @@ class StlabLibrariesConan(ConanFile):
         "boost_optional": [True, False],
         "boost_variant": [True, False],
         "coroutines": [True, False],
-        "task_system": ["header", "portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
+        "task_system": ["header", "portable", "libdispatch", "emscripten", "intel_tbb", "windows", "auto"],
     }
 
     default_options = {
@@ -119,7 +119,7 @@ class StlabLibrariesConan(ConanFile):
         self.options.boost_optional = True
         self.options.boost_variant = True
 
-    # TODO(fernando): pnacl
+    # TODO(sean-parent) : This should default to self configure (not portable)
     def _default_task_system(self):
         if self.settings.os == "Macos":
             return "libdispatch"
