@@ -74,7 +74,7 @@ add_library( stlab::stlab ALIAS stlab )
 
 #
 # stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
-# features ensures that the corresponding C standard flag is populated in
+# features ensures that the corresponding C++ standard flag is populated in
 # targets linking to stlab.
 #
 # target_compile_features( stlab INTERFACE cxx_std_14)
@@ -101,7 +101,7 @@ target_link_libraries( stlab INTERFACE Threads::Threads )
 # Several definitions are specified for the microsoft compiler. These have
 # the following effects.
 #
-#  + NOMINMAX
+# + NOMINMAX
 #    disable the `min` and `max` macros defined in the windows.h header
 #
 target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
