@@ -18,10 +18,16 @@ endif()
 
 target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.channel
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.channel>
+  )
+else()
+  add_test(
     NAME stlab.test.channel
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.channel> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 
 ################################################################################
@@ -34,10 +40,17 @@ target_compile_definitions(stlab.test.executor PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.executor
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.executor>
+  )
+else()
+  add_test(
     NAME stlab.test.executor
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.executor> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
+
 
 ################################################################################
 
@@ -61,10 +74,16 @@ target_compile_definitions(stlab.test.future PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.future PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.future
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.future>
+  )
+else()
+  add_test(
     NAME stlab.test.future
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.future> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 
 ################################################################################
@@ -76,10 +95,16 @@ target_compile_definitions(stlab.test.serial_queue PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.serial_queue PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.serial_queue
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.serial_queue>
+  )
+else()
+  add_test(
     NAME stlab.test.serial_queue
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.serial_queue> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 ################################################################################
 
@@ -91,10 +116,16 @@ target_compile_definitions(stlab.test.cow PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.cow PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.cow
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.cow>
+  )
+else()
+  add_test(
     NAME stlab.test.cow
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.cow> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 
 ################################################################################
@@ -107,10 +138,16 @@ target_compile_definitions(stlab.test.task PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.task PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.task
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.task>
+  )
+else()
+  add_test(
     NAME stlab.test.task
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.task> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 ################################################################################
 
@@ -122,10 +159,16 @@ target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.tuple PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.tuple
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.tuple>
+  )
+else()
+  add_test(
     NAME stlab.test.tuple
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.tuple> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 ################################################################################
 
@@ -137,10 +180,16 @@ target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.traits
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.traits>
+  )
+else()
+  add_test(
     NAME stlab.test.traits
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.traits> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 ################################################################################
 
@@ -150,10 +199,16 @@ add_executable( stlab.test.forest
 
 target_link_libraries( stlab.test.forest PUBLIC stlab::testing )
 
-add_test(
+if(EMSCRIPTEN)
+  add_test(NAME stlab.test.forest
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --experimental-wasm-threads --experimental-wasm-bulk-memory $<TARGET_FILE:stlab.test.forest>
+  )
+else()
+  add_test(
     NAME stlab.test.forest
     COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.forest> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+  )
+endif()
 
 ################################################################################
 #

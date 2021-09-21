@@ -20,6 +20,15 @@ project( stlab VERSION 1.6.2 LANGUAGES CXX )
 # set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(EMSCRIPTEN)
+  set(CMAKE_AR "emar")
+  set(CMAKE_RANLIB "emranlib")
+  set(CXX_target "em")
+  set(CC_target "emcc")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_TEST_DISABLE_ALT_STACK=1 -s USE_PTHREADS=1")
+  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -DBOOST_TEST_DISABLE_ALT_STACK=1 -s WASM=1 -s USE_PTHREADS=1 -s EXIT_RUNTIME=1 -s INITIAL_MEMORY=2047MB -s DEMANGLE_SUPPORT=1 -O2")
+endif()
+
 include( CTest )
 include( CMakeDependentOption )
 
@@ -65,7 +74,7 @@ add_library( stlab::stlab ALIAS stlab )
 
 #
 # stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
-# features ensures that the corresponding C++ standard flag is populated in
+# features ensures that the corresponding C standard flag is populated in
 # targets linking to stlab.
 #
 # target_compile_features( stlab INTERFACE cxx_std_14)
@@ -92,7 +101,7 @@ target_link_libraries( stlab INTERFACE Threads::Threads )
 # Several definitions are specified for the microsoft compiler. These have
 # the following effects.
 #
-# + NOMINMAX
+#  + NOMINMAX
 #    disable the `min` and `max` macros defined in the windows.h header
 #
 target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )

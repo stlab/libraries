@@ -1,10 +1,16 @@
 add_library( coroutines INTERFACE )
 add_library( stlab::coroutines ALIAS coroutines )
 
-include( stlab/coroutines/AppleClang )
-include( stlab/coroutines/Clang )
-include( stlab/coroutines/GNU )
-include( stlab/coroutines/MSVC )
+if(NOT EMSCRIPTEN)
+  include( stlab/coroutines/AppleClang )
+  include( stlab/coroutines/Clang )
+  include( stlab/coroutines/GNU )
+  include( stlab/coroutines/MSVC )
+endif()
+
+if(EMSCRIPTEN)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTLAB_FUTURE_COROUTINES=0")
+endif()
 
 if( stlab.coroutines )
   #

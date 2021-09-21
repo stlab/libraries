@@ -34,6 +34,7 @@
 
 # cmake build directory
 build/
+build_wasm/
 
 # clion build directory
 clion_build/
