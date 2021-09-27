@@ -50,26 +50,18 @@ namespace detail {
 
 /**************************************************************************************************/
 
-enum class executor_priority
-{
-    high,
-    medium,
-    normal = medium,
-    low
-};
+enum class executor_priority { high, medium, normal = medium, low };
 
 /**************************************************************************************************/
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 
-constexpr auto platform_priority(executor_priority p)
-{
-    switch (p)
-    {
+constexpr auto platform_priority(executor_priority p) {
+    switch (p) {
         case executor_priority::high:
             return DISPATCH_QUEUE_PRIORITY_HIGH;
         case executor_priority::normal:
-          return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+            return DISPATCH_QUEUE_PRIORITY_DEFAULT;
         case executor_priority::low:
             return DISPATCH_QUEUE_PRIORITY_LOW;
         default:
@@ -115,14 +107,20 @@ struct executor_type {
 
 #elif STLAB_TASK_SYSTEM(INTEL_TBB)
 
-constexpr auto platform_priority(executor_priority p)
-{
-    switch (p)
-    {
+/*
+    REVISIT (sean-parent) : Ps is currently using TBB 2020 and hasn't yet updated to oneAPI. I'm
+    not exactly sure which version added arena priorities but it was someplace between interface
+    version 11102 and 12050. These conditionals can be removed once our major clients have updated.
+*/
+
+#if TBB_INTERFACE_VERSION >= 12050
+
+constexpr auto platform_priority(executor_priority p) {
+    switch (p) {
         case executor_priority::high:
             return tbb::task_arena::priority::high;
         case executor_priority::normal:
-          return tbb::task_arena::priority::normal;
+            return tbb::task_arena::priority::normal;
         case executor_priority::low:
             return tbb::task_arena::priority::low;
         default:
@@ -131,14 +129,29 @@ constexpr auto platform_priority(executor_priority p)
     return tbb::task_arena::priority::normal;
 }
 
+#else
+
+inline tbb::task_arena& tbb_arena() {
+    static tbb::task_arena _arena{tbb::task_arena::automatic, 1};
+    return _arena;
+}
+
+#endif
+
 template <executor_priority P = executor_priority::normal>
 struct executor_type {
     using result_type = void;
+
+#if TBB_INTERFACE_VERSION >= 12050
 
     static tbb::task_arena& arena() {
         static tbb::task_arena _arena{tbb::task_arena::automatic, 1, platform_priority(P)};
         return _arena;
     }
+
+#else
+    static tbb::task_arena& arena() { return tbb_arena(); }
+#endif
 
     template <typename F>
     void operator()(F f) const {
@@ -184,10 +197,8 @@ struct executor_type {
 
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 
-constexpr auto platform_priority(executor_priority p)
-{
-    switch (p)
-    {
+constexpr auto platform_priority(executor_priority p) {
+    switch (p) {
         case executor_priority::high:
             return TP_CALLBACK_PRIORITY_HIGH;
         case executor_priority::normal:
@@ -196,7 +207,6 @@ constexpr auto platform_priority(executor_priority p)
             return TP_CALLBACK_PRIORITY_LOW;
         default:
             assert(!"Unknown value!");
-
     }
     return TP_CALLBACK_PRIORITY_NORMAL;
 }
@@ -284,7 +294,7 @@ class notification_queue {
         task<void()> _task;
 
         template <class F>
-        element_t(F&& f, unsigned priority) : _priority{priority}, _task{std::forward<F>(f)} { }
+        element_t(F&& f, unsigned priority) : _priority{priority}, _task{std::forward<F>(f)} {}
 
         struct greater {
             bool operator()(const element_t& a, const element_t& b) const {
@@ -316,7 +326,8 @@ public:
 
     bool pop(task<void()>& x) {
         lock_t lock{_mutex};
-        while (_q.empty() && !_done) _ready.wait(lock);
+        while (_q.empty() && !_done)
+            _ready.wait(lock);
         if (_q.empty()) return false;
         x = pop_not_empty();
         return true;
@@ -383,16 +394,16 @@ public:
     priority_task_system() {
         _threads.reserve(_count);
         for (unsigned n = 0; n != _count; ++n) {
-            _threads.emplace_back([&, n]{ run(n); });
+            _threads.emplace_back([&, n] { run(n); });
         }
     }
 
     ~priority_task_system() {
-        for (auto& e : _q) e.done();
-        for (auto& e : _threads) e.join();
+        for (auto& e : _q)
+            e.done();
+        for (auto& e : _threads)
+            e.join();
     }
-
-
 
     template <std::size_t P, typename F>
     void execute(F&& f) {
@@ -426,8 +437,7 @@ inline priority_task_system& pts() {
 }
 
 template <executor_priority P = executor_priority::normal>
-struct task_system
-{
+struct task_system {
     using result_type = void;
 
     void operator()(task<void()> f) const {
