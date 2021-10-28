@@ -167,6 +167,21 @@ BOOST_AUTO_TEST_CASE(int_channel_move_assignment_receiver) {
     BOOST_REQUIRE_EQUAL(42, result);
 }
 
+BOOST_AUTO_TEST_CASE(move_receiver_when_attaching) {
+    BOOST_TEST_MESSAGE("move receiver when attaching");
+
+    std::atomic_int result{0};
+
+    auto sut = std::move(_receive[0]);
+
+    auto check = std::move(sut) | [&](int x) { result = x; };
+    _send[0](42);
+
+    wait_until_done([&] { return result == 42; });
+
+    BOOST_REQUIRE_EQUAL(42, result);
+}
+
 BOOST_AUTO_TEST_CASE(int_channel_copy_ctor_receiver) {
     BOOST_TEST_MESSAGE("int channel copy ctor receiver");
 

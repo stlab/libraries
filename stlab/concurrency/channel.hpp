@@ -652,7 +652,7 @@ struct shared_process_sender_helper;
 template <typename Q, typename T, typename R, std::size_t... I, typename... Args>
 struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
     : shared_process_sender_indexed<Q, T, R, Args, I, Args...>... {
-    
+
     explicit
     shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) :
         shared_process_sender_indexed<Q, T, R, Args, I, Args...>(sp)... {}
@@ -1352,7 +1352,7 @@ auto zip(S s, R... r) {
 
 /**************************************************************************************************/
 
-struct buffer_size 
+struct buffer_size
 {
     std::size_t _value;
     buffer_size(std::size_t b) : _value(b) {}
@@ -1386,7 +1386,7 @@ struct annotated_process {
     annotated_process(F f, executor&& e) : _f(std::move(f)), _annotations(std::move(e._executor)) {}
     annotated_process(F f, annotations&& a) : _f(std::move(f)), _annotations(std::move(a)) {}
     annotated_process(executor_task_pair<F>&& etp, buffer_size bs) : _f(std::move(etp._f)), _annotations(std::move(etp._executor), bs) {}
-    
+
 };
 
 template <typename B, typename E>
@@ -1517,7 +1517,7 @@ public:
     bool ready() const { return _ready; }
 
     template <typename F>
-    auto operator|(F&& f) const {
+    auto operator|(F&& f) const & {
         if (!_p) throw channel_error(channel_error_codes::broken_channel);
 
         if (_ready) throw channel_error(channel_error_codes::process_already_running);
@@ -1530,7 +1530,7 @@ public:
     }
 
     template <typename F>
-    auto operator|(detail::annotated_process<F> ap) {
+    auto operator|(detail::annotated_process<F> ap) & {
         if (!_p) throw channel_error(channel_error_codes::broken_channel);
 
         if (_ready) throw channel_error(channel_error_codes::process_already_running);
@@ -1548,13 +1548,19 @@ public:
     }
 
     template <typename F>
-    auto operator|(executor_task_pair<F> etp) {
+    auto operator|(executor_task_pair<F> etp) & {
         return operator|(detail::annotated_process<F>(std::move(etp)));
     }
 
-    auto operator|(sender<T> send) {
+    auto operator|(sender<T> send) & {
         return operator|
             ([_send = std::move(send)](auto&& x) { _send(std::forward<decltype(x)>(x)); });
+    }
+
+    template <typename P>
+    auto operator|(P&& p) && {
+        auto receiver(std::move(*this));
+        return receiver | std::forward<P>(p);
     }
 };
 
