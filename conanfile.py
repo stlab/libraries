@@ -172,8 +172,6 @@ class StlabLibrariesConan(ConanFile):
     def configure(self):
         ConanFile.configure(self)
 
-        tools.check_min_cppstd(self, "14")
-
         self._fix_boost_components()
 
         if self._use_boost():
@@ -186,22 +184,28 @@ class StlabLibrariesConan(ConanFile):
         if self.options.testing:
             cmake = CMake(self)
             cmake.verbose = True
-            if not self.settings.compiler.cppstd:
-                cmake.definitions["CMAKE_CXX_STANDARD"] = 17
-                cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
-                cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
-                cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
-                cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
-                cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
-                cmake.definitions["stlab.task_system"] = self.options.task_system
+            cmake.definitions["CMAKE_CXX_STANDARD"] = 14
+            cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
+            cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
+            cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
+            cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
+            cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
+            cmake.definitions["stlab.task_system"] = self.options.task_system
 
+            self.output.info("*********** BEFORE configure().")
             cmake.configure()
+            self.output.info("*********** BEFORE build().")
             cmake.build()
+            self.output.info("*********** BEFORE test().")
             cmake.test(output_on_failure=True)
- 
+            self.output.info("*********** AFTER test().")
+
     def package(self):
         self.copy("*.hpp")
 
     def imports(self):
         self.copy("*.dll", "./bin", "bin")
         self.copy("*.dylib", "./bin", "lib")
+
+    def package_info(self):
+        self.cpp_info.includedirs = ['.']
