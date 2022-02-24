@@ -2005,8 +2005,7 @@ auto operator co_await(stlab::future<R> f) {
 
         void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input)
-                .then(stlab::default_executor,
-                      [this, ch](auto&& result) mutable {
+                .then([this, ch](auto&& result) mutable {
                           this->_result = std::forward<decltype(result)>(result);
                           ch.resume();
                       })
@@ -2026,7 +2025,7 @@ inline auto operator co_await(stlab::future<void> f) {
 
         inline void await_suspend(std::experimental::coroutine_handle<> ch) {
             std::move(_input)
-                .then(stlab::default_executor, [ch]() mutable { ch.resume(); })
+                .then([ch]() mutable { ch.resume(); })
                 .detach();
         }
     };

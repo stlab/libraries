@@ -38,7 +38,7 @@ string( CONCAT activate
 # If using MSVC and active, set the coroutines flag
 #
 target_compile_options( coroutines INTERFACE
-  $<$<AND:$<CXX_COMPILER_ID:MSVC>,${active}>:/await> )
+  $<$<AND:$<CXX_COMPILER_ID:MSVC>,${active}>:/await /permissive-> )
 
 #
 # If using MSVC and active, set a preprocessor definition to enable
