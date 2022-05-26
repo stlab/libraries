@@ -18,7 +18,7 @@ jobs:
         id: set-matrix
         # Note! The json in this file MUST be in a single line for parsing to succeed.
         # Do not format matrix.json.
-        run: echo "::set-output name=matrix::$(cat ./.github/minimal_matrix.json)"
+        run: echo "::set-output name=matrix::$(cat ./.github/matrix.json)"
 
   builds:
     needs: generate-matrix
