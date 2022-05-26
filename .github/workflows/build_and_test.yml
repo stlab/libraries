@@ -1,0 +1,44 @@
+name: Build & Test
+
+on: [push, pull_request]
+
+env: 
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  generate-matrix:
+    name: Parse Job Matrix
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Parse Job Matrix
+        id: set-matrix
+        # Note! The json in this file MUST be in a single line for parsing to succeed.
+        # Do not format matrix.json.
+        run: echo "::set-output name=matrix::$(cat ./.github/minimal_matrix.json)"
+
+  builds:
+    needs: generate-matrix
+    runs-on: ${{ matrix.config.os }}  
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
+    name: ${{ matrix.config.name }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3 
+        with:
+          python-version: "3.9.13"
+      
+      - name: Install Dependencies
+        run: ./stlab.py install --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
+
+      - name: Build
+        run: ./stlab.py build --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
+
+      - name: Test
+        run: ./stlab.py test --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
