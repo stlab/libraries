@@ -1,6 +1,6 @@
-This is the source code repository of the Software Technology Lab (stlab).
+This is the source code repository of the Software Technology Lab (STLab).
 
-ASL libraries will be migrated here in the stlab namespace, new libraries will be created here.
+ASL libraries will be migrated here in the `stlab` namespace, new libraries will be created here.
 
 # Branch states
 
@@ -17,7 +17,7 @@ This library provides futures and channels, high level abstractions for implemen
 
 # Documentation
 
-The complete documentation is available on the [stlab home page](http://stlab.cc).
+The complete documentation is available on the [STLab home page](http://stlab.cc).
 
 Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
