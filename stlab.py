@@ -10,6 +10,7 @@ import sys
 
 PYENV_PYTHON_VERSION = '3.8.6'
 CONAN_PACKAGE_TOOLS_VERSION = '0.37.0'
+# CONAN_VERSION = '1.43.0'
 CONAN_VERSION = '1.48.1'
 
 DEFAULT_BUILD_CONFIG = 'Debug'
@@ -50,18 +51,18 @@ def build_dir_context(args):
 def install_tooling_dependencies(args):
     if args.platform == 'Darwin':
         shutil.which('brew') or run_cmd(
-            "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
+            ["/bin/bash", "-c", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"])
 
-        if run_cmd("brew outdated pyenv"):
-            run_cmd("brew upgrade pyenv")
+        if run_cmd(["brew", "outdated", "pyenv"]):
+            run_cmd(["brew", "upgrade", "pyenv"])
 
-        if run_cmd("brew outdated pyenv-virtualenv"):
-            run_cmd("brew install pyenv-virtualenv")
+        if run_cmd(["brew", "outdated", "pyenv-virtualenv"]):
+            run_cmd(["brew", "install", "pyenv-virtualenv"])
 
-        shutil.which('cmake') or run_cmd("brew install cmake")
+        shutil.which('cmake') or run_cmd(["brew", "install", "cmake"])
 
         if shutil.which('pyenv'):
-            run_cmd(';'.join([
+            subprocess.run(';'.join([
                 "eval \"$(pyenv init --path)\"",
                 "eval \"$(pyenv init -)\"",
                 f"pyenv install {PYENV_PYTHON_VERSION}",
@@ -71,23 +72,23 @@ def install_tooling_dependencies(args):
             ]), shell=True)
 
     if args.platform == 'Darwin' or args.platform == 'Linux':
-        run_cmd("pip install --upgrade pip")
+        run_cmd(['pip', 'install', '--upgrade', 'pip'])
         run_cmd(
-            f"pip install conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}")
-        run_cmd(f"pip install conan=={CONAN_VERSION}")
-        shutil.which('cmake') or run_cmd("pip install cmake")
+            ['pip', 'install', f'conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}'])
+        run_cmd(['pip', 'install', f'conan=={CONAN_VERSION}'])
+        shutil.which('cmake') or run_cmd(["pip", "install", "cmake"])
 
     if args.platform == 'Windows':
-        run_cmd("set PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;")
-        run_cmd("python.exe --version")
-        run_cmd("cmake --version")
-        run_cmd("python.exe -m pip install --upgrade pip")
+        run_cmd(["set", "PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;"])
+        run_cmd(["python.exe", "--version"])
+        run_cmd(["cmake", "--version"])
+        run_cmd(["python.exe", "-m", "pip", "install", "--upgrade", "pip"])
         run_cmd(
-            f"pip.exe install conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}")
-        run_cmd(f"pip.exe install conan=={CONAN_VERSION}")
+            ["pip.exe", "install", f"conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}"])
+        run_cmd(["pip.exe", "install", f"conan=={CONAN_VERSION}"])
 
-    run_cmd("conan --version")
-    run_cmd("conan user")
+    run_cmd(['conan', '--version'])
+    run_cmd(['conan', 'user'])
 
 
 def set_environment_variables(args):
@@ -96,8 +97,8 @@ def set_environment_variables(args):
         os.environ[k] = v
 
     def gh_actions_setter(k, v):
-        env_dst = "$Env:GITHUB_ENV" if args.os == "Windows" else "$GITHUB_ENV"
-        run_cmd(f"echo {k}={v} >> {env_dst}")
+        run_cmd(["echo", f"{k}={v}", ">>",
+                 "$Env:GITHUB_ENV" if args.os == 'Windows' else "$GITHUB_ENV"])
 
     set = gh_actions_setter if executing_in_gh_actions() else local_setter
 
@@ -117,8 +118,8 @@ def set_environment_variables(args):
 def install_stlab_dependencies(args):
     with build_dir_context(args):
         # REVISIT - should we turn off testing=True for non-test builds?
-        run_cmd(
-            f"conan install .. --build=missing -s build_type={args.build_config} -o testing=True, -s, compiler.cppstd={args.cxx_std}")
+        run_cmd(["conan", "install", "..", "--build=missing", "-s",
+                 f"build_type={args.build_config}", "-o", "testing=True", "-s", f"compiler.cppstd={args.cxx_std}"])
 
 
 def install_command(args):
@@ -131,15 +132,15 @@ def install_command(args):
 def build_command(args):
     print(f"BUILD: {args}")
     with build_dir_context(args):
-        run_cmd(
-            f"cmake -G \"Unix Makefiles\" -D CMAKE_BUILD_TYPE={args.build_config} -D stlab_testing=ON ..")
-        run_cmd("cmake --build . ")
+        run_cmd(["cmake", "-G", "Unix Makefiles", "-D",
+                 f"CMAKE_BUILD_TYPE={args.build_config}", "-D", "stlab_testing=ON", ".."])
+        run_cmd(["cmake", "--build", "."])
 
 
 def test_command(args):
     print(f"TEST: {args}")
     with build_dir_context(args):
-        run_cmd(f"ctest -C {args.build_config} --output-on-failure")
+        run_cmd(["ctest", "-C", args.build_config, "--output-on-failure"])
 
 
 def main(argv):
