@@ -118,7 +118,6 @@ def install_command(args):
     install_tooling_dependencies(args)
     set_environment_variables(args)
     install_stlab_dependencies(args)
-    pass
 
 
 def build_command(args):
