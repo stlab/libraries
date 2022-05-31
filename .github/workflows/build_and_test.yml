@@ -34,10 +34,10 @@ jobs:
           python-version: "3.9.13"
       
       - name: Install Dependencies
-        run: ./stlab.py install --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
+        run: python stlab.py install --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
 
       - name: Build
-        run: ./stlab.py build --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
+        run: python stlab.py build --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
 
       - name: Test
-        run: ./stlab.py test --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
+        run: python stlab.py test --compiler ${{ matrix.config.compiler }} --compiler-version ${{ matrix.config.version }} 
