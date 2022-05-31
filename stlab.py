@@ -10,7 +10,6 @@ import sys
 
 PYENV_PYTHON_VERSION = '3.8.6'
 CONAN_PACKAGE_TOOLS_VERSION = '0.37.0'
-# CONAN_VERSION = '1.43.0'
 CONAN_VERSION = '1.48.1'
 
 DEFAULT_BUILD_CONFIG = 'Debug'
@@ -29,16 +28,9 @@ def pushd(new_dir):
         os.chdir(previous_dir)
 
 
-def shell_cmd(cmd):
+def run_cmd(cmd, shell=False):
     # TODO: logging
-    process = subprocess.Popen(cmd)
-    process.communicate()
-    return process.returncode
-
-
-def unsafe_shell_cmd(cmdstr):
-    process = subprocess.Popen(cmdstr, shell=True)
-    process.communicate()
+    process = subprocess.run(cmd, shell=shell)
     return process.returncode
 
 
@@ -57,45 +49,45 @@ def build_dir_context(args):
 
 def install_tooling_dependencies(args):
     if args.platform == 'Darwin':
-        shutil.which('brew') or shell_cmd(
-            ["/bin/bash", "-c", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"])
+        shutil.which('brew') or run_cmd(
+            "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
 
-        if shell_cmd(["brew", "outdated", "pyenv"]):
-            shell_cmd(["brew", "upgrade", "pyenv"])
+        if run_cmd("brew outdated pyenv"):
+            run_cmd("brew upgrade pyenv")
 
-        if shell_cmd(["brew", "outdated", "pyenv-virtualenv"]):
-            shell_cmd(["brew", "install", "pyenv-virtualenv"])
+        if run_cmd("brew outdated pyenv-virtualenv"):
+            run_cmd("brew install pyenv-virtualenv")
 
-        shutil.which('cmake') or shell_cmd(["brew", "install", "cmake"])
+        shutil.which('cmake') or run_cmd("brew install cmake")
 
         if shutil.which('pyenv'):
-            subprocess.run(';'.join([
+            run_cmd(';'.join([
                 "eval \"$(pyenv init --path)\"",
                 "eval \"$(pyenv init -)\"",
                 f"pyenv install {PYENV_PYTHON_VERSION}",
                 f"pyenv virtualenv {PYENV_PYTHON_VERSION} conan",
                 "pyenv rehash",
                 "pyenv activate conan"
-            ]), shell=True, executable='/bin/zsh')
+            ]), shell=True)
 
     if args.platform == 'Darwin' or args.platform == 'Linux':
-        shell_cmd(['pip', 'install', '--upgrade', 'pip'])
-        shell_cmd(
-            ['pip', 'install', f'conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}'])
-        shell_cmd(['pip', 'install', f'conan=={CONAN_VERSION}'])
-        shutil.which('cmake') or shell_cmd(["pip", "install", "cmake"])
+        run_cmd("pip install --upgrade pip")
+        run_cmd(
+            f"pip install conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}")
+        run_cmd(f"pip install conan=={CONAN_VERSION}")
+        shutil.which('cmake') or run_cmd("pip install cmake")
 
     if args.platform == 'Windows':
-        shell_cmd(["set", "PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;"])
-        shell_cmd(["python.exe", "--version"])
-        shell_cmd(["cmake", "--version"])
-        shell_cmd(["python.exe", "-m", "pip", "install", "--upgrade", "pip"])
-        shell_cmd(
-            ["pip.exe", "install", f"conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}"])
-        shell_cmd(["pip.exe", "install", f"conan=={CONAN_VERSION}"])
+        run_cmd("set PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;")
+        run_cmd("python.exe --version")
+        run_cmd("cmake --version")
+        run_cmd("python.exe -m pip install --upgrade pip")
+        run_cmd(
+            f"pip.exe install conan_package_tools=={CONAN_PACKAGE_TOOLS_VERSION}")
+        run_cmd(f"pip.exe install conan=={CONAN_VERSION}")
 
-    shell_cmd(['conan', '--version'])
-    shell_cmd(['conan', 'user'])
+    run_cmd("conan --version")
+    run_cmd("conan user")
 
 
 def set_environment_variables(args):
@@ -104,8 +96,8 @@ def set_environment_variables(args):
         os.environ[k] = v
 
     def gh_actions_setter(k, v):
-        shell_cmd(["echo", f"{k}={v}", ">>",
-                  "$Env:GITHUB_ENV" if args.os == 'Windows' else "$GITHUB_ENV"])
+        env_dst = "$Env:GITHUB_ENV" if args.os == "Windows" else "$GITHUB_ENV"
+        run_cmd(f"echo {k}={v} >> {env_dst}")
 
     set = gh_actions_setter if executing_in_gh_actions() else local_setter
 
@@ -125,8 +117,8 @@ def set_environment_variables(args):
 def install_stlab_dependencies(args):
     with build_dir_context(args):
         # REVISIT - should we turn off testing=True for non-test builds?
-        shell_cmd(["conan", "install", "..", "--build=missing", "-s",
-                  f"build_type={args.build_config}", "-o", "testing=True", "-s", f"compiler.cppstd={args.cxx_std}"])
+        run_cmd(
+            f"conan install .. --build=missing -s build_type={args.build_config} -o testing=True, -s, compiler.cppstd={args.cxx_std}")
 
 
 def install_command(args):
@@ -139,15 +131,15 @@ def install_command(args):
 def build_command(args):
     print(f"BUILD: {args}")
     with build_dir_context(args):
-        shell_cmd(["cmake", "-G", "Unix Makefiles", "-D",
-                  f"CMAKE_BUILD_TYPE={args.build_config}", "-D", "stlab_testing=ON", ".."])
-        shell_cmd(["cmake", "--build", "."])
+        run_cmd(
+            f"cmake -G \"Unix Makefiles\" -D CMAKE_BUILD_TYPE={args.build_config} -D stlab_testing=ON ..")
+        run_cmd("cmake --build . ")
 
 
 def test_command(args):
     print(f"TEST: {args}")
     with build_dir_context(args):
-        shell_cmd(["ctest", "-C", args.build_config, "--output-on-failure"])
+        run_cmd(f"ctest -C {args.build_config} --output-on-failure")
 
 
 def main(argv):
