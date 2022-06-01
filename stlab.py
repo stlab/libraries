@@ -79,7 +79,7 @@ def install_tooling_dependencies(args):
         shutil.which('cmake') or run_cmd(["pip", "install", "cmake"])
 
     if args.platform == 'Windows':
-        run_cmd(["set", "PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;"])
+        run_cmd(["set", "PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;"], shell=True)
         run_cmd(["python.exe", "--version"])
         run_cmd(["cmake", "--version"])
         run_cmd(["python.exe", "-m", "pip", "install", "--upgrade", "pip"])
