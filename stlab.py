@@ -132,7 +132,8 @@ def install_command(args):
 def build_command(args):
     print(f"BUILD: {args}")
     with build_dir_context(args):
-        run_cmd(["cmake", "-G", "Unix Makefiles", "-D",
+        generator = "NMake Makefiles" if args.platform == 'Windows' else "Unix Makefiles"
+        run_cmd(["cmake", "-G", generator, "-D",
                  f"CMAKE_BUILD_TYPE={args.build_config}", "-D", "stlab_testing=ON", ".."])
         run_cmd(["cmake", "--build", "."])
 
