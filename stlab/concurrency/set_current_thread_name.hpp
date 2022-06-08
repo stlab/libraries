@@ -25,7 +25,7 @@
 #include <emscripten/threading.h>
 
 /**************************************************************************************************/
-#elif defined(__has_include) && __has_include(<pthread.h>)
+#else
 
 #include <pthread.h>
 
@@ -64,14 +64,9 @@ inline void set_current_thread_name(const char* name) {
 }
 
 /**************************************************************************************************/
-#elif defined(__has_include) && __has_include(<pthread.h>)
-
-inline void set_current_thread_name(const char* name) { pthread_setname_np(pthread_self(), name); }
-
-/**************************************************************************************************/
 #else
 
-inline void set_current_thread_name(const char*) {}
+inline void set_current_thread_name(const char* name) { pthread_setname_np(pthread_self(), name); }
 
 /**************************************************************************************************/
 #endif
