@@ -34,10 +34,10 @@ jobs:
           python-version: "3.9.13"
       
       - name: Install Dependencies
-        run: python stlab.py install --compiler "${{ matrix.config.compiler }}" --compiler-version "${{ matrix.config.version }}" --cmake-toolset "${{ matrix.config.cmake_toolset || None }}"
+        run: python stlab.py install --compiler "${{ matrix.config.compiler }}" --compiler-version "${{ matrix.config.version }}" --cmake-toolset "${{ matrix.config.cmake_toolset || 'None' }}"
 
       - name: Build
-        run: python stlab.py build --compiler "${{ matrix.config.compiler }}" --compiler-version "${{ matrix.config.version }}" --cmake-toolset "${{ matrix.config.cmake_toolset || None }}"
+        run: python stlab.py build --compiler "${{ matrix.config.compiler }}" --compiler-version "${{ matrix.config.version }}" --cmake-toolset "${{ matrix.config.cmake_toolset || 'None' }}"
 
       - name: Test
-        run: python stlab.py test --compiler "${{ matrix.config.compiler }}" --compiler-version "${{ matrix.config.version }}" --cmake-toolset "${{ matrix.config.cmake_toolset || None }}"
+        run: python stlab.py test --compiler "${{ matrix.config.compiler }}" --compiler-version "${{ matrix.config.version }}" --cmake-toolset "${{ matrix.config.cmake_toolset || 'None' }}"
