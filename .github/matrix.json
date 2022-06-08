@@ -6,6 +6,13 @@
             "version": "16",
             "os": "windows-2019",
             "cmake_toolset": "Visual Studio 16 2019"
+        },
+        {
+            "name": "Windows VS2017",
+            "compiler": "Visual Studio",
+            "version": "15",
+            "os": "windows-2016",
+            "cmake_toolset": "Visual Studio 15 2017 Win64"
         }
     ]
 }
