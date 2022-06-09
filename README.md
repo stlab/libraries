@@ -2,6 +2,33 @@ This is the source code repository of the Software Technology Lab (STLab).
 
 ASL libraries will be migrated here in the `stlab` namespace, new libraries will be created here.
 
+# Building & Running
+
+## Standalone Project ("Hello Stlab")
+
+```bash
+$ cmake -S standalone -B build/standalone
+$ cmake --build build/standalone
+$ ./build/standalone/Stlab
+The answer is 42
+```
+
+## Test Suite
+
+```bash
+$ cmake -S test -B build/test
+$ cmake --build build/test
+$ ./build/test/StlabTests
+[doctest] doctest version is "2.4.8"
+[doctest] run with "--help" for options
+===============================================================================
+[doctest] test cases:  <...>
+[doctest] assertions:  <...>
+[doctest] Status: SUCCESS!
+```
+
+# TODO BEFORE MERGE: The remainder of this README may be out of date. 
+
 # Branch states
 
 - **`main`:**
