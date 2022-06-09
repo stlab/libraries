@@ -1,6 +1,11 @@
 name: Build and Tests
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+  
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -10,21 +15,7 @@ env:
   # options="-Dstlab.coroutines=ON"
 
 jobs:
-  # In the common scenario where a user pushes to a branch, and then raises a PR for it,
-  # We'd like to ignore one of those jobs, since it would be testing identical code.
-  detect_duplicate_job:
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          skip_after_successful_duplicate: 'true'
-
   generate-matrix:
-    needs: detect_duplicate_job
-    if: ${{ needs.detect_duplicate_job.should_skip != 'true' }}
     name: Generate Job Matrix
     runs-on: ubuntu-20.04
     outputs:
