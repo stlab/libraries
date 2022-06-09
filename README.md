@@ -27,7 +27,7 @@ $ ./build/test/StlabTests
 [doctest] Status: SUCCESS!
 ```
 
-# TODO BEFORE MERGE: The remainder of this README may be out of date. 
+# TODO BEFORE MERGE: The remainder of this README may be out of date
 
 # Branch states
 
