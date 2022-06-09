@@ -29,7 +29,7 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 -- Visual Studio 2017 (>= 15.9.0), Visual Studio 2019
 -- gcc (>= 7)
 -- clang (>= 6)
-- boost.optional and boost.variant if the compiler's library does not provide them
+- boost.optional and boost.variant
 - boost.test only for the unit tests
 
 # Building

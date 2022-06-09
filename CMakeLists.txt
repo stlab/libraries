@@ -37,22 +37,11 @@ cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF "NOT subproject" OFF )
 
-option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
-option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
 set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
 
-#
-# On apple we have to force the usage of boost.variant, because Apple's
-# implementation of C++17 is not complete
-#
-if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
-  message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
-  set( stlab.boost_variant ON )
-endif()
-
-mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
+mark_as_advanced( stlab.coroutines )
 
 #
 # stlab has no compiled components. As such, we declare it as an `INTERFACE`
@@ -112,55 +101,31 @@ if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   set(CMAKE_CXX_STANDARD ${CONAN_SETTINGS_COMPILER_CPPSTD})
 endif()
 
-if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
-  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    #
-    # We provide aliases to the conan target to mimic the native findBoost
-    # functionality
-    #
-    add_library( Boost::boost INTERFACE IMPORTED )
-    add_library( Boost::unit_test_framework INTERFACE IMPORTED )
-    set_property( TARGET Boost::boost Boost::unit_test_framework 
-      APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
+if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  #
+  # We provide aliases to the conan target to mimic the native findBoost
+  # functionality
+  #
+  add_library( Boost::boost INTERFACE IMPORTED )
+  add_library( Boost::unit_test_framework INTERFACE IMPORTED )
+  set_property( TARGET Boost::boost Boost::unit_test_framework 
+    APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
+else()
+  #
+  # Request compiled unit testing component only if testing is `ON`
+  #
+  if( stlab.testing )
+    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
   else()
-    #
-    # Request compiled unit testing component only if testing is `ON`
-    #
-    if( stlab.testing )
-      find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
-    else()
-      find_package( Boost 1.60.0 REQUIRED )
-    endif()
+    find_package( Boost 1.60.0 REQUIRED )
   endif()
-
-  if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
-    message(FATAL_ERROR "Could not find Boost unit test framework.")
-  endif()
-  
-
-  string( APPEND either_generator
-    "$<OR:$<BOOL:${stlab.boost_optional}>,"
-         "$<BOOL:${stlab.boost_variant}>>" )
-
-  #
-  # Link to the `Boost::boost` target is either `stlab.boost_optional`
-  # or `stlab.boost_variant` are set `ON`, which provides the include
-  # directory for the boost header.
-  #
-  target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
-
-  #
-  # Conditionally specify the corresponding compiler definitions for
-  # each boost algebraic data type library. In the case that either
-  # is specified, a preprocessor definition is used to specify that
-  # `auto_ptr` should not be used in the boost headers.
-  #
-  target_compile_definitions( stlab INTERFACE
-    $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
-    $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
-
-  unset( either_generator )
 endif()
+
+if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
+  message(FATAL_ERROR "Could not find Boost unit test framework.")
+endif()
+
+target_link_libraries( stlab INTERFACE Boost::boost )
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")

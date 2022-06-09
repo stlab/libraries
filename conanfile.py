@@ -25,8 +25,6 @@ class StlabLibrariesConan(ConanFile):
     options = {
         "testing": [True, False],
         "coverage": [True, False],
-        "boost_optional": [True, False],
-        "boost_variant": [True, False],
         "coroutines": [True, False],
         "task_system": ["header", "portable", "libdispatch", "emscripten", "pnacl", "windows", "auto"],
     }
@@ -34,8 +32,6 @@ class StlabLibrariesConan(ConanFile):
     default_options = {
         "testing": False,
         "coverage": False,
-        "boost_optional": False,
-        "boost_variant": False,
         "coroutines": False,
         "task_system": "header",
     }
@@ -44,19 +40,13 @@ class StlabLibrariesConan(ConanFile):
         self.output.info(str)
         self.output.warn(str)
 
-    def _use_boost(self):
-        return self.options.testing or \
-                self.options.boost_optional or \
-                self.options.boost_variant
-
     def _requires_libdispatch(self):
         # On macOS it is not necessary to use the libdispatch conan package, because the library is included in the OS.
         return self.options.task_system == "libdispatch" and \
                self.settings.os != "Macos"
 
     def requirements(self):
-        if self._use_boost():
-            self.requires("boost/1.75.0@")
+        self.requires("boost/1.75.0@")
 
         if self._requires_libdispatch():
             self.requires("libdispatch/5.3.2@")
@@ -66,8 +56,6 @@ class StlabLibrariesConan(ConanFile):
         self.info.header_only()
         self.info.options.testing = "ANY"
         self.info.options.coverage = "ANY"
-        self.info.options.boost_optional = "ANY"
-        self.info.options.boost_variant = "ANY"
         self.info.options.coroutines = "ANY"
 
     def _configure_boost(self):
@@ -105,19 +93,6 @@ class StlabLibrariesConan(ConanFile):
         self.options["boost"].without_thread = True
         self.options["boost"].without_type_erasure = True
         self.options["boost"].without_wave = True
-
-    def _fix_boost_components(self):
-        if self.settings.os != "Macos": return
-        if self.settings.compiler != "apple-clang": return
-
-        if (float(str(self.settings.compiler.version)) >= 12) and not ((self.settings.compiler.cppstd == "14") or (self.settings.compiler.cppstd == "gnu14")): return
-
-        #
-        # On Apple we have to force the usage of boost.variant, because Apple's implementation of C++17 is not complete.
-        #
-        self._log("Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
-        self.options.boost_optional = True
-        self.options.boost_variant = True
 
     # TODO(fernando): pnacl
     def _default_task_system(self):
@@ -172,10 +147,7 @@ class StlabLibrariesConan(ConanFile):
     def configure(self):
         ConanFile.configure(self)
 
-        self._fix_boost_components()
-
-        if self._use_boost():
-            self._configure_boost()
+        self._configure_boost()
 
         self._configure_task_system()
         self.output.info("Task System: {}.".format(self.options.task_system))
@@ -187,8 +159,6 @@ class StlabLibrariesConan(ConanFile):
             cmake.definitions["CMAKE_CXX_STANDARD"] = 14
             cmake.definitions["stlab.testing"] = option_on_off(self.options.testing)
             cmake.definitions["stlab.coverage"] = option_on_off(self.options.coverage)
-            cmake.definitions["stlab.boost_variant"] = option_on_off(self.options.boost_variant)
-            cmake.definitions["stlab.boost_optional"] = option_on_off(self.options.boost_optional)
             cmake.definitions["stlab.coroutines"] = option_on_off(self.options.coroutines)
             cmake.definitions["stlab.task_system"] = self.options.task_system
 
