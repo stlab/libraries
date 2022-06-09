@@ -43,18 +43,18 @@
             "os": "macos-10.15"
         },
         {
-            "name": "Windows VS2022",
-            "compiler": "Visual Studio",
-            "version": "17",
-            "os": "windows-2022",
-            "cmake_toolset": "Visual Studio 17 2022 Win64"
-        },
-        {
             "name": "Windows VS2019",
             "compiler": "Visual Studio",
             "version": "16",
             "os": "windows-2019",
             "cmake_toolset": "Visual Studio 16 2019"
+        },
+        {
+            "name": "Windows VS2017",
+            "compiler": "Visual Studio",
+            "version": "15",
+            "os": "windows-2016",
+            "cmake_toolset": "Visual Studio 15 2017 Win64"
         }
     ]
 }
