@@ -1,6 +1,11 @@
 name: Build and Tests
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+  
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -20,10 +25,8 @@ jobs:
 
       - name: Generate Job Matrix
         id: set-matrix
-        run: |
-          MATRIX=$(cat ./.github/matrix.json)
-          echo "${MATRIX}"
-          echo "::set-output name=matrix::${MATRIX}"
+        # Note: The json in this variable must be a single line for parsing to succeed.
+        run: echo "::set-output name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)"
           
   builds:
     needs: generate-matrix
@@ -35,9 +38,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.10.4"
 
       - name: Install Dependencies (Unix)
         if: ${{ matrix.config.compiler != 'Visual Studio' }}
@@ -53,7 +56,8 @@ jobs:
           python.exe --version
           cmake --version
           python.exe -m pip install --upgrade pip
-          pip.exe install conan_package_tools==0.37.0
+          pip.exe install markupsafe==2.0.1
+          pip.exe install conan_package_tools==0.38.0
           pip.exe install conan==1.43.0
           conan --version
           conan user
