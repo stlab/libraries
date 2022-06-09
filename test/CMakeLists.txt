@@ -1,196 +1,60 @@
-if( NOT ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC"
-      AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "99.99.99"
-      AND stlab.coroutines ) )
-  add_executable( stlab.test.channel
-    channel_functor_tests.cpp
-    channel_merge_round_robin_tests.cpp
-    channel_merge_unordered_tests.cpp
-    channel_merge_zip_with_tests.cpp
-    channel_process_tests.cpp
-    channel_test_helper.cpp
-    channel_tests.cpp
-    tuple_algorithm_test.cpp
-    main.cpp
-    channel_test_helper.hpp )
+cmake_minimum_required(VERSION 3.14...3.22)
 
-  target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
+project(StlabTests LANGUAGES CXX)
+
+# ---- Options ----
+
+option(ENABLE_TEST_COVERAGE "Enable test coverage" OFF)
+option(TEST_INSTALLED_VERSION "Test the version found by find_package" OFF)
+
+# --- Import tools ----
+
+include(../cmake/tools.cmake)
+
+# ---- Dependencies ----
+
+include(../cmake/CPM.cmake)
+
+CPMAddPackage("gh:onqtam/doctest@2.4.8")
+CPMAddPackage("gh:TheLartians/Format.cmake@1.7.3")
+
+if(TEST_INSTALLED_VERSION)
+  find_package(Stlab REQUIRED)
+else()
+  CPMAddPackage(NAME Stlab SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 endif()
 
-target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
+# ---- Create binary ----
 
-add_test(
-    NAME stlab.test.channel
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.channel> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
+add_executable(${PROJECT_NAME} ${sources})
+target_link_libraries(${PROJECT_NAME} doctest::doctest Stlab::Stlab)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 
+# enable compiler warnings
+if(NOT TEST_INSTALLED_VERSION)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_compile_options(Stlab PUBLIC -Wall -Wpedantic -Wextra -Werror)
+  elseif(MSVC)
+    target_compile_options(Stlab PUBLIC /W4 /WX)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DOCTEST_CONFIG_USE_STD_HEADERS)
+  endif()
+endif()
 
-################################################################################
+# ---- Add StlabTests ----
 
-add_executable( stlab.test.executor
-        executor_test.cpp
-        main.cpp)
+enable_testing()
 
-target_compile_definitions(stlab.test.executor PRIVATE STLAB_UNIT_TEST)
+# Note: doctest and similar testing frameworks can automatically configure CMake tests. For other
+# testing frameworks add the tests target instead: add_test(NAME ${PROJECT_NAME} COMMAND
+# ${PROJECT_NAME})
 
-target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
+include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
+doctest_discover_tests(${PROJECT_NAME})
 
-add_test(
-    NAME stlab.test.executor
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.executor> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
+# ---- code coverage ----
 
-################################################################################
-
-add_executable( stlab.test.future
-  future_recover_tests.cpp
-  future_test_helper.cpp
-  future_tests.cpp
-  future_then_tests.cpp
-  future_when_all_arguments_tests.cpp
-  future_when_all_range_tests.cpp
-  future_when_any_arguments_tests.cpp
-  future_when_any_range_tests.cpp
-  tuple_algorithm_test.cpp
-  main.cpp
-  future_test_helper.hpp )
-
-target_sources( stlab.test.future PUBLIC
-  $<$<BOOL:$<TARGET_PROPERTY:COROUTINES>>:future_coroutine_tests.cpp> )
-
-target_compile_definitions(stlab.test.future PRIVATE STLAB_UNIT_TEST)
-
-target_link_libraries( stlab.test.future PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.future
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.future> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-
-################################################################################
-
-add_executable( stlab.test.serial_queue
-  serial_queue_test.cpp )
-
-target_compile_definitions(stlab.test.serial_queue PRIVATE STLAB_UNIT_TEST)
-
-target_link_libraries( stlab.test.serial_queue PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.serial_queue
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.serial_queue> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-################################################################################
-
-add_executable( stlab.test.cow
-  cow_test.cpp
-  main.cpp )
-
-target_compile_definitions(stlab.test.cow PRIVATE STLAB_UNIT_TEST)
-
-target_link_libraries( stlab.test.cow PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.cow
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.cow> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-
-################################################################################
-
-add_executable( stlab.test.task
-  task_test.cpp
-  main.cpp )
-
-target_compile_definitions(stlab.test.task PRIVATE STLAB_UNIT_TEST)
-
-target_link_libraries( stlab.test.task PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.task
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.task> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-################################################################################
-
-add_executable( stlab.test.tuple
-  tuple_test.cpp
-  main.cpp )
-
-target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
-
-target_link_libraries( stlab.test.tuple PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.tuple
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.tuple> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-################################################################################
-
-add_executable( stlab.test.traits
-        traits_test.cpp
-        main.cpp )
-
-target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
-
-target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.traits
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.traits> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-################################################################################
-
-add_executable( stlab.test.forest
-        forest_test.cpp
-        main.cpp )
-
-target_link_libraries( stlab.test.forest PUBLIC stlab::testing )
-
-add_test(
-    NAME stlab.test.forest
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.forest> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
-)
-
-################################################################################
-#
-# tests are compiled without compiler extensions to ensure the stlab headers
-# are not dependent upon any such extension.
-#
-set_target_properties(
-  stlab.test.channel
-  stlab.test.future
-  stlab.test.serial_queue
-  stlab.test.cow
-  stlab.test.task
-  stlab.test.tuple
-  stlab.test.traits
-  PROPERTIES CXX_EXTENSIONS OFF )
-
-#
-# Many of the stlab tests are executed using the system executor which defaults
-# to a number of threads equal to the system parallelism.
-#
-# Here we (attempt to) query the system processor count and store the value in
-# the `nProcessors` variable, where a non-zeros value indicates success.
-#
-# Provided the query was successful, we inform ctest of the test parallism.
-#
-
-include(ProcessorCount)
-ProcessorCount(nProcessors)
-
-if(nProcessors)
-  set_tests_properties(
-    stlab.test.channel
-    stlab.test.executor
-    stlab.test.future
-    stlab.test.serial_queue
-    stlab.test.cow
-    stlab.test.task
-    stlab.test.tuple
-    PROPERTIES PROCESSORS ${nProcessors})
+if(ENABLE_TEST_COVERAGE)
+  target_compile_options(Stlab PUBLIC -O0 -g -fprofile-arcs -ftest-coverage)
+  target_link_options(Stlab PUBLIC -fprofile-arcs -ftest-coverage)
 endif()
