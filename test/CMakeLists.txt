@@ -26,8 +26,9 @@ endif()
 
 # ---- Create binary ----
 
-file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
-add_executable(${PROJECT_NAME} ${sources})
+# file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
+# add_executable(${PROJECT_NAME} ${sources})
+add_executable(${PROJECT_NAME} source/main.cpp source/traits_test.cpp source/channel_functor_tests.cpp)
 target_link_libraries(${PROJECT_NAME} doctest::doctest Stlab::Stlab)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 

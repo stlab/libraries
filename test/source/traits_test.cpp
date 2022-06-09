@@ -6,7 +6,7 @@ Copyright 2019 Adobe
 
 /**************************************************************************************************/
 
-#include <boost/test/unit_test.hpp>
+#include <doctest/doctest.h>
 
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/test/model.hpp>
@@ -26,14 +26,12 @@ struct smart_test<test, std::vector<std::vector<T, A>>> : test<T> {};
 
 }
 
-BOOST_AUTO_TEST_CASE(check_smart_is_copy_constructible_v) {
-    BOOST_TEST_MESSAGE("Check smart_is_copy_constructible_v");
+TEST_CASE("Check smart_is_copy_constructible_v") {
+    CHECK(smart_is_copy_constructible_v<int> == true);
+    CHECK(smart_is_copy_constructible_v<std::vector<int>> == true);
+    CHECK(smart_is_copy_constructible_v<std::vector<annotate>> == true);
 
-    BOOST_REQUIRE(smart_is_copy_constructible_v<int> == true);
-    BOOST_REQUIRE(smart_is_copy_constructible_v<std::vector<int>> == true);
-    BOOST_REQUIRE(smart_is_copy_constructible_v<std::vector<annotate>> == true);
-
-    BOOST_REQUIRE(smart_is_copy_constructible_v<move_only> == false);
-    BOOST_REQUIRE(smart_is_copy_constructible_v<std::vector<move_only>> == false);
-    BOOST_REQUIRE(smart_is_copy_constructible_v<std::vector<std::vector<move_only>>> == false);
+    CHECK(smart_is_copy_constructible_v<move_only> == false);
+    CHECK(smart_is_copy_constructible_v<std::vector<move_only>> == false);
+    CHECK(smart_is_copy_constructible_v<std::vector<std::vector<move_only>>> == false);
 }
