@@ -21,6 +21,7 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
 fi
 
 pip install --upgrade pip
+pip install markupsafe==2.0.1
 pip install conan_package_tools==0.38.0
 pip install conan==1.49.0
 

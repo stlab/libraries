@@ -54,6 +54,7 @@ jobs:
           cmake --version
           python.exe -m pip install --upgrade pip
           pip.exe install conan_package_tools==0.38.0
+          pip.exe install markupsafe==2.0.1
           pip.exe install conan==1.43.0
           conan --version
           conan user
