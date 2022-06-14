@@ -7,33 +7,9 @@
             "os": "ubuntu-20.04"
         },
         {
-            "name": "Linux GCC 9",
-            "compiler": "gcc",
-            "version": "9",
-            "os": "ubuntu-20.04"
-        },
-        {
-            "name": "Linux GCC 8",
-            "compiler": "gcc",
-            "version": "8",
-            "os": "ubuntu-20.04"
-        },
-        {
             "name": "Linux Clang 11",
             "compiler": "clang",
             "version": "11",
-            "os": "ubuntu-20.04"
-        },
-        {
-            "name": "Linux Clang 10",
-            "compiler": "clang",
-            "version": "10",
-            "os": "ubuntu-20.04"
-        },
-        {
-            "name": "Linux Clang 9",
-            "compiler": "clang",
-            "version": "9",
             "os": "ubuntu-20.04"
         },
         {
