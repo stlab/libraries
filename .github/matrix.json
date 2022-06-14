@@ -4,13 +4,13 @@
             "name": "Linux GCC 10",
             "compiler": "gcc",
             "version": "10",
-            "os": "ubuntu-20.04"
+            "os": "ubuntu-22.04"
         },
         {
-            "name": "Linux Clang 11",
+            "name": "Linux Clang 14",
             "compiler": "clang",
-            "version": "11",
-            "os": "ubuntu-20.04"
+            "version": "14",
+            "os": "ubuntu-22.04"
         },
         {
             "name": "macOS apple-clang 12.0",
