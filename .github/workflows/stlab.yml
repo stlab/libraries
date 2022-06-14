@@ -72,7 +72,7 @@ jobs:
         shell: bash
         run: |
           echo "CONAN_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
-          echo "CONAN_DOCKER_IMAGE=conanio/clang${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CONAN_DOCKER_IMAGE=conanio/clang${{ matrix.config.version }}-ubuntu16.04" >> $GITHUB_ENV
 
       - name: Settting EnvVars (macOS)
         if: ${{ matrix.config.compiler == 'apple-clang' }}
