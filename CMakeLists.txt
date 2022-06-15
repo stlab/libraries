@@ -127,9 +127,9 @@ if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
     # Request compiled unit testing component only if testing is `ON`
     #
     if( stlab.testing )
-      find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
+      find_package( Boost 1.74.0 REQUIRED COMPONENTS unit_test_framework )
     else()
-      find_package( Boost 1.60.0 REQUIRED )
+      find_package( Boost 1.74.0 REQUIRED )
     endif()
   endif()
 
