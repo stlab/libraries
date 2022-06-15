@@ -42,7 +42,7 @@
             "platform": "android",
             "compiler": "clang",
             "version": "14",
-            "runner_os": "ununtu-22.04",
+            "runner_os": "ubuntu-22.04",
             "abi": "arm64-v8a",
             "minsdk": "24"
         }
