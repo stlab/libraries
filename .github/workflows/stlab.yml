@@ -14,7 +14,7 @@ env:
 jobs:
   generate-matrix:
     name: Generate Job Matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -39,15 +39,22 @@ jobs:
         with:
           python-version: "3.10.4"
 
-      - name: Install Dependencies (Unix)
-        if: ${{ matrix.config.compiler != 'Visual Studio' }}
+      - name: Install Dependencies (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
           chmod +x .github/install.sh
           .github/install.sh
         shell: bash
 
+      - name: Install Dependencies (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        run: |
+          sudo apt-get install -y ninja-build
+          sudo apt-get install -y libboost-all-dev
+        shell: bash
+
       - name: Install Dependencies (Windows)
-        if: ${{ matrix.config.compiler == 'Visual Studio' }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
           set PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;
           python.exe --version
@@ -64,15 +71,15 @@ jobs:
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
-          echo "CONAN_GCC_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
-          echo "CONAN_DOCKER_IMAGE=conanio/gcc${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CC=gcc-${{matrix.config.version}}" >> $GITHUB_ENV
+          echo "CXX=g++-${{matrix.config.version}}" >> $GITHUB_ENV
 
       - name: Settting EnvVars (Linux+Clang)
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
-          echo "CONAN_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
-          echo "CONAN_DOCKER_IMAGE=conanio/clang${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
+          echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
       - name: Settting EnvVars (macOS)
         if: ${{ matrix.config.compiler == 'apple-clang' }}
@@ -87,15 +94,35 @@ jobs:
           echo "CONAN_VISUAL_VERSIONS=${{ matrix.config.version }}" >> $Env:GITHUB_ENV
           echo "CMAKE_TOOLSET=${{ matrix.config.cmake_toolset }}" >> $Env:GITHUB_ENV
 
-      - name: Build (Unix)
-        if: ${{ matrix.config.compiler != 'Visual Studio' }}
+      - name: Configure (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        shell: bash
+        run: |
+          mkdir build
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
           chmod +x .github/run.sh
           .github/run.sh
 
+      - name: Build (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        shell: bash
+        run: |
+          cmake --build build/
+
+      - name: Test (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        shell: bash
+        run: |
+          cd build/
+          ctest
+
       - name: Build (Windows)
-        if: ${{ matrix.config.compiler == 'Visual Studio' }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: powershell
         run: |
           Write-Host "CONAN_VISUAL_VERSIONS: $Env:CONAN_VISUAL_VERSIONS"
