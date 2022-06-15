@@ -42,8 +42,8 @@ jobs:
       - name: Install Dependencies (macos)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
-          chmod +x .github/install.sh
-          .github/install.sh
+          brew install boost
+          brew install ninja
         shell: bash
 
       - name: Install Dependencies (ubuntu)
@@ -85,7 +85,8 @@ jobs:
         if: ${{ matrix.config.compiler == 'apple-clang' }}
         shell: bash
         run: |
-          echo "CONAN_APPLE_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
 
       - name: Settting EnvVars (Windows)
         if: ${{ matrix.config.compiler == 'Visual Studio' }}
@@ -101,12 +102,18 @@ jobs:
           mkdir build
           cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
 
+      - name: Configure (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
+        run: |
+          mkdir build
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
+
       - name: Build (macos)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
-          chmod +x .github/run.sh
-          .github/run.sh
+          cmake --build build/
 
       - name: Build (ubuntu)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
@@ -116,6 +123,13 @@ jobs:
 
       - name: Test (ubuntu)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        shell: bash
+        run: |
+          cd build/
+          ctest
+
+      - name: Test (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
           cd build/
