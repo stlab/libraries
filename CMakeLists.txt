@@ -252,7 +252,11 @@ write_basic_package_version_file(
 # intrinsic
 #
 
-install( TARGETS stlab EXPORT stlabTargets )
+if( stlab.coroutines )
+    install( TARGETS stlab coroutines EXPORT stlabTargets )
+else()
+    install( TARGETS stlab EXPORT stlabTargets )
+endif()
 
 #
 # Non-testing header files (preserving relative paths) are installed to the
