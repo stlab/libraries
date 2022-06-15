@@ -27,7 +27,7 @@ jobs:
           
   builds:
     needs: generate-matrix
-    runs-on: ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.runner_os }}
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
@@ -40,21 +40,21 @@ jobs:
           python-version: "3.10.4"
 
       - name: Install Dependencies (macos)
-        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'macos') }}
         run: |
           chmod +x .github/install.sh
           .github/install.sh
         shell: bash
 
       - name: Install Dependencies (ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'ubuntu') }}
         run: |
           sudo apt-get install -y ninja-build
           sudo apt-get install -y libboost-all-dev
         shell: bash
 
       - name: Install Dependencies (Windows)
-        if: ${{ startsWith(matrix.config.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'windows') }}
         run: |
           set PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;
           python.exe --version
@@ -95,34 +95,44 @@ jobs:
           echo "CMAKE_TOOLSET=${{ matrix.config.cmake_toolset }}" >> $Env:GITHUB_ENV
 
       - name: Configure (ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'ubuntu') && matrix.config.platform == 'linux' }}
         shell: bash
         run: |
           mkdir build
           cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
 
+      - name: Configure (ubuntu android)
+        if: ${{ startsWith(matrix.config.runner_os, 'ubuntu') && matrix.config.platform == 'android' }}
+        shell: bash
+        run: |
+          mkdir build
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=${{ matrix.config.abi }} \
+            -DANDROID_PLATFORM=android-${{ matrix.config.minsdk }}
+
       - name: Build (macos)
-        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'macos') }}
         shell: bash
         run: |
           chmod +x .github/run.sh
           .github/run.sh
 
       - name: Build (ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'ubuntu') }}
         shell: bash
         run: |
           cmake --build build/
 
       - name: Test (ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'ubuntu') }}
         shell: bash
         run: |
           cd build/
           ctest
 
       - name: Build (Windows)
-        if: ${{ startsWith(matrix.config.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.runner_os, 'windows') }}
         shell: powershell
         run: |
           Write-Host "CONAN_VISUAL_VERSIONS: $Env:CONAN_VISUAL_VERSIONS"

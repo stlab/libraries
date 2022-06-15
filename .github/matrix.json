@@ -2,35 +2,49 @@
     "config": [
         {
             "name": "Linux GCC 10",
+            "platform": "linux",
             "compiler": "gcc",
             "version": "10",
-            "os": "ubuntu-22.04"
+            "runner_os": "ubuntu-22.04"
         },
         {
             "name": "Linux Clang 14",
+            "platform": "linux",
             "compiler": "clang",
             "version": "14",
-            "os": "ubuntu-22.04"
+            "runner_os": "ubuntu-22.04"
         },
         {
             "name": "macOS apple-clang 12.0",
+            "platform": "darwin",
             "compiler": "apple-clang",
             "version": "12.0",
-            "os": "macos-10.15"
+            "runner_os": "macos-10.15"
         },
         {
             "name": "Windows VS2019",
+            "platform": "windows",
             "compiler": "Visual Studio",
             "version": "16",
-            "os": "windows-2019",
+            "runner_os": "windows-2019",
             "cmake_toolset": "Visual Studio 16 2019"
         },
         {
             "name": "Windows VS2017",
+            "platform": "windows",
             "compiler": "Visual Studio",
             "version": "15",
-            "os": "windows-2016",
+            "runner_os": "windows-2016",
             "cmake_toolset": "Visual Studio 15 2017 Win64"
+        },
+        {
+            "name": "Android Clang",
+            "platform": "android",
+            "compiler": "clang",
+            "version": "14",
+            "runner_os": "ununtu-22.04",
+            "abi": "arm64-v8a",
+            "minsdk": "24"
         }
     ]
 }
