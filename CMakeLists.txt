@@ -1,41 +1,13 @@
-cmake_minimum_required( VERSION 3.8 )
-
-#
-# Here we check whether stlab is being configured in isolation or as a component
-# of a larger proeject. To do so, we query whether the `PROJECT_NAME` CMake
-# variable has been defined. In the case it has, we can conclude stlab is a
-# subproject.
-#
-# This convention has been borrowed from the Catch C++ unit testing library.
-#
-if( DEFINED PROJECT_NAME )
-  set( subproject ON )
-else()
-  set( subproject OFF )
-endif()
+cmake_minimum_required( VERSION 3.23 )
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
-
-# Overriden from Conan?
-# set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include( CTest )
 include( CMakeDependentOption )
 
-#
-# The `stlab.testing` and `stlab.coverage` options only appear as
-# cmake-gui and ccmake options iff stlab is the highest level project.
-# In the case that stlab is a subproject, these options are hidden from
-# the user interface and set to `OFF`
-#
-cmake_dependent_option( stlab.testing
-  "Compile the stlab tests and integrate with ctest"
-  ${BUILD_TESTING} "NOT subproject" OFF )
-
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
-  OFF "NOT subproject" OFF )
+  OFF PROJECT_IS_TOP_LEVEL OFF )
 
 option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
@@ -64,13 +36,6 @@ add_library( stlab INTERFACE )
 add_library( stlab::stlab ALIAS stlab )
 
 #
-# stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
-# features ensures that the corresponding C++ standard flag is populated in
-# targets linking to stlab.
-#
-# target_compile_features( stlab INTERFACE cxx_std_14)
-
-#
 # The include directory for stlab can be expected to vary between build
 # and installaion. Here we use a CMake generator expression to dispatch
 # on how the configuration under which this library is being consumed.
@@ -97,46 +62,21 @@ target_link_libraries( stlab INTERFACE Threads::Threads )
 #
 target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
 
-add_subdirectory( stlab/concurrency )
+add_subdirectory( stlab )
 
-if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
+if ( BUILD_TESTING OR stlab.boost_variant OR stlab.boost_optional )
   #
-  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-  # will populate targets for each conan package specified in the
-  # conanfile.txt
+  # Request compiled unit testing component only if testing is `ON`
   #
-  conan_basic_setup( TARGETS KEEP_RPATHS )
-
-  # REVISIT (sparent) : This should not be necessary but appears to be
-  set(CMAKE_CXX_STANDARD ${CONAN_SETTINGS_COMPILER_CPPSTD})
-endif()
-
-if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
-  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    #
-    # We provide aliases to the conan target to mimic the native findBoost
-    # functionality
-    #
-    add_library( Boost::boost INTERFACE IMPORTED )
-    add_library( Boost::unit_test_framework INTERFACE IMPORTED )
-    set_property( TARGET Boost::boost Boost::unit_test_framework 
-      APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
+  if( BUILD_TESTING )
+    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
   else()
-    #
-    # Request compiled unit testing component only if testing is `ON`
-    #
-    if( stlab.testing )
-      find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
-    else()
-      find_package( Boost 1.60.0 REQUIRED )
-    endif()
+    find_package( Boost 1.60.0 REQUIRED )
   endif()
 
-  if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
+  if ( BUILD_TESTING AND NOT TARGET Boost::unit_test_framework )
     message(FATAL_ERROR "Could not find Boost unit test framework.")
   endif()
-  
 
   string( APPEND either_generator
     "$<OR:$<BOOL:${stlab.boost_optional}>,"
@@ -166,7 +106,7 @@ if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
 
   add_library( libdispatch::libdispatch INTERFACE IMPORTED )
-  set_property( TARGET libdispatch::libdispatch  
+  set_property( TARGET libdispatch::libdispatch
     APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
 
   target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
@@ -191,7 +131,6 @@ endif()
 
 message(STATUS "stlab: Task System: ${stlab.task_system}")
 
-
 list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
 
 if( stlab.coroutines )
@@ -199,7 +138,7 @@ if( stlab.coroutines )
   target_link_libraries( stlab INTERFACE stlab::coroutines )
 endif()
 
-if ( stlab.testing )
+if ( BUILD_TESTING )
   include( stlab/development )
 
   #
@@ -253,22 +192,18 @@ write_basic_package_version_file(
 #
 
 if( stlab.coroutines )
-    install( TARGETS stlab coroutines EXPORT stlabTargets )
+    install(
+      TARGETS stlab coroutines
+      EXPORT stlabTargets
+      FILE_SET stlab
+    )
 else()
-    install( TARGETS stlab EXPORT stlabTargets )
+    install(
+      TARGETS stlab
+      EXPORT stlabTargets
+      FILE_SET stlab
+    )
 endif()
-
-#
-# Non-testing header files (preserving relative paths) are installed to the
-# `include` subdirectory of the `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`
-# directory. Source file permissions preserved.
-#
-install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/stlab
-  DESTINATION include
-  USE_SOURCE_PERMISSIONS
-  FILES_MATCHING
-    PATTERN "*.hpp"
-    PATTERN "*test*" EXCLUDE )
 
 #
 # A CMake configuration file is generated describing the stlab exported targets.
