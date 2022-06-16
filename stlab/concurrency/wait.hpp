@@ -176,7 +176,7 @@ struct blocking_get_guarded {
 
 template <class T>
 auto get_wait_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
-    if (x.is_ready()) return std::move(x);
+    if (x.is_ready()) return x;
 
 #if STLAB_TASK_SYSTEM(PORTABLE)
     if (!detail::pts().wake()) detail::pts().add_thread();
