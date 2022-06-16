@@ -5,16 +5,6 @@ project( stlab VERSION 1.6.2 LANGUAGES CXX )
 include( CTest )
 include( CMakeDependentOption )
 
-#
-# The `stlab.testing` and `stlab.coverage` options only appear as
-# cmake-gui and ccmake options iff stlab is the highest level project.
-# In the case that stlab is a subproject, these options are hidden from
-# the user interface and set to `OFF`
-#
-cmake_dependent_option( stlab.testing
-  "Compile the stlab tests and integrate with ctest"
-  ${BUILD_TESTING} PROJECT_IS_TOP_LEVEL OFF )
-
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF PROJECT_IS_TOP_LEVEL OFF )
@@ -74,17 +64,17 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab )
 
-if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
+if ( BUILD_TESTING OR stlab.boost_variant OR stlab.boost_optional )
   #
   # Request compiled unit testing component only if testing is `ON`
   #
-  if( stlab.testing )
+  if( BUILD_TESTING )
     find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
   else()
     find_package( Boost 1.60.0 REQUIRED )
   endif()
 
-  if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
+  if ( BUILD_TESTING AND NOT TARGET Boost::unit_test_framework )
     message(FATAL_ERROR "Could not find Boost unit test framework.")
   endif()
 
@@ -148,7 +138,7 @@ if( stlab.coroutines )
   target_link_libraries( stlab INTERFACE stlab::coroutines )
 endif()
 
-if ( stlab.testing )
+if ( BUILD_TESTING )
   include( stlab/development )
 
   #
