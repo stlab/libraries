@@ -1,18 +1,4 @@
-cmake_minimum_required( VERSION 3.8 )
-
-#
-# Here we check whether stlab is being configured in isolation or as a component
-# of a larger proeject. To do so, we query whether the `PROJECT_NAME` CMake
-# variable has been defined. In the case it has, we can conclude stlab is a
-# subproject.
-#
-# This convention has been borrowed from the Catch C++ unit testing library.
-#
-if( DEFINED PROJECT_NAME )
-  set( subproject ON )
-else()
-  set( subproject OFF )
-endif()
+cmake_minimum_required( VERSION 3.23 )
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
@@ -27,11 +13,11 @@ include( CMakeDependentOption )
 #
 cmake_dependent_option( stlab.testing
   "Compile the stlab tests and integrate with ctest"
-  ${BUILD_TESTING} "NOT subproject" OFF )
+  ${BUILD_TESTING} PROJECT_IS_TOP_LEVEL OFF )
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
-  OFF "NOT subproject" OFF )
+  OFF PROJECT_IS_TOP_LEVEL OFF )
 
 option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
 option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
@@ -86,7 +72,7 @@ target_link_libraries( stlab INTERFACE Threads::Threads )
 #
 target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
 
-add_subdirectory( stlab/concurrency )
+add_subdirectory( stlab )
 
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
   #
@@ -216,22 +202,18 @@ write_basic_package_version_file(
 #
 
 if( stlab.coroutines )
-    install( TARGETS stlab coroutines EXPORT stlabTargets )
+    install(
+      TARGETS stlab coroutines
+      EXPORT stlabTargets
+      FILE_SET stlab
+    )
 else()
-    install( TARGETS stlab EXPORT stlabTargets )
+    install(
+      TARGETS stlab
+      EXPORT stlabTargets
+      FILE_SET stlab
+    )
 endif()
-
-#
-# Non-testing header files (preserving relative paths) are installed to the
-# `include` subdirectory of the `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`
-# directory. Source file permissions preserved.
-#
-install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/stlab
-  DESTINATION include
-  USE_SOURCE_PERMISSIONS
-  FILES_MATCHING
-    PATTERN "*.hpp"
-    PATTERN "*test*" EXCLUDE )
 
 #
 # A CMake configuration file is generated describing the stlab exported targets.
