@@ -1,18 +1,20 @@
 name: Build and Tests
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+  
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
-#TODO(fernando): Build with the following options:
-  # options="-Dstlab.coroutines=ON"
-
 jobs:
   generate-matrix:
     name: Generate Job Matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -20,10 +22,8 @@ jobs:
 
       - name: Generate Job Matrix
         id: set-matrix
-        run: |
-          MATRIX=$(cat ./.github/matrix.json)
-          echo "${MATRIX}"
-          echo "::set-output name=matrix::${MATRIX}"
+        # Note: The json in this variable must be a single line for parsing to succeed.
+        run: echo "::set-output name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)"
           
   builds:
     needs: generate-matrix
@@ -35,68 +35,110 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.10.4"
 
-      - name: Install Dependencies (Unix)
-        if: ${{ matrix.config.compiler != 'Visual Studio' }}
+      - name: Install Dependencies (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
-          chmod +x .github/install.sh
-          .github/install.sh
+          brew install boost
+          brew install ninja
+        shell: bash
+
+      - name: Install Dependencies (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        run: |
+          sudo apt-get install -y ninja-build
+          sudo apt-get install -y libboost-all-dev
         shell: bash
 
       - name: Install Dependencies (Windows)
-        if: ${{ matrix.config.compiler == 'Visual Studio' }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
-          set PATH=%PYTHON%;%PYTHON%/Scripts/;%PATH%;
-          python.exe --version
-          cmake --version
-          python.exe -m pip install --upgrade pip
-          pip.exe install conan_package_tools==0.37.0
-          pip.exe install conan==1.43.0
-          conan --version
-          conan user
+          choco install --yes ninja
+          vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows boost-variant:x64-windows
         shell: cmd
 
       - name: Settting EnvVars (Linux+GCC)
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
-          echo "CONAN_GCC_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
-          echo "CONAN_DOCKER_IMAGE=conanio/gcc${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CC=gcc-${{matrix.config.version}}" >> $GITHUB_ENV
+          echo "CXX=g++-${{matrix.config.version}}" >> $GITHUB_ENV
 
       - name: Settting EnvVars (Linux+Clang)
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
-          echo "CONAN_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
-          echo "CONAN_DOCKER_IMAGE=conanio/clang${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
+          echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
       - name: Settting EnvVars (macOS)
         if: ${{ matrix.config.compiler == 'apple-clang' }}
         shell: bash
         run: |
-          echo "CONAN_APPLE_CLANG_VERSIONS=${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
 
-      - name: Settting EnvVars (Windows)
-        if: ${{ matrix.config.compiler == 'Visual Studio' }}
-        shell: powershell
-        run: |
-          echo "CONAN_VISUAL_VERSIONS=${{ matrix.config.version }}" >> $Env:GITHUB_ENV
-          echo "CMAKE_TOOLSET=${{ matrix.config.cmake_toolset }}" >> $Env:GITHUB_ENV
-
-      - name: Build (Unix)
-        if: ${{ matrix.config.compiler != 'Visual Studio' }}
+      - name: Configure (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
         shell: bash
         run: |
-          chmod +x .github/run.sh
-          .github/run.sh
+          mkdir build
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build (Windows)
-        if: ${{ matrix.config.compiler == 'Visual Studio' }}
-        shell: powershell
+      - name: Configure (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
         run: |
-          Write-Host "CONAN_VISUAL_VERSIONS: $Env:CONAN_VISUAL_VERSIONS"
-          Write-Host "CMAKE_TOOLSET:         $Env:CMAKE_TOOLSET"
-          python build.py
+          mkdir build
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure (windows)
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
+        shell: cmd
+        run: |
+          mkdir build
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
+        run: |
+          cmake --build build/
+
+      - name: Build (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        shell: bash
+        run: |
+          cmake --build build/
+
+      - name: Build (windows)
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
+        shell: cmd
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          cmake --build build/
+
+      - name: Test (ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+        shell: bash
+        run: |
+          cd build/
+          ctest
+
+      - name: Test (macos)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
+        run: |
+          cd build/
+          ctest
+
+      - name: Test (windows)
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
+        shell: bash
+        run: |
+          cd build/
+          ctest

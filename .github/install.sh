@@ -13,16 +13,17 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
         eval "$(pyenv init -)"
     fi
 
-    pyenv install 3.8.6
-    pyenv virtualenv 3.8.6 conan
+    pyenv install 3.10.4
+    pyenv virtualenv 3.10.4 conan
 
     pyenv rehash
     pyenv activate conan
 fi
 
 pip install --upgrade pip
-pip install conan_package_tools==0.37.0
-pip install conan==1.43.0
+pip install markupsafe==2.0.1
+pip install conan_package_tools==0.38.0
+pip install conan==1.49.0
 
 conan --version
 conan user
