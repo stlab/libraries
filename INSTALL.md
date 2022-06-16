@@ -2,9 +2,9 @@
  
  ## Requirements
  * C++ 14 compatible compiler
-    * Visual Studio 2015 Update 5 or later
-    * Clang 3.8 or later
-    * GCC 4.8.5 or later
+    * Visual Studio 2019 or later
+    * Clang 14 or later
+    * GCC 10 or later
     
  * boost.optional, boost.variant (only for C++14, see below for further details)
  * boost.test (only for the unit tests)
@@ -29,8 +29,3 @@
   * boost::variant, if the define STLAB_FORCE_BOOST_VARIANT is set, or
   * std::variant, if C++17 is enabled and std::variant is available, or
   * boost::variant
-  
-  
-
- 
- 

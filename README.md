@@ -26,7 +26,7 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 # Requirements
 - C++14 Compiler
--- Visual Studio 2017 (>= 15.9.0), Visual Studio 2019
+-- Visual Studio 2019
 -- gcc (>= 7)
 -- clang (>= 6)
 - boost.optional and boost.variant if the compiler's library does not provide them
@@ -34,22 +34,4 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 # Building
 
-First, you will need the following tools:
-
-- [`conan`](https://www.conan.io/) ([download](https://www.conan.io/downloads))
-- [`CMake`](https://cmake.org/) ([download](https://cmake.org/download/))
-- (Mac) Xcode 8.2.1 or later
-- (MSVC) Visual Studio 2017.9 or later
-
-`conan` and `cmake` are available on the Mac via [Homebrew](http://brew.sh). `cmake` is available on Windows via [`scoop`](http://scoop.sh/).
-
-Once they're set up, run either `setup_xcode.sh` or `setup_msvc.bat` for the platform of your choice. It will setup all necessary library dependencies and create the platform-specific project file in the `./build/` directory.
-
-*Microsoft Windows Platform Build Notes*:
-- If you are using `conan` for the first time, add `--build missing` to conan command call in `setup_msvc.bat` script
-- Use administrator command prompt if you get issues in manifest creation during `setup_msvc.bat` run (ex: `mt : general error c101008d`)
-
-# Upcomming Changes in Version 2
-* Currently we are redesigning the interface of the `future` class. We will make the associated executor of a task more explicit by removing the implicit "inheritance" of the executors from the previous future. So a continuation will not get automatically the same executor from its predecessor. If non is provided, then it will be automatically be executed via the `immediate_executor`.
-* As well we will remove all `.then()` and `.recover()` functions from the `future` interface. Only the `operator|()` and `operator^()` will remain. So the pipe notation, as it is comming with C++20 ranges, will become the only choice. Obviously this will be a breaking change.
-* In parallel we think about changing the then former `recover()` function signature, see issue [#263](https://github.com/stlab/libraries/issues/263).
+STLab is a standard CMake project. See the [running CMake](https://cmake.org/runningcmake) tutorial for an introduction to this tool.
