@@ -157,7 +157,7 @@ struct blocking_get_guarded {
         _condition.notify_one();
         /*
             A valid future<> result is required because the following reduction in
-            recover() will attach a continuation - which will crash on in invalid
+            recover() will attach a continuation - which will crash on an invalid
             future<>.
          */
         return make_exceptional_future<T>(
