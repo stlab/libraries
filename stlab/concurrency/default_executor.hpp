@@ -31,8 +31,8 @@
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
 #include <algorithm>
-#include <array>
 #include <atomic>
+#include <climits>
 #include <condition_variable>
 #include <thread>
 #include <vector>
