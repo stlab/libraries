@@ -16,10 +16,6 @@ endif()
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
-# Overriden from Conan?
-# set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 include( CTest )
 include( CMakeDependentOption )
 
@@ -64,13 +60,6 @@ add_library( stlab INTERFACE )
 add_library( stlab::stlab ALIAS stlab )
 
 #
-# stlab requires C++17 support, at a minimum. Setting the `cxx_std_17` compile
-# features ensures that the corresponding C++ standard flag is populated in
-# targets linking to stlab.
-#
-# target_compile_features( stlab INTERFACE cxx_std_14)
-
-#
 # The include directory for stlab can be expected to vary between build
 # and installaion. Here we use a CMake generator expression to dispatch
 # on how the configuration under which this library is being consumed.
@@ -99,44 +88,19 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab/concurrency )
 
-if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  include( ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake )
-  #
-  # using the `TARGETS` keyword in the `conan_basic_setup` invocation
-  # will populate targets for each conan package specified in the
-  # conanfile.txt
-  #
-  conan_basic_setup( TARGETS KEEP_RPATHS )
-
-  # REVISIT (sparent) : This should not be necessary but appears to be
-  set(CMAKE_CXX_STANDARD ${CONAN_SETTINGS_COMPILER_CPPSTD})
-endif()
-
 if ( stlab.testing OR stlab.boost_variant OR stlab.boost_optional )
-  if( EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    #
-    # We provide aliases to the conan target to mimic the native findBoost
-    # functionality
-    #
-    add_library( Boost::boost INTERFACE IMPORTED )
-    add_library( Boost::unit_test_framework INTERFACE IMPORTED )
-    set_property( TARGET Boost::boost Boost::unit_test_framework 
-      APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::boost )
+  #
+  # Request compiled unit testing component only if testing is `ON`
+  #
+  if( stlab.testing )
+    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
   else()
-    #
-    # Request compiled unit testing component only if testing is `ON`
-    #
-    if( stlab.testing )
-      find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
-    else()
-      find_package( Boost 1.60.0 REQUIRED )
-    endif()
+    find_package( Boost 1.60.0 REQUIRED )
   endif()
 
   if (stlab.testing AND NOT TARGET Boost::unit_test_framework)
     message(FATAL_ERROR "Could not find Boost unit test framework.")
   endif()
-  
 
   string( APPEND either_generator
     "$<OR:$<BOOL:${stlab.boost_optional}>,"
@@ -166,7 +130,7 @@ if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
   message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
 
   add_library( libdispatch::libdispatch INTERFACE IMPORTED )
-  set_property( TARGET libdispatch::libdispatch  
+  set_property( TARGET libdispatch::libdispatch
     APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
 
   target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
@@ -190,7 +154,6 @@ else()
 endif()
 
 message(STATUS "stlab: Task System: ${stlab.task_system}")
-
 
 list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
 
