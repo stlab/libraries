@@ -1,9 +1,9 @@
 {
     "config": [
         {
-            "name": "Linux GCC 10",
+            "name": "Linux GCC 11",
             "compiler": "gcc",
-            "version": "10",
+            "version": "11",
             "os": "ubuntu-22.04"
         },
         {
