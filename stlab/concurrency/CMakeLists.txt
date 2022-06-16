@@ -8,12 +8,14 @@ target_sources( stlab INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/main_executor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/optional.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/progress.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ready_future.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system_timer.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/task.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/traits.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tuple_algorithm.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utility.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/variant.hpp>
+    ${CMAKE_CURRENT_SOURCE_DIR}/variant.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/wait.hpp>
   $<INSTALL_INTERFACE:
     include/stlab/concurrency/channel.hpp
     include/stlab/concurrency/config.hpp
@@ -24,12 +26,14 @@ target_sources( stlab INTERFACE
     include/stlab/concurrency/main_executor.hpp
     include/stlab/concurrency/optional.hpp
     include/stlab/concurrency/progress.hpp
+    include/stlab/concurrency/ready_future.hpp
     include/stlab/concurrency/system_timer.hpp
     include/stlab/concurrency/task.hpp
     include/stlab/concurrency/traits.hpp
     include/stlab/concurrency/tuple_algorithm.hpp
     include/stlab/concurrency/utility.hpp
-    include/stlab/concurrency/variant.hpp>)
+    include/stlab/concurrency/variant.hpp
+    include/stlab/concurrency/wait.hpp>)
 
 if(CXX_COMPILER_ID MATCHES MSVC)
   if(CXX_COMPILER_VERSION VERSION_LESS 99)
