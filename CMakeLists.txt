@@ -49,7 +49,6 @@ target_include_directories( stlab INTERFACE
 # target called `Thread::Thread` which transitively supplies inlude directories,
 # compiler flags, and linker flags to CMake targets linking to it.
 #
-set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
 find_package( Threads REQUIRED )
 target_link_libraries( stlab INTERFACE Threads::Threads )
 
