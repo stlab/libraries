@@ -6,8 +6,8 @@
 
 /**************************************************************************************************/
 
-#ifndef STLAB_CONCURRENCY_WAIT_HPP
-#define STLAB_CONCURRENCY_WAIT_HPP
+#ifndef STLAB_CONCURRENCY_AWAIT_HPP
+#define STLAB_CONCURRENCY_AWAIT_HPP
 
 #include <chrono>
 #include <condition_variable>
@@ -85,7 +85,7 @@ struct _get_optional<bool> {
 } // namespace detail
 
 template <typename T>
-T wait(future<T> x) {
+T await(future<T> x) {
     if (auto result = x.get_try())
         return detail::_get_optional<decltype(result)>{}(std::move(result)); // if ready, done
 
@@ -119,7 +119,7 @@ T wait(future<T> x) {
          backoff *= 2) {
         {
             std::unique_lock<std::mutex> lock{m};
-            if (condition.wait_for(lock, backoff, [&] { return flag; })) {
+            if (condition.await_for(lock, backoff, [&] { return flag; })) {
                 break;
             }
         }
@@ -174,7 +174,7 @@ struct blocking_get_guarded {
 } // namespace detail
 
 template <class T>
-auto wait_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
+auto await_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
     if (x.is_ready()) return x;
 
 #if STLAB_TASK_SYSTEM(PORTABLE)
@@ -195,18 +195,18 @@ auto wait_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T>
 /**************************************************************************************************/
 
 template <typename T>
-[[deprecated("Use wait instead.")]] T blocking_get(future<T> x) {
-    return wait(std::move(x));
+[[deprecated("Use await instead.")]] T blocking_get(future<T> x) {
+    return await(std::move(x));
 }
 
 template <class T>
-[[deprecated("Use wait_for instead.")]] auto blocking_get_for(
+[[deprecated("Use await_for instead.")]] auto blocking_get_for(
     future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
-    wait_for(std::move(x), timeout);
+    await_for(std::move(x), timeout);
 }
 
 template <class T>
-[[deprecated("Use wait_for instead.")]] auto blocking_get(
+[[deprecated("Use await_for instead.")]] auto blocking_get(
     future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
     return blocking_get_for(std::move(x), timeout).get_try();
 }
@@ -219,4 +219,4 @@ template <class T>
 
 } // namespace stlab
 
-#endif // STLAB_CONCURRENCY_WAIT_HPP
+#endif // STLAB_CONCURRENCY_AWAIT_HPP

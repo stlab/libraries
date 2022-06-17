@@ -10,7 +10,7 @@
 #define STLAB_CONCURRENCY_UTILITY_HPP
 
 #include <stlab/concurrency/ready_future.hpp>
-#include <stlab/concurrency/wait.hpp>
+#include <stlab/concurrency/await.hpp>
 
 /**************************************************************************************************/
 
@@ -26,5 +26,7 @@
            (int)std::hash<std::thread::id>()(std::this_thread::get_id()), S);
 
 #endif
+
+/**************************************************************************************************/
 
 #endif // STLAB_CONCURRENCY_UTILITY_HPP
