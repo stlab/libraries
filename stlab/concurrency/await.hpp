@@ -119,7 +119,7 @@ T await(future<T> x) {
          backoff *= 2) {
         {
             std::unique_lock<std::mutex> lock{m};
-            if (condition.await_for(lock, backoff, [&] { return flag; })) {
+            if (condition.wait_for(lock, backoff, [&] { return flag; })) {
                 break;
             }
         }
