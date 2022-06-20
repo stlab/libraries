@@ -12,30 +12,19 @@ cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF PROJECT_IS_TOP_LEVEL OFF )
 
-option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
-option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
+option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." OFF )
 option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
 
 set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
 
-#
-# On apple we have to force the usage of boost.variant, because Apple's
-# implementation of C++17 is not complete
-#
-if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
-  message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
-  set( stlab.boost_variant ON )
-endif()
-
-mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
-
+mark_as_advanced( stlab.coroutines )
 
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
 endif()
 
-if( ( stlab.boost_variant OR stlab.boost_optional ) AND NOT Boost_FOUND )
-  message( SEND_ERROR "stlab.boost_variant OR stlab.boost_optional is enabled, but a Boost installation was not found." )
+if( STLAB_USE_BOOST_CPP17_SHIMS AND NOT Boost_FOUND )
+  message( SEND_ERROR "STLAB_USE_BOOST_CPP17_SHIMS is enabled, but a Boost installation was not found." )
 endif()
 
 #
@@ -74,12 +63,10 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab )
 
-if ( stlab.boost_variant OR stlab.boost_optional )
+if ( STLAB_USE_BOOST_CPP17_SHIMS )
   target_link_libraries( stlab INTERFACE Boost::boost )
 
-  target_compile_definitions( stlab INTERFACE
-    $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
-    $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
+  target_compile_definitions( stlab INTERFACE STLAB_USE_BOOST_CPP17_SHIMS )
 endif()
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
