@@ -5,6 +5,9 @@ project( stlab VERSION 1.6.2 LANGUAGES CXX )
 include( CTest )
 include( CMakeDependentOption )
 
+find_package( Threads REQUIRED )
+find_package( Boost 1.60.0 OPTIONAL_COMPONENTS unit_test_framework )
+
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF PROJECT_IS_TOP_LEVEL OFF )
@@ -25,6 +28,15 @@ if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_
 endif()
 
 mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
+
+
+if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
+  message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
+endif()
+
+if( ( stlab.boost_variant OR stlab.boost_optional ) AND NOT Boost_FOUND )
+  message( SEND_ERROR "stlab.boost_variant OR stlab.boost_optional is enabled, but a Boost installation was not found." )
+endif()
 
 #
 # stlab has no compiled components. As such, we declare it as an `INTERFACE`
@@ -49,7 +61,6 @@ target_include_directories( stlab INTERFACE
 # target called `Thread::Thread` which transitively supplies inlude directories,
 # compiler flags, and linker flags to CMake targets linking to it.
 #
-find_package( Threads REQUIRED )
 target_link_libraries( stlab INTERFACE Threads::Threads )
 
 #
@@ -63,42 +74,12 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab )
 
-if ( BUILD_TESTING OR stlab.boost_variant OR stlab.boost_optional )
-  #
-  # Request compiled unit testing component only if testing is `ON`
-  #
-  if( BUILD_TESTING )
-    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
-  else()
-    find_package( Boost 1.60.0 REQUIRED )
-  endif()
+if ( stlab.boost_variant OR stlab.boost_optional )
+  target_link_libraries( stlab INTERFACE Boost::boost )
 
-  if ( BUILD_TESTING AND NOT TARGET Boost::unit_test_framework )
-    message(FATAL_ERROR "Could not find Boost unit test framework.")
-  endif()
-
-  string( APPEND either_generator
-    "$<OR:$<BOOL:${stlab.boost_optional}>,"
-         "$<BOOL:${stlab.boost_variant}>>" )
-
-  #
-  # Link to the `Boost::boost` target is either `stlab.boost_optional`
-  # or `stlab.boost_variant` are set `ON`, which provides the include
-  # directory for the boost header.
-  #
-  target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
-
-  #
-  # Conditionally specify the corresponding compiler definitions for
-  # each boost algebraic data type library. In the case that either
-  # is specified, a preprocessor definition is used to specify that
-  # `auto_ptr` should not be used in the boost headers.
-  #
   target_compile_definitions( stlab INTERFACE
     $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
     $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
-
-  unset( either_generator )
 endif()
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
