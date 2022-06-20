@@ -6,7 +6,7 @@ include( CTest )
 include( CMakeDependentOption )
 
 find_package( Threads REQUIRED )
-find_package( Boost 1.60.0 OPTIONAL_COMPONENTS unit_test_framework )
+find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
