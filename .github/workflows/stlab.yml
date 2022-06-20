@@ -101,6 +101,12 @@ jobs:
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           cmake --build build/
 
+      - name: Build (wasm)
+        if: ${{ startsWith(matrix.config.compiler, 'emcc') }}
+        shell: cmd
+        run: |
+          docker build -t stlab-wasm-test --file .github/wasm.dockerfile .
+
       - name: Test
         shell: bash
         run: |

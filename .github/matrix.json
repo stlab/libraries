@@ -24,6 +24,11 @@
             "version": "16",
             "os": "windows-2019",
             "cmake_toolset": "Visual Studio 16 2019"
+        },
+        {
+            "name": "Linux Webassembly",
+            "compiler": "emcc",
+            "os": "ubuntu-22.04"
         }
     ]
 }

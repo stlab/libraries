@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.23 )
+cmake_minimum_required( VERSION 3.22 )
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
@@ -68,9 +68,9 @@ if ( BUILD_TESTING OR stlab.boost_variant OR stlab.boost_optional )
   # Request compiled unit testing component only if testing is `ON`
   #
   if( BUILD_TESTING )
-    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
+    find_package( Boost 1.79.0 REQUIRED COMPONENTS unit_test_framework )
   else()
-    find_package( Boost 1.60.0 REQUIRED )
+    find_package( Boost 1.79.0 REQUIRED )
   endif()
 
   if ( BUILD_TESTING AND NOT TARGET Boost::unit_test_framework )
