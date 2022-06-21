@@ -1,50 +1,31 @@
 #ifndef STLAB_SET_CURRENT_THREAD_NAME_HPP
 #define STLAB_SET_CURRENT_THREAD_NAME_HPP
 
-/**************************************************************************************************/
-#if defined(__APPLE__)
+#ifdef STLAB_WIN32_THREADS
+  #include <cstring>
+  #include <string>
 
-#include <pthread.h>
+  #include <windows.h>
 
-/**************************************************************************************************/
-#elif defined(_MSC_VER)
-
-#include <cstring>
-#include <string>
-
-#include <windows.h>
-
-#include <processthreadsapi.h>
-#include <stringapiset.h>
-
-/**************************************************************************************************/
-#elif defined(__EMSCRIPTEN__) && defined(__EMSCRIPTEN_PTHREADS__)
-
-#include <pthread.h>
-
-#include <emscripten/threading.h>
-
-/**************************************************************************************************/
-#elif defined(__has_include) && __has_include(<pthread.h>)
-
-#include <pthread.h>
-
-/**************************************************************************************************/
+  #include <processthreadsapi.h>
+  #include <stringapiset.h>
+#elif defined(STLAB_PTHREAD_THREADS)
+  #include <pthread.h>
+#elif defined(STLAB_PTHREAD_EMSCRIPTEN_THREADS)
+  #include <pthread.h>
+  #include <emscripten/threading.h>
+#elif defined(STLAB_PTHREAD_APPLE_THREADS)
+  #include <pthread.h>
+#elif defined(STLAB_NO_THREADS)
+  // Do nothing
+#else
+  #error "Unspecified or unknown thread mode set."
 #endif
-
-/**************************************************************************************************/
 
 namespace stlab {
 
-/**************************************************************************************************/
-#if defined(__APPLE__)
-
-inline void set_current_thread_name(const char* name) { pthread_setname_np(name); }
-
-/**************************************************************************************************/
-#elif defined(_MSC_VER)
-
 inline void set_current_thread_name(const char* name) {
+#ifdef STLAB_WIN32_THREADS
     /* Should string->wstring be split out to a utility? */
     int count = MultiByteToWideChar(CP_UTF8, 0, name, static_cast<int>(std::strlen(name)), NULL, 0);
     if (count <= 0) return;
@@ -54,27 +35,18 @@ inline void set_current_thread_name(const char* name) {
     if (count <= 0) return;
 
     (void)SetThreadDescription(GetCurrentThread(), str.c_str());
-}
-
-/**************************************************************************************************/
-#elif defined(__EMSCRIPTEN__) && defined(__EMSCRIPTEN_PTHREADS__)
-
-inline void set_current_thread_name(const char* name) {
+#elif defined(STLAB_PTHREAD_EMSCRIPTEN_THREADS)
     emscripten_set_thread_name(pthread_self(), name);
-}
-
-/**************************************************************************************************/
-#elif defined(__has_include) && __has_include(<pthread.h>)
-
-inline void set_current_thread_name(const char* name) { pthread_setname_np(pthread_self(), name); }
-
-/**************************************************************************************************/
+#elif defined(STLAB_PTHREAD_APPLE_THREADS)
+    pthread_setname_np(name);
+#elif defined(STLAB_PTHREAD_THREADS)
+    pthread_setname_np(pthread_self(), name);
+#elif defined(STLAB_NO_THREADS)
+    // Nothing
 #else
-
-inline void set_current_thread_name(const char*) {}
-
-/**************************************************************************************************/
+    #error "Unspecified or unknown thread mode set."
 #endif
+}
 
 } // namespace stlab
 

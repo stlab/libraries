@@ -2,10 +2,12 @@ cmake_minimum_required( VERSION 3.23 )
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
 include( CTest )
 include( CMakeDependentOption )
+include( StlabUtil )
 
-find_package( Threads REQUIRED )
+find_package( Threads )
 find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 
 cmake_dependent_option( stlab.coverage
@@ -14,6 +16,8 @@ cmake_dependent_option( stlab.coverage
 
 option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." OFF )
 option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." FALSE )
+stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
+set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
 set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
 
@@ -23,6 +27,10 @@ endif()
 
 if( STLAB_USE_BOOST_CPP17_SHIMS AND NOT Boost_FOUND )
   message( SEND_ERROR "STLAB_USE_BOOST_CPP17_SHIMS is enabled, but a Boost installation was not found." )
+endif()
+
+if( (NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND )
+  message( SEND_ERROR "STLAB_THREAD_SYSTEM is not \"none\", but a thread system was not found." )
 endif()
 
 #
@@ -43,12 +51,9 @@ target_include_directories( stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include> )
 
-#
-# As of CMake version 3.1, the FindThreads CMake module supplies an imported
-# target called `Thread::Thread` which transitively supplies inlude directories,
-# compiler flags, and linker flags to CMake targets linking to it.
-#
-target_link_libraries( stlab INTERFACE Threads::Threads )
+if ( NOT STLAB_THREAD_SYSTEM STREQUAL "none" )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
+endif()
 
 #
 # Several definitions are specified for the microsoft compiler. These have
@@ -68,6 +73,18 @@ endif()
 
 if ( STLAB_NO_STD_COROUTINES )
   target_compile_definitions( stlab INTERFACE STLAB_NO_STD_COROUTINES )
+endif()
+
+if ( STLAB_THREAD_SYSTEM STREQUAL "win32"  )
+  target_compile_definitions( stlab INTERFACE STLAB_WIN32_THREADS )
+elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread" )
+  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_THREADS )
+elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-emscripten" )
+  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_EMSCRIPTEN_THREADS )
+elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-apple" )
+  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_APPLE_THREADS )
+else ()
+  target_compile_definitions( stlab INTERFACE STLAB_NO_THREADS )
 endif()
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
