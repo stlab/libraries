@@ -1,18 +1,16 @@
-if( NOT STLAB_NO_COROUTINES )
-  add_executable( stlab.test.channel
-    channel_functor_tests.cpp
-    channel_merge_round_robin_tests.cpp
-    channel_merge_unordered_tests.cpp
-    channel_merge_zip_with_tests.cpp
-    channel_process_tests.cpp
-    channel_test_helper.cpp
-    channel_tests.cpp
-    tuple_algorithm_test.cpp
-    main.cpp
-    channel_test_helper.hpp )
+add_executable( stlab.test.channel
+  channel_functor_tests.cpp
+  channel_merge_round_robin_tests.cpp
+  channel_merge_unordered_tests.cpp
+  channel_merge_zip_with_tests.cpp
+  channel_process_tests.cpp
+  channel_test_helper.cpp
+  channel_tests.cpp
+  tuple_algorithm_test.cpp
+  main.cpp
+  channel_test_helper.hpp )
 
-  target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
-endif()
+target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
 
