@@ -2012,7 +2012,7 @@ auto operator co_await(stlab::future<R> f) {
                 .detach();
         }
     };
-    return Awaiter{std::move(f)};
+    return Awaiter{std::move(f), {}};
 }
 
 inline auto operator co_await(stlab::future<void> f) {
