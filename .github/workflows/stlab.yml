@@ -73,12 +73,19 @@ jobs:
           echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
           echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
 
-      - name: Configure (Unix)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
+      - name: Configure (Ubuntu)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
         shell: bash
         run: |
           mkdir build
           cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
+
+      - name: Configure (MacOS)
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
+        run: |
+          mkdir build
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_STD_COROUTINES=TRUE
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}

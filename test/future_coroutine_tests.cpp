@@ -18,8 +18,6 @@
 
 #include "future_test_helper.hpp"
 
-#if STLAB_FUTURE_COROUTINES
-
 using namespace stlab;
 using namespace future_test_helper;
 
@@ -116,5 +114,3 @@ BOOST_AUTO_TEST_CASE(future_coroutine_combined_void_int) {
     BOOST_REQUIRE_EQUAL(42, intCheck);
     BOOST_REQUIRE(boolCheck.load());
 }
-
-#endif
