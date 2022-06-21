@@ -28,19 +28,10 @@
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
 
-// as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
-// support for the channels tests
-#ifdef __has_include
-#if __has_include(<experimental/coroutine>) && STLAB_FUTURE_COROUTINES
-#define STLAB_FUTURE_COROUTINES_SUPPORT() 1
-#include <experimental/coroutine>
-#include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/immediate_executor.hpp>
-#endif
-#endif
-
-#if !defined(STLAB_FUTURE_COROUTINES_SUPPORT)
-#define STLAB_FUTURE_COROUTINES_SUPPORT() 0
+#ifndef STLAB_NO_COROUTINES
+    #include <coroutine>
+    #include <stlab/concurrency/default_executor.hpp>
+    #include <stlab/concurrency/immediate_executor.hpp>
 #endif
 
 /**************************************************************************************************/
@@ -1942,10 +1933,10 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
 
 /**************************************************************************************************/
 
-#if STLAB_FUTURE_COROUTINES_SUPPORT() == 1
+#ifndef STLAB_NO_COROUTINES
 
 template <typename T, typename... Args>
-struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
+struct std::coroutine_traits<stlab::future<T>, Args...> {
     struct promise_type {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
 
@@ -1957,9 +1948,9 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
 
         stlab::future<T> get_return_object() { return std::move(_promise.second); }
 
-        auto initial_suspend() const { return std::experimental::suspend_never{}; }
+        auto initial_suspend() const { return std::suspend_never{}; }
 
-        auto final_suspend() const { return std::experimental::suspend_never{}; }
+        auto final_suspend() const noexcept { return std::suspend_never{}; }
 
         template <typename U>
         void return_value(U&& val) {
@@ -1971,7 +1962,7 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
 };
 
 template <typename... Args>
-struct std::experimental::coroutine_traits<stlab::future<void>, Args...> {
+struct std::coroutine_traits<stlab::future<void>, Args...> {
     struct promise_type {
         std::pair<stlab::packaged_task<>, stlab::future<void>> _promise;
 
@@ -1981,9 +1972,9 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...> {
 
         inline stlab::future<void> get_return_object() { return _promise.second; }
 
-        inline auto initial_suspend() const { return std::experimental::suspend_never{}; }
+        inline auto initial_suspend() const { return std::suspend_never{}; }
 
-        inline auto final_suspend() const { return std::experimental::suspend_never{}; }
+        inline auto final_suspend() const noexcept { return std::suspend_never{}; }
 
         inline void return_void() { _promise.first(); }
 
@@ -2003,7 +1994,7 @@ auto operator co_await(stlab::future<R> f) {
 
         auto await_resume() { return std::move(_result); }
 
-        void await_suspend(std::experimental::coroutine_handle<> ch) {
+        void await_suspend(std::coroutine_handle<> ch) {
             std::move(_input)
                 .then([this, ch](auto&& result) mutable {
                           this->_result = std::forward<decltype(result)>(result);
@@ -2023,7 +2014,7 @@ inline auto operator co_await(stlab::future<void> f) {
 
         inline auto await_resume() {}
 
-        inline void await_suspend(std::experimental::coroutine_handle<> ch) {
+        inline void await_suspend(std::coroutine_handle<> ch) {
             std::move(_input)
                 .then([ch]() mutable { ch.resume(); })
                 .detach();
@@ -2032,6 +2023,6 @@ inline auto operator co_await(stlab::future<void> f) {
     return Awaiter{std::move(f)};
 }
 
-#endif
+#endif // STLAB_NO_COROUTINES
 
 #endif

@@ -5,6 +5,7 @@ target_sources( stlab INTERFACE
   FILES
     algorithm/reverse.hpp
 
+    concurrency/channel.hpp
     concurrency/config.hpp
     concurrency/default_executor.hpp
     concurrency/executor_base.hpp
@@ -33,21 +34,4 @@ target_sources( stlab INTERFACE
     scope.hpp
     utility.hpp
     version.hpp
-)
-
-if(CXX_COMPILER_ID MATCHES MSVC)
-  if(CXX_COMPILER_VERSION VERSION_LESS 99)
-    get_target_property(wants_coroutines stlab COROUTINES)
-    if(wants_coroutines)
-      message(STATUS "Not including concurrency/channel.hpp in the target sources for stlab")
-      return()
-    endif()
-  endif()
-endif()
-
-target_sources( stlab INTERFACE
-  FILE_SET stlab
-  TYPE HEADERS
-  BASE_DIRS ../
-  FILES concurrency/channel.hpp
 )

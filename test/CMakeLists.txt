@@ -1,6 +1,4 @@
-if( NOT ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC"
-      AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "99.99.99"
-      AND stlab.coroutines ) )
+if( NOT STLAB_NO_COROUTINES )
   add_executable( stlab.test.channel
     channel_functor_tests.cpp
     channel_merge_round_robin_tests.cpp
@@ -54,8 +52,9 @@ add_executable( stlab.test.future
   main.cpp
   future_test_helper.hpp )
 
-target_sources( stlab.test.future PUBLIC
-  $<$<BOOL:$<TARGET_PROPERTY:COROUTINES>>:future_coroutine_tests.cpp> )
+if( NOT STLAB_NO_COROUTINES )
+  target_sources( stlab.test.future PUBLIC future_coroutine_tests.cpp )
+endif()
 
 target_compile_definitions(stlab.test.future PRIVATE STLAB_UNIT_TEST)
 

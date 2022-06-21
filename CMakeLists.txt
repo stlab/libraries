@@ -13,11 +13,9 @@ cmake_dependent_option( stlab.coverage
   OFF PROJECT_IS_TOP_LEVEL OFF )
 
 option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." OFF )
-option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
+option( STLAB_NO_COROUTINES "Suppress usage of coroutines. Useful for non-conforming compilers." OFF )
 
 set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
-
-mark_as_advanced( stlab.coroutines )
 
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
@@ -65,8 +63,11 @@ add_subdirectory( stlab )
 
 if ( STLAB_USE_BOOST_CPP17_SHIMS )
   target_link_libraries( stlab INTERFACE Boost::boost )
-
   target_compile_definitions( stlab INTERFACE STLAB_USE_BOOST_CPP17_SHIMS )
+endif()
+
+if ( STLAB_NO_COROUTINES )
+  target_compile_definitions( stlab INTERFACE STLAB_NO_COROUTINES )
 endif()
 
 if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
@@ -99,11 +100,6 @@ endif()
 message(STATUS "stlab: Task System: ${stlab.task_system}")
 
 list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
-
-if( stlab.coroutines )
-  include( stlab/coroutines )
-  target_link_libraries( stlab INTERFACE stlab::coroutines )
-endif()
 
 if ( BUILD_TESTING )
   include( stlab/development )
@@ -158,19 +154,11 @@ write_basic_package_version_file(
 # intrinsic
 #
 
-if( stlab.coroutines )
-    install(
-      TARGETS stlab coroutines
-      EXPORT stlabTargets
-      FILE_SET stlab
-    )
-else()
-    install(
-      TARGETS stlab
-      EXPORT stlabTargets
-      FILE_SET stlab
-    )
-endif()
+install(
+  TARGETS stlab
+  EXPORT stlabTargets
+  FILE_SET stlab
+)
 
 #
 # A CMake configuration file is generated describing the stlab exported targets.
