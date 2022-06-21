@@ -85,7 +85,7 @@ jobs:
         shell: bash
         run: |
           mkdir build
-          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_COROUTINES=YES
+          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_COROUTINES=TRUE
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
