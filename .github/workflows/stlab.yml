@@ -77,39 +77,39 @@ jobs:
         if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
         shell: bash
         run: |
-          mkdir build
-          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
+          mkdir ../build
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
 
       - name: Configure (MacOS)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
-          mkdir build
-          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_STD_COROUTINES=TRUE
+          mkdir ../build
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_STD_COROUTINES=TRUE
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-          mkdir build
-          cmake -S. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23
+          mkdir ..\build
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23
 
       - name: Build (Unix)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
-          cmake --build build/
+          cmake --build ../build/
 
       - name: Build (windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-          cmake --build build/
+          cmake --build ../build/
 
       - name: Test
         shell: bash
         run: |
-          cd build/
+          cd ../build/
           ctest

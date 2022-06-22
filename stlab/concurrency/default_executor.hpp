@@ -9,9 +9,9 @@
 #ifndef STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
-#include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
+#include <stlab/config.hpp>
 
 #include <cassert>
 #include <chrono>

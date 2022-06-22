@@ -71,6 +71,7 @@ add_library( stlab::stlab ALIAS stlab )
 #
 target_include_directories( stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
   $<INSTALL_INTERFACE:include> )
 
 #
@@ -86,56 +87,23 @@ add_subdirectory( stlab )
 
 if ( STLAB_USE_BOOST_CPP17_SHIMS )
   target_link_libraries( stlab INTERFACE Boost::boost )
-  target_compile_definitions( stlab INTERFACE STLAB_USE_BOOST_CPP17_SHIMS )
 endif()
 
-if ( STLAB_NO_STD_COROUTINES )
-  target_compile_definitions( stlab INTERFACE STLAB_NO_STD_COROUTINES )
+if ( NOT STLAB_THREAD_SYSTEM STREQUAL "none"  )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
 endif()
 
-if ( STLAB_THREAD_SYSTEM STREQUAL "win32"  )
-  target_compile_definitions( stlab INTERFACE STLAB_WIN32_THREADS )
-  target_link_libraries( stlab INTERFACE Threads::Threads )
-elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread" )
-  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_THREADS )
-  target_link_libraries( stlab INTERFACE Threads::Threads )
-elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-emscripten" )
-  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_EMSCRIPTEN_THREADS )
-  target_link_libraries( stlab INTERFACE Threads::Threads )
-elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-apple" )
-  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_APPLE_THREADS )
-  target_link_libraries( stlab INTERFACE Threads::Threads )
-else ()
-  target_compile_definitions( stlab INTERFACE STLAB_NO_THREADS )
-endif()
-
-if (STLAB_TASK_SYSTEM STREQUAL "portable")
-  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_PORTABLE )
-elseif (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
-  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_LIBDISPATCH )
+if (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
-elseif (STLAB_TASK_SYSTEM STREQUAL "emscripten")
-  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_EMSCRIPTEN )
-elseif (STLAB_TASK_SYSTEM STREQUAL "windows")
-  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_WINDOWS )
-else()
-  message(FATAL_ERROR "Invalid Task System: ${STLAB_TASK_SYSTEM}")
 endif()
 
 if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
-  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_LIBDISPATCH )
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
-elseif (STLAB_MAIN_EXECUTOR STREQUAL "emscripten")
-  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_EMSCRIPTEN )
 elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
-  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_QT )
   target_link_libraries( stlab INTERFACE Qt6::Core )
-elseif (STLAB_MAIN_EXECUTOR STREQUAL "none")
-  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_NONE )
-else()
-  message(FATAL_ERROR "Invalid main executor variant: ${STLAB_MAIN_EXECUTOR}")
 endif()
 
+message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 

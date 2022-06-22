@@ -18,7 +18,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <stlab/concurrency/config.hpp>
+#include <stlab/config.hpp>
 
 /**************************************************************************************************/
 

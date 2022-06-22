@@ -6,7 +6,6 @@ target_sources( stlab INTERFACE
     algorithm/reverse.hpp
 
     concurrency/channel.hpp
-    concurrency/config.hpp
     concurrency/default_executor.hpp
     concurrency/executor_base.hpp
     concurrency/future.hpp
@@ -34,4 +33,14 @@ target_sources( stlab INTERFACE
     scope.hpp
     utility.hpp
     version.hpp
+)
+
+stlab_generate_config_file()
+
+target_sources( stlab INTERFACE
+  FILE_SET stlab
+  TYPE HEADERS
+  BASE_DIRS ${CMAKE_BINARY_DIR}
+  FILES
+    ${CMAKE_BINARY_DIR}/stlab/config.hpp
 )

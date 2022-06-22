@@ -1,24 +1,40 @@
 /*
-    Copyright 2015 Adobe
-    Distributed under the Boost Software License, Version 1.0.
-    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+  Copyright 2015-2021 Adobe
+  Distributed under the Boost Software License, Version 1.0.
+  (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
 
-/**************************************************************************************************/
+#ifndef STLAB_CONFIG_HPP
+#define STLAB_CONFIG_HPP
 
-#ifndef STLAB_CONCURRENCY_CONFIG_HPP
-#define STLAB_CONCURRENCY_CONFIG_HPP
+// Configuration generated from CMake
 
-#include <stlab/concurrency/config_task_system.hpp>
+#cmakedefine STLAB_USE_BOOST_CPP17_SHIMS
+#cmakedefine STLAB_NO_STD_COROUTINES
 
-/**************************************************************************************************/
+#define STLAB_THREADS(X) (STLAB_THREADS_##X())
+#cmakedefine01 STLAB_THREADS_WIN32()
+#cmakedefine01 STLAB_THREADS_PTHREAD()
+#cmakedefine01 STLAB_THREADS_PTHREAD_EMSCRIPTEN()
+#cmakedefine01 STLAB_THREADS_PTHREAD_APPLE()
+#cmakedefine01 STLAB_THREADS_NONE()
+
+#define STLAB_TASK_SYSTEM(X) (STLAB_TASK_SYSTEM_##X())
+#cmakedefine01 STLAB_TASK_SYSTEM_PORTABLE()
+#cmakedefine01 STLAB_TASK_SYSTEM_LIBDISPATCH()
+#cmakedefine01 STLAB_TASK_SYSTEM_EMSCRIPTEN()
+#cmakedefine01 STLAB_TASK_SYSTEM_WINDOWS()
+
+#define STLAB_MAIN_EXECUTOR(X) (STLAB_MAIN_EXECUTOR_##X())
+#cmakedefine01 STLAB_MAIN_EXECUTOR_LIBDISPATCH()
+#cmakedefine01 STLAB_MAIN_EXECUTOR_EMSCRIPTEN()
+#cmakedefine01 STLAB_MAIN_EXECUTOR_QT()
+#cmakedefine01 STLAB_MAIN_EXECUTOR_NONE()
+
+// Various functionality macros
 
 #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 0
-#define STLAB_FEATURE_PRIVATE_COROUTINES() 0
-
 #define STLAB_FEATURE(X) (STLAB_FEATURE_PRIVATE_##X())
-
-/**************************************************************************************************/
 
 #define STLAB_CPP_VERSION(X) (STLAB_CPP_VERSION_PRIVATE() == (X))
 #define STLAB_CPP_VERSION_LESS_THAN(X) (STLAB_CPP_VERSION_PRIVATE() < (X))
@@ -62,7 +78,7 @@
     #endif
 #endif
 
-/**************************************************************************************************/
+// STLAB_NODISCARD macro
 
 #if __cplusplus < 201703L
 #define STLAB_NODISCARD()
@@ -70,9 +86,4 @@
 #define STLAB_NODISCARD() [[nodiscard]]
 #endif
 
-
-/**************************************************************************************************/
-
-#endif // STLAB_CONCURRENCY_CONFIG_HPP
-
-/**************************************************************************************************/
+#endif // STLAB_CONFIG_HPP
