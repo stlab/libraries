@@ -13,9 +13,7 @@
 
 #define STLAB_MAIN_EXECUTOR_LIBDISPATCH 1
 #define STLAB_MAIN_EXECUTOR_EMSCRIPTEN 2
-#define STLAB_MAIN_EXECUTOR_WINDOWS 3
-#define STLAB_MAIN_EXECUTOR_QT 4
-#define STLAB_MAIN_EXECUTOR_PORTABLE 5
+#define STLAB_MAIN_EXECUTOR_QT 3
 
 
 #if defined(QT_CORE_LIB) && !defined(STLAB_DISABLE_QT_MAIN_EXECUTOR)
@@ -24,10 +22,8 @@
 #define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_LIBDISPATCH
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_EMSCRIPTEN
-#elif STLAB_TASK_SYSTEM(WINDOWS)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_WINDOWS
-#elif STLAB_TASK_SYSTEM(PORTABLE)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_PORTABLE
+#else
+#error "Unable to auto-detect main executor"
 #endif
 
 #if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
@@ -39,13 +35,6 @@
 #include <dispatch/dispatch.h>
 #elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_EMSCRIPTEN
 #include <stlab/concurrency/default_executor.hpp>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
-#include <Windows.h>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE
-// REVISIT (sparent) : for testing only
-#if 0 && __APPLE__
-#include <dispatch/dispatch.h>
-#endif
 #endif
 
 /**************************************************************************************************/
@@ -132,58 +121,14 @@ struct main_executor_type {
 
 using main_executor_type = default_executor_type;
 
-#elif (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE) || \
-    (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS)
-
-// TODO (sparent) : We need a main task scheduler for STLAB_TASK_SYSTEM_WINDOWS
-
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
-
-// TODO main_executor_type for Windows 8 / 10
-struct main_executor_type {};
-
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE
-
-// TODO (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
-struct main_executor_type {
-    using result_type = void;
-
-#if __APPLE__
-    template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        ::dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {
-            auto f = static_cast<f_t*>(f_);
-            (*f)();
-            delete f;
-        });
-    }
-#endif // __APPLE__
-};
-
-#endif // STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
-
-#endif // (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE) || ...
-
-/**************************************************************************************************/
+#endif // STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
 
 } // namespace detail
 
-/**************************************************************************************************/
-
 constexpr auto main_executor = detail::main_executor_type{};
-
-/**************************************************************************************************/
 
 } // namespace v1
 
-/**************************************************************************************************/
-
 } // namespace stlab
 
-/**************************************************************************************************/
-
-#endif
-
-/**************************************************************************************************/
+#endif // STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
