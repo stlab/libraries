@@ -2,14 +2,14 @@ cmake_minimum_required( VERSION 3.23 )
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
+list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 include( CTest )
 include( CMakeDependentOption )
 include( StlabUtil )
 
-find_package( Threads )
 find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 find_package( libdispatch )
+find_package( Threads )
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
@@ -36,7 +36,7 @@ if( (NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND )
 endif()
 
 if( (STLAB_TASK_SYSTEM STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
-  message( SEND_ERROR "STLAB_TASK_SYSTEM is set to libdispatch, but a libdispatch installation was not found." )
+  message( SEND_ERROR "STLAB_TASK_SYSTEM is set to \"libdispatch\", but a libdispatch installation was not found." )
 endif()
 
 #
@@ -56,10 +56,6 @@ add_library( stlab::stlab ALIAS stlab )
 target_include_directories( stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include> )
-
-if ( NOT STLAB_THREAD_SYSTEM STREQUAL "none" )
-  target_link_libraries( stlab INTERFACE Threads::Threads )
-endif()
 
 #
 # Several definitions are specified for the microsoft compiler. These have
@@ -83,24 +79,28 @@ endif()
 
 if ( STLAB_THREAD_SYSTEM STREQUAL "win32"  )
   target_compile_definitions( stlab INTERFACE STLAB_WIN32_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
 elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread" )
   target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
 elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-emscripten" )
   target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_EMSCRIPTEN_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
 elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-apple" )
   target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_APPLE_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
 else ()
   target_compile_definitions( stlab INTERFACE STLAB_NO_THREADS )
 endif()
 
-if (${STLAB_TASK_SYSTEM} STREQUAL "portable")
+if (STLAB_TASK_SYSTEM STREQUAL "portable")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
-elseif (${STLAB_TASK_SYSTEM} STREQUAL "libdispatch")
+elseif (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
-elseif (${STLAB_TASK_SYSTEM} STREQUAL "emscripten")
+elseif (STLAB_TASK_SYSTEM STREQUAL "emscripten")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSCRIPTEN )
-elseif (${STLAB_TASK_SYSTEM} STREQUAL "windows")
+elseif (STLAB_TASK_SYSTEM STREQUAL "windows")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
 else()
   message(FATAL_ERROR "Invalid Task System: ${STLAB_TASK_SYSTEM}")
@@ -108,7 +108,6 @@ endif()
 
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 
-list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
 
 if ( BUILD_TESTING )
   include( stlab/development )
