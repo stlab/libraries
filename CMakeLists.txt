@@ -10,6 +10,7 @@ include( StlabUtil )
 find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 find_package( libdispatch )
 find_package( Threads )
+find_package( Qt6 COMPONENTS Core )
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
@@ -22,6 +23,9 @@ set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread sys
 
 stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Select the task system (portable|libdispatch|emscripten|windows).")
+
+stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
+set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Select the main executor variant (qt|libdispatch|emscripten|none).")
 
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
@@ -37,6 +41,18 @@ endif()
 
 if( (STLAB_TASK_SYSTEM STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
   message( SEND_ERROR "STLAB_TASK_SYSTEM is set to \"libdispatch\", but a libdispatch installation was not found." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "emscripten") AND NOT (STLAB_TASK_SYSTEM STREQUAL "emscripten") )
+  message( SEND_ERROR "If STLAB_MAIN_EXECUTOR is set to \"emscripten\", STLAB_TASK_SYSTEM must also be." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt") AND NOT Qt6Core_FOUND )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt\", but a Qt6 installation was not found." )
 endif()
 
 #
@@ -94,20 +110,34 @@ else ()
 endif()
 
 if (STLAB_TASK_SYSTEM STREQUAL "portable")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
+  target_compile_definitions( stlab INTERFACE STLAB_FORCE_TASK_SYSTEM_PORTABLE )
 elseif (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
+  target_compile_definitions( stlab INTERFACE STLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
 elseif (STLAB_TASK_SYSTEM STREQUAL "emscripten")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSCRIPTEN )
+  target_compile_definitions( stlab INTERFACE STLAB_FORCE_TASK_SYSTEM_EMSCRIPTEN )
 elseif (STLAB_TASK_SYSTEM STREQUAL "windows")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
+  target_compile_definitions( stlab INTERFACE STLAB_FORCE_TASK_SYSTEM_WINDOWS )
 else()
   message(FATAL_ERROR "Invalid Task System: ${STLAB_TASK_SYSTEM}")
 endif()
 
-message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
+if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_LIBDISPATCH )
+  target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "emscripten")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_EMSCRIPTEN )
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_QT )
+  target_link_libraries( stlab INTERFACE Qt6::Core )
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "none")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_NONE )
+else()
+  message(FATAL_ERROR "Invalid main executor variant: ${STLAB_MAIN_EXECUTOR}")
+endif()
 
+message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
+message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
 if ( BUILD_TESTING )
   include( stlab/development )
