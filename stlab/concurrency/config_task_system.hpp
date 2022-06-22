@@ -40,44 +40,7 @@
 
 #else
 
-    #if defined(__APPLE__)
-
-        #undef STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH
-        #define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 1
-
-    #elif defined(__EMSCRIPTEN__)
-
-        #if defined(__EMSCRIPTEN_PTHREADS__)
-
-            #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
-            #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
-
-        #else
-
-            #undef STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN
-            #define STLAB_TASK_SYSTEM_PRIVATE_EMSCRIPTEN() 1
-
-        #endif
-
-    #elif defined(_MSC_VER)
-
-        #undef STLAB_TASK_SYSTEM_PRIVATE_WINDOWS
-        #define STLAB_TASK_SYSTEM_PRIVATE_WINDOWS() 1
-
-    #else
-        #if defined(__has_include)
-            #if __has_include(<dispatch/dispatch.h>)
-                #undef STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH
-                #define STLAB_TASK_SYSTEM_PRIVATE_LIBDISPATCH() 1
-            #else
-                #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
-                #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
-            #endif
-        #else
-            #undef STLAB_TASK_SYSTEM_PRIVATE_PORTABLE
-            #define STLAB_TASK_SYSTEM_PRIVATE_PORTABLE() 1
-        #endif
-    #endif
+    #error "Unspecified or unknown task system."
 
 #endif
 
