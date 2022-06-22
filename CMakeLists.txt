@@ -19,7 +19,7 @@ option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful f
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
-set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
+set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|windows).")
 
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
@@ -106,8 +106,6 @@ elseif (${stlab.task_system} STREQUAL "libdispatch")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
 elseif (${stlab.task_system} STREQUAL "emscripten")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSCRIPTEN )
-elseif (${stlab.task_system} STREQUAL "pnacl")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
 elseif (${stlab.task_system} STREQUAL "windows")
   target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
 else()

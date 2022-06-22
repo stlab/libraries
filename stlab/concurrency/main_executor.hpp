@@ -13,10 +13,9 @@
 
 #define STLAB_MAIN_EXECUTOR_LIBDISPATCH 1
 #define STLAB_MAIN_EXECUTOR_EMSCRIPTEN 2
-#define STLAB_MAIN_EXECUTOR_PNACL 3
-#define STLAB_MAIN_EXECUTOR_WINDOWS 4
-#define STLAB_MAIN_EXECUTOR_QT 5
-#define STLAB_MAIN_EXECUTOR_PORTABLE 6
+#define STLAB_MAIN_EXECUTOR_WINDOWS 3
+#define STLAB_MAIN_EXECUTOR_QT 4
+#define STLAB_MAIN_EXECUTOR_PORTABLE 5
 
 
 #if defined(QT_CORE_LIB) && !defined(STLAB_DISABLE_QT_MAIN_EXECUTOR)
@@ -25,8 +24,6 @@
 #define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_LIBDISPATCH
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_EMSCRIPTEN
-#elif STLAB_TASK_SYSTEM(PNACL)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_PNACL
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_WINDOWS
 #elif STLAB_TASK_SYSTEM(PORTABLE)
@@ -42,10 +39,6 @@
 #include <dispatch/dispatch.h>
 #elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_EMSCRIPTEN
 #include <stlab/concurrency/default_executor.hpp>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL
-#include <ppapi/cpp/completion_callback.h>
-#include <ppapi/cpp/core.h>
-#include <ppapi/cpp/module.h>
 #elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
 #include <Windows.h>
 #elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE
@@ -140,33 +133,11 @@ struct main_executor_type {
 using main_executor_type = default_executor_type;
 
 #elif (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE) || \
-    (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL) ||  \
     (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS)
 
 // TODO (sparent) : We need a main task scheduler for STLAB_TASK_SYSTEM_WINDOWS
 
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL
-
-struct main_executor_type {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        pp::Module::Get()->core()->CallOnMainThread(0,
-                                                    pp::CompletionCallback(
-                                                        [](void* f_, int32_t) {
-                                                            auto f = static_cast<f_t*>(f_);
-                                                            (*f)();
-                                                            delete f;
-                                                        },
-                                                        new f_t(std::move(f))),
-                                                    0);
-    }
-};
-
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
+#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
 
 // TODO main_executor_type for Windows 8 / 10
 struct main_executor_type {};
@@ -191,7 +162,7 @@ struct main_executor_type {
 #endif // __APPLE__
 };
 
-#endif // STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL
+#endif // STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
 
 #endif // (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE) || ...
 
