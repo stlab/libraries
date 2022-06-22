@@ -7,7 +7,7 @@ include (CheckCXXSymbolExists)
 # to the result. The following table shows the correspondence between result
 # values and threading systems.
 #
-# | result value       | Threading system   |
+# | Result value       | Threading system   |
 # |--------------------+--------------------|
 # | pthread            | POSIX threads      |
 # | win32              | Windows threads    |
@@ -29,6 +29,39 @@ function( stlab_detect_thread_system result_var )
     endif()
   else()
     set( result "none" )
+  endif()
+  set( ${result_var} ${result} PARENT_SCOPE )
+endfunction()
+
+# Detect the target platform's task system and set the specified 'result_var'
+# to the result. The following table shows the correspondence between result
+# values and task systems.
+#
+# | Result value | Task system                                |
+# |--------------+--------------------------------------------|
+# | libdispatch  | libdispatch (aka. Grand Central Dispatch ) |
+# | portable     | A portable task system provided by stlab   |
+# | emscripten   | Emscripten's task system                   |
+# | windows      | Windows's task system                      |
+function( stlab_detect_task_system result_var )
+  if( APPLE )
+    set( result "libdispatch")
+  elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
+    check_cxx_symbol_exists("__EMSCRIPTEN_PTHREADS__" "pthread.h" HAS_EMSCRIPTEN_PTHREADS )
+    if( HAS_EMSCRIPTEN_PTHREADS )
+      set( result "portable")
+    else()
+      set( result "emscripten")
+    endif()
+  elseif( WIN32 )
+    set( result "windows")
+  else()
+    find_package( libdispatch )
+    if( libdispatch_FOUND )
+      set( result "libdispatch")
+    else()
+      set( result "portable")
+    endif()
   endif()
   set( ${result_var} ${result} PARENT_SCOPE )
 endfunction()
