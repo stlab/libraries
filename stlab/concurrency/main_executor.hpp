@@ -9,31 +9,14 @@
 #ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
-#include <stlab/concurrency/config.hpp>
-
-#define STLAB_MAIN_EXECUTOR_LIBDISPATCH 1
-#define STLAB_MAIN_EXECUTOR_EMSCRIPTEN 2
-#define STLAB_MAIN_EXECUTOR_QT 3
-
-
-#if defined(QT_CORE_LIB) && !defined(STLAB_DISABLE_QT_MAIN_EXECUTOR)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_QT
-#elif STLAB_TASK_SYSTEM(LIBDISPATCH)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_LIBDISPATCH
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_EMSCRIPTEN
-#else
-#error "Unable to auto-detect main executor"
-#endif
-
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
+#ifdef STLAB_MAIN_EXECUTOR_QT
 #include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
 #include <memory>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_LIBDISPATCH
+#elif defined(STLAB_MAIN_EXECUTOR_LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_EMSCRIPTEN
+#elif defined(STLAB_MAIN_EXECUTOR_EMSCRIPTEN)
 #include <stlab/concurrency/default_executor.hpp>
 #endif
 
@@ -51,7 +34,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
+#ifdef STLAB_MAIN_EXECUTOR_QT
 
 class main_executor_type {
     using result_type = void;
@@ -100,7 +83,7 @@ public:
 
 /**************************************************************************************************/
 
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_LIBDISPATCH
+#elif defined(STLAB_MAIN_EXECUTOR_LIBDISPATCH)
 
 struct main_executor_type {
     using result_type = void;
@@ -117,15 +100,17 @@ struct main_executor_type {
     }
 };
 
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_EMSCRIPTEN
+#elif defined(STLAB_MAIN_EXECUTOR_EMSCRIPTEN
 
 using main_executor_type = default_executor_type;
 
-#endif // STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
+#endif // STLAB_MAIN_EXECUTOR_QT
 
 } // namespace detail
 
+#ifndef STLAB_MAIN_EXECUTOR_NONE
 constexpr auto main_executor = detail::main_executor_type{};
+#endif
 
 } // namespace v1
 

@@ -65,3 +65,30 @@ function( stlab_detect_task_system result_var )
   endif()
   set( ${result_var} ${result} PARENT_SCOPE )
 endfunction()
+
+# Find a main executor variant that is compatable with the target platform. The
+# following table shows the correspondence between result values and main
+# executor variants.
+#
+# | Result value | Task system                                |
+# |--------------+--------------------------------------------|
+# | libdispatch  | libdispatch (aka. Grand Central Dispatch ) |
+# | emscripten   | Emscripten's executor                      |
+# | qt           | Qt's event framework                       |
+# | none         | None                                       |
+function( stlab_detect_main_executor result_var )
+  find_package(Qt6 QUIET COMPONENTS Core)
+  stlab_detect_task_system( task_system )
+
+  if( ${task_system} STREQUAL "libdispatch" )
+    set( result "libdispatch")
+  elseif( ${task_system} STREQUAL "emscripten" )
+    set( result "emscripten")
+  elseif( Qt6Core_FOUND )
+    set( result "qt")
+  else()
+    set( result "none")
+  endif()
+
+  set( ${result_var} ${result} PARENT_SCOPE )
+endfunction()
