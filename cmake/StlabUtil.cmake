@@ -92,3 +92,45 @@ function( stlab_detect_main_executor result_var )
 
   set( ${result_var} ${result} PARENT_SCOPE )
 endfunction()
+
+# Generate 'stlab/config.hpp' in the binary directory using active CMake
+# variables and 'stlab/config.hpp.in'.
+function( stlab_generate_config_file )
+  if ( STLAB_THREAD_SYSTEM STREQUAL "win32" )
+    set( STLAB_THREADS_WIN32 TRUE )
+  elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread" )
+    set( STLAB_THREADS_PTHREAD TRUE )
+  elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-emscripten" )
+    set( STLAB_THREADS_PTHREAD_EMSCRIPTEN TRUE )
+  elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-apple" )
+    set( STLAB_THREADS_PTHREAD_APPLE TRUE )
+  else ()
+    set( STLAB_THREADS_NONE TRUE )
+  endif()
+
+  if (STLAB_TASK_SYSTEM STREQUAL "portable")
+    set( STLAB_TASK_SYSTEM_PORTABLE TRUE )
+  elseif (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
+    set( STLAB_TASK_SYSTEM_LIBDISPATCH TRUE )
+  elseif (STLAB_TASK_SYSTEM STREQUAL "emscripten")
+    set( STLAB_TASK_SYSTEM_EMSCRIPTEN TRUE )
+  elseif (STLAB_TASK_SYSTEM STREQUAL "windows")
+    set( STLAB_TASK_SYSTEM_WINDOWS TRUE )
+  endif()
+
+  if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
+    set( STLAB_MAIN_EXECUTOR_LIBDISPATCH TRUE )
+  elseif (STLAB_MAIN_EXECUTOR STREQUAL "emscripten")
+    set( STLAB_MAIN_EXECUTOR_EMSCRIPTEN TRUE )
+  elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
+    set( STLAB_MAIN_EXECUTOR_QT TRUE )
+  elseif (STLAB_MAIN_EXECUTOR STREQUAL "none")
+    set( STLAB_MAIN_EXECUTOR_NONE TRUE )
+  endif()
+
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/stlab/config.hpp.in"
+    "${CMAKE_BINARY_DIR}/stlab/config.hpp"
+    @ONLY
+  )
+endfunction()
