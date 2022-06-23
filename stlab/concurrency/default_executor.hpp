@@ -21,10 +21,6 @@
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM(PNACL)
-#include <ppapi/cpp/completion_callback.h>
-#include <ppapi/cpp/core.h>
-#include <ppapi/cpp/module.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
@@ -133,30 +129,6 @@ struct executor_type {
                 delete f;
             },
             new f_t(std::move(f)), 0);
-    }
-};
-
-/**************************************************************************************************/
-
-#elif STLAB_TASK_SYSTEM(PNACL)
-
-template <executor_priority P = executor_priority::medium>
-struct executor_type {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        pp::Module::Get()->core()->CallOnMainThread(0,
-                                                    pp::CompletionCallback(
-                                                        [](void* f_, int32_t) {
-                                                            auto f = static_cast<f_t*>(f_);
-                                                            (*f)();
-                                                            delete f;
-                                                        },
-                                                        new f_t(std::move(f))),
-                                                    0);
     }
 };
 

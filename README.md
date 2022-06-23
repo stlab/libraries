@@ -29,8 +29,8 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 -- Visual Studio 2019
 -- gcc (>= 7)
 -- clang (>= 6)
-- boost.optional and boost.variant if the compiler's library does not provide them
-- boost.test only for the unit tests
+- [OPTIONAL] Boost.Optional and Boost.Variant. Required when `STLAB_USE_BOOST_CPP17_SHIMS` is enabled.
+- [OPTIONAL] Boost.Test. Used when `BUILD_TESTING` is enabled.
 
 # Building
 

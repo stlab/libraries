@@ -1,20 +1,16 @@
-if( NOT ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC"
-      AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "99.99.99"
-      AND stlab.coroutines ) )
-  add_executable( stlab.test.channel
-    channel_functor_tests.cpp
-    channel_merge_round_robin_tests.cpp
-    channel_merge_unordered_tests.cpp
-    channel_merge_zip_with_tests.cpp
-    channel_process_tests.cpp
-    channel_test_helper.cpp
-    channel_tests.cpp
-    tuple_algorithm_test.cpp
-    main.cpp
-    channel_test_helper.hpp )
+add_executable( stlab.test.channel
+  channel_functor_tests.cpp
+  channel_merge_round_robin_tests.cpp
+  channel_merge_unordered_tests.cpp
+  channel_merge_zip_with_tests.cpp
+  channel_process_tests.cpp
+  channel_test_helper.cpp
+  channel_tests.cpp
+  tuple_algorithm_test.cpp
+  main.cpp
+  channel_test_helper.hpp )
 
-  target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
-endif()
+target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
 target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
 
@@ -54,8 +50,9 @@ add_executable( stlab.test.future
   main.cpp
   future_test_helper.hpp )
 
-target_sources( stlab.test.future PUBLIC
-  $<$<BOOL:$<TARGET_PROPERTY:COROUTINES>>:future_coroutine_tests.cpp> )
+if( NOT STLAB_NO_STD_COROUTINES )
+  target_sources( stlab.test.future PUBLIC future_coroutine_tests.cpp )
+endif()
 
 target_compile_definitions(stlab.test.future PRIVATE STLAB_UNIT_TEST)
 
@@ -86,6 +83,12 @@ add_test(
 add_executable( stlab.test.cow
   cow_test.cpp
   main.cpp )
+
+# Disable warning on GCC 11 and above for cow_test.cpp. See
+# github.com/stlab/libraries/issues/438 for details.
+if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11" )
+  set_source_files_properties( cow_test.cpp PROPERTIES COMPILE_FLAGS -Wno-free-nonheap-object )
+endif()
 
 target_compile_definitions(stlab.test.cow PRIVATE STLAB_UNIT_TEST)
 

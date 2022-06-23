@@ -2,29 +2,58 @@ cmake_minimum_required( VERSION 3.23 )
 
 project( stlab VERSION 1.6.2 LANGUAGES CXX )
 
+list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 include( CTest )
 include( CMakeDependentOption )
+include( StlabUtil )
+
+find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
+find_package( libdispatch )
+find_package( Threads )
+find_package( Qt6 COMPONENTS Core )
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF PROJECT_IS_TOP_LEVEL OFF )
 
-option( stlab.boost_variant "Prefer Boost::variant to std::variant" OFF )
-option( stlab.boost_optional "Prefer Boost::optional to std::optional" OFF )
-option( stlab.coroutines "Leverage the coroutine TS in stlab" OFF )
+option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." OFF )
+option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." FALSE )
+stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
+set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
-set(stlab.task_system "header" CACHE STRING "Select the task system (header|portable|libdispatch|emscripten|pnacl|windows).")
+stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
+set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Select the task system (portable|libdispatch|emscripten|windows).")
 
-#
-# On apple we have to force the usage of boost.variant, because Apple's
-# implementation of C++17 is not complete
-#
-if(APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION LESS 12)
-  message(STATUS "Apple-Clang versions less than 12 do not correctly support std::optional or std::variant, so we will use boost::optional and boost::variant instead.")
-  set( stlab.boost_variant ON )
+stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
+set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Select the main executor variant (qt|libdispatch|emscripten|none).")
+
+if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
+  message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
 endif()
 
-mark_as_advanced( stlab.coroutines stlab.boost_variant stlab.boost_optional )
+if( STLAB_USE_BOOST_CPP17_SHIMS AND NOT Boost_FOUND )
+  message( SEND_ERROR "STLAB_USE_BOOST_CPP17_SHIMS is enabled, but a Boost installation was not found." )
+endif()
+
+if( (NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND )
+  message( SEND_ERROR "STLAB_THREAD_SYSTEM is not \"none\", but a thread system was not found." )
+endif()
+
+if( (STLAB_TASK_SYSTEM STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
+  message( SEND_ERROR "STLAB_TASK_SYSTEM is set to \"libdispatch\", but a libdispatch installation was not found." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "emscripten") AND NOT (STLAB_TASK_SYSTEM STREQUAL "emscripten") )
+  message( SEND_ERROR "If STLAB_MAIN_EXECUTOR is set to \"emscripten\", STLAB_TASK_SYSTEM must also be." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt") AND NOT Qt6Core_FOUND )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt\", but a Qt6 installation was not found." )
+endif()
 
 #
 # stlab has no compiled components. As such, we declare it as an `INTERFACE`
@@ -45,15 +74,6 @@ target_include_directories( stlab INTERFACE
   $<INSTALL_INTERFACE:include> )
 
 #
-# As of CMake version 3.1, the FindThreads CMake module supplies an imported
-# target called `Thread::Thread` which transitively supplies inlude directories,
-# compiler flags, and linker flags to CMake targets linking to it.
-#
-set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
-find_package( Threads REQUIRED )
-target_link_libraries( stlab INTERFACE Threads::Threads )
-
-#
 # Several definitions are specified for the microsoft compiler. These have
 # the following effects.
 #
@@ -64,79 +84,60 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab )
 
-if ( BUILD_TESTING OR stlab.boost_variant OR stlab.boost_optional )
-  #
-  # Request compiled unit testing component only if testing is `ON`
-  #
-  if( BUILD_TESTING )
-    find_package( Boost 1.60.0 REQUIRED COMPONENTS unit_test_framework )
-  else()
-    find_package( Boost 1.60.0 REQUIRED )
-  endif()
-
-  if ( BUILD_TESTING AND NOT TARGET Boost::unit_test_framework )
-    message(FATAL_ERROR "Could not find Boost unit test framework.")
-  endif()
-
-  string( APPEND either_generator
-    "$<OR:$<BOOL:${stlab.boost_optional}>,"
-         "$<BOOL:${stlab.boost_variant}>>" )
-
-  #
-  # Link to the `Boost::boost` target is either `stlab.boost_optional`
-  # or `stlab.boost_variant` are set `ON`, which provides the include
-  # directory for the boost header.
-  #
-  target_link_libraries( stlab INTERFACE $<${either_generator}:Boost::boost> )
-
-  #
-  # Conditionally specify the corresponding compiler definitions for
-  # each boost algebraic data type library. In the case that either
-  # is specified, a preprocessor definition is used to specify that
-  # `auto_ptr` should not be used in the boost headers.
-  #
-  target_compile_definitions( stlab INTERFACE
-    $<$<BOOL:${stlab.boost_optional}>:STLAB_FORCE_BOOST_OPTIONAL>
-    $<$<BOOL:${stlab.boost_variant}>:STLAB_FORCE_BOOST_VARIANT> )
-
-  unset( either_generator )
+if ( STLAB_USE_BOOST_CPP17_SHIMS )
+  target_link_libraries( stlab INTERFACE Boost::boost )
+  target_compile_definitions( stlab INTERFACE STLAB_USE_BOOST_CPP17_SHIMS )
 endif()
 
-if (NOT APPLE AND (${stlab.task_system} STREQUAL "libdispatch"))
-  message(STATUS "CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
-
-  add_library( libdispatch::libdispatch INTERFACE IMPORTED )
-  set_property( TARGET libdispatch::libdispatch
-    APPEND PROPERTY INTERFACE_LINK_LIBRARIES CONAN_PKG::libdispatch )
-
-  target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE libdispatch::libdispatch)
+if ( STLAB_NO_STD_COROUTINES )
+  target_compile_definitions( stlab INTERFACE STLAB_NO_STD_COROUTINES )
 endif()
 
-if (${stlab.task_system} STREQUAL "header")
-  # Task System is selected in concurrency/config_task_system.hpp
-  # Nothing to define.
-elseif (${stlab.task_system} STREQUAL "portable")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PORTABLE )
-elseif (${stlab.task_system} STREQUAL "libdispatch")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_LIBDISPATCH )
-elseif (${stlab.task_system} STREQUAL "emscripten")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_EMSCRIPTEN )
-elseif (${stlab.task_system} STREQUAL "pnacl")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_PNACL )
-elseif (${stlab.task_system} STREQUAL "windows")
-  target_compile_definitions( stlab INTERFACE -DSTLAB_FORCE_TASK_SYSTEM_WINDOWS )
+if ( STLAB_THREAD_SYSTEM STREQUAL "win32"  )
+  target_compile_definitions( stlab INTERFACE STLAB_WIN32_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
+elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread" )
+  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
+elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-emscripten" )
+  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_EMSCRIPTEN_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
+elseif ( STLAB_THREAD_SYSTEM STREQUAL "pthread-apple" )
+  target_compile_definitions( stlab INTERFACE STLAB_PTHREAD_APPLE_THREADS )
+  target_link_libraries( stlab INTERFACE Threads::Threads )
+else ()
+  target_compile_definitions( stlab INTERFACE STLAB_NO_THREADS )
+endif()
+
+if (STLAB_TASK_SYSTEM STREQUAL "portable")
+  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_PORTABLE )
+elseif (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
+  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_LIBDISPATCH )
+  target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
+elseif (STLAB_TASK_SYSTEM STREQUAL "emscripten")
+  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_EMSCRIPTEN )
+elseif (STLAB_TASK_SYSTEM STREQUAL "windows")
+  target_compile_definitions( stlab INTERFACE STLAB_TASK_SYSTEM_WINDOWS )
 else()
-  message(FATAL_ERROR "Invalid Task System: ${stlab.task_system}")
+  message(FATAL_ERROR "Invalid Task System: ${STLAB_TASK_SYSTEM}")
 endif()
 
-message(STATUS "stlab: Task System: ${stlab.task_system}")
-
-list( APPEND CMAKE_MODULE_PATH "${stlab_SOURCE_DIR}/cmake" )
-
-if( stlab.coroutines )
-  include( stlab/coroutines )
-  target_link_libraries( stlab INTERFACE stlab::coroutines )
+if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_LIBDISPATCH )
+  target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "emscripten")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_EMSCRIPTEN )
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_QT )
+  target_link_libraries( stlab INTERFACE Qt6::Core )
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "none")
+  target_compile_definitions( stlab INTERFACE STLAB_MAIN_EXECUTOR_NONE )
+else()
+  message(FATAL_ERROR "Invalid main executor variant: ${STLAB_MAIN_EXECUTOR}")
 endif()
+
+message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
+message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
 if ( BUILD_TESTING )
   include( stlab/development )
@@ -191,19 +192,11 @@ write_basic_package_version_file(
 # intrinsic
 #
 
-if( stlab.coroutines )
-    install(
-      TARGETS stlab coroutines
-      EXPORT stlabTargets
-      FILE_SET stlab
-    )
-else()
-    install(
-      TARGETS stlab
-      EXPORT stlabTargets
-      FILE_SET stlab
-    )
-endif()
+install(
+  TARGETS stlab
+  EXPORT stlabTargets
+  FILE_SET stlab
+)
 
 #
 # A CMake configuration file is generated describing the stlab exported targets.
