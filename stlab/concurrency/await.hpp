@@ -105,11 +105,6 @@ T await(future<T> x) {
 #if STLAB_TASK_SYSTEM(PORTABLE)
     if (!detail::pts().wake()) detail::pts().add_thread();
 
-    auto resolved = [&] {
-        std::unique_lock<std::mutex> lock{m};
-        return flag;
-    };
-
     /*
         If no tasks are available we wait for one tick of the system clock and exponentially
         back off on the wait as long as no tasks are available.
