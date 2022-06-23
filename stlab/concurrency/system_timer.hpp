@@ -11,8 +11,8 @@
 
 /**************************************************************************************************/
 
-#include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/task.hpp>
+#include <stlab/config.hpp>
 
 #include <chrono>
 #include <functional>
