@@ -10,6 +10,7 @@
 #define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 
 #include <chrono>
+#include <utility>
 
 /**************************************************************************************************/
 

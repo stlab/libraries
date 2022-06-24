@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_TRAITS_HPP
 #define STLAB_CONCURRENCY_TRAITS_HPP
 
+#include <type_traits>
+
 /**************************************************************************************************/
 
 namespace stlab {

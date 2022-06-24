@@ -45,3 +45,4 @@ clion_*
 
 # jupyter backups
 .ipynb_checkpoints/
+stlab/config.hpp

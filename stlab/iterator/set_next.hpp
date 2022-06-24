@@ -8,6 +8,8 @@
 #ifndef STLAB_ITERATOR_SET_NEXT_HPP
 #define STLAB_ITERATOR_SET_NEXT_HPP
 
+#include <iterator>
+
 /*************************************************************************************************/
 
 namespace stlab {
