@@ -27,8 +27,8 @@
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
 #include <algorithm>
-#include <array>
 #include <atomic>
+#include <climits>
 #include <condition_variable>
 #include <thread>
 #include <vector>
@@ -208,24 +208,52 @@ private:
 
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
-inline auto queue_size() {
-#ifdef STLAB_UNIT_TEST
-    // The test cannot run with less than two cores
-    return std::max(2u, std::thread::hardware_concurrency());
-#else
-    return std::max(1u, std::thread::hardware_concurrency());
-#endif
-}
+class waiter {
+    std::mutex _mutex;
+    using lock_t = std::unique_lock<std::mutex>;
+    std::condition_variable _ready;
+
+    bool _waiting{false};
+    bool _done{false};
+
+public:
+    void done() {
+        {
+            lock_t lock{_mutex};
+            _done = true;
+        }
+        _ready.notify_one();
+    }
+
+    // If wait() is waiting, wake and return true, otherwise return false
+    bool wake() {
+        {
+            lock_t lock{_mutex, std::try_to_lock};
+            if (!lock || !_waiting) return false;
+            _waiting = false;
+        }
+        _ready.notify_one();
+        return true;
+    }
+
+    // Will wait until `wake()` or `done()` returns true if done
+    bool wait() {
+        lock_t lock{_mutex};
+        _waiting = true;
+        while (_waiting && !_done) _ready.wait(lock);
+        _waiting = false;
+        return _done;
+    }
+};
 
 class notification_queue {
-    using lock_t = std::unique_lock<std::mutex>;
 
     struct element_t {
-        unsigned _priority;
+        std::size_t _priority;
         task<void()> _task;
 
         template <class F>
-        element_t(F&& f, unsigned priority) : _priority{priority}, _task{std::forward<F>(f)} { }
+        element_t(F&& f, std::size_t priority) : _priority{priority}, _task{std::forward<F>(f)} { }
 
         struct greater {
             bool operator()(const element_t& a, const element_t& b) const {
@@ -234,13 +262,21 @@ class notification_queue {
         };
     };
 
-    std::vector<element_t> _q; // can't use priority queue because top() is const
-    bool _done{false};
     std::mutex _mutex;
+    using lock_t = std::unique_lock<std::mutex>;
     std::condition_variable _ready;
+    std::vector<element_t> _q; // can't use priority queue because top() is const
+    std::size_t _count{0};
+    bool _done{false};
+    bool _waiting{false};
 
-    // This must be called under a lock with a non-empty _q
-    task<void()> pop_not_empty() {
+    static constexpr std::size_t merge_priority_count(std::size_t priority, std::size_t count) {
+        assert((priority < 4) && "Priority must be in the range [0, 4).");
+        return (priority << (sizeof(std::size_t) * CHAR_BIT - 2)) | count;
+    }
+
+    // Must be called under a lock with a non-empty _q, always returns a valid task
+    auto pop_not_empty() -> task<void()>  {
         auto result = std::move(_q.front()._task);
         std::pop_heap(begin(_q), end(_q), element_t::greater());
         _q.pop_back();
@@ -248,19 +284,31 @@ class notification_queue {
     }
 
 public:
-    bool try_pop(task<void()>& x) {
+    auto try_pop() -> task<void()> {
         lock_t lock{_mutex, std::try_to_lock};
-        if (!lock || _q.empty()) return false;
-        x = pop_not_empty();
+        if (!lock || _q.empty()) return nullptr;
+        return pop_not_empty();
+    }
+
+    // If waiting in `pop()`, wakes and returns true. Otherwise returns false.
+    bool wake() {
+        {
+            lock_t lock{_mutex, std::try_to_lock};
+            if (!lock || !_waiting) return false;
+            _waiting = false; // triggers wake
+        }
+        _ready.notify_one();
         return true;
     }
 
-    bool pop(task<void()>& x) {
+
+    auto pop() -> std::pair<bool, task<void()>> {
         lock_t lock{_mutex};
-        while (_q.empty() && !_done) _ready.wait(lock);
-        if (_q.empty()) return false;
-        x = pop_not_empty();
-        return true;
+        _waiting = true;
+        while (_q.empty() && !_done && _waiting) _ready.wait(lock);
+        _waiting = false;
+        if (_q.empty()) return { _done, nullptr };
+        return { false, pop_not_empty() };
     }
 
     void done() {
@@ -268,15 +316,15 @@ public:
             lock_t lock{_mutex};
             _done = true;
         }
-        _ready.notify_all();
+        _ready.notify_one();
     }
 
     template <typename F>
-    bool try_push(F&& f, unsigned priority) {
+    bool try_push(F&& f, std::size_t priority) {
         {
             lock_t lock{_mutex, std::try_to_lock};
             if (!lock) return false;
-            _q.emplace_back(std::forward<F>(f), priority);
+            _q.emplace_back(std::forward<F>(f), merge_priority_count(priority, _count++));
             std::push_heap(begin(_q), end(_q), element_t::greater());
         }
         _ready.notify_one();
@@ -284,10 +332,10 @@ public:
     }
 
     template <typename F>
-    void push(F&& f, unsigned priority) {
+    void push(F&& f, std::size_t priority) {
         {
             lock_t lock{_mutex};
-            _q.emplace_back(std::forward<F>(f), priority);
+            _q.emplace_back(std::forward<F>(f), merge_priority_count(priority, _count++));
             std::push_heap(begin(_q), end(_q), element_t::greater());
         }
         _ready.notify_one();
@@ -297,32 +345,48 @@ public:
 /**************************************************************************************************/
 
 class priority_task_system {
-    using lock_t = std::unique_lock<std::mutex>;
+    // _count is the number of threads in the thread pool
+    // it is at least 1 but usually number of cores - 1 reserved for the main thread
+    const unsigned _count{std::max(2u, std::thread::hardware_concurrency()) - 1};
+    // thread limit is the total number of threads, including expansion threads for waiting calls
+    // It is odd number because a usual pattern is to fan out based on the number of cores, we want
+    // one additional thread so if we fan out the limit number of times we have one additional thread
+    const unsigned _thread_limit{std::max(9U, std::thread::hardware_concurrency() * 4 + 1)};
 
-    const unsigned _count{queue_size()};
-
-    std::vector<std::thread> _threads;
     std::vector<notification_queue> _q{_count};
     std::atomic<unsigned> _index{0};
-    std::atomic_bool _done{false};
+
+    std::mutex _mutex;
+    using lock_t = std::unique_lock<std::mutex>;
+    std::vector<std::thread> _threads;
+    std::vector<waiter> _waiters{_thread_limit - _count};
 
     void run(unsigned i) {
         stlab::set_current_thread_name("cc.stlab.default_executor");
         while (true) {
             task<void()> f;
 
-            for (unsigned n = 0; n != _count; ++n) {
-                if (_q[(i + n) % _count].try_pop(f)) break;
+            for (unsigned n = 0; n != _count && !f; ++n) {
+                f = _q[(i + n) % _count].try_pop();
             }
-            if (!f && !_q[i].pop(f)) break;
-
-            f();
+            if (!f) {
+                bool done;
+                std::tie(done, f) = _q[i].pop();
+                if (done) break;
+            }
+            if (f) f(); // we can wake with no task.
         }
     }
 
+    std::size_t waiters_size() {
+        lock_t lock{_mutex};
+        return _threads.size() - _count;
+    }
+
 public:
+    // Initialize the task system with
     priority_task_system() {
-        _threads.reserve(_count);
+        _threads.reserve(_thread_limit);
         for (unsigned n = 0; n != _count; ++n) {
             _threads.emplace_back([&, n]{ run(n); });
         }
@@ -330,10 +394,9 @@ public:
 
     ~priority_task_system() {
         for (auto& e : _q) e.done();
+        for (auto& e : _waiters) e.done();
         for (auto& e : _threads) e.join();
     }
-
-
 
     template <std::size_t P, typename F>
     void execute(F&& f) {
@@ -347,17 +410,39 @@ public:
         _q[i % _count].push(std::forward<F>(f), P);
     }
 
-    bool steal() {
-        task<void()> f;
 
-        for (unsigned n = 0; n != _count; ++n) {
-            if (_q[n].try_pop(f)) break;
+
+    void add_thread() {
+        lock_t lock{_mutex};
+        if (_threads.size() == _thread_limit) return; // log with cerr
+        _threads.emplace_back([&, i = _threads.size()] {
+            stlab::set_current_thread_name("cc.stlab.default_executor.expansion");
+
+            while(true) {
+                task<void()> f;
+
+                for (unsigned n = 0; n != _count && !f; ++n) {
+                    f = _q[(i + n) % _count].try_pop();
+                }
+
+                if (f) {
+                    f(); // we can wake with no task.
+                    continue;
+                }
+                if (_waiters[i - _count].wait()) break;
+            };
+        });
+    }
+
+    // returns true if a thread was woken
+    bool wake() {
+        for (auto& e : _q) {
+            if (e.wake()) return true;
         }
-        if (!f) return false;
-
-        f();
-
-        return true;
+        for (std::size_t n = 0, l = waiters_size(); n != l; ++n) {
+            if (_waiters[n].wake()) return true;
+        }
+        return false;
     }
 };
 
