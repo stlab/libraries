@@ -9,14 +9,16 @@
 #ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
-#ifdef STLAB_MAIN_EXECUTOR_QT
+#include <stlab/config.hpp>
+
+#if STLAB_MAIN_EXECUTOR(QT)
 #include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
 #include <memory>
-#elif defined(STLAB_MAIN_EXECUTOR_LIBDISPATCH)
+#elif STLAB_MAIN_EXECUTOR(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif defined(STLAB_MAIN_EXECUTOR_EMSCRIPTEN)
+#elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 #include <stlab/concurrency/default_executor.hpp>
 #endif
 
@@ -34,7 +36,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#ifdef STLAB_MAIN_EXECUTOR_QT
+#if STLAB_MAIN_EXECUTOR(QT)
 
 class main_executor_type {
     using result_type = void;
@@ -83,7 +85,7 @@ public:
 
 /**************************************************************************************************/
 
-#elif defined(STLAB_MAIN_EXECUTOR_LIBDISPATCH)
+#elif STLAB_MAIN_EXECUTOR(LIBDISPATCH)
 
 struct main_executor_type {
     using result_type = void;
@@ -100,17 +102,25 @@ struct main_executor_type {
     }
 };
 
-#elif defined(STLAB_MAIN_EXECUTOR_EMSCRIPTEN
+#elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 
 using main_executor_type = default_executor_type;
 
-#endif // STLAB_MAIN_EXECUTOR_QT
+#elif STLAB_MAIN_EXECUTOR(NONE)
+
+// For documentation only
+struct main_executor_type {
+    using result_type = void;
+
+    template <typename F>
+    void operator()(F f) const { }
+};
+
+#endif
 
 } // namespace detail
 
-#ifndef STLAB_MAIN_EXECUTOR_NONE
 constexpr auto main_executor = detail::main_executor_type{};
-#endif
 
 } // namespace v1
 
