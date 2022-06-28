@@ -1,25 +1,55 @@
 FROM emscripten/emsdk
 
-RUN apt remove --purge cmake -y && \ 
-    pip install cmake --upgrade
+# Hi, grepper. Boost Dependency: 1.74.0
+ARG BOOST_MAJOR=1
+ARG BOOST_MINOR=74
+ARG BOOST_PATCH=0
 
-RUN cd /home && wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz \
-  && tar xfz boost_1_79_0.tar.gz \
-  && rm boost_1_79_0.tar.gz \
-  && cd boost_1_79_0 \
-  && ./bootstrap.sh --prefix=/home/boost-wasm/ --with-libraries=test \
-  && ./b2 install --prefix=/home/boost-wasm/ toolset=emscripten link=static variant=release threading=single runtime-link=static \
-  && cd /home \
-  && rm -rf boost_1_79_0
+WORKDIR /installdir
 
-WORKDIR /home/boost-wasm/lib
+# Install cmake 3.23 from Kitware directly.
+# Note that snap is difficult to get working inside docker,
+# and as of this writing, `pip install cmake` installs 3.22.
+RUN apt-get update -y \
+  && apt-get upgrade -y \
+  && apt-get remove --purge cmake -y \
+  # Install cmake dependencies.
+  && apt-get install build-essential libssl-dev wget -y \
+  && wget https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.sh \
+  && /bin/bash cmake-3.23.2-linux-x86_64.sh --prefix=/usr/local/ --exclude-subdir
 
-RUN emar q libboost_prg_exec_monitor.a libboost_prg_exec_monitor.bc \
-    && emar q libboost_test_exec_monitor.a libboost_test_exec_monitor.bc \
-    && emar q libboost_unit_test_framework.a libboost_unit_test_framework.bc
+# Required for `emrun`.
+RUN apt install firefox -y
+
+WORKDIR /build/boost-wasm
+
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_MAJOR}.${BOOST_MINOR}.${BOOST_PATCH}/source/boost_${BOOST_MAJOR}_${BOOST_MINOR}_${BOOST_PATCH}.tar.gz \
+    && tar xfz boost_${BOOST_MAJOR}_${BOOST_MINOR}_${BOOST_PATCH}.tar.gz \
+    && rm boost_${BOOST_MAJOR}_${BOOST_MINOR}_${BOOST_PATCH}.tar.gz
+
+WORKDIR /build/boost-wasm/boost_${BOOST_MAJOR}_${BOOST_MINOR}_${BOOST_PATCH}
+
+RUN ./bootstrap.sh
+
+RUN ./b2 \
+    -q \
+    link=static \
+    toolset=emscripten \
+    variant=release \
+    threading=single \
+    # This is only required for Boost < 1.79.0.
+    # See https://github.com/boostorg/build/commit/003a3c29c12427c5a424f2332aa4ba00a8554a88
+    archiveflags="-r" \
+    # Find other libraries with `./b2 --show-libraries`.
+    --with-test \
+    install
 
 COPY . /src
 
 WORKDIR /build
 
-RUN emcmake cmake --trace /src -DBOOST_ROOT=/home/boost-wasm
+RUN emmake cmake -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_STD_COROUTINES=TRUE /src
+
+RUN emmake cmake --build .
+
+# CMD emrun --kill_exit --browser_args="--headless" /build/EmsdkBoost.html

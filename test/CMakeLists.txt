@@ -163,15 +163,40 @@ add_test(
 # tests are compiled without compiler extensions to ensure the stlab headers
 # are not dependent upon any such extension.
 #
-set_target_properties(
-  stlab.test.channel
-  stlab.test.future
-  stlab.test.serial_queue
-  stlab.test.cow
-  stlab.test.task
-  stlab.test.tuple
-  stlab.test.traits
-  PROPERTIES CXX_EXTENSIONS OFF )
+
+if (EMSCRIPTEN)
+  set_target_properties(
+    stlab.test.channel
+    stlab.test.future
+    stlab.test.serial_queue
+    stlab.test.cow
+    stlab.test.task
+    stlab.test.tuple
+    stlab.test.traits
+    stlab.test.forest
+    PROPERTIES
+    CXX_EXTENSIONS OFF
+    #
+    # WASM tests will be run with the `emrun` tool, which requires HTML
+    # output from emcc and a linker flag, `--emrun`, to hook stdout, stderr, and exit().
+    #
+    LINK_FLAGS "--emrun"
+    SUFFIX ".html"
+  )
+else()
+  set_target_properties(
+    stlab.test.channel
+    stlab.test.future
+    stlab.test.serial_queue
+    stlab.test.cow
+    stlab.test.task
+    stlab.test.tuple
+    stlab.test.traits
+    stlab.test.forest
+    PROPERTIES
+    CXX_EXTENSIONS OFF
+  )
+endif()
 
 #
 # Many of the stlab tests are executed using the system executor which defaults
