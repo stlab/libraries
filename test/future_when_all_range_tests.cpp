@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_all_delayed) {
     auto done_future = stlab::when_all(stlab::default_executor, [&done] { done = true;},
         std::make_pair(test_futures.begin(), test_futures.end()));
 
-    stlab::blocking_get(done_future);
+    stlab::await(done_future);
 
     BOOST_REQUIRE(done);
 }
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_task) {
         std::make_pair(futures.begin(), futures.end())
     );
 
-    BOOST_REQUIRE_EQUAL(4, stlab::blocking_get(sut));
+    BOOST_REQUIRE_EQUAL(4, stlab::await(sut));
 }
 
 
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
                         },
                         std::make_pair(futures.begin(), futures.end()));
 
-    stlab::blocking_get(sut);
+    stlab::await(sut);
 
     BOOST_REQUIRE_EQUAL(3, check);
 }

@@ -5,7 +5,7 @@ target_sources( stlab INTERFACE
   FILES
     algorithm/reverse.hpp
 
-    concurrency/config.hpp
+    concurrency/channel.hpp
     concurrency/default_executor.hpp
     concurrency/executor_base.hpp
     concurrency/future.hpp
@@ -35,19 +35,12 @@ target_sources( stlab INTERFACE
     version.hpp
 )
 
-if(CXX_COMPILER_ID MATCHES MSVC)
-  if(CXX_COMPILER_VERSION VERSION_LESS 99)
-    get_target_property(wants_coroutines stlab COROUTINES)
-    if(wants_coroutines)
-      message(STATUS "Not including concurrency/channel.hpp in the target sources for stlab")
-      return()
-    endif()
-  endif()
-endif()
+stlab_generate_config_file()
 
 target_sources( stlab INTERFACE
   FILE_SET stlab
   TYPE HEADERS
-  BASE_DIRS ../
-  FILES concurrency/channel.hpp
+  BASE_DIRS ${CMAKE_BINARY_DIR}
+  FILES
+    ${CMAKE_BINARY_DIR}/stlab/config.hpp
 )

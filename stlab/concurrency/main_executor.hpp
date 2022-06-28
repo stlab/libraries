@@ -9,50 +9,17 @@
 #ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
-#include <stlab/concurrency/config.hpp>
+#include <stlab/config.hpp>
 
-#define STLAB_MAIN_EXECUTOR_LIBDISPATCH 1
-#define STLAB_MAIN_EXECUTOR_EMSCRIPTEN 2
-#define STLAB_MAIN_EXECUTOR_PNACL 3
-#define STLAB_MAIN_EXECUTOR_WINDOWS 4
-#define STLAB_MAIN_EXECUTOR_QT 5
-#define STLAB_MAIN_EXECUTOR_PORTABLE 6
-
-
-#if defined(QT_CORE_LIB) && !defined(STLAB_DISABLE_QT_MAIN_EXECUTOR)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_QT
-#elif STLAB_TASK_SYSTEM(LIBDISPATCH)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_LIBDISPATCH
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_EMSCRIPTEN
-#elif STLAB_TASK_SYSTEM(PNACL)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_PNACL
-#elif STLAB_TASK_SYSTEM(WINDOWS)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_WINDOWS
-#elif STLAB_TASK_SYSTEM(PORTABLE)
-#define STLAB_MAIN_EXECUTOR STLAB_MAIN_EXECUTOR_PORTABLE
-#endif
-
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
+#if STLAB_MAIN_EXECUTOR(QT)
 #include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
 #include <memory>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_LIBDISPATCH
+#elif STLAB_MAIN_EXECUTOR(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_EMSCRIPTEN
+#elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 #include <stlab/concurrency/default_executor.hpp>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL
-#include <ppapi/cpp/completion_callback.h>
-#include <ppapi/cpp/core.h>
-#include <ppapi/cpp/module.h>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
-#include <Windows.h>
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE
-// REVISIT (sparent) : for testing only
-#if 0 && __APPLE__
-#include <dispatch/dispatch.h>
-#endif
 #endif
 
 /**************************************************************************************************/
@@ -69,7 +36,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_QT
+#if STLAB_MAIN_EXECUTOR(QT)
 
 class main_executor_type {
     using result_type = void;
@@ -118,7 +85,7 @@ public:
 
 /**************************************************************************************************/
 
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_LIBDISPATCH
+#elif STLAB_MAIN_EXECUTOR(LIBDISPATCH)
 
 struct main_executor_type {
     using result_type = void;
@@ -135,84 +102,28 @@ struct main_executor_type {
     }
 };
 
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_EMSCRIPTEN
+#elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 
 using main_executor_type = default_executor_type;
 
-#elif (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE) || \
-    (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL) ||  \
-    (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS)
+#elif STLAB_MAIN_EXECUTOR(NONE)
 
-// TODO (sparent) : We need a main task scheduler for STLAB_TASK_SYSTEM_WINDOWS
-
-#if STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL
-
+// For documentation only
 struct main_executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        pp::Module::Get()->core()->CallOnMainThread(0,
-                                                    pp::CompletionCallback(
-                                                        [](void* f_, int32_t) {
-                                                            auto f = static_cast<f_t*>(f_);
-                                                            (*f)();
-                                                            delete f;
-                                                        },
-                                                        new f_t(std::move(f))),
-                                                    0);
-    }
+    void operator()(F f) const { }
 };
-
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_WINDOWS
-
-// TODO main_executor_type for Windows 8 / 10
-struct main_executor_type {};
-
-#elif STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE
-
-// TODO (sparent) : provide a scheduler and run-loop - this is provide for testing on mac
-struct main_executor_type {
-    using result_type = void;
-
-#if __APPLE__
-    template <typename F>
-    void operator()(F f) const {
-        using f_t = decltype(f);
-
-        ::dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {
-            auto f = static_cast<f_t*>(f_);
-            (*f)();
-            delete f;
-        });
-    }
-#endif // __APPLE__
-};
-
-#endif // STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PNACL
-
-#endif // (STLAB_MAIN_EXECUTOR == STLAB_MAIN_EXECUTOR_PORTABLE) || ...
-
-/**************************************************************************************************/
-
-} // namespace detail
-
-/**************************************************************************************************/
-
-constexpr auto main_executor = detail::main_executor_type{};
-
-/**************************************************************************************************/
-
-} // namespace v1
-
-/**************************************************************************************************/
-
-} // namespace stlab
-
-/**************************************************************************************************/
 
 #endif
 
-/**************************************************************************************************/
+} // namespace detail
+
+constexpr auto main_executor = detail::main_executor_type{};
+
+} // namespace v1
+
+} // namespace stlab
+
+#endif // STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP

@@ -11,8 +11,8 @@
 
 /**************************************************************************************************/
 
-#include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/task.hpp>
+#include <stlab/config.hpp>
 
 #include <chrono>
 #include <functional>
@@ -21,10 +21,6 @@
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 #include <emscripten.h>
-#elif STLAB_TASK_SYSTEM(PNACL)
-#include <ppapi/cpp/completion_callback.h>
-#include <ppapi/cpp/core.h>
-#include <ppapi/cpp/module.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>

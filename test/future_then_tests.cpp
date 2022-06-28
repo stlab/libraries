@@ -788,7 +788,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_move_only_container) {
         });
 
         check_valid_future(sut);
-        auto result = blocking_get(std::move(sut));
+        auto result = stlab::await(std::move(sut));
 
         BOOST_REQUIRE_EQUAL(3, result.size());
         BOOST_REQUIRE_EQUAL(10, result[0].member());
@@ -809,7 +809,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_move_only_container) {
         };
 
         check_valid_future(sut);
-        auto result = blocking_get(std::move(sut));
+        auto result = stlab::await(std::move(sut));
 
         BOOST_REQUIRE_EQUAL(3, result.size());
         BOOST_REQUIRE_EQUAL(10, result[0].member());

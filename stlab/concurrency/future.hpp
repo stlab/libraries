@@ -17,30 +17,22 @@
 #include <mutex>
 #include <vector>
 
-#include <stlab/concurrency/config.hpp>
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/config.hpp>
 #include <stlab/memory.hpp>
 
 #include <stlab/functional.hpp>
 #include <stlab/utility.hpp>
 
-// as long as VS 2017 still accepts await as keyword, it is necessary to disable coroutine
-// support for the channels tests
-#ifdef __has_include
-#if __has_include(<experimental/coroutine>) && STLAB_FUTURE_COROUTINES
-#define STLAB_FUTURE_COROUTINES_SUPPORT() 1
-#include <experimental/coroutine>
-#include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/immediate_executor.hpp>
-#endif
-#endif
-
-#if !defined(STLAB_FUTURE_COROUTINES_SUPPORT)
-#define STLAB_FUTURE_COROUTINES_SUPPORT() 0
+#ifndef STLAB_NO_STD_COROUTINES
+    #include <coroutine>
+    #include <stlab/concurrency/default_executor.hpp>
+    #include <stlab/concurrency/immediate_executor.hpp>
 #endif
 
 /**************************************************************************************************/
@@ -204,11 +196,6 @@ using packaged_task_from_signature_t = typename packaged_task_from_signature<T>:
 template <typename>
 struct reduced_;
 
-template <>
-struct reduced_<future<void>> {
-    using type = void;
-};
-
 template <typename T>
 struct reduced_<future<T>> {
     using type = T;
@@ -354,7 +341,6 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (!ready) _then.emplace_back(std::forward<E>(executor), std::move(p.first));
         }
         if (ready) executor(std::move(p.first));
-
         return reduce(std::move(p.second));
     }
 
@@ -1734,11 +1720,6 @@ struct reduction_helper<future<T>> {
     future<void> value;
 };
 
-template <>
-struct reduction_helper<future<void>> {
-    future<void> value;
-};
-
 /**************************************************************************************************/
 
 template <typename T>
@@ -1763,34 +1744,11 @@ struct value_<T, enable_if_copyable<T>> {
 
     template <typename R, typename F, typename... Args>
     static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
         sb._reduction_helper.value =
-            (*sb._result)
-                .recover([_p = sb.shared_from_this()](future<R> f) {
-                    if (f.exception()) {
-                        _p->_exception = std::move(f).exception();
-                        proceed(*_p);
-                        throw future_error(future_error_codes::reduction_failed);
-                    }
-                    return *f.get_try();
-                })
-                .then([_p = sb.shared_from_this()](auto) { proceed(*_p); });
-    }
-
-    template <typename F, typename... Args>
-    static void set(shared_base<future<void>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
-        sb._reduction_helper.value =
-            (*sb._result)
-                .recover([_p = sb.shared_from_this()](future<void> f) {
-                     if (f.exception()) {
-                         _p->_exception = std::move(f).exception();
-                         value_::proceed(*_p);
-                         throw future_error(future_error_codes::reduction_failed);
-                     }
-                     return;
-                 })
-                 .then([_p = sb.shared_from_this()]() { proceed(*_p); });
+            f(std::forward<Args>(args)...).recover(immediate_executor, [_p = sb.shared_from_this()](future<R> f) {
+                _p->_result = std::move(f);
+                proceed(*_p);
+            });
     }
 };
 
@@ -1815,18 +1773,11 @@ struct value_<T, enable_if_not_copyable<T>> {
 
     template <typename R, typename F, typename... Args>
     static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        sb._result = f(std::forward<Args>(args)...);
         sb._reduction_helper.value =
-            std::move(*sb._result)
-                .recover([_p = sb.shared_from_this()](future<R> f) {
-                    if (auto ex = std::move(f).exception()) {
-                        _p->_exception = ex;
-                        proceed(*_p);
-                        throw future_error(future_error_codes::reduction_failed);
-                    }
-                    return *f.get_try();
-                })
-                .then([_p = sb.shared_from_this()](auto) { proceed(*_p); });
+            f(std::forward<Args>(args)...).recover([_p = sb.shared_from_this()](future<R> f) {
+                _p->_result = std::move(f);
+                proceed(*_p);
+            });
     }
 };
 
@@ -1895,37 +1846,45 @@ auto shared_base<void>::recover(E&& executor, F&& f)
 
 template <typename T>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then([](auto) {});
+    return std::move(r).then(immediate_executor, [](auto&& f) {
+        std::forward<decltype(f)>(f).get_try();
+    });
 }
 
 template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
+    return std::move(r).then(immediate_executor, [](auto&& f) {
+        return *std::forward<decltype(f)>(f).get_try();
+    });
 }
 
 /**************************************************************************************************/
 
 template <typename T>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then([](auto){});
+    return std::move(r).then(immediate_executor, [](auto&& f){
+        std::forward<decltype(f)>(f).get_try();
+    });
 }
 
 template <typename T>
 template <typename R>
 auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
+    return std::move(r).then(immediate_executor, [](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
 }
 
 /**************************************************************************************************/
 
 inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then([](auto) {});
+    return std::move(r).then(immediate_executor, [](auto&& f){
+        std::forward<decltype(f)>(f).get_try();
+    });
 }
 
 template <typename R>
 auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then([](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
+    return std::move(r).then(immediate_executor, [](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
 }
 
 /**************************************************************************************************/
@@ -1942,10 +1901,10 @@ auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
 
 /**************************************************************************************************/
 
-#if STLAB_FUTURE_COROUTINES_SUPPORT() == 1
+#ifndef STLAB_NO_STD_COROUTINES
 
 template <typename T, typename... Args>
-struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
+struct std::coroutine_traits<stlab::future<T>, Args...> {
     struct promise_type {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
 
@@ -1957,9 +1916,9 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
 
         stlab::future<T> get_return_object() { return std::move(_promise.second); }
 
-        auto initial_suspend() const { return std::experimental::suspend_never{}; }
+        auto initial_suspend() const { return std::suspend_never{}; }
 
-        auto final_suspend() const { return std::experimental::suspend_never{}; }
+        auto final_suspend() const noexcept { return std::suspend_never{}; }
 
         template <typename U>
         void return_value(U&& val) {
@@ -1971,7 +1930,7 @@ struct std::experimental::coroutine_traits<stlab::future<T>, Args...> {
 };
 
 template <typename... Args>
-struct std::experimental::coroutine_traits<stlab::future<void>, Args...> {
+struct std::coroutine_traits<stlab::future<void>, Args...> {
     struct promise_type {
         std::pair<stlab::packaged_task<>, stlab::future<void>> _promise;
 
@@ -1981,9 +1940,9 @@ struct std::experimental::coroutine_traits<stlab::future<void>, Args...> {
 
         inline stlab::future<void> get_return_object() { return _promise.second; }
 
-        inline auto initial_suspend() const { return std::experimental::suspend_never{}; }
+        inline auto initial_suspend() const { return std::suspend_never{}; }
 
-        inline auto final_suspend() const { return std::experimental::suspend_never{}; }
+        inline auto final_suspend() const noexcept { return std::suspend_never{}; }
 
         inline void return_void() { _promise.first(); }
 
@@ -2003,7 +1962,7 @@ auto operator co_await(stlab::future<R> f) {
 
         auto await_resume() { return std::move(_result); }
 
-        void await_suspend(std::experimental::coroutine_handle<> ch) {
+        void await_suspend(std::coroutine_handle<> ch) {
             std::move(_input)
                 .then([this, ch](auto&& result) mutable {
                           this->_result = std::forward<decltype(result)>(result);
@@ -2012,7 +1971,7 @@ auto operator co_await(stlab::future<R> f) {
                 .detach();
         }
     };
-    return Awaiter{std::move(f)};
+    return Awaiter{std::move(f), {}};
 }
 
 inline auto operator co_await(stlab::future<void> f) {
@@ -2023,7 +1982,7 @@ inline auto operator co_await(stlab::future<void> f) {
 
         inline auto await_resume() {}
 
-        inline void await_suspend(std::experimental::coroutine_handle<> ch) {
+        inline void await_suspend(std::coroutine_handle<> ch) {
             std::move(_input)
                 .then([ch]() mutable { ch.resume(); })
                 .detach();
@@ -2032,6 +1991,6 @@ inline auto operator co_await(stlab::future<void> f) {
     return Awaiter{std::move(f)};
 }
 
-#endif
+#endif // STLAB_NO_STD_COROUTINES
 
 #endif
