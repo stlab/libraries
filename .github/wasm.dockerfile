@@ -55,6 +55,9 @@ RUN emmake cmake \
   -DEMSCRIPTEN=YES \
   -DCMAKE_CXX_STANDARD=17 \
   -DSTLAB_NO_STD_COROUTINES=TRUE \
+  -DSTLAB_THREAD_SYSTEM=pthread-emscripten \
+  -DSTLAB_TASK_SYSTEM=emscripten \
+  -DSTLAB_MAIN_EXECUTOR=emscripten \
   -DBoost_USE_STATIC_LIBS=YES \
   /src
 
