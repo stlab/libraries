@@ -180,7 +180,8 @@ if (EMSCRIPTEN)
     # WASM tests will be run with the `emrun` tool, which requires HTML
     # output from emcc and a linker flag, `--emrun`, to hook stdout, stderr, and exit().
     #
-    LINK_FLAGS "--emrun"
+    COMPILE_FLAGS "-pthread"
+    LINK_FLAGS "--emrun -pthread -sLLD_REPORT_UNDEFINED -sEXPORTED_FUNCTIONS=_pthread_setname_np,pthread_setname_np"
     SUFFIX ".html"
   )
 else()

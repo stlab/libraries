@@ -19,6 +19,8 @@ RUN apt-get update -y \
   && /bin/bash cmake-3.23.2-linux-x86_64.sh --prefix=/usr/local/ --exclude-subdir
 
 # Required for `emrun`.
+# Might need to change this to a nightly build.
+# See https://emscripten.org/docs/porting/pthreads.html#running-code-and-tests
 RUN apt install firefox -y
 
 WORKDIR /build/boost-wasm
@@ -37,6 +39,7 @@ RUN ./b2 \
     toolset=emscripten \
     variant=release \
     threading=single \
+    cxxflags="-pthread" \
     # This is only required for Boost < 1.79.0.
     # See https://github.com/boostorg/build/commit/003a3c29c12427c5a424f2332aa4ba00a8554a88
     archiveflags="-r" \
@@ -48,8 +51,13 @@ COPY . /src
 
 WORKDIR /build
 
-RUN emmake cmake -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_STD_COROUTINES=TRUE /src
+RUN emmake cmake \
+  -DEMSCRIPTEN=YES \
+  -DCMAKE_CXX_STANDARD=17 \
+  -DSTLAB_NO_STD_COROUTINES=TRUE \
+  -DBoost_USE_STATIC_LIBS=YES \
+  /src
 
-RUN emmake cmake --build .
+RUN VERBOSE=1 emmake cmake --build .
 
-# CMD emrun --kill_exit --browser_args="--headless" /build/EmsdkBoost.html
+# CMD emrun --kill_exit --browser_args="--headless" /build/Stlab.html
