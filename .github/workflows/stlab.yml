@@ -70,8 +70,8 @@ jobs:
         if: ${{ matrix.config.compiler == 'apple-clang' }}
         shell: bash
         run: |
-          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
-          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm@13)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm@13)/bin/clang++" >> $GITHUB_ENV
 
       - name: Configure (Ubuntu)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') }}

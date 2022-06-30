@@ -1,7 +1,0 @@
-if(NOT DEFINED ENV{TESTS_ARGUMENTS})
-    set(ENV{TESTS_ARGUMENTS} "")
-endif()
-execute_process(COMMAND ${TEST_EXECUTABLE} $ENV{TESTS_ARGUMENTS} RESULT_VARIABLE result)
-if(NOT "${result}" STREQUAL "0")
-    message(FATAL_ERROR "Test failed with return value '${result}'")
-endif()

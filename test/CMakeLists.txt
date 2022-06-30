@@ -16,7 +16,7 @@ target_link_libraries( stlab.test.channel PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.channel
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.channel> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.channel
 )
 
 
@@ -32,7 +32,7 @@ target_link_libraries( stlab.test.executor PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.executor
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.executor> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.executor
 )
 
 ################################################################################
@@ -60,7 +60,7 @@ target_link_libraries( stlab.test.future PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.future
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.future> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.future
 )
 
 
@@ -75,7 +75,7 @@ target_link_libraries( stlab.test.serial_queue PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.serial_queue
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.serial_queue> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.serial_queue
 )
 
 ################################################################################
@@ -96,7 +96,7 @@ target_link_libraries( stlab.test.cow PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.cow
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.cow> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.cow
 )
 
 
@@ -112,7 +112,7 @@ target_link_libraries( stlab.test.task PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.task
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.task> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.task
 )
 
 ################################################################################
@@ -127,7 +127,7 @@ target_link_libraries( stlab.test.tuple PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.tuple
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.tuple> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.tuple
 )
 
 ################################################################################
@@ -142,7 +142,7 @@ target_link_libraries( stlab.test.traits PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.traits
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.traits> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.traits
 )
 
 ################################################################################
@@ -155,7 +155,7 @@ target_link_libraries( stlab.test.forest PUBLIC stlab::testing )
 
 add_test(
     NAME stlab.test.forest
-    COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:stlab.test.forest> -P ${CMAKE_SOURCE_DIR}/cmake/RunTests.cmake
+    COMMAND stlab.test.forest
 )
 
 ################################################################################
