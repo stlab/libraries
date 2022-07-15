@@ -34,4 +34,4 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 # Building
 
-STLab is a standard CMake project. See the [running CMake](https://cmake.org/runningcmake) tutorial for an introduction to this tool.
+STLab is a standard CMake project. See the [running CMake](https://cmake.org/runningcmake) tutorial for an introduction to this tool. Test
