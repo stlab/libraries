@@ -25,7 +25,7 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 - Linux with GCC 11
 - Linux with Clang 14
-- MacOS with Apple-clang 13.0.1
+- MacOS 11 with Apple-clang 13.0.0
 - Windows with Visual Studio 16
 
 ## Requirements
