@@ -1,4 +1,4 @@
-# This is the source code repository of the Software Technology Lab (STLab).
+# Software Technology Lab (STLab) Library Source Code Repository
 
 ASL libraries will be migrated here in the `stlab` namespace, new libraries will be created here.
 
