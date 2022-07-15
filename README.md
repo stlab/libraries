@@ -1,4 +1,4 @@
-# This is the source code repository of the Software Technology Lab (STLab).
+# Software Technology Lab (STLab) Library Source Code Repository
 
 ASL libraries will be migrated here in the `stlab` namespace, new libraries will be created here.
 
@@ -25,7 +25,7 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 - Linux with GCC 11
 - Linux with Clang 14
-- MacOS with Apple-clang 13.0.1
+- MacOS 11 with Apple-clang 13.0.0
 - Windows with Visual Studio 16
 
 ## Requirements
@@ -63,7 +63,7 @@ Run CMake in the root directory of this project, setting `../BUILD` as your buil
 basis of your command will be
 
 ```
-cmake -S . -B ../BUILD
+cmake -S . -B ../BUILD # + other options. See below...
 ```
 
 but there are other options you may need to append in order to be successful.  Among them:
@@ -72,7 +72,7 @@ but there are other options you may need to append in order to be successful.  A
 * `-DSTLAB_USE_BOOST_CPP17_SHIMS=ON` if you are building in C++14 compliant mode.
 * `-DCMAKE_BUILD_TYPE=`[`Release`|`Debug`] to build the given configuration.
 * `-DBUILD_TESTING=OFF` if you only intend to build, but not test, this library.
-* `-DSTLAB_NO_STD_COROUTINES=TRUE` if you are targeting an Apple platform.
+* `-DSTLAB_NO_STD_COROUTINES=TRUE` if your compiler doesn't have standard coroutine support. This applies to Apple platforms and when CMAKE_CXX_STANDARD is set to 14 or 17.```
 * `-DBoost_USE_STATIC_LIBS=TRUE` if you will be testing on Windows.
 
 We also suggest the installation of [Ninja](https://ninja-build.org/) and its use by adding
