@@ -63,7 +63,7 @@ Run CMake in the root directory of this project, setting `../BUILD` as your buil
 basis of your command will be
 
 ```
-cmake -S . -B ../BUILD
+cmake -S . -B ../BUILD # + other options. See below...
 ```
 
 but there are other options you may need to append in order to be successful.  Among them:
