@@ -72,7 +72,7 @@ but there are other options you may need to append in order to be successful.  A
 * `-DSTLAB_USE_BOOST_CPP17_SHIMS=ON` if you are building in C++14 compliant mode.
 * `-DCMAKE_BUILD_TYPE=`[`Release`|`Debug`] to build the given configuration.
 * `-DBUILD_TESTING=OFF` if you only intend to build, but not test, this library.
-* `-DSTLAB_NO_STD_COROUTINES=TRUE` if you are targeting an Apple platform.
+* `-DSTLAB_NO_STD_COROUTINES=TRUE` if your compiler doesn't have standard coroutine support. This applies to Apple platforms and when CMAKE_CXX_STANDARD is set to 14 or 17.```
 * `-DBoost_USE_STATIC_LIBS=TRUE` if you will be testing on Windows.
 
 We also suggest the installation of [Ninja](https://ninja-build.org/) and its use by adding
