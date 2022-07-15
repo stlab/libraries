@@ -81,7 +81,7 @@ We also suggest the installation of [Ninja](https://ninja-build.org/) and its us
 A typical invocation might look like this:
 
 ```
-cmake -S . -B ../BUILD -GNinja -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=OFF
+cmake -S . -B ../BUILD -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 ```
 
 ### Build
