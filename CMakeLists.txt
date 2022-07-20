@@ -130,14 +130,6 @@ if ( BUILD_TESTING )
     stlab::development
     stlab::stlab )
 
-  #
-  # Linking to the Boost unit test framework requires an additional
-  # preprocessor definition when the unit test compiled resources are
-  # provided by a shared library rather than a static library.
-  #
-  target_compile_definitions( testing INTERFACE
-    $<$<NOT:$<BOOL:${Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK>)
-
   add_subdirectory( test )
 endif()
 

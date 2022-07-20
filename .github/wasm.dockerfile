@@ -22,10 +22,10 @@ WORKDIR /build/boost-wasm/
 
 RUN emcmake cmake \
   -GNinja \
+  -DCMAKE_CXX_FLAGS="-pthread" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/emsdk/upstream/emscripten/cache/sysroot/$HOME/build/boost-release-emscripten-install \
-  -DBOOST_EXCLUDE_LIBRARIES="fiber;context;coroutine;asio;log" \
-  -DBoost_USE_STATIC_LIBS=On \
+  -DBOOST_EXCLUDE_LIBRARIES="fiber;beast;context;coroutine;asio;log" \
   /install/boost/
 
 RUN ninja 
