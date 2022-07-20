@@ -16,8 +16,10 @@ cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF PROJECT_IS_TOP_LEVEL OFF )
 
-option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." OFF )
-option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." FALSE )
+stlab_check_disfunctional_variant_optional(STLAB_DEFAULT_USE_BOOST_CPP17_SHIMS)
+option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." ${STLAB_DEFAULT_USE_BOOST_CPP17_SHIMS} )
+stlab_check_disfunctional_coroutines(STLAB_DEFAULT_NO_STD_COROUTINES)
+option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES} )
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
@@ -103,6 +105,8 @@ elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
   target_link_libraries( stlab INTERFACE Qt6::Core )
 endif()
 
+message(STATUS "stlab: Use Boost C++17 Shims: ${STLAB_USE_BOOST_CPP17_SHIMS}")
+message(STATUS "stlab: Disable Coroutines: ${STLAB_DEFAULT_NO_STD_COROUTINES}")
 message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")

@@ -13,9 +13,9 @@
             "os": "ubuntu-22.04"
         },
         {
-            "name": "macOS apple-clang 13.0.1",
+            "name": "macOS apple-clang 13.0.0",
             "compiler": "apple-clang",
-            "version": "13.0.1",
+            "version": "13.0.0",
             "os": "macos-11"
         },
         {

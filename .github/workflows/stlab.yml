@@ -66,26 +66,12 @@ jobs:
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Set enviroment variables (MacOS)
-        if: ${{ matrix.config.compiler == 'apple-clang' }}
-        shell: bash
-        run: |
-          echo "CC=$(brew --prefix llvm@13)/bin/clang" >> $GITHUB_ENV
-          echo "CXX=$(brew --prefix llvm@13)/bin/clang++" >> $GITHUB_ENV
-
-      - name: Configure (Ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+      - name: Configure (Unix)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
           mkdir ../build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
-
-      - name: Configure (MacOS)
-        if: ${{ startsWith(matrix.config.os, 'macos') }}
-        shell: bash
-        run: |
-          mkdir ../build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DSTLAB_NO_STD_COROUTINES=TRUE
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
