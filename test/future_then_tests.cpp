@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
               }).then([& _result = result](auto&& x) {
             return async(
                 default_executor, [&_result](auto&& x) { _result = std::move(x); },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         wait_until_future_completed(sut);
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
               }).then([& _result = result](auto&& x) {
             return async(
                 immediate_executor, [&_result](auto&& x) { _result = std::move(x); },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         BOOST_REQUIRE(sut.get_try());
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(future_async_moving_move_only_capture_to_result) {
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [& _m = m] { return move(_m); });
+    sut = async(make_executor<0>(), [& _m = m] { return std::move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(future_async_mutable_move_move_only_capture_to_result) {
 
     move_only m{42};
 
-    sut = async(make_executor<0>(), [& _m = m]() { return move(_m); });
+    sut = async(make_executor<0>(), [& _m = m]() { return std::move(_m); });
 
     check_valid_future(sut);
     auto result = wait_until_future_r_completed(sut);
@@ -667,7 +667,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_moving_move_only_capture_to_result) {
     move_only m{42};
 
     sut = async(make_executor<0>(), [] { return move_only{10}; }).then([& _m = m](auto) {
-        return move(_m);
+        return std::move(_m);
     });
 
     check_valid_future(sut);
@@ -685,7 +685,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
 
         sut = async(make_executor<0>(), []() {
                   return move_only{10};
-              }).then([& _m = m](auto) { return move(_m); });
+              }).then([& _m = m](auto) { return std::move(_m); });
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -697,7 +697,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_mutable_move_move_only_capture_to
         move_only m{42};
 
         sut = async(make_executor<0>(), []() { return move_only{10}; }) |
-              [& _m = m](auto) { return move(_m); };
+              [& _m = m](auto) { return std::move(_m); };
 
         check_valid_future(sut);
         auto result = wait_until_future_r_completed(sut);
@@ -721,9 +721,9 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
                 default_executor,
                 [&_flag](auto&& x) {
                     _flag = true;
-                    return forward<move_only>(x);
+                    return std::forward<move_only>(x);
                 },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         auto result = wait_until_future_r_completed(sut);
@@ -744,9 +744,9 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only) {
                 immediate_executor,
                 [&_flag](auto&& x) {
                     _flag = true;
-                    return forward<move_only>(x);
+                    return std::forward<move_only>(x);
                 },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         auto result = wait_until_future_r_completed(sut);
@@ -842,10 +842,10 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_get_try_on_rvalue) {
 
     sut = async(make_executor<0>(), [] { return 42; });
 
-    auto test_result_1 = move(sut).get_try(); // test for r-value implementation
+    auto test_result_1 = std::move(sut).get_try(); // test for r-value implementation
     (void)test_result_1;
     wait_until_future_completed(sut);
-    auto test_result_2 = move(sut).get_try();
+    auto test_result_2 = std::move(sut).get_try();
 
     BOOST_REQUIRE_EQUAL(42, *sut.get_try());
     BOOST_REQUIRE_EQUAL(42, *test_result_2);
@@ -1273,7 +1273,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void_when_inner_future_fails)
                     _check = true;
                     throw test_exception("failure");
                 },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         wait_until_future_fails<test_exception>(sut);
@@ -1295,7 +1295,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void_when_inner_future_fails)
                     _check = true;
                     throw test_exception("failure");
                 },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         wait_until_future_fails<test_exception>(sut);
@@ -1530,7 +1530,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only_when_inner_future_f
                     _flag = true;
                     throw test_exception("failure");
                 },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         wait_until_future_fails<test_exception>(sut);
@@ -1552,7 +1552,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_move_only_when_inner_future_f
                     _flag = true;
                     throw test_exception("failure");
                 },
-                forward<move_only>(x));
+                std::forward<move_only>(x));
         });
 
         wait_until_future_fails<test_exception>(sut);

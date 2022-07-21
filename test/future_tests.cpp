@@ -671,8 +671,7 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_void_task) {
     BOOST_TEST_MESSAGE("future reduction with mutable task");
 
     std::atomic_int check{0};
-    auto func = [i = int{0}, &check]() mutable {
-        i++;
+    auto func = [&check]() mutable {
         ++check;
     };
 
