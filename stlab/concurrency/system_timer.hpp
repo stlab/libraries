@@ -17,14 +17,16 @@
 #include <chrono>
 #include <functional>
 
+#if STLAB_TASK_SYSTEM(EMSCRIPTEN)
+#include <emscripten.h>
+#endif
+
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
-#include <emscripten.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
-#elif STLAB_TASK_SYSTEM(PORTABLE)
+#elif STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 #include <algorithm>
 #include <condition_variable>
@@ -81,10 +83,6 @@ struct system_timer_type {
             });
     }
 };
-
-/**************************************************************************************************/
-
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 /**************************************************************************************************/
 
@@ -173,7 +171,7 @@ private:
 
 /**************************************************************************************************/
 
-#elif STLAB_TASK_SYSTEM(PORTABLE)
+#elif STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 class system_timer {
     using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;
@@ -252,7 +250,7 @@ public:
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
+#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 struct system_timer_type {
     using result_type = void;
