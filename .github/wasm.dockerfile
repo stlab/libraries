@@ -8,6 +8,9 @@ RUN apt update -y \
 
 RUN apt-get update -y \
   && apt-get install -y ninja-build \
+  # Firefox dependencies? Might remove.
+  && apt-get install -y libpci-dev \
+  && apt-get install -y libgl1-mesa-dev \
   && apt-get remove --purge cmake -y \
   # cmake dependencies per [LINK]
   && apt-get install build-essential libssl-dev wget -y \
@@ -28,7 +31,7 @@ RUN emcmake cmake \
   -DBOOST_EXCLUDE_LIBRARIES="fiber;beast;context;coroutine;asio;log" \
   /install/boost/
 
-RUN ninja 
+RUN ninja -v
 
 RUN ninja install
 
@@ -44,6 +47,13 @@ RUN emcmake cmake \
   -DSTLAB_NO_STD_COROUTINES=TRUE \
   /src
 
-RUN ninja
+RUN ninja -j4 -v
 
-# RUN ctest
+# Suppress an exception thrown by emrun trying to find a favicon.
+COPY ./assets/favicon.ico /build/stlab/test/
+
+RUN echo "#!/bin/bash\nemrun --verbose --kill_exit --browser_args=\"--headless\" test/stlab.test.\$1.html" >> runner.sh \
+  && chmod +x runner.sh
+
+# Usage: `docker run <this-image's-name> channel`
+ENTRYPOINT ["./runner.sh"]
