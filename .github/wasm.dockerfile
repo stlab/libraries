@@ -45,15 +45,10 @@ RUN emcmake cmake \
   -DCMAKE_CXX_STANDARD=23 \
   -DCMAKE_BUILD_TYPE=Release \
   -DSTLAB_NO_STD_COROUTINES=TRUE \
+  -DCMAKE_CXX_FLAGS="-pthread" \
+  -DCMAKE_EXE_LINKER_FLAGS="-pthread" \
   /src
 
 RUN ninja -j4 -v
 
-# Suppress an exception thrown by emrun trying to find a favicon.
-COPY ./assets/favicon.ico /build/stlab/test/
-
-RUN echo "#!/bin/bash\nemrun --verbose --kill_exit --browser_args=\"--headless\" test/stlab.test.\$1.html" >> runner.sh \
-  && chmod +x runner.sh
-
-# Usage: `docker run <this-image's-name> channel`
-ENTRYPOINT ["./runner.sh"]
+ENTRYPOINT ["ctest"]

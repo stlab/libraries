@@ -1,0 +1,10 @@
+# Ignore everything, explicitly add files.
+# May improve layer caching during development
+# https://stackoverflow.com/a/45929376
+*
+!cmake
+!CMakeLists.txt
+# Demanded by cmake
+!LICENSE
+!stlab
+!test
