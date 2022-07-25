@@ -2,6 +2,7 @@
 # May improve layer caching during development
 # https://stackoverflow.com/a/45929376
 *
+!assets
 !cmake
 !CMakeLists.txt
 # Demanded by cmake

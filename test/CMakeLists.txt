@@ -175,6 +175,9 @@ set_target_properties(
   stlab.test.forest
   PROPERTIES
   CXX_EXTENSIONS OFF
+  SUFFIX ".html"
+  COMPILE_OPTIONS "-pthread;-gsource-map;-fwasm-exceptions"
+  LINK_OPTIONS "--emrun;-sINITIAL_MEMORY=300MB;-pthread;--source-map-base http://localhost:8000/;-sPTHREAD_POOL_SIZE=100;-fwasm-exceptions;-sASSERTIONS=1;-sSAFE_HEAP=1"
 )
 
 

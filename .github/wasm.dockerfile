@@ -51,4 +51,11 @@ RUN emcmake cmake \
 
 RUN ninja -j4 -v
 
-ENTRYPOINT ["ctest"]
+# Suppress an exception thrown by emrun trying to find a favicon.
+COPY ./assets/favicon.ico /build/stlab/test/
+
+RUN echo "#!/bin/bash\nemrun --verbose --kill_exit --browser_args=\"--headless\" test/stlab.test.\$1.html" >> runner.sh \
+  && chmod +x runner.sh
+
+# Usage: `docker run <this-image's-name> channel`
+ENTRYPOINT ["./runner.sh"]
