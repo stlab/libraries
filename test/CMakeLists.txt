@@ -164,21 +164,38 @@ add_test(
 # are not dependent upon any such extension.
 #
 
-set_target_properties(
-  stlab.test.channel
-  stlab.test.future
-  stlab.test.serial_queue
-  stlab.test.cow
-  stlab.test.task
-  stlab.test.tuple
-  stlab.test.traits
-  stlab.test.forest
-  PROPERTIES
-  CXX_EXTENSIONS OFF
-  SUFFIX ".html"
-  COMPILE_OPTIONS "-pthread;-gsource-map;-fwasm-exceptions"
-  LINK_OPTIONS "--emrun;-sINITIAL_MEMORY=300MB;-pthread;--source-map-base http://localhost:8000/;-sPTHREAD_POOL_SIZE=100;-fwasm-exceptions;-sASSERTIONS=1;-sSAFE_HEAP=1"
-)
+if (EMSCRIPTEN)
+  set_target_properties(
+    stlab.test.channel
+    stlab.test.future
+    stlab.test.serial_queue
+    stlab.test.cow
+    stlab.test.task
+    stlab.test.tuple
+    stlab.test.traits
+    stlab.test.forest
+    PROPERTIES
+    CXX_EXTENSIONS OFF
+    SUFFIX ".html"
+    COMPILE_OPTIONS "-pthread;-fwasm-exceptions"
+    LINK_OPTIONS "--emrun;-pthread;-fwasm-exceptions;-sINITIAL_MEMORY=300MB;-sPTHREAD_POOL_SIZE=100;-sPROXY_TO_PTHREAD"
+  )
+else()
+  set_target_properties(
+    stlab.test.channel
+    stlab.test.future
+    stlab.test.serial_queue
+    stlab.test.cow
+    stlab.test.task
+    stlab.test.tuple
+    stlab.test.traits
+    stlab.test.forest
+    PROPERTIES
+    CXX_EXTENSIONS OFF
+  )
+endif()
+
+
 
 
 #
