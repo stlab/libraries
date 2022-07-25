@@ -114,24 +114,19 @@ endfunction()
 # to the result. The following table shows the correspondence between result
 # values and task systems.
 #
-# | Result value | Task system                                |
-# |--------------+--------------------------------------------|
-# | libdispatch  | libdispatch (aka. Grand Central Dispatch ) |
-# | portable     | A portable task system provided by stlab   |
-# | emscripten   | Emscripten's task system                   |
-# | windows      | Windows's task system                      |
+# | Result value | Task system                                                    |
+# |--------------+----------------------------------------------------------------|
+# | libdispatch  | libdispatch (aka. Grand Central Dispatch )                     |
+# | portable     | A portable task system provided by stlab (supports Emscripten) |
+# | windows      | Windows's task system                                          |
 function( stlab_detect_task_system result_var )
   find_package( Threads QUIET )
   if( APPLE )
     set( result "libdispatch")
-  elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
-    if( Threads_FOUND )
-      set( result "emscripten")
-    else()
-      set( result "portable")
-    endif()
   elseif( WIN32 )
     set( result "windows")
+  elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
+    set( result "portable")
   else()
     find_package( libdispatch )
     if( libdispatch_FOUND )

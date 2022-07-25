@@ -104,7 +104,28 @@ struct main_executor_type {
 
 #elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 
-using main_executor_type = default_executor_type;
+struct main_scheduler_type {
+    using result_type = void;
+
+    template <class F>
+    void operator()(F&& f) const {
+        using function_type = typename std::remove_reference<F>::type;
+        auto p = new function_type(std::forward<F>(f));
+
+        emscripten_async_run_in_main_runtime_thread(
+            EM_FUNC_SIG_VI,
+            static_cast<void(*)(void*)>([](void* f_) {
+                emscripten_async_call(
+                    [](void* f_) {
+                        auto f = static_cast<function_type*>(f_);
+                        (*f)();
+                        delete f;
+                    },
+                    f_, 0);
+            }),
+            p);
+    }
+};
 
 #elif STLAB_MAIN_EXECUTOR(NONE)
 
