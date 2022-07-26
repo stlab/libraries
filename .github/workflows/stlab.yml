@@ -19,7 +19,7 @@ jobs:
         id: set-matrix
         # Note: The json in this variable must be a single line for parsing to succeed.
         run: echo "::set-output name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)"
-          
+
   builds:
     needs: generate-matrix
     runs-on: ${{ matrix.config.os }}
@@ -30,6 +30,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: mymindstorm/setup-emsdk@v11
+        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
+      
+      - name: Verify Emsdk Installation
+        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
+        run: |
+          which emcc
+          emcc -v
 
       - name: Install dependencies (macos)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
@@ -59,11 +67,6 @@ jobs:
           sudo apt-get install -y ninja-build
           sudo apt update -y && sudo apt install firefox -y
           git clone --depth 1 --recurse-submodules https://github.com/boostorg/boost.git ~/boost
-          git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
-          cd ~/emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
-          source ./emsdk_env.sh
 
       - name: Set enviroment variables (Linux+GCC)
         if: ${{ matrix.config.compiler == 'gcc' }}
