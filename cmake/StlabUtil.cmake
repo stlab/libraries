@@ -154,7 +154,7 @@ function( stlab_detect_main_executor result_var )
 
   if( task_system STREQUAL "libdispatch" )
     set( result "libdispatch")
-  elseif( task_system STREQUAL "emscripten" )
+  elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
     set( result "emscripten")
   elseif( Qt6Core_FOUND )
     set( result "qt")
