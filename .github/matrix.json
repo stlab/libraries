@@ -27,7 +27,7 @@
         },
         {
             "name": "Linux Webassembly",
-            "compiler": "emcc",
+            "compiler": "emscripten",
             "os": "ubuntu-22.04"
         }
     ]
