@@ -66,7 +66,7 @@ jobs:
         run: |
           sudo apt-get install -y ninja-build
           sudo apt update -y && sudo apt install firefox -y
-          git clone --depth 1 --recurse-submodules https://github.com/boostorg/boost.git ~/boost
+          git clone --depth 1 --recurse-submodules https://github.com/boostorg/boost.git $HOME/boost
 
       - name: Set enviroment variables (Linux+GCC)
         if: ${{ matrix.config.compiler == 'gcc' }}
@@ -87,9 +87,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p ../build-boost
-          emcmake cmake -S ~/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+          emcmake cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_CXX_FLAGS="-pthread" \
-            -DCMAKE_INSTALL_PREFIX=`which emsdk`/../upstream/emscripten/cache/sysroot/boost-release-emscripten-install \
+            -DCMAKE_INSTALL_PREFIX=`which emsdk`/../upstream/emscripten/cache/sysroot/$HOME/boost-release-emscripten-install \
             -DBOOST_EXCLUDE_LIBRARIES="asio;beast;context;coroutine;fiber;log"
 
           cmake --build ../build-boost
@@ -108,7 +108,7 @@ jobs:
         run: |
           mkdir ../build
           emcmake cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DBOOST_ROOT=~/boost-release-emscripten-install            
+            -DBOOST_ROOT=$HOME/boost-release-emscripten-install            
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
