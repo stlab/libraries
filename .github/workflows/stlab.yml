@@ -96,7 +96,7 @@ jobs:
           mkdir -p ../build/boost
           emcmake cmake -S ~/boost -B ../build/boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_CXX_FLAGS="-pthread" \
-            -DCMAKE_INSTALL_PREFIX=~/emsdk/upstream/emscripten/cache/sysroot/$HOME/build/boost-release-emscripten-install \
+            -DCMAKE_INSTALL_PREFIX=`which emsdk`/../upstream/emscripten/cache/sysroot/$HOME/build/boost-release-emscripten-install \
             -DBOOST_EXCLUDE_LIBRARIES="asio;beast;context;coroutine;fiber;log"
 
           mkdir -p ../build/stlab
