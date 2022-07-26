@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get install -y ninja-build
-          sudo apt update -y && apt install firefox -y
+          sudo apt update -y && sudo apt install firefox -y
           git clone --depth 1 --recurse-submodules https://github.com/boostorg/boost.git ~/boost
           git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
           cd ~/emsdk
