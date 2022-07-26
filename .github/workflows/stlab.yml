@@ -39,7 +39,7 @@ jobs:
         shell: bash
 
       - name: Install dependencies (ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') && "!startsWith(matrix.config.compiler, 'emscripten')" }}
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') && startsWith(matrix.config.compiler, 'emscripten') == false }}
         run: |
           sudo apt-get install -y ninja-build
           sudo apt-get install -y libboost-all-dev
@@ -80,7 +80,7 @@ jobs:
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
       - name: Configure (Unix && !emscripten)
-        if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && "!startsWith(matrix.config.compiler, 'emscripten')" }}
+        if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && startsWith(matrix.config.compiler, 'emscripten') == false }}
         shell: bash
         run: |
           mkdir ../build
@@ -109,7 +109,7 @@ jobs:
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23
 
       - name: Build (Unix && !emscripten)
-        if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && "!startsWith(matrix.config.compiler, 'emscripten')" }}
+        if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && startsWith(matrix.config.compiler, 'emscripten') == false }}
         shell: bash
         run: |
           cmake --build ../build/
@@ -137,7 +137,7 @@ jobs:
             emrun --browser_args="--headless" --browser firefox --kill_start {} \;
 
       - name: Test
-        if: "!startsWith(matrix.config.compiler, 'emscripten')"
+        if: ${{ startsWith(matrix.config.compiler, 'emscripten') == false }}
         shell: bash
         run: |
           cd ../build/
