@@ -142,5 +142,5 @@ jobs:
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
-          find ../build/stlab/test -name "stlab.test.*.html" -exec \
+          find ../build/test -name "stlab.test.*.html" -exec \
             emrun --browser_args="--headless" --browser firefox --kill_start --kill_exit {} \;
