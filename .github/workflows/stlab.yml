@@ -129,7 +129,7 @@ jobs:
           cmake --install ../build/boost
           cmake --build ../build/stlab
 
-      - name: Test
+      - name: Test (emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
