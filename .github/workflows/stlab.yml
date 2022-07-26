@@ -137,7 +137,7 @@ jobs:
             emrun --browser_args="--headless" --browser firefox --kill_start {} \;
 
       - name: Test
-        if: ${{ !startsWith(matrix.config.os, 'emscripten') }}
+        if: ${{ !startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
           cd ../build/
