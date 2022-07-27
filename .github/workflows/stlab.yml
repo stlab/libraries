@@ -117,7 +117,7 @@ jobs:
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23
 
       - name: Build (Unix)
-        if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) }}
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
           cmake --build ../build/
