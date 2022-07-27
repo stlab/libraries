@@ -178,7 +178,7 @@ if (EMSCRIPTEN)
     CXX_EXTENSIONS OFF
     SUFFIX ".html"
     COMPILE_OPTIONS "-pthread;-fwasm-exceptions"
-    LINK_OPTIONS "--emrun;-pthread;-fwasm-exceptions;-sINITIAL_MEMORY=300MB;-sPTHREAD_POOL_SIZE=100;-sPROXY_TO_PTHREAD"
+    LINK_OPTIONS "--emrun;-pthread;-fwasm-exceptions;-sINITIAL_MEMORY=300MB;-sPTHREAD_POOL_SIZE=32;-sPROXY_TO_PTHREAD"
   )
 else()
   set_target_properties(
