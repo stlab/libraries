@@ -89,7 +89,6 @@ jobs:
           mkdir -p ../build-boost
           emcmake cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_CXX_FLAGS="-pthread" \
-            -DCMAKE_INSTALL_PREFIX=`which emsdk`/../upstream/emscripten/cache/sysroot/$HOME/boost-release-emscripten-install \
             -DBOOST_EXCLUDE_LIBRARIES="asio;beast;context;coroutine;fiber;log"
 
           cmake --build ../build-boost
@@ -107,8 +106,7 @@ jobs:
         shell: bash
         run: |
           mkdir ../build
-          emcmake cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DBOOST_ROOT=$HOME/boost-release-emscripten-install            
+          emcmake cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
