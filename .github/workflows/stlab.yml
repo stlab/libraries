@@ -64,7 +64,8 @@ jobs:
           git pull
           ./emsdk install latest
           ./emsdk install latest
-          echo "source $HOME/emsdk/emsdk_env.sh" >> ~/.bash_profile
+          # Note: only steps with `shell: bash -l {0}` will see this source.
+          ./emsdk construct_env
           popd
 
           git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
