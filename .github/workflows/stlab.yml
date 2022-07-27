@@ -63,7 +63,8 @@ jobs:
           pushd $HOME/emsdk
           git pull
           ./emsdk install latest
-          ./emsdk install latest
+          ./emsdk activate latest
+          echo "source $HOME/emsdk/emsdk_env.sh" >> .bash_profile
           popd
 
           git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
@@ -84,9 +85,8 @@ jobs:
 
       - name: Compile Boost (Ubuntu emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-        shell: bash
+        shell: bash -l {0}
         run: |
-          source $HOME/emsdk/emsdk_env.sh
           mkdir -p ../build-boost
           emcmake cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_CXX_FLAGS="-pthread" \
@@ -104,9 +104,8 @@ jobs:
 
       - name: Configure (Ubuntu emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-        shell: bash
+        shell: bash -l {0}
         run: |
-          source $HOME/emsdk/emsdk_env.sh
           mkdir ../build
           emcmake cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
 
@@ -140,8 +139,7 @@ jobs:
 
       - name: Test (emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-        shell: bash
+        shell: bash -l {0}
         run: |
-          source $HOME/emsdk/emsdk_env.sh
           find ../build/test -name "stlab.test.*.html" -exec \
             emrun --browser_args="--headless" --browser firefox --kill_start --kill_exit {} \;
