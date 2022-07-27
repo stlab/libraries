@@ -30,8 +30,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: mymindstorm/setup-emsdk@v11
-        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
 
       - name: Install dependencies (macos)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
@@ -60,6 +58,15 @@ jobs:
         run: |
           sudo apt-get install -y ninja-build
           sudo apt update -y && sudo apt install firefox -y
+
+          git clone https://github.com/emscripten-core/emsdk.git $HOME/emsdk
+          pushd $HOME/emsdk
+          git pull
+          ./emsdk install latest
+          ./emsdk install latest
+          ./emsdk construct_env
+          popd
+
           git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
 
       - name: Set enviroment variables (Linux+GCC)
