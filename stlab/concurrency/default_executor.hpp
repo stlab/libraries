@@ -19,20 +19,16 @@
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
-#include <emscripten.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
-
 #include <algorithm>
 #include <atomic>
 #include <climits>
 #include <condition_variable>
 #include <thread>
 #include <vector>
-
 #endif
 
 /**************************************************************************************************/
@@ -106,29 +102,6 @@ struct executor_type {
                                    (*f)();
                                    delete f;
                                });
-    }
-};
-
-/**************************************************************************************************/
-
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
-
-template <executor_priority P = executor_priority::medium>
-struct executor_type {
-    using result_type = void;
-
-    template <typename F>
-    void operator()(F f) const {
-        // REVISIT (sparent) : Using a negative timeout may give better performance. Need to test.
-        using f_t = decltype(f);
-
-        emscripten_async_call(
-            [](void* f_) {
-                auto f = static_cast<f_t*>(f_);
-                (*f)();
-                delete f;
-            },
-            new f_t(std::move(f)), 0);
     }
 };
 
