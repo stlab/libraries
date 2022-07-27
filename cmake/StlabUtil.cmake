@@ -142,7 +142,7 @@ endfunction()
 # following table shows the correspondence between result values and main
 # executor variants.
 #
-# | Result value | Task system                                |
+# | Result value | Main Executor                              |
 # |--------------+--------------------------------------------|
 # | libdispatch  | libdispatch (aka. Grand Central Dispatch ) |
 # | emscripten   | Emscripten's executor                      |
