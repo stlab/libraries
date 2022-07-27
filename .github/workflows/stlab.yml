@@ -32,12 +32,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: mymindstorm/setup-emsdk@v11
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-      
-      - name: Verify emsdk installation (emscripten)
-        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-        run: |
-          which emcc
-          emcc -v
 
       - name: Install dependencies (macos)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
