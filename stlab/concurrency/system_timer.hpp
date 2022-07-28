@@ -19,8 +19,6 @@
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
-#include <emscripten.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
@@ -81,10 +79,6 @@ struct system_timer_type {
             });
     }
 };
-
-/**************************************************************************************************/
-
-#elif STLAB_TASK_SYSTEM(EMSCRIPTEN)
 
 /**************************************************************************************************/
 
