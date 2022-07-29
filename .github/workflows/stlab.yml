@@ -131,7 +131,6 @@ jobs:
           cmake --build ../build/
 
       - name: Test
-        if: ${{ !startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
           cd ../build/
