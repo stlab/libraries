@@ -90,7 +90,7 @@ jobs:
         run: |
           mkdir -p ../build-boost
           cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DCMAKE_TOOLCHAIN_FILE=./cmake/ExperimentalEmscripten.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/ExperimentalEmscripten.cmake \
             -DBOOST_INCLUDE_LIBRARIES="test"
 
           cmake --build ../build-boost
@@ -109,7 +109,7 @@ jobs:
         run: |
           mkdir ../build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DCMAKE_TOOLCHAIN_FILE=./cmake/ExperimentalEmscripten.cmake
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/ExperimentalEmscripten.cmake
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
