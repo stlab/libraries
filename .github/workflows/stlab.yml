@@ -97,7 +97,7 @@ jobs:
           cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_CXX_FLAGS="-Wno-deprecated-builtins" \
             -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/ExperimentalEmscripten.cmake \
-            -DBOOST_EXCLUDE_LIBRARIES="fiber;beast;context;coroutine;asio;log"
+            -DBOOST_INCLUDE_LIBRARIES="optional;variant;test"
 
           cmake --build ../build-boost
           cmake --install ../build-boost
