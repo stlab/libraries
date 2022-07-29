@@ -70,8 +70,7 @@ jobs:
           echo 'source "/home/runner/emsdk/emsdk_env.sh"' >> $HOME/.bash_profile
           
           # Override Emsdk's bundled node (14.18.2) to the GH Actions system installation (>= 16.16.0)
-          NODE=`which node`
-          sed -i "/^NODE_JS = .*/c\NODE_JS = '${NODE}'" .emscripten
+          sed -i "/^NODE_JS = .*/c\NODE_JS = '`which node`'" .emscripten
           echo "Overwrote .emscripten config file to:"
           cat .emscripten
           popd
