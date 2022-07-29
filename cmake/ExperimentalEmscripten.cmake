@@ -70,8 +70,8 @@ endif()
 # You can read more about the setting here: https://emscripten.org/docs/porting/pthreads.html#blocking-on-the-main-browser-thread
 #
 
-set(CMAKE_CXX_FLAGS "-pthread -fwasm-exceptions -sSUPPORT_LONGJMP=wasm") 
-set(CMAKE_EXE_LINKER_FLAGS "-pthread -fwasm-exceptions -sEXIT_RUNTIME=1 -sINITIAL_MEMORY=300MB -sPTHREAD_POOL_SIZE=32 -sPROXY_TO_PTHREAD")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fwasm-exceptions -sSUPPORT_LONGJMP=wasm")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -fwasm-exceptions -sEXIT_RUNTIME=1 -sINITIAL_MEMORY=300MB -sPTHREAD_POOL_SIZE=32 -sPROXY_TO_PTHREAD")
 set(STLAB_WASM_NODE_JS_MIN_VERSION "v16.16.0")
 
 #
