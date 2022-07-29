@@ -72,7 +72,8 @@ jobs:
           # Override Emsdk's bundled node (14.18.2) to the GH Actions system installation (>= 16.16.0)
           NODE=`which node`
           sed -i "/^NODE_JS = .*/c\NODE_JS = ${NODE}" .emscripten
-
+          echo "Overwrote .emscripten config file to:"
+          cat .emscripten
           popd
 
       - name: Set enviroment variables (Linux+GCC)
