@@ -54,7 +54,7 @@ jobs:
           vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows boost-variant:x64-windows
         shell: cmd
 
-      - name: Install dependencies (emscripten ubuntu)
+      - name: Install dependencies (emscripten && ubuntu)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
@@ -75,21 +75,21 @@ jobs:
           cat .emscripten
           popd
 
-      - name: Set enviroment variables (linux & gcc)
+      - name: Set enviroment variables (linux && gcc)
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
           echo "CC=gcc-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=g++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Set enviroment variables (linux & clang)
+      - name: Set enviroment variables (linux && clang)
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Compile Boost (ubuntu emscripten)
+      - name: Compile Boost (ubuntu && emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash -l {0}
         run: |
@@ -125,7 +125,7 @@ jobs:
           mkdir ..\build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-      - name: Build (Unix)
+      - name: Build (unix)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
