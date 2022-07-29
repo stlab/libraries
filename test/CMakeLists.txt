@@ -163,7 +163,6 @@ add_test(
 # tests are compiled without compiler extensions to ensure the stlab headers
 # are not dependent upon any such extension.
 #
-
 set_target_properties(
   stlab.test.channel
   stlab.test.future
@@ -172,10 +171,7 @@ set_target_properties(
   stlab.test.task
   stlab.test.tuple
   stlab.test.traits
-  stlab.test.forest
-  PROPERTIES
-  CXX_EXTENSIONS OFF
-)
+  PROPERTIES CXX_EXTENSIONS OFF )
 
 #
 # Many of the stlab tests are executed using the system executor which defaults
