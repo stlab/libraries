@@ -42,6 +42,7 @@ jobs:
       - name: Install dependencies (ubuntu)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') && !startsWith(matrix.config.compiler, 'emscripten') }}
         run: |
+          sudo apt-get update
           sudo apt-get install -y ninja-build
           sudo apt-get install -y libboost-all-dev
         shell: bash
@@ -57,7 +58,9 @@ jobs:
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
-          sudo apt-get update && sudo apt-get install -y ninja-build
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+          git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
 
           git clone https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           pushd $HOME/emsdk
@@ -66,8 +69,6 @@ jobs:
           ./emsdk activate latest
           echo 'source "/home/runner/emsdk/emsdk_env.sh"' >> $HOME/.bash_profile
           popd
-
-          git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
 
       - name: Set enviroment variables (Linux+GCC)
         if: ${{ matrix.config.compiler == 'gcc' }}
@@ -107,7 +108,8 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir ../build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=./cmake/ExperimentalEmscripten.cmake
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+            -DCMAKE_TOOLCHAIN_FILE=./cmake/ExperimentalEmscripten.cmake
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
@@ -115,7 +117,8 @@ jobs:
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           mkdir ..\build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake 
 
       - name: Build (Unix)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
