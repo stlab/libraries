@@ -34,6 +34,7 @@ jobs:
       - name: Install dependencies (macos)
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
+          brew update
           brew install boost
           brew install ninja
         shell: bash
@@ -56,8 +57,7 @@ jobs:
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
-          sudo apt-get install -y ninja-build
-          sudo apt update -y && sudo apt install firefox -y
+          sudo apt-get update && sudo apt-get install -y ninja-build
 
           git clone https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           pushd $HOME/emsdk
@@ -88,9 +88,9 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir -p ../build-boost
-          emcmake cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DCMAKE_CXX_FLAGS="-pthread" \
-            -DBOOST_EXCLUDE_LIBRARIES="asio;beast;context;coroutine;fiber;log"
+          cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+            -DCMAKE_TOOLCHAIN_FILE=./cmake/ExperimentalEmscripten.cmake \
+            -DBOOST_INCLUDE_LIBRARIES="test"
 
           cmake --build ../build-boost
           cmake --install ../build-boost
@@ -107,7 +107,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir ../build
-          emcmake cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=./cmake/ExperimentalEmscripten.cmake
 
       - name: Configure (Windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
@@ -136,10 +136,3 @@ jobs:
         run: |
           cd ../build/
           ctest
-
-      - name: Test (emscripten)
-        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-        shell: bash -l {0}
-        run: |
-          find ../build/test -name "stlab.test.*.html" -exec \
-            emrun --browser_args="--headless" --browser firefox --kill_start --kill_exit {} \;
