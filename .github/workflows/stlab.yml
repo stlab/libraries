@@ -47,7 +47,7 @@ jobs:
           sudo apt-get install -y libboost-all-dev
         shell: bash
 
-      - name: Install dependencies (Windows)
+      - name: Install dependencies (windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
           choco install --yes ninja
@@ -75,21 +75,21 @@ jobs:
           cat .emscripten
           popd
 
-      - name: Set enviroment variables (Linux+GCC)
+      - name: Set enviroment variables (linux & gcc)
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
           echo "CC=gcc-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=g++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Set enviroment variables (Linux+Clang)
+      - name: Set enviroment variables (linux & clang)
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Compile Boost (Ubuntu emscripten)
+      - name: Compile Boost (ubuntu emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash -l {0}
         run: |
@@ -102,14 +102,14 @@ jobs:
           cmake --build ../build-boost
           cmake --install ../build-boost
 
-      - name: Configure (Unix && !emscripten)
+      - name: Configure (unix && !emscripten)
         if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && !startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
           mkdir ../build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
 
-      - name: Configure (Ubuntu emscripten)
+      - name: Configure (ubuntu emscripten)
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash -l {0}
         run: |
@@ -117,7 +117,7 @@ jobs:
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/ExperimentalEmscripten.cmake
 
-      - name: Configure (Windows)
+      - name: Configure (windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
