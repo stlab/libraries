@@ -133,6 +133,9 @@ struct main_scheduler_type {
                 emscripten_async_call(
                     [](void* f_) {
                         auto f = static_cast<function_type*>(f_);
+                        // Note the absence of exception handling.
+                        // Operations queued to the task system cannot throw as a precondition. 
+                        // We use packaged tasks to marshal exceptions.
                         (*f)();
                         delete f;
                     },
