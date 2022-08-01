@@ -1,7 +1,7 @@
 #
-# This toolchain file extends Emscripten.cmake provided by the Emscripten SDK,
-# and sets the minimum options required to run the stlab test executables with
-# ctest (using a node runner).
+# This toolchain file extends `Emscripten.cmake` provided by the Emscripten SDK,
+# and set options required to run STLab test drivers with
+# CTest (using a node runner).
 #
 
 #
@@ -33,7 +33,7 @@ endif()
 #
 # `-sSUPPORT_LONGJMP=wasm`
 # Enables experimental support for LONGJMP in functions which may throw exceptions.
-# Without this, boost would not compile (LLVM errored out). 
+# Without this, Boost doesn't compile (LLVM errors out). 
 #
 # `-sEXIT_RUNTIME=1`
 # Indicates the runtime environment (node) should exit when our main() returns.

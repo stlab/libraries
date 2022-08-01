@@ -62,12 +62,12 @@ jobs:
           sudo apt-get install -y ninja-build
           git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
 
-          git clone https://github.com/emscripten-core/emsdk.git $HOME/emsdk
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           pushd $HOME/emsdk
           git pull
           ./emsdk install latest
           ./emsdk activate latest
-          echo 'source "/home/runner/emsdk/emsdk_env.sh"' >> $HOME/.bash_profile
+          echo 'source "~/emsdk/emsdk_env.sh"' >> ~/.bash_profile
           
           # Override Emsdk's bundled node (14.18.2) to the GH Actions system installation (>= 16.16.0)
           sed -i "/^NODE_JS = .*/c\NODE_JS = '`which node`'" .emscripten
