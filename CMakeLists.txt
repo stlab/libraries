@@ -111,11 +111,11 @@ message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 # Print the emcc version information, if relevant.
 #
 if( EMSCRIPTEN )
-  execute_process(COMMAND emcc -v ERROR_VARIABLE EMCC_VERSION)
-  STRING(REGEX REPLACE "\n" ";" EMCC_VERSION "${EMCC_VERSION}")
+  execute_process( COMMAND emcc -v ERROR_VARIABLE EMCC_VERSION )
+  STRING( REGEX REPLACE "\n" ";" EMCC_VERSION "${EMCC_VERSION}" )
   message ( STATUS "stlab: Emscripten version:" )
-  foreach(LINE ${EMCC_VERSION})
-    message (STATUS "\t${LINE}")
+  foreach( LINE ${EMCC_VERSION} )
+    message ( STATUS "\t${LINE}" )
   endforeach()
 endif()
 
