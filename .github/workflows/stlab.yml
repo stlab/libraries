@@ -64,7 +64,6 @@ jobs:
 
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           pushd $HOME/emsdk
-          git pull
           ./emsdk install latest
           ./emsdk activate latest
           echo 'source "~/emsdk/emsdk_env.sh"' >> ~/.bash_profile
