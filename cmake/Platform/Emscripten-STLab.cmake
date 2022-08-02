@@ -7,17 +7,13 @@
 #
 # Find the Emscripten SDK and include its CMake toolchain.
 #
-find_program(EMSDK_EXECUTABLE emsdk)
-if (EMSDK_EXECUTABLE)
-    get_filename_component(EMSDK_ROOT ${EMSDK_EXECUTABLE} DIRECTORY)
-
-    message(TRACE "Appending ${EMSDK_ROOT}/upstream/emscripten/cmake/Modules/Platform to CMAKE_MODULE_PATH")
-    list(APPEND CMAKE_MODULE_PATH "${EMSDK_ROOT}/upstream/emscripten/cmake/Modules/Platform")
-
-    include (Emscripten)
-else()
+find_program( EM_CONFIG_EXECUTABLE em-config )
+if ( NOT EM_CONFIG_EXECUTABLE )
     message(FATAL_ERROR "Could not find emsdk installation. Please install the Emscripten SDK.\nhttps://emscripten.org/docs/getting_started/downloads.html ")
 endif()
+
+execute_process( COMMAND ${EM_CONFIG_EXECUTABLE} EMSCRIPTEN_ROOT OUTPUT_VARIABLE EMSDK_ROOT OUTPUT_STRIP_TRAILING_WHITESPACE)
+include( ${EMSDK_ROOT}/cmake/Modules/Platform/Emscripten.cmake )
 
 #
 # Explanation of flags used:
