@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dependencies (macos)
+      - name: Install dependencies // macOS
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
           brew update
@@ -39,7 +39,7 @@ jobs:
           brew install ninja
         shell: bash
 
-      - name: Install dependencies (ubuntu)
+      - name: Install dependencies // Linux (GCC|Clang)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') && !startsWith(matrix.config.compiler, 'emscripten') }}
         run: |
           sudo apt-get update
@@ -47,14 +47,14 @@ jobs:
           sudo apt-get install -y libboost-all-dev
         shell: bash
 
-      - name: Install dependencies (windows)
+      - name: Install dependencies // Windows
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
           choco install --yes ninja
           vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows boost-variant:x64-windows
         shell: cmd
 
-      - name: Install dependencies (emscripten && ubuntu)
+      - name: Install dependencies // Linux Emscripten
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
@@ -74,21 +74,21 @@ jobs:
           cat .emscripten
           popd
 
-      - name: Set enviroment variables (linux && gcc)
+      - name: Set enviroment variables // Linux GCC
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
           echo "CC=gcc-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=g++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Set enviroment variables (linux && clang)
+      - name: Set enviroment variables // Linux Clang
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Compile Boost (ubuntu && emscripten)
+      - name: Compile Boost // Emscripten
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash -l {0}
         run: |
@@ -101,14 +101,14 @@ jobs:
           cmake --build ../build-boost
           cmake --install ../build-boost
 
-      - name: Configure (unix && !emscripten)
+      - name: Configure // Unix !Emscripten
         if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && !startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
           mkdir ../build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
 
-      - name: Configure (ubuntu emscripten)
+      - name: Configure // Linux Emscripten
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash -l {0}
         run: |
@@ -116,7 +116,7 @@ jobs:
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake
 
-      - name: Configure (windows)
+      - name: Configure // Windows
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
@@ -124,13 +124,13 @@ jobs:
           mkdir ..\build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-      - name: Build (unix)
+      - name: Build // Unix
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
           cmake --build ../build/
 
-      - name: Build (windows)
+      - name: Build // Windows
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
