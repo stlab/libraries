@@ -107,18 +107,6 @@ message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
-#
-# Print the emcc version information, if relevant.
-#
-if( EMSCRIPTEN )
-  execute_process( COMMAND emcc -v ERROR_VARIABLE EMCC_VERSION )
-  STRING( REGEX REPLACE "\n" ";" EMCC_VERSION "${EMCC_VERSION}" )
-  message ( STATUS "stlab: Emscripten version:" )
-  foreach( LINE ${EMCC_VERSION} )
-    message ( STATUS "\t${LINE}" )
-  endforeach()
-endif()
-
 if ( BUILD_TESTING )
   include( stlab/development )
 

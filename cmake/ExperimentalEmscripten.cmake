@@ -110,3 +110,13 @@ endif()
 # But, Boost doesn't consider BUILD_SHARED_LIBS when setting this default.
 #
 set(Boost_USE_STATIC_LIBS ON)
+
+#
+# Print the emcc version information, if relevant.
+#
+execute_process( COMMAND emcc -v ERROR_VARIABLE EMCC_VERSION )
+STRING( REGEX REPLACE "\n" ";" EMCC_VERSION "${EMCC_VERSION}" )
+message ( STATUS "stlab: Emscripten version:" )
+foreach( LINE ${EMCC_VERSION} )
+  message ( STATUS "\t${LINE}" )
+endforeach()
