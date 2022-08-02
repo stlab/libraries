@@ -9,7 +9,7 @@
 #
 find_program( EM_CONFIG_EXECUTABLE em-config )
 if ( NOT EM_CONFIG_EXECUTABLE )
-    message( FATAL_ERROR "Could not find emsdk installation. Please install the Emscripten SDK.\nhttps://emscripten.org/docs/getting_started/downloads.html ")
+    message( FATAL_ERROR "Could not find emsdk installation. Please install the Emscripten SDK.\nhttps://emscripten.org/docs/getting_started/downloads.html" )
 endif()
 
 execute_process( COMMAND ${EM_CONFIG_EXECUTABLE} EMSCRIPTEN_ROOT OUTPUT_VARIABLE EMSDK_ROOT OUTPUT_STRIP_TRAILING_WHITESPACE )
