@@ -95,7 +95,7 @@ jobs:
           mkdir -p ../build-boost
           cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
             -DCMAKE_CXX_FLAGS="-Wno-deprecated-builtins" \
-            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/ExperimentalEmscripten.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake \
             -DBOOST_INCLUDE_LIBRARIES="optional;variant;multiprecision;test"
 
           cmake --build ../build-boost
@@ -114,7 +114,7 @@ jobs:
         run: |
           mkdir ../build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/ExperimentalEmscripten.cmake
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake
 
       - name: Configure (windows)
         if: ${{ startsWith(matrix.config.os, 'windows') }}
