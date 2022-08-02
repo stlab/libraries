@@ -45,7 +45,7 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -sSUPPORT_LONGJMP=wasm" )
 
 #
 # `-sEXIT_RUNTIME=1`
-# Indicates the runtime environment (node) should exit when our main() returns.
+# Indicates the runtime environment (node) should exit when `main()` returns.
 #
 set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXIT_RUNTIME=1" )
 
@@ -55,7 +55,7 @@ set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXIT_RUNTIME=1" )
 #
 #   Pthread 0x0058faf8 sent an error! http://localhost:6931/<test>: RuntimeError: unreachable executed
 #
-# If we run the problematic test in a browser with `emrun`, we can see some javascript errors that explain:
+# If the problematic test is run in a browser with `emrun`, JavaScript errors are emitted that explain:
 #
 #   Aborted(Cannot enlarge memory arrays to size 17457152 bytes (OOM). Either
 #   (1) compile with -sINITIAL_MEMORY=X with X higher than the current value 16777216, 
@@ -95,6 +95,7 @@ set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sPROXY_TO_PTHREAD" )
 # --experimental-wasm-xxx flags are supported by node.
 #
 set( STLAB_WASM_NODE_JS_MIN_VERSION "16.16.0" )
+
 set( NODE_JS_FLAGS "--experimental-wasm-threads;--experimental-wasm-eh" )
 
 #
