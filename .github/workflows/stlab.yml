@@ -66,7 +66,7 @@ jobs:
           pushd $HOME/emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          echo 'source "~/emsdk/emsdk_env.sh"' >> ~/.bash_profile
+          echo 'source "$HOME/emsdk/emsdk_env.sh"' >> $HOME/.bash_profile
           
           # Override Emsdk's bundled node (14.18.2) to the GH Actions system installation (>= 16.16.0)
           sed -i "/^NODE_JS = .*/c\NODE_JS = '`which node`'" .emscripten
