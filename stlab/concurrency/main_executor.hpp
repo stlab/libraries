@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
+#include <utility>
+
 #include <stlab/config.hpp>
 
 #if STLAB_MAIN_EXECUTOR(QT)
