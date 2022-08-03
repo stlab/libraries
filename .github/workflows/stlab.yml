@@ -19,7 +19,7 @@ jobs:
         id: set-matrix
         # Note: The json in this variable must be a single line for parsing to succeed.
         run: echo "::set-output name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)"
-          
+
   builds:
     needs: generate-matrix
     runs-on: ${{ matrix.config.os }}
@@ -31,63 +31,106 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dependencies (macos)
+      - name: Install dependencies // macOS
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
+          brew update
           brew install boost
           brew install ninja
         shell: bash
 
-      - name: Install dependencies (ubuntu)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') }}
+      - name: Install dependencies // Linux (GCC|Clang)
+        if: ${{ startsWith(matrix.config.os, 'ubuntu') && !startsWith(matrix.config.compiler, 'emscripten') }}
         run: |
+          sudo apt-get update
           sudo apt-get install -y ninja-build
           sudo apt-get install -y libboost-all-dev
         shell: bash
 
-      - name: Install dependencies (Windows)
+      - name: Install dependencies // Windows
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
           choco install --yes ninja
           vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows boost-variant:x64-windows
         shell: cmd
 
-      - name: Set enviroment variables (Linux+GCC)
+      - name: Install dependencies // Linux Emscripten
+        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+          git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
+
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git $HOME/emsdk
+          pushd $HOME/emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo 'source "$HOME/emsdk/emsdk_env.sh"' >> $HOME/.bash_profile
+          
+          # Override Emsdk's bundled node (14.18.2) to the GH Actions system installation (>= 16.16.0)
+          sed -i "/^NODE_JS = .*/c\NODE_JS = '`which node`'" .emscripten
+          echo "Overwrote .emscripten config file to:"
+          cat .emscripten
+          popd
+
+      - name: Set enviroment variables // Linux GCC
         if: ${{ matrix.config.compiler == 'gcc' }}
         shell: bash
         run: |
           echo "CC=gcc-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=g++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Set enviroment variables (Linux+Clang)
+      - name: Set enviroment variables // Linux Clang
         if: ${{ matrix.config.compiler == 'clang' }}
         shell: bash
         run: |
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Configure (Unix)
-        if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
+      - name: Compile Boost // Emscripten
+        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
+        shell: bash -l {0}
+        run: |
+          mkdir -p ../build-boost
+          cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+            -DCMAKE_CXX_FLAGS="-Wno-deprecated-builtins" \
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake \
+            -DBOOST_INCLUDE_LIBRARIES="optional;variant;multiprecision;test"
+
+          cmake --build ../build-boost
+          cmake --install ../build-boost
+
+      - name: Configure // Unix !Emscripten
+        if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && !startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
           mkdir ../build
           cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23
 
-      - name: Configure (Windows)
+      - name: Configure // Linux Emscripten
+        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
+        shell: bash -l {0}
+        run: |
+          mkdir ../build
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake
+
+      - name: Configure // Windows
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           mkdir ..\build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-      - name: Build (Unix)
+      - name: Build // Unix
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
         shell: bash
         run: |
           cmake --build ../build/
 
-      - name: Build (windows)
+      - name: Build // Windows
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: cmd
         run: |
@@ -98,4 +141,4 @@ jobs:
         shell: bash
         run: |
           cd ../build/
-          ctest
+          ctest --output-on-failure

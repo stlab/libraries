@@ -104,7 +104,46 @@ struct main_executor_type {
 
 #elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 
-using main_executor_type = default_executor_type;
+struct main_scheduler_type {
+    using result_type = void;
+
+    template <class F>
+    void operator()(F&& f) const {
+        using function_type = typename std::remove_reference<F>::type;
+        auto p = new function_type(std::forward<F>(f));
+
+         /*
+           `emscripten_async_run_in_main_runtime_thread()` schedules a function to run on the main
+            JS thread, however, the code can be executed at any POSIX thread cancelation point if
+            wasm code is executing on the JS main thread.
+            Executing the code from a POSIX thread cancelation point can cause problems, including
+            deadlocks and data corruption. Consider:
+            ```
+                mutex.lock();   // <-- If reentered, would deadlock here
+                new T;          // <-- POSIX cancelation point, could reenter
+            ```
+            The call to `emscripten_async_call()` bounces the call to execute as part of the main
+            run-loop on the current (main) thread. This avoids nasty reentrancy issues if executed
+            from a POSIX thread cancelation point.
+        */
+
+        emscripten_async_run_in_main_runtime_thread(
+            EM_FUNC_SIG_VI,
+            static_cast<void(*)(void*)>([](void* f_) {
+                emscripten_async_call(
+                    [](void* f_) {
+                        auto f = static_cast<function_type*>(f_);
+                        // Note the absence of exception handling.
+                        // Operations queued to the task system cannot throw as a precondition. 
+                        // We use packaged tasks to marshal exceptions.
+                        (*f)();
+                        delete f;
+                    },
+                    f_, 0);
+            }),
+            p);
+    }
+};
 
 #elif STLAB_MAIN_EXECUTOR(NONE)
 
