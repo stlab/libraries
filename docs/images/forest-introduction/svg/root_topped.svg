@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100.000000' height='135.000000'>
+    <path d='M 62.000000 50.000000 C86.271941 13.674474 25.831469 9.710810 31.616601 38.109008' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='35.773949 35.331157, 38.283443 48.086643, 27.459253 40.886859' fill='black' stroke='none'/>
+    <path d='M 37.000000 100.000000 C12.728059 136.325526 73.168531 140.289190 67.383399 111.890992' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='63.226051 114.668843, 60.716557 101.913357, 71.540747 109.113141' fill='black' stroke='none'/>
+    <rect x='25.000000' y='50.000000' fill='white' width='50.000000' height='50.000000' stroke='darkred' stroke-width='2.000000'/>
+    <text font-size='16.000000' text-anchor='middle' x='50.000000' y='75.000000' dominant-baseline='central' fill='black'>
+&#x211C;<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+</svg>

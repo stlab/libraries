@@ -1,0 +1,42 @@
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely need to edit after that.
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'jekyll serve'. If you change this file, please restart the server process.
+
+# Site settings
+title: stlab
+subtitle: modern, modular C++ algorithms and data structures.
+email: sean.parent@stlab.cc
+description: > # this means to ignore newlines until "baseurl:"
+    stlab hosts modern, modular C++ algorithms and data structures.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "http://www.stlab.cc" # the base hostname & protocol for your site
+twitter_username: SeanParent
+github_username:  stlab
+remote_theme: adobe/hyde-theme@v1.1.0
+exclude:
+    - _source
+    - build
+    - stlab # from building examples
+    - boost # from building examples
+    - boost.tgz # from building examples
+    - "*.sh"
+    - README.md
+    - stlab.bbprojectd/
+    - vendor # For Travis-CI (see https://jekyllrb.com/docs/continuous-integration/)
+    - tools/
+    - bs-config.sj
+    - CMakeLists.txt
+    - Gemfile
+    - Gemfile.lock
+adobe_hyde:
+    header_image: stlab-logo-long.svg
+excerpt_separator: <!--more-->
+markdown: kramdown
+utterances:
+    repo: stlab/stlab.github.io 
+    label: "utterance"
+plugins:
+  - jekyll-redirect-from

@@ -1,0 +1,202 @@
+[
+  {
+    "name": "v1.6.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.6.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.6.0",
+    "commit": {
+      "sha": "8bec44964e6d477237d230d826b73cb54860068e",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/8bec44964e6d477237d230d826b73cb54860068e"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjYuMA=="
+  },
+  {
+    "name": "v1.5.6",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.6",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.6",
+    "commit": {
+      "sha": "c9d5de0b2ab5ef6b16bfee1d9e7e83a28246ae1f",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/c9d5de0b2ab5ef6b16bfee1d9e7e83a28246ae1f"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuNg=="
+  },
+  {
+    "name": "v1.5.5",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.5",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.5",
+    "commit": {
+      "sha": "31f2c718b832c0683408a9c4b5238294bd10e7de",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/31f2c718b832c0683408a9c4b5238294bd10e7de"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuNQ=="
+  },
+  {
+    "name": "v1.5.4",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.4",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.4",
+    "commit": {
+      "sha": "51e936705d53019468b476a2c41714eb597dd1b6",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/51e936705d53019468b476a2c41714eb597dd1b6"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuNA=="
+  },
+  {
+    "name": "v1.5.3",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.3",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.3",
+    "commit": {
+      "sha": "e91c2205c8c73143b0eb4b472424ea2f4feff3ec",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/e91c2205c8c73143b0eb4b472424ea2f4feff3ec"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuMw=="
+  },
+  {
+    "name": "v1.5.2",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.2",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.2",
+    "commit": {
+      "sha": "2e411dd5c8b7eb096e9eb04c46b569c775b126c6",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/2e411dd5c8b7eb096e9eb04c46b569c775b126c6"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuMg=="
+  },
+  {
+    "name": "v1.5.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.1",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.1",
+    "commit": {
+      "sha": "328ef2b423df2aadc7c932bb8d6408406714bf37",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/328ef2b423df2aadc7c932bb8d6408406714bf37"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuMQ=="
+  },
+  {
+    "name": "v1.5.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.5.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.5.0",
+    "commit": {
+      "sha": "41446a20a734299caf9a20210c3b6bbb4250e35d",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/41446a20a734299caf9a20210c3b6bbb4250e35d"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjUuMA=="
+  },
+  {
+    "name": "v1.4.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.4.1",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.4.1",
+    "commit": {
+      "sha": "77465f739b1f7d23013ec29b5e683f295cbcee84",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/77465f739b1f7d23013ec29b5e683f295cbcee84"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjQuMQ=="
+  },
+  {
+    "name": "v1.4.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.4.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.4.0",
+    "commit": {
+      "sha": "fa815b4531904cb9a68b11a0026964e0b197c9de",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/fa815b4531904cb9a68b11a0026964e0b197c9de"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjQuMA=="
+  },
+  {
+    "name": "v1.3.3",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.3.3",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.3.3",
+    "commit": {
+      "sha": "1a9ec94227b0427c1d6a6afb323a5c92d0aa4048",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/1a9ec94227b0427c1d6a6afb323a5c92d0aa4048"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjMuMw=="
+  },
+  {
+    "name": "v1.3.2",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.3.2",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.3.2",
+    "commit": {
+      "sha": "3cb8d9b218581d2b2f04fe68ffa99c8b9608f55e",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/3cb8d9b218581d2b2f04fe68ffa99c8b9608f55e"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjMuMg=="
+  },
+  {
+    "name": "v1.3.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.3.1",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.3.1",
+    "commit": {
+      "sha": "fdb3ab411777a68305b1dd0c77417d12ef5ba9b3",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/fdb3ab411777a68305b1dd0c77417d12ef5ba9b3"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjMuMQ=="
+  },
+  {
+    "name": "v1.3.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.3.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.3.0",
+    "commit": {
+      "sha": "128cc41d441e6f4b695ab00fc2592f11aa896d58",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/128cc41d441e6f4b695ab00fc2592f11aa896d58"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjMuMA=="
+  },
+  {
+    "name": "v1.2.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.2.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.2.0",
+    "commit": {
+      "sha": "b17593c5732bf8ad49c0180e33a75a5cdb4c2481",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/b17593c5732bf8ad49c0180e33a75a5cdb4c2481"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjIuMA=="
+  },
+  {
+    "name": "v1.1.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.1.1",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.1.1",
+    "commit": {
+      "sha": "eac93e4e7b3fd1e86c0ab73978a7419516952424",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/eac93e4e7b3fd1e86c0ab73978a7419516952424"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjEuMQ=="
+  },
+  {
+    "name": "v1.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.1",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.1",
+    "commit": {
+      "sha": "7ac995122cb891dbc3b8373fdc036cfc9ca6d98b",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/7ac995122cb891dbc3b8373fdc036cfc9ca6d98b"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjE="
+  },
+  {
+    "name": "v1.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.0",
+    "commit": {
+      "sha": "1b106fe89318c855fef3dc56d81f98e0c26c2cff",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/1b106fe89318c855fef3dc56d81f98e0c26c2cff"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjA="
+  },
+  {
+    "name": "1.5.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/1.5.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/1.5.0",
+    "commit": {
+      "sha": "41446a20a734299caf9a20210c3b6bbb4250e35d",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/41446a20a734299caf9a20210c3b6bbb4250e35d"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzLzEuNS4w"
+  },
+  {
+    "name": "1.3.0",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/1.3.0",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/1.3.0",
+    "commit": {
+      "sha": "128cc41d441e6f4b695ab00fc2592f11aa896d58",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/128cc41d441e6f4b695ab00fc2592f11aa896d58"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzLzEuMy4w"
+  }
+]
