@@ -6,7 +6,7 @@ brief: Fullorder iterator that visits forest nodes in reverse
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename I>\nstruct stlab::reverse_fullorder_iterator;"
+declaration: "template <class I>\nstruct stlab::reverse_fullorder_iterator;"
 dtor: unspecified
 typedefs:
   difference_type:
