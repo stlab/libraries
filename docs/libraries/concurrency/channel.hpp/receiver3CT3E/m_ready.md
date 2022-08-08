@@ -1,20 +1,14 @@
 ---
 layout: method
 title: ready
-tags: [library]
-pure-name: ready
-defined-in-header: stlab/concurrency/channel.hpp 
-declaration: ready()
-description: Returns `true` if the receiver is ready, otherwise `false`.
-entities:
-  - kind: methods
-    list:
-      - name: stlab::receiver::ready
-        pure-name: ready
-        defined-in-header: stlab/concurrency/channel.hpp 
-        declaration: bool ready() const
-        description: Returns `true` if this receiver is ready to receive values.
-  - kind: result
-    description: if the receiver was set to ready, it returns `true`, otherwise `false`; the initial value is `false`.
-  - kind: parameters
+owner: FelixPetriconi
+brief: Returns `true` if the receiver is ready, otherwise `false`.
+tags:
+  - method
+defined_in_file: concurrency/channel.hpp
+overloads:
+  bool ready() const:
+    description: If the receiver was set to ready, it returns `true`, otherwise `false`; the initial value is `false`.
+    return: `true` if this receiver is ready to receive values.
+    signature_with_names: bool ready() const
 ---

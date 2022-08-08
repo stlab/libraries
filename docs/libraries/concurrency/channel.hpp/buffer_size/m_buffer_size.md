@@ -1,22 +1,20 @@
 ---
 layout: method
-title: stlab::buffer_size
-tags: [library]
-pure-name: buffer_size
-defined-in-header: stlab/concurrency/channel.hpp 
-declaration: buffer_size()
-description: Constructs a new buffer_size object
-entities:
-  - kind: methods
-    list:
-      - name: stlab::buffer_size::buffer_size
-        pure-name: buffer_size
-        defined-in-header: stlab/concurrency/channel.hpp 
-        declaration: buffer_size(std::size_t sz)
-        description: Constructs a new buffer_size object and initializes it with the value sz.
-  - kind: parameters
-    list:
-      - name: sz
-        description: Specifies the size of the buffer
+title: buffer_size
+owner: FelixPetriconi
+brief: buffer_size constructor
 example: buffer_size_example.cpp
+tags:
+  - method
+defined_in_file: concurrency/channel.hpp
+is_ctor: true
+overloads:
+  buffer_size(std::size_t):
+    arguments:
+      - description: Specifies the size of the buffer
+        name: b
+        type: std::size_t
+    description: "Constructs a new buffer_size object and initializes it with the value `b`."
+    return: "A buffer_size object of size `b`."
+    signature_with_names: buffer_size(std::size_t b)
 ---
