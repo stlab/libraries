@@ -1,62 +1,53 @@
 #!/bin/bash
 
-OLD=docs/libraries/concurrency/channel
-NEW=docs/libraries/concurrency/channel.hpp
+OLD=docs/libraries/concurrency/future
+NEW=docs/libraries/concurrency/future.hpp
+NEW_READY_FUTURE=docs/libraries/concurrency/ready_future.hpp
 
-mkdir -p $NEW
+mkdir -p $NEW/packaged_task
+mkdir -p $NEW_READY_FUTURE
 
 move() {
-    git mv $OLD/$1.md $NEW/$2.md
+    EXTENSION=${3:-md}  
+    git mv $OLD/$1.$EXTENSION $NEW/$2.$EXTENSION
 }
 
-# argument_of does not exist in the old docs.
-
-mkdir -p $NEW/buffer_size
-
-move receiver/buffer_size/buffer_size buffer_size/m_buffer_size
-move receiver/buffer_size/index buffer_size/index
-
-# channel_error does not exist in the old docs
-
-# first_ does not exist in the old docs
-
-# function_process does not exist in the old docs
-
-# identity does not exist in the old docs
-
-# receiver3CT3E/...
-
-mkdir -p $NEW/receiver3CT3E
-
-move receiver/index receiver3CT3E/index
-git mv $OLD/receiver/operator_pipe_example.cpp $NEW/receiver3CT3E/operator_pipe_example.cpp
-move receiver/operator_pipe receiver3CT3E/m_operator7C
-move receiver/ready receiver3CT3E/m_ready
-git mv $OLD/receiver/set_ready_example.cpp $NEW/receiver3CT3E/set_ready_example.cpp
-move receiver/set_ready receiver3CT3E/set_ready
-
-# result_of does not exist in the old docs.
-
-# round_robin_t does not exist in the old docs
-
-# Moving all old sender stuff into the copyable variant, arbitrarily.
-COPYABLE_SENDER=sender3CT2C20enable_if_.a01d6424
-
-mkdir -p $NEW/$COPYABLE_SENDER
-
-git mv $OLD/sender/call_operator_example.cpp $NEW/$COPYABLE_SENDER/call_operator_example.cpp
-git mv $OLD/sender/close_example.cpp $NEW/$COPYABLE_SENDER/close_example.cpp
-move sender/close $COPYABLE_SENDER/m_close
-move sender/index $COPYABLE_SENDER/index
-move "sender/operator()" $COPYABLE_SENDER/m_operator2829
-
-# unordered_t does not exist in the old docs.
-
-move channel f_channel
-# for_each_n does not exist in the old docs
-move join f_join
-move merge_channel f_merge_channel
-move merge f_merge
-move zip_with f_zip_with
-move zip f_zip
+move async_example async_example cpp
+move async f_async
+# blocking_get has been moved to await.hpp
 move index index
+git mv $OLD/make_exceptional_future.md $NEW_READY_FUTURE/f_make_exceptional_future.md
+git mv $OLD/make_ready_future.md $NEW_READY_FUTURE/f_make_ready_future.md
+move package_example packaged_task/package_example cpp
+move package packaged_task/f_package
+move when_all_example when_all_example cpp
+move when_all_void_example when_all_void_example cpp
+move when_all f_when_all
+move when_any_example when_any_example cpp
+move when_any_void_example when_any_void_example cpp
+move when_any f_when_any
+
+# Arbitrarily copy the existing future docs into the copyable-T-variant
+COPYABLE_T_FUTURE=future3CT2C20enable_if_.e055d50a
+
+mkdir -p $NEW/$COPYABLE_T_FUTURE
+
+move future/detach_example $COPYABLE_T_FUTURE/detach_example cpp
+move future/detach $COPYABLE_T_FUTURE/m_detach
+move future/error $COPYABLE_T_FUTURE/m_error
+move future/exception $COPYABLE_T_FUTURE/m_exception
+move future/get_try $COPYABLE_T_FUTURE/m_get_try
+move future/index $COPYABLE_T_FUTURE/index
+move future/is_ready $COPYABLE_T_FUTURE/m_is_ready
+move future/operator_co_await_example $COPYABLE_T_FUTURE/operator_co_await_example cpp
+# Hyde isn't generating docs for operator co_await, likely because our language version is < 20
+move future/operator_pipe $COPYABLE_T_FUTURE/m_operator7C
+move future/operator_xor $COPYABLE_T_FUTURE/m_operator5E
+move future/recover_example $COPYABLE_T_FUTURE/recover_example cpp
+move future/recover $COPYABLE_T_FUTURE/m_recover
+move future/reset $COPYABLE_T_FUTURE/m_reset
+move future/then_continuation_example $COPYABLE_T_FUTURE/then_continuation_example cpp
+move future/then_reduction_example $COPYABLE_T_FUTURE/then_reduction_example cpp
+move future/then_split_example $COPYABLE_T_FUTURE/then_split_example cpp
+move future/then $COPYABLE_T_FUTURE/m_then
+move future/valid $COPYABLE_T_FUTURE/m_valid
