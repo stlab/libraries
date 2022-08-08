@@ -1,23 +1,35 @@
 ---
 layout: method
-title: stlab::annotate::annotate
-tags: [library]
-scope: annotate
-pure-name: annotate
-defined-in-header: stlab/test/model.hpp
+title: annotate
+owner: sean-parent
 brief: Constructs an annotate
-entities:
-  - kind: methods
-    list:
-      - name: stlab::annotate::annotate
-        pure-name: annotate
-        defined-in-header: stlab/test/model.hpp
-        description: Only way to create an annotate 
-        declaration: |
-            annotate(annotate_counters& counters)
- 
-  - kind: parameters
-    list:
-      - name: counters
-        description: The instance of counters in which all events are recorded
+tags:
+  - method
+defined_in_file: test/model.hpp
+is_ctor: true
+overloads:
+  annotate(const stlab::annotate &):
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: const stlab::annotate &
+    description: __MISSING__
+    return: __OPTIONAL__
+    signature_with_names: annotate(const stlab::annotate & x)
+  annotate(stlab::annotate &&):
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: stlab::annotate &&
+    description: __MISSING__
+    return: __OPTIONAL__
+    signature_with_names: annotate(stlab::annotate && x)
+  explicit annotate(stlab::annotate_counters &):
+    arguments:
+      - description: The instance of counters in which all events are recorded
+        name: counters
+        type: stlab::annotate_counters &
+    description: __MISSING__
+    return: __OPTIONAL__
+    signature_with_names: explicit annotate(stlab::annotate_counters & counters)
 ---
