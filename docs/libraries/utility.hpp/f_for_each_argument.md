@@ -1,26 +1,25 @@
 ---
 layout: function
-title: stlab::for_each_argument
-tags: [library]
-scope: stlab
-pure-name: for_each_argument
+title: for_each_argument
+owner: sean-parent
 brief: Execute a function for each passed argument
-annotation: template function
 example: [ for_each_argument_example.cpp ]
-defined-in-header: stlab/utility.hpp
-entities:
-  - kind: overloads
-    list:
-      - name: for_each_argument
-        pure-name: for_each_argument
-        declaration: |
-            template<class F, class... Args>
-            void for_each_argument(F&& f, Args&&...args)
-        description: Executes `f` individually for each of `args`
-  - kind: parameters
-    list:
-      - name: f
-        description: Unary function that can take all arguments of type `Args`
-      - name: args
-        description: Arguments to be passed one-by-one to `f`
+tags:
+  - function
+defined_in_file: utility.hpp
+overloads:
+  "template <class F, class... Args>\nvoid for_each_argument(F &&, Args &&...)":
+    arguments:
+      - description: Unary function that can take all arguments of type `Args`
+        name: f
+        type: F &&
+      - description: Arguments to be passed one-by-one to `f`
+        name: args
+        type: Args &&...
+    description: __OPTIONAL__
+    return: __OPTIONAL__
+    signature_with_names: "template <class F, class... Args>\nvoid for_each_argument(F && f, Args &&... args)"
+namespace:
+  - stlab
+  - v1
 ---
