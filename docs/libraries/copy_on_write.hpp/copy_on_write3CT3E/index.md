@@ -2,10 +2,10 @@
 layout: class
 title: copy_on_write<T>
 owner: sean-parent
-brief: A copy-on-write wrapper for any type that models `RegularType`.
+brief: A copy-on-write wrapper for any type that models `RegularType`
 tags:
   - class
-defined-in-file: stlab/copy_on_write.hpp
+defined_in_file: copy_on_write.hpp
 declaration: "template <typename T>\nclass stlab::copy_on_write;"
 typedefs:
   element_type:
@@ -16,7 +16,7 @@ typedefs:
     description: The type of value stored
 fields:
   default_s:
-    description: Shared, empty model instance.
+    description: Shared, empty model instance
     type: stlab::copy_on_write::model
 namespace:
   - stlab

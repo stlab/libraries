@@ -5,7 +5,7 @@ owner: sean-parent
 brief: Obtain a non-`const` reference to the underlying value
 tags:
   - method
-defined-in-file: stlab/copy_on_write.hpp
+defined_in_file: copy_on_write.hpp
 overloads:
   auto write() -> stlab::copy_on_write::element_type &:
     description: Singular variant

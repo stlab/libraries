@@ -5,7 +5,7 @@ owner: sean-parent
 brief: Returns if the object instance reference count is one
 tags:
   - method
-defined-in-file: stlab/copy_on_write.hpp
+defined_in_file: copy_on_write.hpp
 overloads:
   bool unique() const:
     description: Singular variant
