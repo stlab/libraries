@@ -15,17 +15,20 @@ CMAKE_BUILD_DIR=../BUILD-DOCS
 XCODE_TOOLCHAIN=$(xcode-select -p)
 XCODE_CPP_DIR=${XCODE_TOOLCHAIN}/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
 
-HYDE_EXECUTABLE=/Users/demarco/dev/hyde/build/hyde
+HYDE_EXECUTABLE=`which hyde`
+HYDE_VALIDATE_FLAG="--hyde-validate"
+HYDE_UPDATE_FLAG="--hyde-update"
+HYDE_ARGS="--access-filter-public --use-system-clang"
 CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR -DSTLAB_TASK_SYSTEM=portable"
 
 #
 # User-configured variables
 #
 
-FORCE=0
 ALL_NAMESPACES=0
+FORCE=0
 PATTERN="*.hpp"
-HYDE_ARGS="--hyde-update --access-filter-public --use-system-clang"
+UPDATE=0
 
 #
 # Argument Parsing
@@ -33,6 +36,10 @@ HYDE_ARGS="--hyde-update --access-filter-public --use-system-clang"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    -u|--update)
+      UPDATE=1
+      shift # past flag
+      ;;
     -f|--force)
       FORCE=1
       shift # past flag
@@ -53,6 +60,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+#
+# Only update the documentation if -u|--update was provided.
+# By default, only run Hyde validation.
+#
+
+if [ $UPDATE -eq 1 ]
+then
+    HYDE_ARGS="$HYDE_UPDATE_FLAG $HYDE_ARGS"
+else
+    HYDE_ARGS="$HYDE_VALIDATE_FLAG $HYDE_ARGS"
+fi
+
+#
+# Ignore detail namespaces by default, unless -a|--all-namespaces was provided.
+#
+
 if [ $ALL_NAMESPACES -eq 0 ]
 then
     HYDE_ARGS="${HYDE_ARGS} --namespace-blacklist=detail,unsafe"
@@ -71,6 +94,10 @@ then
 else
     cmake -S. -B $CMAKE_BUILD_DIR -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release
 fi
+
+#
+# Run Hyde on every file matching $PATTERN found in the stlab/ directory.
+#
 
 pushd $(dirname $0) > /dev/null
 
