@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #
-# The intent of this script is to generate the documentation shell for stlab.github.io.
-# Note that stlab.github.io is a submodule of this repository, stored in /docs.
+# This script invokes Hyde on the headers in the stlab directory.
+# TODO: Usage documentation
 # Also see .hyde-config.
 #
 
@@ -16,14 +16,16 @@ XCODE_TOOLCHAIN=$(xcode-select -p)
 XCODE_CPP_DIR=${XCODE_TOOLCHAIN}/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
 
 HYDE_EXECUTABLE=/Users/demarco/dev/hyde/build/hyde
-HYDE_ARGS="--hyde-update --access-filter-public --namespace-blacklist=detail,unsafe --use-system-clang"
-CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR"
+CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR -DSTLAB_TASK_SYSTEM=portable"
 
 #
-# User-specified variables
+# User-configured variables
 #
 
 FORCE=0
+ALL_NAMESPACES=0
+PATTERN="*.hpp"
+HYDE_ARGS="--hyde-update --access-filter-public --use-system-clang"
 
 #
 # Argument Parsing
@@ -33,7 +35,16 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -f|--force)
       FORCE=1
-      shift # past argument
+      shift # past flag
+      ;;
+    -a|--all-namespaces)
+      ALL_NAMESPACES=1
+      shift # past flag
+      ;;
+    -p|--pattern)
+      PATTERN=$2
+      shift # past flag
+      shift # past value
       ;;
     -*|--*)
       echo "Unknown option $1"
@@ -41,6 +52,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [ $ALL_NAMESPACES -eq 0 ]
+then
+    HYDE_ARGS="${HYDE_ARGS} --namespace-blacklist=detail,unsafe"
+fi
 
 #
 # Invoke CMake, iff: 
@@ -58,6 +74,6 @@ fi
 
 pushd $(dirname $0) > /dev/null
 
-find stlab -name "*.hpp" -exec $HYDE_EXECUTABLE $HYDE_ARGS {} -- $CLANG_ARGS \;
+find stlab -name $PATTERN -exec $HYDE_EXECUTABLE $HYDE_ARGS {} -- $CLANG_ARGS \;
 
 popd > /dev/null
