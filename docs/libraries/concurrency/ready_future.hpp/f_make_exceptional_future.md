@@ -1,21 +1,25 @@
 ---
 layout: function
-title: stlab::make_exceptional_future
+title: make_exceptional_future
+owner: sean-parent
 brief: Creates a future that is fulfilled as failed
-defined-in-header: stlab/concurrency/future.hpp
 tags:
   - function
+defined_in_file: concurrency/ready_future.hpp
 overloads:
   "template <typename T, typename E>\nfuture<T> make_exceptional_future(std::exception_ptr, E)":
-    description: This function creates a future that is fulfilled as failed.
     arguments:
       - description: The exception pointer
-        name: exception
+        name: error
         type: std::exception_ptr
       - description: The executor that will be used for an attached continuation
         name: executor
         type: E
+    description: This function creates a future that is fulfilled as failed.
     return: A future that is ready in an error state.
-    signature_with_names: "template <typename T, typename E>\nfuture<T> make_exceptional_future(std::exception_ptr exception, E executor)"
+    signature_with_names: "template <typename T, typename E>\nfuture<T> make_exceptional_future(std::exception_ptr error, E executor)"
+namespace:
+  - stlab
+  - v1
 ---
 Creates a future that is fulfilled as failed

@@ -1,10 +1,11 @@
 ---
-layout: function
+layout: method
 title: reset
+owner: sean-parent
 brief: Cancels this future
-defined-in-header: stlab/concurrency/future.hpp 
 tags:
-  - function
+  - method
+defined_in_file: concurrency/future.hpp
 overloads:
   void reset():
     description: Cancels this future. If the task is already running, its result will be abandoned and no subsequent continuation will be started.
