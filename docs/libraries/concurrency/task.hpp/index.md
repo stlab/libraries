@@ -1,7 +1,9 @@
 ---
 layout: library
-title: Task
-tags: [library]
+title: concurrency/task.hpp
+owner: sean-parent
 brief: Task class and related functions
-library-type: library
+tags:
+  - sourcefile
+library-type: sourcefile
 ---

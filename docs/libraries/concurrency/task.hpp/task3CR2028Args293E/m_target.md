@@ -1,29 +1,18 @@
 ---
 layout: method
-title: stlab::task::target
-tags: [library]
-scope: task
-pure-name: target
-defined-in-header: stlab/concurrency/task.hpp
+title: target
+owner: sean-parent
 brief: Get the underlying function
-entities:
-  - kind: methods
-    list:
-      - name: stlab::task::target
-        pure-name: target
-        defined-in-header: stlab/concurrency/task.hpp 
-        declaration: |
-            template <class T>
-            T* target()
-        description: Nonconst variant
-      - name: stlab::task::target
-        pure-name: target
-        defined-in-header: stlab/concurrency/task.hpp 
-        declaration: |
-            template <class T>
-            const T* target() const
-        description: Const variant
-  - kind: result
-    description: |
-        A pointer to the underlying function, if `target_type() == typeid(T)`. Otherwise, `nullptr`.
+tags:
+  - method
+defined_in_file: concurrency/task.hpp
+overloads:
+  "template <class T>\nT * target()":
+    description: Mutable variant
+    return: __OPTIONAL__
+    signature_with_names: "template <class T>\nT * target()"
+  "template <class T>\nconst T * target() const":
+    description: Const variant
+    return: A pointer to the underlying function, if `target_type() == typeid(T)`. Otherwise, `nullptr`. 
+    signature_with_names: "template <class T>\nconst T * target() const"
 ---

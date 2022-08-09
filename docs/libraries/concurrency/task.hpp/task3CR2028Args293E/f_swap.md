@@ -1,22 +1,24 @@
 ---
-layout: method
-title: stlab::task::swap
-tags: [library]
-scope: task
-pure-name: swap
-defined-in-header: stlab/concurrency/task.hpp
+layout: function
+title: swap
+owner: sean-parent
 brief: Swaps an other task with this
-entities:
-  - kind: methods
-    list:
-      - name: stlab::task::swap
-        pure-name: swap
-        defined-in-header: stlab/concurrency/task.hpp 
-        declaration: |
-            void swap(task& x)
-        description: Exchanges this task with the passed one.
-  - kind: parameters
-    list:
-      - name: x
-        description: The task that shall be exchanged with this
+tags:
+  - function
+defined_in_file: concurrency/task.hpp
+overloads:
+  void swap(task<R (Args...)> &, task<R (Args...)> &):
+    arguments:
+      - description: __OPTIONAL__
+        name: x
+        type: task<R (Args...)> &
+      - description: __OPTIONAL__
+        name: y
+        type: task<R (Args...)> &
+    description: Exchanges this task with the passed one.
+    return: __OPTIONAL__
+    signature_with_names: void swap(task<R (Args...)> & x, task<R (Args...)> & y)
+namespace:
+  - stlab
+  - v1
 ---
