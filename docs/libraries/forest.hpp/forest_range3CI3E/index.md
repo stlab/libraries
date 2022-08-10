@@ -6,7 +6,7 @@ brief: Utility class denoting a range composed of two iterators
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename I>\nstruct stlab::forest_range;"
+declaration: "template <class I>\nstruct stlab::forest_range;"
 ctor: unspecified
 dtor: unspecified
 fields:

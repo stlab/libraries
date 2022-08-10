@@ -6,7 +6,7 @@ brief: Fullorder iterator that visits nodes that adhere to a predicate
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename I, typename P>\nstruct stlab::filter_fullorder_iterator;"
+declaration: "template <class I, class P>\nstruct stlab::filter_fullorder_iterator;"
 dtor: unspecified
 typedefs:
   difference_type:

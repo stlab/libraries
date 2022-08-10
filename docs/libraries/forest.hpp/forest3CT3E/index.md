@@ -6,10 +6,10 @@ brief: A hierarchical, node-based data structure that supports a number of diffe
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename T>\nclass stlab::forest;"
+declaration: "template <class T>\nclass stlab::forest;"
 typedefs:
   child_iterator:
-    definition: child_iterator<stlab::forest::iterator>
+    definition: stlab::child_iterator<iterator>
     description: child iterator type
   const_child_iterator:
     definition: stlab::child_iterator<const_iterator>

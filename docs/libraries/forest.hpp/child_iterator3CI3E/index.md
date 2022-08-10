@@ -6,7 +6,7 @@ brief: Iterator type for traversing the children of a forest node
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename I>\nstruct stlab::child_iterator;"
+declaration: "template <class I>\nstruct stlab::child_iterator;"
 dtor: unspecified
 typedefs:
   difference_type:

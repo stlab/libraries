@@ -39,12 +39,12 @@ overloads:
     description: Iterator/predicate ctor
     return: __OPTIONAL__
     signature_with_names: filter_fullorder_iterator<I, P>(I f, I l, P p)
-  "template <typename U>\nfilter_fullorder_iterator<I, P>(const filter_fullorder_iterator<U, P> &)":
+  "template <class U>\nfilter_fullorder_iterator<I, P>(const filter_fullorder_iterator<U, P> &)":
     arguments:
       - description: __OPTIONAL__
         name: x
         type: const filter_fullorder_iterator<U, P> &
     description: Rebase ctor
     return: __OPTIONAL__
-    signature_with_names: "template <typename U>\nfilter_fullorder_iterator<I, P>(const filter_fullorder_iterator<U, P> & x)"
+    signature_with_names: "template <class U>\nfilter_fullorder_iterator<I, P>(const filter_fullorder_iterator<U, P> & x)"
 ---

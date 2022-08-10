@@ -7,14 +7,14 @@ tags:
   - function
 defined_in_file: forest.hpp
 overloads:
-  "template <typename I>\nchild_iterator<I> child_end(const I &)":
+  "template <class I>\nchild_iterator<I> child_end(const I &)":
     arguments:
       - description: __OPTIONAL__
         name: x
         type: const I &
     description: __OPTIONAL__
     return: __OPTIONAL__
-    signature_with_names: "template <typename I>\nchild_iterator<I> child_end(const I & x)"
+    signature_with_names: "template <class I>\nchild_iterator<I> child_end(const I & x)"
 namespace:
   - stlab
 ---
