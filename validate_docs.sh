@@ -43,7 +43,7 @@ Help()
    echo "-a | --all-namespaces    | Process symbols in all namespaces, including \`detail\` and \`unsafe\`."
    echo "-f | --force             | Overwrite the build directory located at $CMAKE_BUILD_DIR."
    echo "-h | --help              | Print this help message."
-   echo "-p | --pattern <PATTERN> | File glob passed to \`find\`. See \`man find\` for more."
+   echo "-p | --pattern <PATTERN> | File glob passed to \`find\`. Defaults to \"$PATTERN\". See \`man find\` for more."
    echo "-u | --update            | Use --hyde-update to generate new documentation"
    echo
 }
