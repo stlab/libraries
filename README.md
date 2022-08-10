@@ -103,3 +103,15 @@ ctest -C Release
 ```
 
 depending on which configuration (`CMAKE_BUILD_TYPE`) you chose to build.
+
+## Generating Documentation
+
+STLab uses [hyde](https://github.com/adobe/hyde) to generate documentation boilerplate by scanning its public headers. You will need to follow Hyde's installation instructions and have `hyde` on your `$PATH` (detectable by `which hyde`).
+
+When adding a new public API, you should invoke
+
+```
+./validate_docs.sh --update
+```
+
+(or, simply `-u`) to generate the boilerplate for it. Then, fill in any fields marked as `__MISSING__`. Fields marked as `__OPTIONAL__` may be omitted.
