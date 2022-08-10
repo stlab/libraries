@@ -19,7 +19,8 @@ HYDE_EXECUTABLE=`which hyde`
 HYDE_VALIDATE_FLAG="--hyde-validate"
 HYDE_UPDATE_FLAG="--hyde-update"
 HYDE_ARGS="--access-filter-public --use-system-clang"
-CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR -DSTLAB_TASK_SYSTEM=portable"
+CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR"
+CMAKE_ARGS="-GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DSTLAB_TASK_SYSTEM=portable"
 
 #
 # User-configured variables
@@ -92,7 +93,7 @@ then
     echo "$CMAKE_BUILD_DIR already exists. Please delete it or use -f." 
     exit 1
 else
-    cmake -S. -B $CMAKE_BUILD_DIR -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release
+    cmake -S. -B $CMAKE_BUILD_DIR $CMAKE_ARGS
 fi
 
 #
