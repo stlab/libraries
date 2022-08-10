@@ -21,7 +21,7 @@ overloads:
       - description: __OPTIONAL__
         name: f
         type: F &&
-    description: Constructs a continuation on a r-value with the passed callable object using the same. 
+    description: Constructs a continuation on a r-value with the passed callable object using the same.
     return: __OPTIONAL__
     signature_with_names: "template <typename F>\nauto operator|(F && f) const &"
   "template <typename F>\nauto operator|(executor_task_pair<F>) &&":

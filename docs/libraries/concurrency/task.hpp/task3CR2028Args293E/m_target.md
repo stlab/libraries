@@ -13,6 +13,6 @@ overloads:
     signature_with_names: "template <class T>\nT * target()"
   "template <class T>\nconst T * target() const":
     description: Const variant
-    return: A pointer to the underlying function, if `target_type() == typeid(T)`. Otherwise, `nullptr`. 
+    return: A pointer to the underlying function, if `target_type() == typeid(T)`. Otherwise, `nullptr`.
     signature_with_names: "template <class T>\nconst T * target() const"
 ---

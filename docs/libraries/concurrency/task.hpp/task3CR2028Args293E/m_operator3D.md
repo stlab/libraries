@@ -32,7 +32,7 @@ overloads:
       - description: __OPTIONAL__
         name: x
         type: task<R (Args...)> &&
-    description: Moves the given task `x` into `this`. 
+    description: Moves the given task `x` into `this`.
     return: __OPTIONAL__
     signature_with_names: task<R (Args...)> & operator=(task<R (Args...)> && x)
   "template <class F>\ntask<R (Args...)> & operator=(F &&)":
