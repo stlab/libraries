@@ -6,7 +6,7 @@ brief: Adaptor to more easily manipulate a node's immediate children
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename Forest>\nclass stlab::child_adaptor;"
+declaration: "template <class Forest>\nclass stlab::child_adaptor;"
 dtor: unspecified
 typedefs:
   const_reference:

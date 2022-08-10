@@ -62,7 +62,7 @@ overloads:
     description: reverse_fullorder_iterator variant
     return: __OPTIONAL__
     signature_with_names: bool operator==(const reverse_fullorder_iterator<I> & a, const reverse_fullorder_iterator<I> & b)
-  "template <typename T>\nbool operator==(const forest<T> &, const forest<T> &)":
+  "template <class T>\nbool operator==(const forest<T> &, const forest<T> &)":
     arguments:
       - description: __OPTIONAL__
         name: x
@@ -72,7 +72,7 @@ overloads:
         type: const forest<T> &
     description: forest variant
     return: __OPTIONAL__
-    signature_with_names: "template <typename T>\nbool operator==(const forest<T> & x, const forest<T> & y)"
+    signature_with_names: "template <class T>\nbool operator==(const forest<T> & x, const forest<T> & y)"
 namespace:
   - stlab
 ---

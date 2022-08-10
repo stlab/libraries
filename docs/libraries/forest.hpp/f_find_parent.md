@@ -7,14 +7,14 @@ tags:
   - function
 defined_in_file: forest.hpp
 overloads:
-  "template <typename I>\nI find_parent(I)":
+  "template <class I>\nI find_parent(I)":
     arguments:
       - description: __OPTIONAL__
         name: i
         type: I
     description: __OPTIONAL__
     return: __OPTIONAL__
-    signature_with_names: "template <typename I>\nI find_parent(I i)"
+    signature_with_names: "template <class I>\nI find_parent(I i)"
 namespace:
   - stlab
 ---

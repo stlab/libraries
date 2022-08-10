@@ -22,12 +22,12 @@ overloads:
     description: Iterator ctor
     return: __OPTIONAL__
     signature_with_names: explicit child_iterator<I>(I x)
-  "template <typename U>\nchild_iterator<I>(const child_iterator<U> &)":
+  "template <class U>\nchild_iterator<I>(const child_iterator<U> &)":
     arguments:
       - description: __OPTIONAL__
         name: u
         type: const child_iterator<U> &
     description: Rebase ctor
     return: __OPTIONAL__
-    signature_with_names: "template <typename U>\nchild_iterator<I>(const child_iterator<U> & u)"
+    signature_with_names: "template <class U>\nchild_iterator<I>(const child_iterator<U> & u)"
 ---

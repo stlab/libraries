@@ -22,12 +22,12 @@ overloads:
     description: Iterator ctor
     return: __OPTIONAL__
     signature_with_names: explicit edge_iterator<I, Edge>(I x)
-  "template <typename U>\nedge_iterator<I, Edge>(const edge_iterator<U, Edge> &)":
+  "template <class U>\nedge_iterator<I, Edge>(const edge_iterator<U, Edge> &)":
     arguments:
       - description: __OPTIONAL__
         name: u
         type: const edge_iterator<U, Edge> &
     description: Rebase ctor
     return: __OPTIONAL__
-    signature_with_names: "template <typename U>\nedge_iterator<I, Edge>(const edge_iterator<U, Edge> & u)"
+    signature_with_names: "template <class U>\nedge_iterator<I, Edge>(const edge_iterator<U, Edge> & u)"
 ---

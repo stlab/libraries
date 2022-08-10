@@ -7,8 +7,8 @@ tags:
   - method
 defined_in_file: forest.hpp
 overloads:
-  auto end():
+  auto end() const:
     description: __OPTIONAL__
     return: __OPTIONAL__
-    signature_with_names: auto end()
+    signature_with_names: auto end() const
 ---

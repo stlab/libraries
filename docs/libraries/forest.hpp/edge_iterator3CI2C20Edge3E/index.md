@@ -6,7 +6,7 @@ brief: Iterator that only visits either leading or trailing edges
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename I, stlab::forest_edge Edge>\nstruct stlab::edge_iterator;"
+declaration: "template <class I, stlab::forest_edge Edge>\nstruct stlab::edge_iterator;"
 dtor: unspecified
 typedefs:
   difference_type:

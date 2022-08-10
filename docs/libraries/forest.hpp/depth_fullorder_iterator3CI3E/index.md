@@ -6,7 +6,7 @@ brief: Fullorder iterator that keeps track of its depth in the forest
 tags:
   - class
 defined_in_file: forest.hpp
-declaration: "template <typename I>\nstruct stlab::depth_fullorder_iterator;"
+declaration: "template <class I>\nstruct stlab::depth_fullorder_iterator;"
 dtor: unspecified
 typedefs:
   difference_type:

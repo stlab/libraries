@@ -10,10 +10,9 @@ overloads:
   void swap(forest<T> &):
     arguments:
       - description: __OPTIONAL__
-        name: unnamed-0
+        name: x
         type: forest<T> &
-        unnamed: true
     description: __OPTIONAL__
     return: __OPTIONAL__
-    signature_with_names: void swap(forest<T> &)
+    signature_with_names: void swap(forest<T> & x)
 ---

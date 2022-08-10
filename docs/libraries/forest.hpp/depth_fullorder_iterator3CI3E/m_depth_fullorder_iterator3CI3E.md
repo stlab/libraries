@@ -27,12 +27,12 @@ overloads:
     description: Iterator ctor
     return: __OPTIONAL__
     signature_with_names: explicit depth_fullorder_iterator<I>(I x, stlab::depth_fullorder_iterator::difference_type d)
-  "template <typename U>\ndepth_fullorder_iterator<I>(const depth_fullorder_iterator<U> &)":
+  "template <class U>\ndepth_fullorder_iterator<I>(const depth_fullorder_iterator<U> &)":
     arguments:
       - description: __OPTIONAL__
         name: x
         type: const depth_fullorder_iterator<U> &
     description: Rebase ctor
     return: __OPTIONAL__
-    signature_with_names: "template <typename U>\ndepth_fullorder_iterator<I>(const depth_fullorder_iterator<U> & x)"
+    signature_with_names: "template <class U>\ndepth_fullorder_iterator<I>(const depth_fullorder_iterator<U> & x)"
 ---

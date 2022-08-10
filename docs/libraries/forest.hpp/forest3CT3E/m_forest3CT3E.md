@@ -17,19 +17,17 @@ overloads:
   forest<T>(const forest<T> &):
     arguments:
       - description: __OPTIONAL__
-        name: unnamed-0
+        name: x
         type: const forest<T> &
-        unnamed: true
     description: Copy ctor
     return: __OPTIONAL__
-    signature_with_names: forest<T>(const forest<T> &)
+    signature_with_names: forest<T>(const forest<T> & x)
   forest<T>(forest<T> &&):
     arguments:
       - description: __OPTIONAL__
-        name: unnamed-0
+        name: x
         type: forest<T> &&
-        unnamed: true
     description: Move ctor
     return: __OPTIONAL__
-    signature_with_names: forest<T>(forest<T> &&)
+    signature_with_names: forest<T>(forest<T> && x)
 ---

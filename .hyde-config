@@ -1,6 +1,6 @@
 {
     "hyde-src-root": "stlab",
-    "hyde-yaml-dir": "../stlab.github.io/libraries",
+    "hyde-yaml-dir": "docs/libraries",
     "clang_flags": [
         "-std=c++20",
         "-I.",
