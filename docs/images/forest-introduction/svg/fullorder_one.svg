@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='175.000000' height='245.000000'>
+    <path d='M 62.000000 47.500000 C40.690419 47.500000 16.713905 62.633719 24.958559 81.960673' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='28.494093 78.425139, 33.443841 90.445955, 21.423025 85.496207' fill='black' stroke='none'/>
+    <path d='M 32.322330 127.677670 C26.135878 133.864122 24.279430 146.481849 26.752986 156.528132' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='30.288520 152.992598, 35.238268 165.013413, 23.217453 160.063665' fill='black' stroke='none'/>
+    <path d='M 36.377622 205.387329 C12.112562 241.702559 74.292494 245.674270 68.936003 217.302462' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='64.778655 220.080313, 62.269160 207.324826, 73.093351 214.524610' fill='black' stroke='none'/>
+    <path d='M 67.677670 167.322330 C73.864122 161.135878 75.720570 148.518151 73.247014 138.471868' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='69.711480 142.007402, 64.761732 129.986587, 76.782547 134.936335' fill='black' stroke='none'/>
+    <path d='M 67.677670 92.322330 C73.864122 86.135878 86.481849 84.279430 96.528132 86.752986' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='100.063665 83.217453, 105.013413 95.238268, 92.992598 90.288520' fill='black' stroke='none'/>
+    <path d='M 111.377622 130.387329 C87.112562 166.702559 149.292494 170.674270 143.936003 142.302462' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='139.778655 145.080313, 137.269160 132.324826, 148.093351 139.524610' fill='black' stroke='none'/>
+    <path d='M 142.677670 92.322330 C171.576851 63.423149 147.730004 51.398424 124.552167 48.332147' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='124.552167 53.332147, 112.552167 48.332147, 124.552167 43.332147' fill='black' stroke='none'/>
+    <text font-size='16.000000' text-anchor='middle' x='23.365339' y='53.827802' dominant-baseline='central' fill='black'>
+1<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='16.894292' y='147.173295' dominant-baseline='central' fill='black'>
+2<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='49.099623' y='227.153469' dominant-baseline='central' fill='black'>
+3<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='83.105708' y='147.826705' dominant-baseline='central' fill='black'>
+4<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='87.231896' y='76.894097' dominant-baseline='central' fill='black'>
+5<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='124.099623' y='152.153469' dominant-baseline='central' fill='black'>
+6<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='156.767317' y='51.618783' dominant-baseline='central' fill='black'>
+7<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <rect x='62.000000' y='10.000000' fill='white' width='50.000000' height='50.000000' stroke='darkred' stroke-width='2.000000'/>
+    <circle cx='50.000000' r='25.000000' stroke='blue' stroke-width='2.000000' cy='110.000000' fill='white' stroke-dasharray='0'/>
+    <circle cx='50.000000' r='25.000000' stroke='blue' stroke-width='2.000000' cy='185.000000' fill='white' stroke-dasharray='0'/>
+    <circle cx='125.000000' r='25.000000' stroke='blue' stroke-width='2.000000' cy='110.000000' fill='white' stroke-dasharray='0'/>
+    <text font-size='16.000000' text-anchor='middle' x='87.000000' y='35.000000' dominant-baseline='central' fill='black'>
+&#x211C;<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='50.000000' y='110.000000' dominant-baseline='central' fill='black'>
+N<tspan dy='8.000000' font-size='.7em'>1</tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='50.000000' y='185.000000' dominant-baseline='central' fill='black'>
+N<tspan dy='8.000000' font-size='.7em'>3</tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='125.000000' y='110.000000' dominant-baseline='central' fill='black'>
+N<tspan dy='8.000000' font-size='.7em'>2</tspan>
+    </text>
+</svg>
