@@ -85,7 +85,7 @@ cmake -S . -B ../BUILD -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Releas
 If you organize the a build directory into subdirectories you can support multiple configurations.
 
 ```
-cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_DEFAULT_TASK_SYSTEM=portable 
+cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_TASK_SYSTEM=portable 
 ```
 
 ### Build

@@ -170,7 +170,7 @@ void test1(stlab::schedule_mode mode) {
 
 /**************************************************************************************************/
 
-int main(int, const char*[]) {
+int main() {
     test0(stlab::schedule_mode::single);
 
     std::cout << "-=-=-=-=-\n";
@@ -185,7 +185,7 @@ int main(int, const char*[]) {
 
     test1(stlab::schedule_mode::all);
 
-    return 0;
+    pre_exit();
 }
 
 /**************************************************************************************************/
