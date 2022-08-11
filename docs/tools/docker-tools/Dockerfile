@@ -4,7 +4,7 @@ FROM ubuntu:latest AS base
 # Install items requiring root access
 
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install --no-install-recommends -y \
+RUN apt-get update && apt-get install -y \
     apt-utils \
     fswatch \
     g++ \
@@ -15,8 +15,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     rbenv \
     wget \
     zlib1g-dev \
-    curl \
+    patch \
 && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g n
+RUN n latest
 
 RUN npm install -g npm@latest
 RUN npm install -g browser-sync
@@ -35,9 +38,17 @@ ENV LANGUAGE "en_US.UTF-8"
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
 RUN mkdir -p "$(rbenv root)"/plugins
 RUN git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
-#  Install latest ruby
-RUN rbenv install $(rbenv install -l | grep -v - | tail -1)
-RUN rbenv global  $(rbenv install -l | grep -v - | tail -1)
+
+#  Install ruby
+ARG RUBY_VERSION
+RUN if [ -z ${RUBY_VERSION+x} ]; then \
+      rbenv install $(rbenv install -l | grep -v - | tail -1); \
+      rbenv global  $(rbenv install -l | grep -v - | tail -1); \
+    else \
+      rbenv install $RUBY_VERSION; \
+      rbenv global $RUBY_VERSION; \
+    fi
+
 #  Install bundler in global ruby
 RUN (eval "$(rbenv init -)"; gem install bundler)
 
@@ -48,11 +59,11 @@ WORKDIR /home/app
 
 RUN mkdir ./install
 WORKDIR ./install
-COPY ./Gemfile .
-COPY ./Gemfile.lock .
-COPY ./.ruby-version .
+COPY ./docs/Gemfile .
+COPY ./docs/Gemfile.lock .
+COPY ./docs/.ruby-version .
 
-RUN  (eval "$(rbenv init -)"; \
+RUN (eval "$(rbenv init -)"; \
     rbenv install `cat .ruby-version`; \
     gem install bundler; \
     rbenv rehash; \
@@ -63,4 +74,4 @@ WORKDIR /home/app
 EXPOSE 3000 3001
 
 # Add version file last to avoid cache invalidation for minor releases
-ADD ./tools/docker-tools/VERSION .
+ADD ./docs/tools/docker-tools/VERSION .
