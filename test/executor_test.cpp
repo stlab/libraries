@@ -22,51 +22,47 @@ using namespace std;
 
 namespace mp = boost::multiprecision;
 
-
-namespace
-{
+namespace {
 void rest() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 
-
 template <typename T, typename N, typename O>
-T power(T x, N n, O op)
-{
-  if (n == 0) return identity_element(op);
+T power(T x, N n, O op) {
+    if (n == 0) return identity_element(op);
 
-  while ((n & 1) == 0) {
-    n >>= 1;
-    x = op(x, x);
-  }
+    while ((n & 1) == 0) {
+        n >>= 1;
+        x = op(x, x);
+    }
 
-  T result = x;
-  n >>= 1;
-  while (n != 0) {
-    x = op(x, x);
-    if ((n & 1) != 0) result = op(result, x);
+    T result = x;
     n >>= 1;
-  }
-  return result;
+    while (n != 0) {
+        x = op(x, x);
+        if ((n & 1) != 0) result = op(result, x);
+        n >>= 1;
+    }
+    return result;
 }
 
 template <typename N>
 struct multiply_2x2 {
-  std::array<N, 4> operator()(const std::array<N, 4>& x, const std::array<N, 4>& y)
-  {
-    return { x[0] * y[0] + x[1] * y[2], x[0] * y[1] + x[1] * y[3],
-    x[2] * y[0] + x[3] * y[2], x[2] * y[1] + x[3] * y[3] };
-  }
+    std::array<N, 4> operator()(const std::array<N, 4>& x, const std::array<N, 4>& y) {
+        return {x[0] * y[0] + x[1] * y[2], x[0] * y[1] + x[1] * y[3], x[2] * y[0] + x[3] * y[2],
+                x[2] * y[1] + x[3] * y[3]};
+    }
 };
 template <typename N>
-std::array<N, 4> identity_element(const multiply_2x2<N>&) { return { N(1), N(0), N(0), N(1) }; }
-
+std::array<N, 4> identity_element(const multiply_2x2<N>&) {
+    return {N(1), N(0), N(0), N(1)};
+}
 
 template <typename R, typename N>
 R fibonacci(N n) {
-  if (n == 0) return R(0);
-  return power(std::array<R, 4>{ 1, 1, 1, 0 }, N(n - 1), multiply_2x2<R>())[0];
+    if (n == 0) return R(0);
+    return power(std::array<R, 4>{1, 1, 1, 0}, N(n - 1), multiply_2x2<R>())[0];
 }
 
-}
+} // namespace
 
 BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     BOOST_TEST_MESSAGE("All low priority tasks are executed");
@@ -150,7 +146,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     mutex m;
     condition_variable cv;
 
-    default_executor([&]{
+    default_executor([&] {
         rest();
         {
             unique_lock<mutex> block{m};
@@ -158,7 +154,6 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
         }
         cv.notify_one();
     });
-
 
     {
         unique_lock<mutex> block{m};
@@ -186,83 +181,82 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     BOOST_REQUIRE(!done);
 }
 
-namespace
-{
-    auto fiboN{ 1000 };
-    const auto iterations = 100'000;
-    const auto startCount = 100;
-    atomic_int workToDo{(iterations - startCount) * 3};
-    const auto expectedWork = startCount * 3 + workToDo;
-    atomic_int highCount{0};
-    atomic_int defaultCount{0};
-    atomic_int lowCount{0};
+namespace {
+auto fiboN{1000};
+const auto iterations = 100'000;
+const auto startCount = 100;
+atomic_int workToDo{(iterations - startCount) * 3};
+const auto expectedWork = startCount * 3 + workToDo;
+atomic_int highCount{0};
+atomic_int defaultCount{0};
+atomic_int lowCount{0};
 
-    atomic_int taskRunning{0};
-    atomic_int done{0};
+atomic_int taskRunning{0};
+atomic_int done{0};
 
+atomic_int correctLow{0};
+atomic_int correctDefault{0};
+atomic_int correctHigh{0};
 
-    atomic_int correctLow{ 0 };
-    atomic_int correctDefault{ 0 };
-    atomic_int correctHigh{ 0 };
+template <stlab::detail::executor_priority P>
+struct check_task {
+    atomic_int& _correctScheduleCount;
+    atomic_int& _currentPrioCount;
 
-    template<stlab::detail::executor_priority P>
-    struct check_task
-    {
-        atomic_int &_correctScheduleCount;
-        atomic_int &_currentPrioCount;
+    check_task(atomic_int& correctCount, atomic_int& prioCount) :
+        _correctScheduleCount(correctCount), _currentPrioCount(prioCount) {
+        ++_currentPrioCount;
+    }
 
-        check_task(atomic_int &correctCount, atomic_int& prioCount)
-            : _correctScheduleCount(correctCount)
-            , _currentPrioCount(prioCount)
-        {
-            ++_currentPrioCount;
-        }
+    template <stlab::detail::executor_priority Q>
+    auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::low, int> {
+        return static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
+    }
 
-        template <stlab::detail::executor_priority Q>
-        auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::low, int> {
-            return static_cast<int>(highCount <= taskRunning && defaultCount <= taskRunning);
-        }
+    template <stlab::detail::executor_priority Q>
+    auto schedule_increment()
+        -> std::enable_if_t<Q == stlab::detail::executor_priority::medium, int> {
+        return static_cast<int>(highCount <= taskRunning);
+    }
 
-        template <stlab::detail::executor_priority Q>
-        auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::medium, int> {
-            return static_cast<int>(highCount <= taskRunning);
-        }
+    template <stlab::detail::executor_priority Q>
+    auto schedule_increment()
+        -> std::enable_if_t<Q == stlab::detail::executor_priority::high, int> {
+        return 0;
+    }
 
-        template <stlab::detail::executor_priority Q>
-        auto schedule_increment() -> std::enable_if_t<Q == stlab::detail::executor_priority::high, int> {
-            return 0;
-        }
+    void operator()() {
+        --_currentPrioCount;
 
-        void operator()() {
-            --_currentPrioCount;
+        ++taskRunning;
 
-            ++taskRunning;
+        _correctScheduleCount += schedule_increment<P>();
 
-            _correctScheduleCount += schedule_increment<P>();
+        fibonacci<mp::cpp_int>(fiboN);
 
-            fibonacci<mp::cpp_int>(fiboN);
-
-            switch (workToDo % 3)
-            {
+        switch (workToDo % 3) {
             case 0:
-              default_executor(check_task<stlab::detail::executor_priority::medium>{correctDefault, defaultCount});
-              break;
-              
+                default_executor(check_task<stlab::detail::executor_priority::medium>{
+                    correctDefault, defaultCount});
+                break;
+
             case 1:
-              high_executor(check_task<stlab::detail::executor_priority::high>{correctHigh, highCount});
-              break;
+                high_executor(
+                    check_task<stlab::detail::executor_priority::high>{correctHigh, highCount});
+                break;
 
             case 2:
-              low_executor(check_task<stlab::detail::executor_priority::low>{correctLow, lowCount});
-              break;
-            }
-            --workToDo;
-
-            ++done;
-            --taskRunning;
+                low_executor(
+                    check_task<stlab::detail::executor_priority::low>{correctLow, lowCount});
+                break;
         }
-    };
-}
+        --workToDo;
+
+        ++done;
+        --taskRunning;
+    }
+};
+} // namespace
 
 BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     BOOST_TEST_MESSAGE("All tasks will be executed according to their prio");
@@ -272,22 +266,29 @@ BOOST_AUTO_TEST_CASE(all_tasks_will_be_executed_according_to_their_prio) {
     for (auto i = 0; i < startCount; ++i) {
         low_executor(check_task<stlab::detail::executor_priority::low>{correctLow, lowCount});
         high_executor(check_task<stlab::detail::executor_priority::high>{correctHigh, highCount});
-        default_executor(check_task<stlab::detail::executor_priority::medium>{correctDefault, defaultCount});
+        default_executor(
+            check_task<stlab::detail::executor_priority::medium>{correctDefault, defaultCount});
     }
     while (done < expectedWork) {
         rest();
     }
 
     auto stop = std::chrono::high_resolution_clock::now();
-    std::cout << "\nPerformance measuring: " << std::chrono::duration<double>(stop - start).count() << "s\n";
+    std::cout << "\nPerformance measuring: " << std::chrono::duration<double>(stop - start).count()
+              << "s\n";
 
-    cout << "Correct default ordering: " << static_cast<double>(correctDefault.load())/iterations <<"%\n";
-    cout << "Correct low ordering:     " << static_cast<double>(correctLow.load())/iterations << "%\n";
+    // REVISIT (sean-parent) - I don't believe that this is measuring the probability of a task executing in order.stl
+    cout << "Correct low ordering:     "
+         << static_cast<double>(correctLow.load()) / iterations * 100.0 << "%\n";
+    cout << "Correct default ordering: "
+         << static_cast<double>(correctDefault.load()) / iterations * 100.0 << "%\n";
+    cout << "Correct high ordering: "
+         << static_cast<double>(correctHigh.load()) / iterations * 100.0 << "%\n";
 }
 
 BOOST_AUTO_TEST_CASE(MeasureTiming) {
     std::vector<int> results;
-    const auto iterations = 300'000;
+    const auto iterations = 10'000;
     results.resize(iterations * 3);
     atomic_bool done{false};
     condition_variable ready;
@@ -296,17 +297,17 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     auto start = chrono::high_resolution_clock::now();
 
     for (auto i = 0; i < iterations; ++i) {
-        low_executor([_i = i, &results,&counter] {
+        low_executor([_i = i, &results, &counter] {
             results[_i] = 1;
             fibonacci<mp::cpp_int>(fiboN);
             ++counter;
         });
-        default_executor([_i = i + iterations, &results,&counter] {
+        default_executor([_i = i + iterations, &results, &counter] {
             results[_i] = 2;
             fibonacci<mp::cpp_int>(fiboN);
             ++counter;
         });
-        high_executor([_i = i + iterations * 2, &results,&counter] {
+        high_executor([_i = i + iterations * 2, &results, &counter] {
             results[_i] = 3;
             fibonacci<mp::cpp_int>(fiboN);
             ++counter;
@@ -323,14 +324,16 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
         }
     });
 
-
     unique_lock<mutex> lock{block};
-    while (!done) ready.wait(lock);
+    while (!done)
+        ready.wait(lock);
 
-    auto stop = std::chrono::high_resolution_clock::now();
-    std::cout << "\nPerformance measuring: " << std::chrono::duration<double>(stop - start).count() << "s\n";
-
-    while (counter < 3*iterations) {
+    while (counter < 3 * iterations) {
         rest();
     }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    std::cout << "\nPerformance measuring: " << std::chrono::duration<double>(stop - start).count()
+              << "s\n";
+
 }

@@ -12,6 +12,7 @@
 #include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/config.hpp>
+#include <stlab/pre_exit.hpp>
 
 #include <cassert>
 #include <chrono>
@@ -45,25 +46,18 @@ namespace detail {
 
 /**************************************************************************************************/
 
-enum class executor_priority
-{
-    high,
-    medium,
-    low
-};
+enum class executor_priority { high, medium, low };
 
 /**************************************************************************************************/
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 
-constexpr auto platform_priority(executor_priority p)
-{
-    switch (p)
-    {
+constexpr auto platform_priority(executor_priority p) {
+    switch (p) {
         case executor_priority::high:
             return DISPATCH_QUEUE_PRIORITY_HIGH;
         case executor_priority::medium:
-          return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+            return DISPATCH_QUEUE_PRIORITY_DEFAULT;
         case executor_priority::low:
             return DISPATCH_QUEUE_PRIORITY_LOW;
         default:
@@ -83,7 +77,12 @@ struct group_t {
 };
 
 inline group_t& group() {
-    static group_t g;
+    // Use an immediately executed lambda to atomically register pre-exit handler
+    // and create the dispatch group.
+    static group_t g{[] {
+        at_pre_exit([]() noexcept { dispatch_group_wait(g._group, DISPATCH_TIME_FOREVER); });
+        return group_t{};
+    }()};
     return g;
 }
 
@@ -109,10 +108,8 @@ struct executor_type {
 
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 
-constexpr auto platform_priority(executor_priority p)
-{
-    switch (p)
-    {
+constexpr auto platform_priority(executor_priority p) {
+    switch (p) {
         case executor_priority::high:
             return TP_CALLBACK_PRIORITY_HIGH;
         case executor_priority::medium:
@@ -121,7 +118,6 @@ constexpr auto platform_priority(executor_priority p)
             return TP_CALLBACK_PRIORITY_LOW;
         default:
             assert(!"Unknown value!");
-
     }
     return TP_CALLBACK_PRIORITY_NORMAL;
 }
@@ -149,10 +145,15 @@ public:
         SetThreadpoolCallbackCleanupGroup(&_callBackEnvironment, _cleanupgroup, nullptr);
     }
 
-    ~task_system() {
+    void join() {
         CloseThreadpoolCleanupGroupMembers(_cleanupgroup, FALSE, nullptr);
         CloseThreadpoolCleanupGroup(_cleanupgroup);
         CloseThreadpool(_pool);
+        _pool = nullptr;
+    }
+
+    ~task_system() {
+        assert((_pool == nullptr) && "stlab: Thread pool not joined prior to destruction.");
     }
 
     template <typename F>
@@ -213,20 +214,20 @@ public:
     bool wait() {
         lock_t lock{_mutex};
         _waiting = true;
-        while (_waiting && !_done) _ready.wait(lock);
+        while (_waiting && !_done)
+            _ready.wait(lock);
         _waiting = false;
         return _done;
     }
 };
 
 class notification_queue {
-
     struct element_t {
         std::size_t _priority;
         task<void()> _task;
 
         template <class F>
-        element_t(F&& f, std::size_t priority) : _priority{priority}, _task{std::forward<F>(f)} { }
+        element_t(F&& f, std::size_t priority) : _priority{priority}, _task{std::forward<F>(f)} {}
 
         struct greater {
             bool operator()(const element_t& a, const element_t& b) const {
@@ -249,7 +250,7 @@ class notification_queue {
     }
 
     // Must be called under a lock with a non-empty _q, always returns a valid task
-    auto pop_not_empty() -> task<void()>  {
+    auto pop_not_empty() -> task<void()> {
         auto result = std::move(_q.front()._task);
         std::pop_heap(begin(_q), end(_q), element_t::greater());
         _q.pop_back();
@@ -274,14 +275,14 @@ public:
         return true;
     }
 
-
     auto pop() -> std::pair<bool, task<void()>> {
         lock_t lock{_mutex};
         _waiting = true;
-        while (_q.empty() && !_done && _waiting) _ready.wait(lock);
+        while (_q.empty() && !_done && _waiting)
+            _ready.wait(lock);
         _waiting = false;
-        if (_q.empty()) return { _done, nullptr };
-        return { false, pop_not_empty() };
+        if (_q.empty()) return {_done, nullptr};
+        return {false, pop_not_empty()};
     }
 
     void done() {
@@ -323,7 +324,8 @@ class priority_task_system {
     const unsigned _count{std::max(2u, std::thread::hardware_concurrency()) - 1};
     // thread limit is the total number of threads, including expansion threads for waiting calls
     // It is odd number because a usual pattern is to fan out based on the number of cores, we want
-    // one additional thread so if we fan out the limit number of times we have one additional thread
+    // one additional thread so if we fan out the limit number of times we have one additional
+    // thread
     const unsigned _thread_limit{std::max(9U, std::thread::hardware_concurrency() * 4 + 1)};
 
     std::vector<notification_queue> _q{_count};
@@ -361,14 +363,23 @@ public:
     priority_task_system() {
         _threads.reserve(_thread_limit);
         for (unsigned n = 0; n != _count; ++n) {
-            _threads.emplace_back([&, n]{ run(n); });
+            _threads.emplace_back([&, n] { run(n); });
         }
     }
 
+    void join() {
+        for (auto& e : _q)
+            e.done();
+        for (auto& e : _waiters)
+            e.done();
+        for (auto& e : _threads)
+            e.join();
+
+        _q.clear();
+    }
+
     ~priority_task_system() {
-        for (auto& e : _q) e.done();
-        for (auto& e : _waiters) e.done();
-        for (auto& e : _threads) e.join();
+        assert(_q.empty() && "stlab: Thread pool not joined prior to destruction.");
     }
 
     template <std::size_t P, typename F>
@@ -383,15 +394,13 @@ public:
         _q[i % _count].push(std::forward<F>(f), P);
     }
 
-
-
     void add_thread() {
         lock_t lock{_mutex};
         if (_threads.size() == _thread_limit) return; // log with cerr
         _threads.emplace_back([&, i = _threads.size()] {
             stlab::set_current_thread_name("cc.stlab.default_executor.expansion");
 
-            while(true) {
+            while (true) {
                 task<void()> f;
 
                 for (unsigned n = 0; n != _count && !f; ++n) {
@@ -420,33 +429,44 @@ public:
 };
 
 inline priority_task_system& pts() {
-    static priority_task_system only_task_system;
+    static priority_task_system only_task_system{[]{
+        at_pre_exit([]() noexcept {
+            only_task_system.join();
+        });
+        return priority_task_system{};
+    }()};
     return only_task_system;
 }
-
-template <executor_priority P = executor_priority::medium>
-struct task_system
-{
-    using result_type = void;
-
-    void operator()(task<void()> f) const {
-        pts().execute<static_cast<std::size_t>(P)>(std::move(f));
-    }
-};
 
 #endif
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
+#if STLAB_TASK_SYSTEM(WINDOWS)
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        static task_system<P> only_task_system;
+        static task_system<P> only_task_system{[]{
+            at_pre_exit([]() noexcept {
+                only_task_system.join();
+            });
+            return task_system<P>{};
+        }()};
         only_task_system(std::move(f));
+    }
+};
+
+#elif STLAB_TASK_SYSTEM(PORTABLE)
+
+template <executor_priority P = executor_priority::medium>
+struct executor_type {
+    using result_type = void;
+
+    void operator()(task<void()> f) const {
+        pts().execute<static_cast<std::size_t>(P)>(std::move(f));
     }
 };
 

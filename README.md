@@ -82,6 +82,12 @@ A typical invocation might look like this:
 cmake -S . -B ../BUILD -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 ```
 
+If you organize the a build directory into subdirectories you can support multiple configurations.
+
+```
+cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_DEFAULT_TASK_SYSTEM=portable 
+```
+
 ### Build
 
 If your configuration command was successful, go to your build directory (`cd ../BUILD`) and invoke:
