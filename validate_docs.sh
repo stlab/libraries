@@ -2,7 +2,6 @@
 
 #
 # This script invokes Hyde on the headers in the stlab directory.
-# TODO: Usage documentation
 # Also see .hyde-config.
 #
 
@@ -32,27 +31,49 @@ PATTERN="*.hpp"
 UPDATE=0
 
 #
+# Help
+#
+
+Help()
+{
+   echo "validate_docs.sh: Validate and update documentation with Hyde"
+   echo
+   echo "Usage: ./validate_docs.sh [-h] [-a|-f|-u] [-p] PATTERN"
+   echo "options:"
+   echo "-a | --all-namespaces    | Process symbols in all namespaces, including \`detail\` and \`unsafe\`."
+   echo "-f | --force             | Overwrite the build directory located at $CMAKE_BUILD_DIR."
+   echo "-h | --help              | Print this help message."
+   echo "-p | --pattern <PATTERN> | File glob passed to \`find\`. Defaults to \"$PATTERN\". See \`man find\` for more."
+   echo "-u | --update            | Use --hyde-update to generate new documentation"
+   echo
+}
+
+#
 # Argument Parsing
 #
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -u|--update)
-      UPDATE=1
+    -a|--all-namespaces)
+      ALL_NAMESPACES=1
       shift # past flag
       ;;
     -f|--force)
       FORCE=1
       shift # past flag
       ;;
-    -a|--all-namespaces)
-      ALL_NAMESPACES=1
-      shift # past flag
+    -h|--help)
+      Help
+      exit
       ;;
     -p|--pattern)
       PATTERN=$2
       shift # past flag
       shift # past value
+      ;;
+    -u|--update)
+      UPDATE=1
+      shift # past flag
       ;;
     -*|--*)
       echo "Unknown option $1"
