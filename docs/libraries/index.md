@@ -6,7 +6,7 @@ brief: The stlab libraries
 tags:
   - library
 library-type: library
-icon: book
+home-icon: book
 short_title: __OPTIONAL__
 tab: API Docs
 ---
