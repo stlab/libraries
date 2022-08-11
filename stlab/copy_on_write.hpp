@@ -26,10 +26,10 @@ class copy_on_write {
     struct model {
         std::atomic<std::size_t> _count{1};
 
-        model() = default;
+        model() noexcept(std::is_nothrow_constructible_v<T>) = default;
 
         template <class... Args>
-        explicit model(Args&&... args) : _value(std::forward<Args>(args)...) {}
+        explicit model(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args&&...>) : _value(std::forward<Args>(args)...) {}
 
         T _value;
     };
@@ -48,7 +48,7 @@ public:
 
     using element_type = T;
 
-    copy_on_write() {
+    copy_on_write() noexcept(std::is_nothrow_constructible_v<T>) {
         static model default_s;
         _self = &default_s;
 

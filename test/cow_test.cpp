@@ -187,6 +187,20 @@ BOOST_AUTO_TEST_CASE(copy_on_write_interface) {
     using namespace stlab;
 
     {
+        // noexcept-correct default construction:
+        static_assert(noexcept(int()), "int() had better be noexcept!");
+        static_assert(noexcept(copy_on_write<int>()), "Default c'tor should be noexcept if the type's c'tor is.");
+        struct not_noexcept_ctor {
+            not_noexcept_ctor() { throw std::exception(); }
+        };
+        static_assert(!noexcept(not_noexcept_ctor()), "Default c'tor should be noexcept if the type is noexcept.");
+        static_assert(!noexcept(copy_on_write<not_noexcept_ctor>()), "Default c'tor shouldn't be noexcept if the type's c'tor isn't.");
+        BOOST_CHECK_THROW([] {
+          copy_on_write<not_noexcept_ctor> ctor_will_throw;
+        }(), std::exception);
+    }
+
+    {
         // default construction
         copy_on_write<int> a;
         copy_on_write<int> b;
