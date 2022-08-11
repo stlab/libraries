@@ -14,6 +14,8 @@
 
 /**************************************************************************************************/
 
+#include <stlab/config.hpp>
+
 #ifdef STLAB_USE_BOOST_CPP17_SHIMS
     #include <boost/optional.hpp>
 #else
