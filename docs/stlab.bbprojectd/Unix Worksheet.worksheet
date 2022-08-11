@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CurrentWorkingDirectory</key>
+	<string>/Users/sean-parent/Projects/github.com/stlab/stlab.github.io</string>
+	<key>WorksheetContents</key>
+	<string>### Editing better-code
+## Jeykll for github pages
+
+# Requires xcode command line tools (make sure to update when xcode is updated):
+
+xcode-select --install
+
+# In Terminal
+open -a terminal ~/Projects/github.com/stlab/stlab.github.io
+bundle update
+bundle exec jekyll build --watch --incremental
+
+# (old) cd ~/Projects/github.com/stlab/stlab.github.io
+# (old) bundle exec jekyll serve --port 4001
+
+# open a new terminal window to watch
+open -a terminal ~/Projects/github.com/stlab/stlab.github.io
+brew update
+brew upgrade npm
+npm update -g browser-sync
+browser-sync start --config bs-config.js
+
+# (old) browser-sync start --server '_site' --file '_site'
+
+
+##
+# (old) open -a "Google Chrome" "http://127.0.0.1:4001/"
+# (old) open -a "LiveReload"
+
+# (old) Click on live-reload extension in Chrome
+
+## Kramdown sytax reference
+open -a "Google Chrome" "http://kramdown.gettalong.org/syntax.html"
+open -a "Google Chrome" "https://github.com/Shopify/liquid/wiki/liquid-for-designers"
+open -a "Google Chrome" "https://jekyllrb.com/docs/home/"
+
+## for porting media wiki
+open -a "Google Chrome" "https://stlab.adobe.com/wiki/index.php/Special:AllPages"
+
+open -a "Google Chrome" "https://www.mediawiki.org/wiki/Help:Formatting"
+
+
+###
+
+</string>
+</dict>
+</plist>

@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='175.000000' height='185.000000'>
+    <path d='M 62.000000 62.500000 C40.690419 62.500000 16.713905 77.633719 24.958559 96.960673' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='black'/>
+    <polygon points='28.494093 93.425139, 33.443841 105.445955, 21.423025 100.496207' fill='black' stroke='none'/>
+    <path d='M 67.677670 107.322330 C73.864122 101.135878 86.481849 99.279430 96.528132 101.752986' fill='none' stroke-dasharray='0' stroke-linecap='round' stroke-width='2.000000' stroke='blue'/>
+    <polygon points='100.063665 98.217453, 105.013413 110.238268, 92.992598 105.288520' fill='blue' stroke='none'/>
+    <text font-size='16.000000' text-anchor='middle' x='87.231896' y='91.894097' dominant-baseline='central' fill='blue'>
+{N, L}<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <rect x='62.000000' y='25.000000' fill='white' width='50.000000' height='50.000000' stroke='darkred' stroke-width='2.000000'/>
+    <circle cx='50.000000' r='25.000000' stroke='black' stroke-width='2.000000' cy='125.000000' fill='white' stroke-dasharray='0'/>
+    <circle cx='125.000000' r='25.000000' stroke='blue' stroke-width='2.000000' cy='125.000000' fill='white' stroke-dasharray='0'/>
+    <text font-size='16.000000' text-anchor='middle' x='87.000000' y='50.000000' dominant-baseline='central' fill='black'>
+&#x211C;<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='50.000000' y='125.000000' dominant-baseline='central' fill='black'>
+S<tspan dy='8.000000' font-size='.7em'>prior</tspan>
+    </text>
+    <text font-size='16.000000' text-anchor='middle' x='125.000000' y='125.000000' dominant-baseline='central' fill='black'>
+N<tspan dy='8.000000' font-size='.7em'></tspan>
+    </text>
+</svg>

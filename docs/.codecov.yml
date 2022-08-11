@@ -1,0 +1,2 @@
+ignore:
+  - "./build/boost/"  # ignore folders and all its contents
