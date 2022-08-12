@@ -49,7 +49,6 @@ Configure the build as follows:
 ```
 cd ../builds/hyde
 ccmake ../../libraries
-cd ../..
 ```
 
 Specify the following options:
@@ -73,6 +72,7 @@ Specify the following options:
 - Build the docker image per the instructions in the hyde repo, [current using the clang13 branch](https://github.com/adobe/hyde/tree/fosterbrereton/llvm13-updates).
 
 ```
+cd ../..
 docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host \
     --tty --interactive \
     hyde bash

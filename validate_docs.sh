@@ -11,15 +11,17 @@
 
 CMAKE_BUILD_DIR=../BUILD-DOCS
 
-XCODE_TOOLCHAIN=$(xcode-select -p)
-XCODE_CPP_DIR=${XCODE_TOOLCHAIN}/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
+# XCODE_TOOLCHAIN=$(xcode-select -p)
+# XCODE_CPP_DIR=${XCODE_TOOLCHAIN}/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
 
 HYDE_EXECUTABLE=`which hyde`
 HYDE_VALIDATE_FLAG="--hyde-validate"
 HYDE_UPDATE_FLAG="--hyde-update"
-HYDE_ARGS="--access-filter-public --use-system-clang"
-CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR"
-CMAKE_ARGS="-GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DSTLAB_TASK_SYSTEM=portable"
+#HYDE_ARGS="--access-filter-public --use-system-clang"
+HYDE_ARGS="--access-filter-public"
+# CLANG_ARGS="-I$XCODE_CPP_DIR -I$CMAKE_BUILD_DIR"
+CLANG_ARGS="-I$CMAKE_BUILD_DIR --std=c++17 --stdlib=libc++"
+CMAKE_ARGS="-GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DSTLAB_TASK_SYSTEM=portable -DBUILD_TESTING=OFF"
 
 #
 # User-configured variables
