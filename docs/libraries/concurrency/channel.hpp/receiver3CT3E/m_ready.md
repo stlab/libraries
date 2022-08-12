@@ -9,6 +9,6 @@ defined_in_file: concurrency/channel.hpp
 overloads:
   bool ready() const:
     description: If the receiver was set to ready, it returns `true`, otherwise `false`; the initial value is `false`.
-    return: `true` if this receiver is ready to receive values.
+    return: "`true` if this receiver is ready to receive values."
     signature_with_names: bool ready() const
 ---
