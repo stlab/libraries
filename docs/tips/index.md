@@ -2,7 +2,7 @@
 title: Tips
 layout: page
 tab: Tips
-home-icon: thumb-tack
+icon: thumb-tack
 ---
 
 From time to time I've posted programming tips (often these have been internal emails), blog posts, or other short form writings. I'm gathering ones that might be of general interest here, updating them in the process.
@@ -13,4 +13,3 @@ From time to time I've posted programming tips (often these have been internal e
         <li><a href="{{ BASE_PATH }}{{ p.url }}">{{ p.title | markdownify }}</a></li>
     {% endfor %}
 </ul>
-

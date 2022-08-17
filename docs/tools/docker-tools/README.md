@@ -74,7 +74,7 @@ cd /mnt/host
 ./docs/tools/docs/start.sh
 ```
 
-To view the site, open a browser to `http://localhost:3000`. The site will auto rebuild and refresh as files are changed. The [Atom editor](https://atom.io/) has a nice [language package for markdown](https://atom.io/packages/language-markdown) that understand the YAML front matter that Jekyll uses, as well as a core package for markdown previews that uses the github style (great for editing readme files).
+To view the site, open a browser to `http://localhost:3000`. The site will auto rebuild and refresh as files are changed.
 
 ## Tips
 

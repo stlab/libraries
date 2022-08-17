@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#bundle exec jekyll build
+cd ./docs
 
 bundle exec jekyll build --watch --incremental &
 sleep 10

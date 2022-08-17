@@ -2,17 +2,17 @@
 layout: default
 ---
 
-{% assign home_thumbs = site.pages | where_exp:"p","p.home-icon" | sort:"tab"%}
+{% assign home_thumbs = site.pages | where_exp:"p","p.icon" | sort:"tab"%}
 
 <div class="home">
   <table class='icon-table'>
   <tr>
     {% for page in home_thumbs %}
       <td>
-        {% if page.home-icon %}
+        {% if page.icon %}
             <a href='{{page.url}}'>
             <div class='icon-box'>
-                <div class='top'><i class="fa fa-inverse fa-{{page.home-icon}}"></i></div>
+                <div class='top'><i class="fa fa-inverse fa-{{page.icon}}"></i></div>
                 <div class='bottom'>{{page.tab}}</div>
             </div>
             </a>
