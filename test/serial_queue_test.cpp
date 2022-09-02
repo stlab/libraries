@@ -6,6 +6,8 @@
 #include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 
+#include <boost/test/unit_test.hpp>
+
 /**************************************************************************************************/
 
 using namespace stlab;
@@ -170,7 +172,7 @@ void test1(stlab::schedule_mode mode) {
 
 /**************************************************************************************************/
 
-int main() {
+BOOST_AUTO_TEST_CASE(serial_queue_interface) {
     test0(stlab::schedule_mode::single);
 
     std::cout << "-=-=-=-=-\n";
@@ -184,8 +186,6 @@ int main() {
     std::cout << "-=-=-=-=-\n";
 
     test1(stlab::schedule_mode::all);
-
-    pre_exit();
 }
 
 /**************************************************************************************************/
