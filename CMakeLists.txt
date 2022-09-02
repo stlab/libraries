@@ -131,8 +131,10 @@ if ( BUILD_TESTING )
   # preprocessor definition when the unit test compiled resources are
   # provided by a shared library rather than a static library.
   #
-  target_compile_definitions( testing INTERFACE
-    $<$<NOT:$<BOOL:${Boost_USE_STATIC_LIBS}>>:BOOST_TEST_DYN_LINK>)
+
+  if (NOT Boost_USE_STATIC_LIBS)
+    target_compile_definitions( testing INTERFACE BOOST_TEST_DYN_LINK=1)
+  endif()
 
   add_subdirectory( test )
 endif()
