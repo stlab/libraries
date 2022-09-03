@@ -82,6 +82,12 @@ A typical invocation might look like this:
 cmake -S . -B ../BUILD -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 ```
 
+If you organize the build directory into subdirectories you can support multiple configurations.
+
+```
+cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_TASK_SYSTEM=portable
+```
+
 ### Build
 
 If your configuration command was successful, go to your build directory (`cd ../BUILD`) and invoke:
@@ -92,7 +98,7 @@ cmake --build .
 
 ## Testing
 
-Running the tests in the `BUILD` directory is as simple as invoking 
+Running the tests in the `BUILD` directory is as simple as invoking
 
 ```
 ctest -C Debug
@@ -111,6 +117,13 @@ STLab uses [hyde](https://github.com/adobe/hyde) to generate documentation boile
 When adding a new public API, you should invoke
 
 ```
+docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host \
+    --tty --interactive \
+    hyde bash
+```
+
+```
+cd /mnt/host/libraries
 ./validate_docs.sh --update
 ```
 

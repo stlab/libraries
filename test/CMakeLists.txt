@@ -67,7 +67,8 @@ add_test(
 ################################################################################
 
 add_executable( stlab.test.serial_queue
-  serial_queue_test.cpp )
+  serial_queue_test.cpp
+  main.cpp )
 
 target_compile_definitions(stlab.test.serial_queue PRIVATE STLAB_UNIT_TEST)
 

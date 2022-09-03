@@ -11,15 +11,6 @@ case $key in
         LOCK=YES
         shift # past argument
     ;;
-    -r|--ruby-version)
-      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-        RUBY_VERSION=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-    ;;
     *)    # unknown option
         POSITIONAL+=("$1") # save it in an array for later
         shift # past argument
@@ -28,15 +19,7 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-if [ -z ${RUBY_VERSION+x} ]; then
-    rbenv local $(rbenv install -l | grep -v - | tail -1)
-else
-    rbenv install $RUBY_VERSION
-    rbenv local $RUBY_VERSION
-fi
-
-gem install bundler
-rbenv rehash
+cd ./docs
 
 rm ./Gemfile.lock
 
@@ -45,3 +28,5 @@ if [[ $LOCK = YES ]]; then
 else
     bundle update
 fi
+
+# git submodule update --recursive --remote
