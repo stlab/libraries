@@ -1,8 +1,9 @@
 ---
 layout: function
 title: await_for
-owner: __MISSING__
-brief: __MISSING__
+owner: sean-parent
+brief: |
+  Wait for the specified duration for the future to be ready and either returns a ready future or a new future which can be waited on.
 tags:
   - function
 defined_in_file: concurrency/await.hpp

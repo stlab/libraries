@@ -1,8 +1,8 @@
 ---
 layout: function
 title: invoke_waiting
-owner: __MISSING__
-brief: __MISSING__
+owner: sean-parent
+brief: When calling a waiting operation, other than `await()` or `await_for()`, such as directly waiting on a `std::condition_variable`, the waiting operation should be invoked with `invoke_waiting()`. This will ensure that there are enough threads available in the portable default executor pool to resolve any pending dependent tasks. With the other default executors, this operation has no effect. Platform executors have similar capability but are hooked into blocking primitives to directly detect blocking calls.
 tags:
   - function
 defined_in_file: concurrency/await.hpp

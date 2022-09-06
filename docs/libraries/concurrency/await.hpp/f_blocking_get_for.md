@@ -1,8 +1,8 @@
 ---
 layout: function
 title: blocking_get_for
-owner: __MISSING__
-brief: __MISSING__
+owner: sean-parent
+brief: _Deprecated_ Use [`await_for()`](./f_await_for.html).
 tags:
   - function
 defined_in_file: concurrency/await.hpp
