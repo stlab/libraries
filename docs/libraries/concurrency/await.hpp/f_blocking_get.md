@@ -2,7 +2,7 @@
 layout: function
 title: blocking_get
 owner: sean-parent
-brief: Waits until the future is ready
+brief: _Deprecated_ Use [`await()`](./f_await_for.html).
 tags:
   - function
 defined_in_file: concurrency/await.hpp

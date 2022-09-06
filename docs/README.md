@@ -24,10 +24,13 @@ You'll need Homebrew to make sure you have the most recent version of Ruby.
 Periodically run `gem update` and `bundle update` to make sure you have the latest jekyll tooling.
 
 ## Building Docs
-1. `cd` to repo directory
-2. `bundle exec jekyll serve --watch`
-3. Documentation viewable at `localhost:4000`
-4. Modifying sources should auto-regenerate the documentation
+```
+cd ./docs
+bundle exec jekyll serve --watch
+```
+
+Documentation viewable at `localhost:4000`
+Modifying sources should auto-regenerate the documentation
 
 ## Building Examples
 1. `./build.sh` will download dependencies, build, and run all the `*.cpp` files in the `libraries` directory.

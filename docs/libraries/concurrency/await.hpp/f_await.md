@@ -1,8 +1,8 @@
 ---
 layout: function
 title: await
-owner: __MISSING__
-brief: __MISSING__
+owner: sean-parent
+brief: Waits until the future is ready and returns the future value.
 tags:
   - function
 defined_in_file: concurrency/await.hpp
