@@ -5,7 +5,9 @@ target_sources( stlab INTERFACE
   FILES
     algorithm/reverse.hpp
 
+	concurrency/await.hpp
     concurrency/channel.hpp
+	concurrency/concurrency.hpp
     concurrency/default_executor.hpp
     concurrency/executor_base.hpp
     concurrency/future.hpp
@@ -13,6 +15,9 @@ target_sources( stlab INTERFACE
     concurrency/main_executor.hpp
     concurrency/optional.hpp
     concurrency/progress.hpp
+	concurrency/ready_future.hpp
+	concurrency/serial_queue.hpp
+	concurrency/set_current_thread_name.hpp
     concurrency/system_timer.hpp
     concurrency/task.hpp
     concurrency/traits.hpp
@@ -26,10 +31,11 @@ target_sources( stlab INTERFACE
 
     copy_on_write.hpp
     enum_ops.hpp
-    forest_algorithms.hpp
     forest.hpp
+	forest_algorithms.hpp
     functional.hpp
     memory.hpp
+	pre_exit.hpp
     scope.hpp
     utility.hpp
     version.hpp
