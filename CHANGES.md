@@ -1,3 +1,7 @@
+## v.1.7.1 - 2022 - September 24
+  - [#496] Add missing files to CMakeLists.txt
+
+
 ## v.1.7.0 - 2022 - September 2
   - Breaking Changes
     - The build setup now requires executing CMake to generate a config.hpp file for the build. This was done to avoid ODR/API/ABI breakage from having the library self-configure differently when used by multiple sub-projects. See the [build instructions](https://github.com/stlab/libraries/runs/7903922028?check_suite_focus=true).

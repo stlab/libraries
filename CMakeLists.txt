@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.23 )
 
-project( stlab VERSION 1.6.2 LANGUAGES CXX )
+project( stlab VERSION 1.7.1 LANGUAGES CXX )
 
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 include( CTest )
