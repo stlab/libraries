@@ -721,6 +721,10 @@ public:
         if (p) (*p)(std::forward<A>(args)...);
     }
 
+    bool canceled() const {
+        return _p.expired();
+    }
+
     void set_exception(std::exception_ptr error) const {
         auto p = _p.lock();
         if (p) p->set_error(std::move(error));
