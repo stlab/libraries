@@ -8,24 +8,24 @@
 using namespace std;
 using namespace stlab;
 
-struct sum_2 
+struct sum_2
 {
     process_state_scheduled _state = await_forever;
     int _counter = 0;
     int _sum = 0;
 
-    void await(int n) { 
-        _sum += n; 
+    void await(int n) {
+        _sum += n;
         ++_counter;
         if (_counter == 2) _state = yield_immediate;
     }
 
-    int yield() { 
+    int yield() {
       _state = await_forever;
       auto result = _sum;
       _sum = 0;
       _counter = 0;
-      return result; 
+      return result;
     }
 
     auto state() const { return _state; }
@@ -55,6 +55,8 @@ int main() {
     }
 
     cout << "The sum is " << r.load() << '\n';
+
+    pre_exit();
 }
 
 /*

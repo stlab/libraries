@@ -43,6 +43,8 @@ int main(int, char**) {
                          std::make_pair(begin(futures), end(futures)));
 
     blocking_get(done);
+
+    pre_exit();
 }
 /*
     Result:

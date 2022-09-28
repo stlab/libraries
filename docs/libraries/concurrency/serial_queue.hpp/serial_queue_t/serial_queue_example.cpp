@@ -25,6 +25,8 @@ int main(int, char**) {
     auto done = ioq([]{});
 
     while (!done.get_try()) { }
+
+    pre_exit();
 }
 
 /*

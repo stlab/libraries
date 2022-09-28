@@ -21,6 +21,8 @@ int main(int, char**) {
     }, fi(), fi(), fi());
 
     while (!f.get_try()) this_thread::sleep_for(chrono::milliseconds(1));
+
+    pre_exit();
 }
 /*
     Result:

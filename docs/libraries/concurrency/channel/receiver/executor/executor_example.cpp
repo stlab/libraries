@@ -18,10 +18,10 @@ int main() {
     // The process times_two will be executed immediately
     // The order of the process and executor is not relevant so calling
     // times_two & executor{ immediate_executor } would be equivalent
-    auto result = receive 
+    auto result = receive
         | executor{ immediate_executor } & [](int x) { return x * 2; }
         | [&v](int x) { v = x; };
-        
+
     receive.set_ready();
 
     send(1);
@@ -30,4 +30,6 @@ int main() {
     while (v == 0) {
         this_thread::sleep_for(chrono::milliseconds(1));
     }
+
+    pre_exit();
 }

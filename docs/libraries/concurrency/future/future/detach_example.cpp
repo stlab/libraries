@@ -11,14 +11,14 @@ using namespace stlab;
 int main() {
   atomic_bool done { false };
   {
-    auto x = async(default_executor, 
-      [] { 
-        this_thread::sleep_for(chrono::seconds(42));       
+    auto x = async(default_executor,
+      [] {
+        this_thread::sleep_for(chrono::seconds(42));
         return 42; }
     );
 
-    auto y = x.then([&_done = done](int x) { 
-      printf("Result %d \n", x); 
+    auto y = x.then([&_done = done](int x) {
+      printf("Result %d \n", x);
       _done = true;
     });
 
@@ -28,10 +28,12 @@ int main() {
 
   // Waiting just for illustration purpose
   while (!done) { this_thread::sleep_for(chrono::milliseconds(1)); }
+
+  pre_exit();
 }
 
-/* 
-  Result: 
+/*
+  Result:
   Waiting for 42s...
-    Result 42 
+    Result 42
 */

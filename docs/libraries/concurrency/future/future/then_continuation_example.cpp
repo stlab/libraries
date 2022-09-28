@@ -13,6 +13,8 @@ int main() {
 
     // Waiting just for illustration purpose
     while (!y.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+
+    pre_exit();
 }
 
 // Result: Result 42

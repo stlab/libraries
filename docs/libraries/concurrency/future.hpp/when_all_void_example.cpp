@@ -28,6 +28,8 @@ int main() {
     }, fi(), fv(), fs(), fv(), fb(), fv());
 
     while (!f.get_try()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    pre_exit();
 }
 
 /*

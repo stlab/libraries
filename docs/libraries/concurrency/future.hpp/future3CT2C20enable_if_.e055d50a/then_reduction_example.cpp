@@ -19,7 +19,7 @@ int main() {
 
     cout << *a.get_try() << '\n';
 
-    return 0;
+    pre_exit();
 }
 /*
     Result:

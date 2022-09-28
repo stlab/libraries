@@ -16,6 +16,8 @@ int main() {
     // Waiting just for illustration purpose
     while (!c1.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
     while (!c2.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+
+    pre_exit();
 }
 /*
     Result: (Note: The order of the results is not defined.)

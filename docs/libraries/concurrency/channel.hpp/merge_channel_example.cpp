@@ -18,14 +18,14 @@ int main() {
 
     std::atomic_int all_done{ 0 };
 
-    auto merged = merge_channel<unordered_t>(default_executor, 
-                        [](int x) { return x; }, 
-                        receive1, 
-                        receive2, 
+    auto merged = merge_channel<unordered_t>(default_executor,
+                        [](int x) { return x; },
+                        receive1,
+                        receive2,
                         receive3)
-        | [&_all_done = all_done](int x) { 
+        | [&_all_done = all_done](int x) {
               cout << x << '\n';
-              ++_all_done; 
+              ++_all_done;
           };
 
     receive1.set_ready();
@@ -43,6 +43,8 @@ int main() {
     while (all_done < 6) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
+    pre_exit();
 }
 
 /*

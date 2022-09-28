@@ -6,14 +6,14 @@
 
 using namespace stlab;
 
-struct nop_process 
+struct nop_process
 {
     process_state_scheduled _state = await_forever;
 
     int _v = 0;
 
     ~nop_process() { std::cout << "nop_process::~nop_process()\n"; }
-    
+
     void await(int x) {
         _v = x;
         _state = yield_immediate;
@@ -33,8 +33,8 @@ int main() {
   std::tie(send, receive) = channel<int>(default_executor);
   std::atomic_bool done{ false };
 
-  auto result = receive | 
-      nop_process{} | 
+  auto result = receive |
+      nop_process{} |
       [&_done = done](int v) {
       std::cout << "Received " << v << '\n';
       _done = (v > 2);
@@ -52,6 +52,8 @@ int main() {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
   std::cout << "Waited till the end.\n";
+
+  pre_exit();
 }
 
 /*
