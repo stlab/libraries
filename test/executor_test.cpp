@@ -20,6 +20,7 @@
 using namespace stlab;
 using namespace std;
 
+// Use 'mpre' instead of 'mp' because the latter conflicts with Boost.Math <= 1.76
 namespace mpre = boost::multiprecision;
 
 namespace {
