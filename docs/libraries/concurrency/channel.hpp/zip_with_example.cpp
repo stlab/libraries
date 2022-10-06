@@ -17,13 +17,13 @@ int main() {
 
     std::atomic_bool done{ false };
 
-    auto joined = zip_with(default_executor, 
+    auto joined = zip_with(default_executor,
                       [](int x, int y) { return x + y; }, // x will get 1, y will get 2
-                      receive1, 
+                      receive1,
                       receive2)
-        | [&_done = done](int x) { 
-              cout << x << '\n'; 
-              _done = true; 
+        | [&_done = done](int x) {
+              cout << x << '\n';
+              _done = true;
           };
 
     receive1.set_ready();
@@ -36,6 +36,8 @@ int main() {
     while (!done) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
+    pre_exit();
 }
 
 /*

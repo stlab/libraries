@@ -14,7 +14,8 @@ int main() {
 	auto f = get_the_answer();
 
 	std::cout << stlab::blocking_get(f) << '\n';
-	return 0;
+
+	pre_exit();
 }
 
 /*

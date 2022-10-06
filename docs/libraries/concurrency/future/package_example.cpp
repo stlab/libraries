@@ -19,6 +19,8 @@ int main() {
     while (!f.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 
     cout << "The answer is " << *f.get_try() << "\n";
+
+    pre_exit();
 }
 
 /*

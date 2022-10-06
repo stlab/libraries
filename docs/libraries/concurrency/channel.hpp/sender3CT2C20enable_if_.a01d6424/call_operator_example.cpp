@@ -16,9 +16,9 @@ int main() {
 
     std::atomic_bool done{ false };
 
-    auto hold = receive | [&_done = done](int x) {  
-        cout << x << '\n'; 
-        _done = true; 
+    auto hold = receive | [&_done = done](int x) {
+        cout << x << '\n';
+        _done = true;
       };
 
     receive.set_ready();
@@ -32,6 +32,8 @@ int main() {
     while (!done.load()) {
         this_thread::sleep_for(chrono::milliseconds(1));
     }
+
+    pre_exit();
 }
 
 /*

@@ -36,18 +36,18 @@ struct adder
 
 
 int main() {
-  sender<int> send;       
+  sender<int> send;
   receiver<int> receiver;
   std::tie(send, receiver) = channel<int>(default_executor);
 
   std::atomic_bool done{false};
 
-  auto calculator = receiver | 
-    adder{} | 
-    [&_done = done](int x) { std::cout << x << '\n'; 
+  auto calculator = receiver |
+    adder{} |
+    [&_done = done](int x) { std::cout << x << '\n';
       _done = true;
     };
-    
+
   receiver.set_ready();
 
   send(1);
@@ -55,10 +55,12 @@ int main() {
   send(3);
   send(0);
 
-    // Waiting just for illustrational purpose
-    while (!done) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+  // Waiting just for illustrational purpose
+  while (!done) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  pre_exit();
 }
 
 /*

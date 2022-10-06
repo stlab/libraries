@@ -8,12 +8,12 @@ using namespace std;
 using namespace stlab;
 
 int main() {
-    auto x = async(default_executor, [] { 
-      throw runtime_error("Vogons did arrive!"); 
-      return 42; 
+    auto x = async(default_executor, [] {
+      throw runtime_error("Vogons did arrive!");
+      return 42;
     });
 
-    auto r = x.recover([](future<int> f) { 
+    auto r = x.recover([](future<int> f) {
         try {
           auto answer = *f.get_try();
           cout << "The answer is " << answer << '\n';
@@ -25,6 +25,8 @@ int main() {
 
     // Waiting just for illustration purpose
     while (!r.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+
+    pre_exit();
 }
 
 // Result: The error "Vogons did arrive!" happened!

@@ -17,11 +17,11 @@ int main() {
 
     // The order of the process and buffer_size is not relevant, so calling
     // times_two & buffer_size{ 2 } would be equivalent
-    
-    auto result = receive 
+
+    auto result = receive
         | buffer_size{ 2 } & [](int x) { return x * 2; }
         | [&v](int x) { v = x; };
-        
+
     receive.set_ready();
 
     send(1);
@@ -29,5 +29,7 @@ int main() {
     while (v == 0) {
         this_thread::sleep_for(chrono::milliseconds(1));
     }
+
+    pre_exit();
 }
 

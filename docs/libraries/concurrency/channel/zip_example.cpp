@@ -19,11 +19,11 @@ int main() {
     std::atomic_int all_done{ 0 };
 
     auto zipped = zip(default_executor,
-                      receive1, 
+                      receive1,
                       receive2)
-        | [&_all_done = all_done](std::tuple<int, double> v) { 
+        | [&_all_done = all_done](std::tuple<int, double> v) {
               cout << get<0>(v) << " " << get<1>(v) << '\n';
-              ++_all_done; 
+              ++_all_done;
           };
 
     receive1.set_ready();
@@ -39,6 +39,8 @@ int main() {
     while (all_done < 2) {
         this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
+    pre_exit();
 }
 
 /*
