@@ -12,6 +12,8 @@
 #ifndef STLAB_CONCURRENCY_OPTIONAL_HPP
 #define STLAB_CONCURRENCY_OPTIONAL_HPP
 
+#include <stlab/config.hpp>
+
 /**************************************************************************************************/
 
 #include <stlab/config.hpp>

@@ -26,10 +26,12 @@ class copy_on_write {
     struct model {
         std::atomic<std::size_t> _count{1};
 
-        model() noexcept(std::is_nothrow_constructible_v<T>) = default;
+        model() noexcept(std::is_nothrow_constructible<T>::value) = default;
 
         template <class... Args>
-        explicit model(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args&&...>) : _value(std::forward<Args>(args)...) {}
+        explicit model(Args&&... args) noexcept(
+            std::is_nothrow_constructible<T, Args&&...>::value) :
+            _value(std::forward<Args>(args)...) {}
 
         T _value;
     };
@@ -48,7 +50,7 @@ public:
 
     using element_type = T;
 
-    copy_on_write() noexcept(std::is_nothrow_constructible_v<T>) {
+    copy_on_write() noexcept(std::is_nothrow_constructible<T>::value) {
         static model default_s;
         _self = &default_s;
 
@@ -60,8 +62,8 @@ public:
     copy_on_write(U&& x, disable_copy<U> = nullptr) : _self(new model(std::forward<U>(x))) {}
 
     template <class U, class V, class... Args>
-    copy_on_write(U&& x, V&& y, Args&&... args)
-        : _self(new model(std::forward<U>(x), std::forward<V>(y), std::forward<Args>(args)...)) {}
+    copy_on_write(U&& x, V&& y, Args&&... args) :
+        _self(new model(std::forward<U>(x), std::forward<V>(y), std::forward<Args>(args)...)) {}
 
     copy_on_write(const copy_on_write& x) noexcept : _self(x._self) {
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");
@@ -114,7 +116,7 @@ public:
 
     auto operator*() const noexcept -> const element_type& { return read(); }
 
-    auto operator-> () const noexcept -> const element_type* { return &read(); }
+    auto operator->() const noexcept -> const element_type* { return &read(); }
 
     bool unique() const noexcept {
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");

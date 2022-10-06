@@ -367,6 +367,11 @@ public:
         }
     }
 
+    // An alternative spelling of the default constructor because void isn't regular
+    // and C++14 requires a copy-ctor even when it must be elided. This allows us to
+    // "manually" elide the copy-ctor.
+    priority_task_system(nullptr_t) : priority_task_system() {}
+
     void join() {
         for (auto& e : _q)
             e.done();
@@ -429,11 +434,9 @@ public:
 };
 
 inline priority_task_system& pts() {
-    static priority_task_system only_task_system{[]{
-        at_pre_exit([]() noexcept {
-            only_task_system.join();
-        });
-        return priority_task_system{};
+    static priority_task_system only_task_system{[] {
+        at_pre_exit([]() noexcept { only_task_system.join(); });
+        return nullptr;
     }()};
     return only_task_system;
 }
