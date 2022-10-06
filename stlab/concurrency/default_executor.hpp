@@ -370,7 +370,7 @@ public:
     // An alternative spelling of the default constructor because void isn't regular
     // and C++14 requires a copy-ctor even when it must be elided. This allows us to
     // "manually" elide the copy-ctor.
-    priority_task_system(nullptr_t) : priority_task_system() {}
+    priority_task_system(std::nullptr_t) : priority_task_system() {}
 
     void join() {
         for (auto& e : _q)
@@ -452,10 +452,8 @@ struct executor_type {
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        static task_system<P> only_task_system{[]{
-            at_pre_exit([]() noexcept {
-                only_task_system.join();
-            });
+        static task_system<P> only_task_system{[] {
+            at_pre_exit([]() noexcept { only_task_system.join(); });
             return task_system<P>{};
         }()};
         only_task_system(std::move(f));
