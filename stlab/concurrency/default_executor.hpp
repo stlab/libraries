@@ -318,6 +318,8 @@ public:
 
 /**************************************************************************************************/
 
+/// A portable, scalable, priority task system.
+
 class priority_task_system {
     // _count is the number of threads in the thread pool
     // it is at least 1 but usually number of cores - 1 reserved for the main thread
@@ -359,13 +361,18 @@ class priority_task_system {
     }
 
 public:
-    // Initialize the task system with
+    /// Create an instance of the task system.
     priority_task_system() {
         _threads.reserve(_thread_limit);
         for (unsigned n = 0; n != _count; ++n) {
             _threads.emplace_back([&, n] { run(n); });
         }
     }
+
+    /// Create an instance of the task system. Alternative spelling of the default constructor
+    /// because void isn't regular and C++14 requires a copy-ctor even when it must be elided. This
+    /// allows us to "manually" elide the copy-ctor. See the immediate executed lambda in `pts()`
+    priority_task_system(std::nullptr_t) : priority_task_system() {}
 
     void join() {
         for (auto& e : _q)
@@ -428,12 +435,15 @@ public:
     }
 };
 
+/// Returns an instance of the task system singleton. An immediately executed lambda is used
+/// to register the the task system for tear down pre-exit in a thread safe manner.
+
 inline priority_task_system& pts() {
-    static priority_task_system only_task_system{[]{
-        at_pre_exit([]() noexcept {
-            only_task_system.join();
-        });
-        return priority_task_system{};
+    // Uses the `nullptr` constructor with an immediate executed lambda to register the task
+    // system in a thread safe manner.
+    static priority_task_system only_task_system{[] {
+        at_pre_exit([]() noexcept { only_task_system.join(); });
+        return nullptr;
     }()};
     return only_task_system;
 }
@@ -449,10 +459,8 @@ struct executor_type {
     using result_type = void;
 
     void operator()(task<void()> f) const {
-        static task_system<P> only_task_system{[]{
-            at_pre_exit([]() noexcept {
-                only_task_system.join();
-            });
+        static task_system<P> only_task_system{[] {
+            at_pre_exit([]() noexcept { only_task_system.join(); });
             return task_system<P>{};
         }()};
         only_task_system(std::move(f));
