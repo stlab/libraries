@@ -20,7 +20,8 @@
 using namespace stlab;
 using namespace std;
 
-namespace mp = boost::multiprecision;
+// Use 'mpre' instead of 'mp' because the latter conflicts with Boost.Math <= 1.76
+namespace mpre = boost::multiprecision;
 
 namespace {
 void rest() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
@@ -232,7 +233,7 @@ struct check_task {
 
         _correctScheduleCount += schedule_increment<P>();
 
-        fibonacci<mp::cpp_int>(fiboN);
+        fibonacci<mpre::cpp_int>(fiboN);
 
         switch (workToDo % 3) {
             case 0:
@@ -299,17 +300,17 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     for (auto i = 0; i < iterations; ++i) {
         low_executor([_i = i, &results, &counter] {
             results[_i] = 1;
-            fibonacci<mp::cpp_int>(fiboN);
+            fibonacci<mpre::cpp_int>(fiboN);
             ++counter;
         });
         default_executor([_i = i + iterations, &results, &counter] {
             results[_i] = 2;
-            fibonacci<mp::cpp_int>(fiboN);
+            fibonacci<mpre::cpp_int>(fiboN);
             ++counter;
         });
         high_executor([_i = i + iterations * 2, &results, &counter] {
             results[_i] = 3;
-            fibonacci<mp::cpp_int>(fiboN);
+            fibonacci<mpre::cpp_int>(fiboN);
             ++counter;
         });
     }
