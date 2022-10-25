@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_AWAIT_HPP
 #define STLAB_CONCURRENCY_AWAIT_HPP
 
+#include <stlab/config.hpp>
+
 #include <chrono>
 #include <condition_variable>
 #include <exception>
@@ -20,6 +22,10 @@
 #include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/ready_future.hpp>
 #include <stlab/memory.hpp>
+
+#if STLAB_TASK_SYSTEM(PORTABLE)
+#include <stlab/concurrency/default_executor.hpp>
+#endif
 
 /**************************************************************************************************/
 

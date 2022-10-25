@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_FUTURE_HPP
 #define STLAB_CONCURRENCY_FUTURE_HPP
 
+#include <stlab/config.hpp>
+
 #include <algorithm>
 #include <atomic>
 #include <cassert>
@@ -27,7 +29,6 @@
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
-#include <stlab/config.hpp>
 #include <stlab/functional.hpp>
 #include <stlab/memory.hpp>
 #include <stlab/utility.hpp>
