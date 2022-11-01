@@ -201,8 +201,8 @@ function( stlab_generate_config_file )
   endif()
 
   configure_file(
-    "${CMAKE_SOURCE_DIR}/stlab/config.hpp.in"
-    "${CMAKE_BINARY_DIR}/stlab/config.hpp"
+    "${PROJECT_SOURCE_DIR}/stlab/config.hpp.in"
+    "${PROJECT_BINARY_DIR}/stlab/config.hpp"
     @ONLY
   )
 endfunction()
