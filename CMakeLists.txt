@@ -69,7 +69,7 @@ add_library( stlab::stlab ALIAS stlab )
 #
 target_include_directories( stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
   $<INSTALL_INTERFACE:include> )
 
 #

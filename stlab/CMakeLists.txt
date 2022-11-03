@@ -46,7 +46,7 @@ stlab_generate_config_file()
 target_sources( stlab INTERFACE
   FILE_SET stlab
   TYPE HEADERS
-  BASE_DIRS ${CMAKE_BINARY_DIR}
+  BASE_DIRS ${PROJECT_BINARY_DIR}
   FILES
-    ${CMAKE_BINARY_DIR}/stlab/config.hpp
+    ${PROJECT_BINARY_DIR}/stlab/config.hpp
 )
