@@ -22,6 +22,7 @@ stlab_check_disfunctional_coroutines(STLAB_DEFAULT_NO_STD_COROUTINES)
 option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES} )
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
+option( STLAB_BUILD_TESTING "Enable Test targets" ${BUILD_TESTING} )
 
 stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
@@ -29,8 +30,8 @@ set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt|libdispatch|emscripten|none).")
 
-if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
-  message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
+if( STLAB_BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
+  message( SEND_ERROR "STLAB_BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
 endif()
 
 if( STLAB_USE_BOOST_CPP17_SHIMS AND NOT Boost_FOUND )
@@ -107,7 +108,7 @@ message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
-if ( BUILD_TESTING )
+if ( STLAB_BUILD_TESTING )
   include( stlab/development )
 
   #
@@ -220,3 +221,4 @@ set( CPACK_PACKAGE_VENDOR "Adobe Software Technology Lab" )
 set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" )
 set( CMAKE_PROJECT_HOMEPAGE_URL "https://stlab.cc/libraries/" )
 include( CPack )
+
