@@ -55,7 +55,7 @@ T& unwrap(T& val) {
 
 template <typename T>
 const T& unwrap(const T& val) {
-  return val;
+    return val;
 }
 
 template <typename T>
@@ -65,7 +65,7 @@ T& unwrap(std::reference_wrapper<T>& val) {
 
 template <typename T>
 const T& unwrap(const std::reference_wrapper<T>& val) {
-  return val.get();
+    return val.get();
 }
 
 /**************************************************************************************************/

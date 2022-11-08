@@ -76,7 +76,8 @@ template <class Seq, template <std::size_t> class F, std::size_t Index, std::siz
 struct index_sequence_transform;
 
 template <class Seq,
-          template <std::size_t> class F,
+          template <std::size_t>
+          class F,
           std::size_t Index = 0,
           std::size_t Count = Seq::size()>
 using index_sequence_transform_t = typename index_sequence_transform<Seq, F, Index, Count>::type;
@@ -110,6 +111,17 @@ constexpr detail::move_if_helper_t<P, T> move_if(T&& t) noexcept {
 template <class F, class... Args>
 void for_each_argument(F&& f, Args&&... args) {
     return (void)std::initializer_list<int>{(std::forward<F>(f)(args), 0)...};
+}
+
+/**************************************************************************************************/
+
+/// Returns a copy of the argument. Used to pass an lvalue to function taking an rvalue or to
+/// copy a type with an `explicit` copy-constructor.
+template <typename T>
+constexpr std::decay_t<T> copy(T&& value) noexcept(
+    noexcept(std::decay_t<T>{static_cast<T&&>(value)})) {
+  static_assert(!std::is_same<std::decay_t<T>, T>::value, "explicit copy of rvalue.");
+  return std::decay_t<T>{static_cast<T&&>(value)};
 }
 
 /**************************************************************************************************/

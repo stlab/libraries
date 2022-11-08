@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_AWAIT_HPP
 #define STLAB_CONCURRENCY_AWAIT_HPP
 
+#include <stlab/config.hpp>
+
 #include <chrono>
 #include <condition_variable>
 #include <exception>
@@ -16,11 +18,14 @@
 #include <type_traits>
 #include <utility>
 
-#include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/ready_future.hpp>
 #include <stlab/memory.hpp>
+
+#if STLAB_TASK_SYSTEM(PORTABLE)
+#include <stlab/concurrency/default_executor.hpp>
+#endif
 
 /**************************************************************************************************/
 
@@ -93,8 +98,8 @@ T await(future<T> x) {
     std::condition_variable condition;
     bool flag{false};
 
-    auto hold = std::move(x).recover(immediate_executor, [&](auto&& r) {
-        x = std::forward<decltype(r)>(r);
+    auto hold = std::move(x).recover(immediate_executor, [&](future<T>&& r) {
+        x = std::move(r);
         {
             std::unique_lock<std::mutex> lock{m};
             flag = true;
@@ -201,8 +206,9 @@ template <class T>
 }
 
 template <class T>
-[[deprecated("Use await_for instead.")]] auto blocking_get(
-    future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
+[[deprecated("Use await_for instead.")]] auto blocking_get(future<T> x,
+                                                           const std::chrono::nanoseconds& timeout)
+    -> decltype(x.get_try()) {
     return blocking_get_for(std::move(x), timeout).get_try();
 }
 

@@ -160,6 +160,19 @@ add_test(
 )
 
 ################################################################################
+
+add_executable( stlab.test.utility
+        utility_test.cpp
+        main.cpp )
+
+target_link_libraries( stlab.test.utility PUBLIC stlab::testing )
+
+add_test(
+    NAME stlab.test.utility
+    COMMAND stlab.test.utility
+)
+
+################################################################################
 #
 # tests are compiled without compiler extensions to ensure the stlab headers
 # are not dependent upon any such extension.
