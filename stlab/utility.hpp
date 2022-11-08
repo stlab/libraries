@@ -118,8 +118,10 @@ void for_each_argument(F&& f, Args&&... args) {
 /// Returns a copy of the argument. Used to pass an lvalue to function taking an rvalue or to
 /// copy a type with an `explicit` copy-constructor.
 template <typename T>
-T copy(const T& a) {
-    return a;
+constexpr std::decay_t<T> copy(T&& value) noexcept(
+    noexcept(std::decay_t<T>{static_cast<T&&>(value)})) {
+  static_assert(!std::is_same<std::decay_t<T>, T>::value, "explicit copy of rvalue.");
+  return std::decay_t<T>{static_cast<T&&>(value)};
 }
 
 /**************************************************************************************************/
