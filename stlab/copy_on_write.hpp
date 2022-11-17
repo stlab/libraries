@@ -45,6 +45,10 @@ class copy_on_write {
     using disable_copy_assign =
         std::enable_if_t<!std::is_same<std::decay_t<U>, copy_on_write>::value, copy_on_write&>;
 
+    template <typename element_type>
+    using disable_write =
+        std::enable_if_t<!std::is_const_v<element_type> && std::is_same_v<T, element_type>, element_type&>;
+
 public:
     /* [[deprecated]] */ using value_type = T;
 
@@ -100,7 +104,8 @@ public:
         return *this = copy_on_write(std::forward<U>(x));
     }
 
-    auto write() -> element_type& {
+    template <typename U = element_type>
+    auto write() -> disable_write<U> {
         if (!unique()) *this = copy_on_write(read());
 
         return _self->_value;
