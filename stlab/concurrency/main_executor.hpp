@@ -106,7 +106,7 @@ struct main_executor_type {
 
 #elif STLAB_MAIN_EXECUTOR(EMSCRIPTEN)
 
-struct main_scheduler_type {
+struct main_executor_type {
     using result_type = void;
 
     template <class F>
