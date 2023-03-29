@@ -829,7 +829,7 @@ public:
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](future<result_type>&& p) {
+                       [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
                            (void)std::move(p).get_try();
                            return std::move(_f)();
                        });
