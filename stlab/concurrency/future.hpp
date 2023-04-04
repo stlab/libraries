@@ -195,8 +195,8 @@ template <typename>
 struct reduced_;
 
 template <typename T>
-struct reduced_<future<T>> {
-    using type = T;
+struct reduced_<future<future<T>>> {
+    using type = future<T>;
 };
 
 template <typename T>
@@ -207,8 +207,8 @@ struct reduced_ {
 template <typename T>
 using reduced_t = typename reduced_<T>::type;
 
-template <typename T>
-struct reduction_helper;
+template <class E, typename R>
+auto reduce(E&& executor, R&& r) -> reduced_t<R>;
 
 /**************************************************************************************************/
 
@@ -260,7 +260,6 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     executor_t _executor;
     stlab::optional<T> _result;
-    reduction_helper<T> _reduction_helper;
     std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
@@ -290,23 +289,13 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         }
         if (ready) executor(std::move(b.first));
 
-        return reduce(std::move(b.second));
+        return detail::reduce(executor, std::move(b.second));
     }
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
         if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
     }
-
-    template <typename R>
-    auto reduce(R&& r) {
-        return std::forward<R>(r);
-    }
-
-    auto reduce(future<future<void>>&& r) -> future<void>;
-
-    template <typename R>
-    auto reduce(future<future<R>>&& r) -> future<R>;
 
     void set_exception(std::exception_ptr error) {
         _exception = std::move(error);
@@ -376,7 +365,6 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     executor_t _executor;
     stlab::optional<T> _result;
-    reduction_helper<T> _reduction_helper;
     std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
@@ -406,23 +394,13 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         }
         if (ready) executor(std::move(b.first));
 
-        return reduce(std::move(b.second));
+        return detail::reduce(executor, std::move(b.second));
     }
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
         if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()] {});
     }
-
-    template <typename R>
-    auto reduce(R&& r) {
-        return std::forward<R>(r);
-    }
-
-    template <typename R>
-    auto reduce(future<future<R>>&& r) -> future<R>;
-
-    auto reduce(future<future<void>>&& r) -> future<void>;
 
     void set_exception(std::exception_ptr error) {
         _exception = std::move(error);
@@ -486,16 +464,6 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
         if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
     }
 
-    template <typename R>
-    auto reduce(R&& r) {
-        return std::forward<R>(r);
-    }
-
-    auto reduce(future<future<void>>&& r) -> future<void>;
-
-    template <typename R>
-    auto reduce(future<future<R>>&& r) -> future<R>;
-
     void set_exception(std::exception_ptr error) {
         _exception = std::move(error);
         then_t then;
@@ -542,13 +510,9 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
     shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {}
 
     void remove_promise() override {
-        if (std::is_same<R, reduced_t<R>>::value) {
-            if ((--_promise_count == 0) && _f) {
-                this->set_exception(
-                    std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
-            }
-        } else {
-            --_promise_count;
+        if ((--_promise_count == 0) && _f) {
+            this->set_exception(
+                std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
         }
     }
 
@@ -1571,6 +1535,82 @@ struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
 
 /**************************************************************************************************/
 
+template <class E, class R>
+inline auto _reduce(E&&, R&& r) {
+    return std::forward<R>(r);
+}
+
+/**
+
+implements the coroutine:
+    [](future<future<R>>&& r) -> future<R> {
+        co_return co_await co_await move(r);
+    }
+
+*/
+
+template <class P, class R>
+struct _reduce_coroutine : std::enable_shared_from_this<_reduce_coroutine<P, R>> {
+    P _promise;
+    // NOTE: Both temporaries are necessary because the ordering of assignment is not guaranteed
+    // to be sequential
+    future<void> _tmp0;
+    future<void> _tmp1;
+
+    _reduce_coroutine(P&& p) : _promise{std::move(p)} {}
+    void start(future<future<R>>&& r) {
+        // ... co_await r;
+        _tmp0 = std::move(r).recover([_this = this->shared_from_this()](auto&& a) mutable {
+            if (auto e = a.exception()) {
+                _this->_promise.set_exception(e);
+                return;
+            }
+            _this->stage_0(std::move(a));
+        });
+    }
+    void stage_0(future<future<R>>&& r) {
+        // co_return co_await ...;
+        _tmp1 =
+            std::move(*r.get_try()).recover([_this = this->shared_from_this()](auto&& a) mutable {
+                if (auto e = a.exception()) {
+                    _this->_promise.set_exception(e);
+                    return;
+                }
+                if constexpr (std::is_same_v<R, void>) {
+                    _this->_promise();             // co_return
+                } else {
+                    _this->_promise(*a.get_try()); // co_return
+                }
+            });
+    }
+};
+
+template <class E>
+inline auto _reduce(E&& executor, future<future<void>>&& r) -> future<void> {
+    auto [p, f] = package<void()>(std::forward<E>(executor), [] {});
+
+    std::make_shared<_reduce_coroutine<decltype(p), void>>(std::move(p))->start(std::move(r));
+
+    return std::move(f);
+}
+
+template <class E, class R>
+inline auto _reduce(E&& executor, future<future<R>>&& r) -> future<R> {
+    auto [p, f] = package<R(R&&)>(std::forward<E>(executor),
+                                  [](auto&& a) { return std::forward<decltype(a)>(a); });
+
+    std::make_shared<_reduce_coroutine<decltype(p), R>>(std::move(p))->start(std::move(r));
+
+    return std::move(f);
+}
+
+template <class E, class R>
+auto reduce(E&& executor, R&& r) -> reduced_t<R> {
+    return _reduce(std::forward<E>(executor), std::forward<R>(r));
+}
+
+/**************************************************************************************************/
+
 } // namespace detail
 
 /**************************************************************************************************/
@@ -1626,7 +1666,7 @@ auto when_any(E executor, F&& f, std::pair<I, I> range) {
 
 template <typename E, typename F, typename... Args>
 auto async(E executor, F&& f, Args&&... args)
-    -> future<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>> {
+    -> detail::reduced_t<future<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>>> {
     using result_type = detail::result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto p = package<result_type()>(
@@ -1639,20 +1679,12 @@ auto async(E executor, F&& f, Args&&... args)
 
     executor(std::move(p.first));
 
-    return std::move(p.second);
+    return detail::reduce(executor, std::move(p.second));
 }
 
 /**************************************************************************************************/
 
 namespace detail {
-
-template <typename T>
-struct reduction_helper {};
-
-template <typename T>
-struct reduction_helper<future<T>> {
-    future<void> value;
-};
 
 /**************************************************************************************************/
 
@@ -1675,16 +1707,6 @@ struct value_<T, enable_if_copyable<T>> {
         sb._result = f(std::forward<Args>(args)...);
         proceed(sb);
     }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        sb._reduction_helper.value =
-            f(std::forward<Args>(args)...)
-                .recover(immediate_executor, [_p = sb.shared_from_this()](future<R> f) {
-                    _p->_result = std::move(f);
-                    proceed(*_p);
-                });
-    }
 };
 
 template <typename T>
@@ -1704,15 +1726,6 @@ struct value_<T, enable_if_not_copyable<T>> {
     static void set(shared_base<R>& sb, F& f, Args&&... args) {
         sb._result = f(std::forward<Args>(args)...);
         proceed(sb);
-    }
-
-    template <typename R, typename F, typename... Args>
-    static void set(shared_base<future<R>>& sb, F& f, Args&&... args) {
-        sb._reduction_helper.value =
-            f(std::forward<Args>(args)...).recover([_p = sb.shared_from_this()](future<R> f) {
-                _p->_result = std::move(f);
-                proceed(*_p);
-            });
     }
 };
 
@@ -1773,50 +1786,7 @@ auto shared_base<void>::recover(future<result_type>&& p, E executor, F&& f) {
     }
     if (ready) executor(std::move(b.first));
 
-    return reduce(std::move(b.second));
-}
-
-/**************************************************************************************************/
-
-template <typename T>
-auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then(immediate_executor,
-                             [](auto&& f) { std::forward<decltype(f)>(f).get_try(); });
-}
-
-template <typename T>
-template <typename R>
-auto shared_base<T, enable_if_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then(immediate_executor,
-                             [](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
-}
-
-/**************************************************************************************************/
-
-template <typename T>
-auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then(immediate_executor,
-                             [](auto&& f) { std::forward<decltype(f)>(f).get_try(); });
-}
-
-template <typename T>
-template <typename R>
-auto shared_base<T, enable_if_not_copyable<T>>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then(immediate_executor,
-                             [](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
-}
-
-/**************************************************************************************************/
-
-inline auto shared_base<void>::reduce(future<future<void>>&& r) -> future<void> {
-    return std::move(r).then(immediate_executor,
-                             [](auto&& f) { std::forward<decltype(f)>(f).get_try(); });
-}
-
-template <typename R>
-auto shared_base<void>::reduce(future<future<R>>&& r) -> future<R> {
-    return std::move(r).then(immediate_executor,
-                             [](auto&& f) { return *std::forward<decltype(f)>(f).get_try(); });
+    return detail::reduce(executor, std::move(b.second));
 }
 
 /**************************************************************************************************/

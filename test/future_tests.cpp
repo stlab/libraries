@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_task) {
                             [func = std::move(func)]() mutable { return func(); });
     });
 
-    BOOST_REQUIRE_EQUAL(2, *stlab::await(result).get_try());
+    BOOST_REQUIRE_EQUAL(2, stlab::await(result));
 }
 
 BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_void_task) {
@@ -702,7 +702,7 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_task) {
                             [func = std::move(func)]() mutable { return func(); });
     });
 
-    BOOST_REQUIRE_EQUAL(2, (*stlab::await(std::move(result)).get_try()).member());
+    BOOST_REQUIRE_EQUAL(2, stlab::await(std::move(result)).member());
 }
 
 BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_void_task) {
