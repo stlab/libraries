@@ -149,14 +149,13 @@ endfunction()
 # | qt           | Qt's event framework                       |
 # | none         | None                                       |
 function( stlab_detect_main_executor result_var )
-  find_package(Qt6 QUIET COMPONENTS Core)
   stlab_detect_task_system( task_system )
 
   if( task_system STREQUAL "libdispatch" )
     set( result "libdispatch")
   elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
     set( result "emscripten")
-  elseif( Qt6Core_FOUND )
+  elseif( TARGET Qt::Core )
     set( result "qt")
   else()
     set( result "none")

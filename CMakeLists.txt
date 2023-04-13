@@ -10,7 +10,15 @@ include( StlabUtil )
 find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 find_package( libdispatch )
 find_package( Threads )
-find_package( Qt6 COMPONENTS Core )
+
+# Search Qt >= 5.15, defaulting to 6
+# (see https://doc.qt.io/qt-6/cmake-qt5-and-qt6-compatibility.html)
+if( NOT TARGET Qt::Core )
+  find_package( Qt6 QUIET COMPONENTS Core )
+  if( NOT Qt6_FOUND )
+    find_package( Qt5 5.15 QUIET COMPONENTS Core )
+  endif()
+endif()
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
@@ -49,8 +57,8 @@ if( (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
   message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found." )
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "qt") AND NOT Qt6Core_FOUND )
-  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt\", but a Qt6 installation was not found." )
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt") AND NOT TARGET Qt::Core )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt\", but a Qt installation was not found (Qt 6 or Qt 5.15)." )
 endif()
 
 #
@@ -98,7 +106,7 @@ endif()
 if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
 elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
-  target_link_libraries( stlab INTERFACE Qt6::Core )
+  target_link_libraries( stlab INTERFACE Qt::Core )
 endif()
 
 message(STATUS "stlab: Use Boost C++17 Shims: ${STLAB_USE_BOOST_CPP17_SHIMS}")
