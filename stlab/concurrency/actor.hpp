@@ -55,18 +55,21 @@ struct value_instance<void> {};
 template <class T>
 struct actor_instance : public std::enable_shared_from_this<actor_instance<T>> {
     template <class Executor>
-    explicit actor_instance(Executor&& e, std::string&& name)
-        : _q(std::forward<Executor>(e)), _name(std::move(name)) {}
+    explicit actor_instance(Executor&& e, std::string&& name) :
+        _q(std::forward<Executor>(e)), _name(std::move(name)) {}
 
     template <class... Args>
     void initialize(Args&&... args) {
         // We want to construct the object instance in the executor where
         // it will be running. We cannot initialize in the constructor because
         // `shared_from_this` will throw `bad_weak_ptr`.
-        _q([_this = this->shared_from_this()](auto&& ...args) mutable {
-            temp_thread_name ttn(_this->_name.c_str());
-            _this->_instance._x = T(std::forward<Args>(args)...);
-        }, std::forward<Args>(args)...).detach();
+        _q(
+            [_this = this->shared_from_this()](auto&&... args) mutable {
+                temp_thread_name ttn(_this->_name.c_str());
+                _this->_instance._x = T(std::forward<Args>(args)...);
+            },
+            std::forward<Args>(args)...)
+            .detach();
     }
 
     auto set_name(std::string&& name) { _name = std::move(name); }
@@ -74,7 +77,7 @@ struct actor_instance : public std::enable_shared_from_this<actor_instance<T>> {
     template <typename F, typename... Args>
     auto send(F&& f, Args&&... args) {
         auto task = [_f = std::forward<F>(f),
-                     _this = this->shared_from_this()](auto&& ...args) mutable {
+                     _this = this->shared_from_this()](auto&&... args) mutable {
             temp_thread_name ttn(_this->_name.c_str());
             if constexpr (std::is_same_v<T, void>) {
                 return std::move(_f)(std::forward<Args>(args)...);
@@ -93,7 +96,8 @@ struct actor_instance : public std::enable_shared_from_this<actor_instance<T>> {
             if constexpr (std::is_same_v<T, void>) {
                 return std::move(_f)(std::forward<R>(x), std::move(_args)...);
             } else {
-                return std::move(_f)(*(_this->_instance._x), std::forward<R>(x), std::move(_args)...);
+                return std::move(_f)(*(_this->_instance._x), std::forward<R>(x),
+                                     std::move(_args)...);
             }
         };
         return std::move(future).then(_q.executor(), std::move(task));
@@ -132,9 +136,9 @@ public:
     actor() = default;
 
     template <class Executor, class... Args>
-    actor(Executor&& e, std::string&& name, Args&&... args)
-        : _impl(std::make_shared<detail::actor_instance<T>>(
-            std::forward<Executor>(e), std::move(name))) {
+    actor(Executor&& e, std::string&& name, Args&&... args) :
+        _impl(std::make_shared<detail::actor_instance<T>>(std::forward<Executor>(e),
+                                                          std::move(name))) {
         if constexpr (!std::is_same_v<T, void>) {
             _impl->initialize(std::forward<Args>(args)...);
         }
