@@ -1,19 +1,10 @@
-//
-//  ADOBE CONFIDENTIAL
-//  __________________
-//
-//  Copyright 2023 Adobe
-//  All Rights Reserved.
-//
-//  NOTICE:  All information contained herein is, and remains
-//  the property of Adobe and its suppliers, if any. The intellectual
-//  and technical concepts contained herein are proprietary to Adobe
-//  and its suppliers and are protected by all applicable intellectual
-//  property laws, including trade secret and copyright laws.
-//  Dissemination of this information or reproduction of this material
-//  is strictly forbidden unless prior written permission is obtained
-//  from Adobe.
-//
+/*
+    Copyright 2023 Adobe
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+*/
+
+/**************************************************************************************************/
 
 #pragma once
 #ifndef STLAB_CONCURRENCY_ACTOR_HPP
