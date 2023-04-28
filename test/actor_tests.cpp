@@ -7,7 +7,7 @@
 /**************************************************************************************************/
 
 // identity
-#include <stlab/actor.hpp>
+#include <stlab/concurrency/actor.hpp>
 
 // boost
 #include <boost/test/unit_test.hpp>
