@@ -13,7 +13,7 @@
 
 #include <stlab/config.hpp>
 
-#if STLAB_MAIN_EXECUTOR(QT)
+#if STLAB_MAIN_EXECUTOR(QT5) || STLAB_MAIN_EXECUTOR(QT6)
 #include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
@@ -38,7 +38,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_MAIN_EXECUTOR(QT)
+#if STLAB_MAIN_EXECUTOR(QT5) || STLAB_MAIN_EXECUTOR(QT6)
 
 class main_executor_type {
     using result_type = void;
