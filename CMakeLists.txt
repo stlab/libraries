@@ -54,11 +54,11 @@ if( (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
   message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found." )
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "qt5") AND NOT TARGET Qt5::Core )
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt5") AND NOT Qt5Core_FOUND )
   message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt5\", but a Qt5 installation was not found." )
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT TARGET Qt6::Core )
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT Qt6Core_FOUND )
   message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt6\", but a Qt6 installation was not found." )
 endif()
 
