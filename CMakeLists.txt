@@ -11,11 +11,11 @@ find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 find_package( libdispatch )
 find_package( Threads )
 
-# Search Qt 6 and Qt >= 5.15
+# Search Qt 6 and Qt 5
 # Since QT_DEFAULT_MAJOR_VERSION is not set, Qt::Core, qt_xxx will refer to Qt6 as it is found first
 # (see https://doc.qt.io/qt-6/cmake-qt5-and-qt6-compatibility.html)
 find_package( Qt6 QUIET COMPONENTS Core )
-find_package( Qt5 5.15 QUIET COMPONENTS Core )
+find_package( Qt5 QUIET COMPONENTS Core )
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
