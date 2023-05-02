@@ -196,8 +196,12 @@ install( EXPORT stlabTargets
 # `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}` is an element of the
 # `CMAKE_PREFIX_PATH` environment variable.
 #
+configure_file(
+  "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake.in"
+  "${stlab_BINARY_DIR}/stlabConfig.cmake"
+  @ONLY )
 install( FILES
-  "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake"
+  "${stlab_BINARY_DIR}/stlabConfig.cmake"
   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
   DESTINATION share/cmake/stlab )
 

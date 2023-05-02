@@ -1,4 +1,21 @@
 include( CMakeFindDependencyMacro )
-find_dependency(Boost 1.74.0)
-find_dependency(Threads)
+
+if ( @STLAB_USE_BOOST_CPP17_SHIMS@ )
+	find_dependency(Boost 1.74.0)
+endif()
+
+if ( NOT @STLAB_THREAD_SYSTEM@ STREQUAL "none" )
+	find_dependency(Threads)
+endif()
+
+if ( @STLAB_TASK_SYSTEM@ STREQUAL "libdispatch" )
+	find_dependency(libdispatch)
+endif()
+
+if ( @STLAB_MAIN_EXECUTOR@ STREQUAL "qt5" )
+	find_dependency(Qt5 COMPONENTS Core)
+elseif ( @STLAB_MAIN_EXECUTOR@ STREQUAL "qt6" )
+	find_dependency(Qt6 COMPONENTS Core)
+endif()
+
 include( "${CMAKE_CURRENT_LIST_DIR}/stlabTargets.cmake" )
