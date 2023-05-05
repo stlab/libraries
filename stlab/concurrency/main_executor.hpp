@@ -13,7 +13,12 @@
 
 #include <stlab/config.hpp>
 
-#if STLAB_MAIN_EXECUTOR(QT)
+#if STLAB_MAIN_EXECUTOR(QT5) || STLAB_MAIN_EXECUTOR(QT6)
+#include <QtGlobal>
+#if (STLAB_MAIN_EXECUTOR(QT5) && (QT_VERSION < QT_VERSION_CHECK(5,0,0) || QT_VERSION >= QT_VERSION_CHECK(6,0,0)) || \
+     STLAB_MAIN_EXECUTOR(QT6) && (QT_VERSION < QT_VERSION_CHECK(6,0,0) || QT_VERSION >= QT_VERSION_CHECK(7,0,0)))
+#error "Mismatching Qt versions"
+#endif
 #include <QCoreApplication>
 #include <QEvent>
 #include <stlab/concurrency/task.hpp>
@@ -38,7 +43,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-#if STLAB_MAIN_EXECUTOR(QT)
+#if STLAB_MAIN_EXECUTOR(QT5) || STLAB_MAIN_EXECUTOR(QT6)
 
 class main_executor_type {
     using result_type = void;

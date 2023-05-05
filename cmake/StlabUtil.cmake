@@ -146,10 +146,10 @@ endfunction()
 # |--------------+--------------------------------------------|
 # | libdispatch  | libdispatch (aka. Grand Central Dispatch ) |
 # | emscripten   | Emscripten's executor                      |
-# | qt           | Qt's event framework                       |
+# | qt5          | Qt's event framework (Qt5)                 |
+# | qt6          | Qt's event framework (Qt6)                 |
 # | none         | None                                       |
 function( stlab_detect_main_executor result_var )
-  find_package(Qt6 QUIET COMPONENTS Core)
   stlab_detect_task_system( task_system )
 
   if( task_system STREQUAL "libdispatch" )
@@ -157,7 +157,9 @@ function( stlab_detect_main_executor result_var )
   elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
     set( result "emscripten")
   elseif( Qt6Core_FOUND )
-    set( result "qt")
+    set( result "qt6")
+  elseif( Qt5Core_FOUND )
+    set( result "qt5")
   else()
     set( result "none")
   endif()
@@ -194,8 +196,10 @@ function( stlab_generate_config_file )
     set( STLAB_MAIN_EXECUTOR_LIBDISPATCH TRUE )
   elseif (STLAB_MAIN_EXECUTOR STREQUAL "emscripten")
     set( STLAB_MAIN_EXECUTOR_EMSCRIPTEN TRUE )
-  elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
-    set( STLAB_MAIN_EXECUTOR_QT TRUE )
+  elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt5")
+    set( STLAB_MAIN_EXECUTOR_QT5 TRUE )
+  elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt6")
+    set( STLAB_MAIN_EXECUTOR_QT6 TRUE )
   elseif (STLAB_MAIN_EXECUTOR STREQUAL "none")
     set( STLAB_MAIN_EXECUTOR_NONE TRUE )
   endif()

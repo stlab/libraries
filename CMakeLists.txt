@@ -9,8 +9,10 @@ include( StlabUtil )
 
 find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 find_package( libdispatch )
+find_package( Qt5 QUIET COMPONENTS Core )
+find_package( Qt6 QUIET COMPONENTS Core )
 find_package( Threads )
-find_package( Qt6 COMPONENTS Core )
+
 
 cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
@@ -27,7 +29,7 @@ stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
-set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt|libdispatch|emscripten|none).")
+set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
 
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
@@ -49,8 +51,12 @@ if( (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
   message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found." )
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "qt") AND NOT Qt6Core_FOUND )
-  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt\", but a Qt6 installation was not found." )
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt5") AND NOT Qt5Core_FOUND )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt5\", but a Qt5 installation was not found." )
+endif()
+
+if( (STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT Qt6Core_FOUND )
+  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt6\", but a Qt6 installation was not found." )
 endif()
 
 #
@@ -97,7 +103,9 @@ endif()
 
 if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
-elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt")
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt5")
+  target_link_libraries( stlab INTERFACE Qt5::Core )
+elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt6")
   target_link_libraries( stlab INTERFACE Qt6::Core )
 endif()
 
@@ -185,8 +193,12 @@ install( EXPORT stlabTargets
 # `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}` is an element of the
 # `CMAKE_PREFIX_PATH` environment variable.
 #
+configure_file(
+  "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake.in"
+  "${stlab_BINARY_DIR}/stlabConfig.cmake"
+  @ONLY )
 install( FILES
-  "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake"
+  "${stlab_BINARY_DIR}/stlabConfig.cmake"
   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
   DESTINATION share/cmake/stlab )
 

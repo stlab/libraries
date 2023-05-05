@@ -28,7 +28,8 @@
 #define STLAB_MAIN_EXECUTOR(X) (STLAB_MAIN_EXECUTOR_##X())
 #cmakedefine01 STLAB_MAIN_EXECUTOR_LIBDISPATCH()
 #cmakedefine01 STLAB_MAIN_EXECUTOR_EMSCRIPTEN()
-#cmakedefine01 STLAB_MAIN_EXECUTOR_QT()
+#cmakedefine01 STLAB_MAIN_EXECUTOR_QT5()
+#cmakedefine01 STLAB_MAIN_EXECUTOR_QT6()
 #cmakedefine01 STLAB_MAIN_EXECUTOR_NONE()
 
 // Various functionality macros

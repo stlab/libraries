@@ -23,4 +23,4 @@ All tasks that are passed to an instance of this instance are executed in-order 
 
 Upon destruction of the main_executor, the underlying main loop is _not_ destroyed. Likewise, all functions submitted to the executor will be executed regardless of destruction state.
 
-So far no main_executor is implemented for Windows. If `QT_CORE_LIB` is defined and not `STLAB_DISABLE_QT_MAIN_EXECUTOR`, a main executor is instantiated that executes the tasks on the Qt main loop.
+So far no main_executor is implemented for Windows. If `STLAB_MAIN_EXECUTOR` is `qt5` or `qt6`, a main executor is instantiated that executes the tasks on the Qt main loop.
