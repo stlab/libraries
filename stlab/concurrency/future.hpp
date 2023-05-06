@@ -1543,7 +1543,7 @@ inline auto _reduce(E&&, R&& r) {
 /**
 
 implements the coroutine:
-    [](future<future<R>>&& r) -> future<R> {
+    [](future<future<R>>&& r) -> task<R> {
         co_return co_await co_await move(r);
     }
 
