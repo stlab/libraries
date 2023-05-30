@@ -31,6 +31,8 @@ set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
 
+option( STLAB_USE_RUST_DEFAULT_EXECUTOR "Use a Rust port of the default_executor. Defaults to OFF." ON )
+
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
 endif()
@@ -109,6 +111,8 @@ elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt6")
   target_link_libraries( stlab INTERFACE Qt6::Core )
 endif()
 
+
+
 message(STATUS "stlab: Use Boost C++17 Shims: ${STLAB_USE_BOOST_CPP17_SHIMS}")
 message(STATUS "stlab: Disable Coroutines: ${STLAB_DEFAULT_NO_STD_COROUTINES}")
 message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
@@ -124,7 +128,7 @@ if ( BUILD_TESTING )
   #
   add_library( testing INTERFACE )
   add_library( stlab::testing ALIAS testing )
-
+  
   #
   # CMake targets linking to the stlab::testing target will (transitively)
   # link to the Boost::unit_test_framework and to stlab::stlab target.
@@ -133,6 +137,13 @@ if ( BUILD_TESTING )
     Boost::unit_test_framework
     stlab::development
     stlab::stlab )
+
+    if ( STLAB_USE_RUST_DEFAULT_EXECUTOR )
+      add_definitions( -DSTLAB_USE_RUST_DEFAULT_EXECUTOR )
+      add_subdirectory( rustport )
+      include_directories( rustport )
+      target_link_libraries( testing INTERFACE RustyDefaultExecutor )
+    endif()
 
   #
   # Linking to the Boost unit test framework requires an additional
