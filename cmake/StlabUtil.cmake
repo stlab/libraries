@@ -190,6 +190,8 @@ function( stlab_generate_config_file )
     set( STLAB_TASK_SYSTEM_EMSCRIPTEN TRUE )
   elseif (STLAB_TASK_SYSTEM STREQUAL "windows")
     set( STLAB_TASK_SYSTEM_WINDOWS TRUE )
+  elseif (STLAB_TASK_SYSTEM STREQUAL "experimental_rust")
+    set( STLAB_TASK_SYSTEM_EXPERIMENTAL_RUST TRUE )
   endif()
 
   if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")

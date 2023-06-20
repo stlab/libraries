@@ -9,7 +9,9 @@
 #ifndef STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
-#ifdef STLAB_USE_RUST_DEFAULT_EXECUTOR
+#include <stlab/config.hpp>
+
+#if STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
 
 #include "bindings.hpp"
 
@@ -17,7 +19,6 @@
 
 #include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
-#include <stlab/config.hpp>
 #include <stlab/pre_exit.hpp>
 
 #include <cassert>
@@ -507,7 +508,7 @@ constexpr auto high_executor = detail::executor_type<detail::executor_priority::
 
 /**************************************************************************************************/
 
-#endif // STLAB_USE_RUST_DEFAULT_EXECUTOR
+#endif // STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
 
 #endif // STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
