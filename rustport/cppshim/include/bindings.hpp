@@ -1,7 +1,8 @@
 #include "bindings.h"
 
-#include <utility>
 #include <iostream>
+#include <type_traits>
+#include <utility>
 
 namespace stlab {
 inline namespace v1 {
@@ -10,33 +11,35 @@ namespace detail {
 // REVISIT - have to invert the priority encoding to match old API.
 enum class executor_priority { high = 2, medium = 1, low = 0 };
 
-/// @brief Invokes `f` on the default_executor.
+/// @brief Asynchronously invoke f on the default_executor.
 /// @tparam F function object type
-/// @param f a function object with signature `void()`.
-/// @return the value returned by `execute`.
-template <class F>
+/// @param f a function object.
+/// @return the result of calling `execute`.
+template <class F, typename = std::enable_if_t<std::is_invocable_r<void, F>::value>>
 auto enqueue(F f) {
-    using f_t = decltype(f);
-    return execute(new f_t(std::move(f)), [](void* f_) {
-        auto f = static_cast<f_t*>(f_);
-        (*f)();
+    return execute(new F(std::move(f)), [](void* f_) {
+        auto f = static_cast<F*>(f_);
+        try {
+            (*f)();
+        } catch (...) {}
         delete f;
     });
 }
 
-/// @brief Invokes `f` on the default_executor at the given `priority`.
+/// @brief Asynchronously invoke `f` on the default_executor with priority `p`.
 /// @tparam F function object type
-/// @param f a function object with signature `void()`.
+/// @param f a function object.
 /// @param priority 
 /// @return the value returned by `execute_priority`.
-template <class F>
-auto enqueue_priority(F f, executor_priority priority) {
-    using f_t = decltype(f);
-    return execute_priority(new f_t(std::move(f)), [](void* f_) {
-        auto f = static_cast<f_t*>(f_);
-        (*f)();
+template <class F, class = std::enable_if_t<std::is_invocable_r< void, F >::value> >
+auto enqueue_priority(F f, executor_priority p) {
+    return execute_priority(new F(std::move(f)), [](void* f_) {
+        auto f = static_cast<F*>(f_);
+        try {
+            (*f)();
+        } catch (...) {}
         delete f;
-    }, static_cast<std::size_t>(priority));
+    }, static_cast<std::uint64_t>(p));
 }
 
 /// @brief A thin invokable wrapper around `enqueue_priority`.

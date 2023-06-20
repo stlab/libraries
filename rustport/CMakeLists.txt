@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 
 include(FetchContent)
 
-project("RustyDefaultExecutor")
-
 FetchContent_Declare(
     Corrosion
     GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
@@ -21,9 +19,9 @@ corrosion_experimental_cbindgen(
         HEADER_NAME "bindings.h"
 )
 
-add_library(${PROJECT_NAME} INTERFACE)
+add_library(RustyDefaultExecutor INTERFACE)
 
-target_include_directories(${PROJECT_NAME}
+target_include_directories(RustyDefaultExecutor
     # PRIVATE
     #     # where the library itself will look for its internal headers
     #     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -32,4 +30,4 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cppshim/include>
 )
 
-target_link_libraries(${PROJECT_NAME} INTERFACE default_executor)
+target_link_libraries(RustyDefaultExecutor INTERFACE default_executor)

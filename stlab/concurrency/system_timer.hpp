@@ -167,7 +167,7 @@ private:
 
 /**************************************************************************************************/
 
-#elif STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(PORTABLE_RUST)
+#elif STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
 
 class system_timer {
     using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;

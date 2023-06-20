@@ -103,7 +103,6 @@ endif()
 
 if (STLAB_TASK_SYSTEM STREQUAL "experimental_rust")
   add_subdirectory( rustport )
-  include_directories( rustport )
 endif()
 
 if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
