@@ -61,9 +61,34 @@ namespace detail {
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+inline std::string get_current_thread_name() {
+    char name[64] = {0};
+    const std::size_t size{sizeof(name) / sizeof(name[0])};
+
+#if STLAB_THREADS(WIN32)
+    // Nothing
+#elif STLAB_THREADS(PTHREAD_EMSCRIPTEN)
+    emscripten_get_thread_name(pthread_self(), name, size);
+#elif STLAB_THREADS(PTHREAD_APPLE)
+    pthread_getname_np(pthread_self(), name, size);
+#elif STLAB_THREADS(PTHREAD)
+    pthread_getname_np(pthread_self(), name, size);
+#elif STLAB_THREADS(NONE)
+    // Nothing
+#else
+    #error "Unspecified or unknown thread mode set."
+#endif
+
+    return std::string(&name[0]);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 struct temp_thread_name {
-    explicit temp_thread_name(const char* name) { stlab::set_current_thread_name(name); }
-    ~temp_thread_name() { stlab::set_current_thread_name(""); }
+    explicit temp_thread_name(const char* name) : _old_name(get_current_thread_name()) { stlab::set_current_thread_name(name); }
+    ~temp_thread_name() { stlab::set_current_thread_name(_old_name.c_str()); }
+private:
+    std::string _old_name;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
