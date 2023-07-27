@@ -109,8 +109,8 @@ struct actor_instance
     : public actor_instance_base
     , std::enable_shared_from_this<actor_instance<T>> {
     template <class Executor>
-    explicit actor_instance(Executor&& e, std::string&& name)
-        : _q(std::forward<Executor>(e)), _name(std::move(name)) {}
+    actor_instance(Executor e, std::string name)
+        : _q(std::move(e)), _name(std::move(name)) {}
 
     template <class... Args>
     void initialize(Args&&... args) {
@@ -120,8 +120,10 @@ struct actor_instance
         //
         // Unfortunately we cannot use schedule() here as it would dereference the std::optional when it
         // doesn't contain a value, and that's UB...
-        stlab::async(executor(), [_this = this->shared_from_this()](auto&&... args){
-            _this->_instance._x = T(std::forward<Args>(args)...);
+        stlab::async(executor(), [_weak = this->weak_from_this()](auto&&... args){
+            if (auto self = _weak.lock()) {
+                self->_instance._x = T(std::forward<Args>(args)...);
+            }
         }, std::forward<Args>(args)...).detach();
     }
 
@@ -158,9 +160,9 @@ struct actor_instance
         };
     }
 
-    template <typename F, typename... Args>
-    auto operator()(F&& f, Args&&... args) {
-        return stlab::async(executor(), entask(std::forward<F>(f)), std::forward<Args>(args)...);
+    template <typename F>
+    auto operator()(F&& f) {
+        return stlab::async(executor(), entask(std::forward<F>(f)));
     }
 
     auto executor() {
@@ -209,8 +211,8 @@ public:
     /// @param args Additional arguments to be passed to the `value_type` of this instance during its
     ///             construction.
     template <class Executor, class... Args>
-    actor(Executor&& e, std::string&& name, Args&&... args)
-        : _impl(std::make_shared<detail::actor_instance<value_type>>(std::forward<Executor>(e),
+    actor(Executor e, std::string name, Args&&... args)
+        : _impl(std::make_shared<detail::actor_instance<value_type>>(std::move(e),
                                                                      std::move(name))) {
         if constexpr (!std::is_same_v<value_type, void>) {
             _impl->initialize(std::forward<Args>(args)...);
@@ -219,26 +221,24 @@ public:
 
     /// @brief Sets the name of the actor to something else.
     /// @param name The incoming name to use from here on out.
-    auto set_name(std::string&& name) { _impl->set_name(std::move(name)); }
+    auto set_name(std::string name) { _impl->set_name(std::move(name)); }
 
     /// @brief Schedule a task for the actor to execute.
     /// @note This routine has identical semantics to `operator()`.
     /// @param f The function to execute. Note that the first parameter to this function must be `T&`,
     ///          and will reference the instance owned by the actor.
-    /// @param args Additional arguments to pass to `f` at the time it is invoked.
-    template <typename F, typename... Args>
-    auto schedule(F&& f, Args&&... args) {
-        return (*_impl)(std::forward<F>(f), std::forward<Args>(args)...);
+    template <typename F>
+    auto schedule(F&& f) {
+        return (*_impl)(std::forward<F>(f));
     }
 
     /// @brief Schedule a task for the actor to execute.
     /// @note This routine has identical semantics to `schedule`.
     /// @param f The function to execute. Note that the first parameter to this function must be `T&`,
     ///          and will reference the instance owned by the actor.
-    /// @param args Additional arguments to pass to `f` at the time it is invoked.
-    template <typename F, typename... Args>
-    auto operator()(F&& f, Args&&... args) {
-        return (*_impl)(std::forward<F>(f), std::forward<Args>(args)...);
+    template <typename F>
+    auto operator()(F&& f) {
+        return (*_impl)(std::forward<F>(f));
     }
 
     /// @brief Get the unique `actor_id` of this actor.

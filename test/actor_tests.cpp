@@ -24,14 +24,14 @@ void increment(int& i) { increment_by(i, 1); }
 
 template <class T>
 T get_actor_value(stlab::actor<T>& a) {
-    return stlab::await(a([](auto& x) { return x; }));
+    return stlab::await(a([](auto x) { return x; }));
 }
 
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(actor_construct_with_arguments) {
     stlab::actor<int> a(stlab::default_executor, "actor_int", 42);
-    stlab::future<void> f = a([](auto& i) { BOOST_REQUIRE(i == 42); });
+    stlab::future<void> f = a([](auto i) { BOOST_REQUIRE(i == 42); });
 
     stlab::await(f);
 
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(actor_construct_with_arguments) {
 
 BOOST_AUTO_TEST_CASE(actor_construct_void) {
     stlab::actor<void> a(stlab::default_executor, "actor_void");
-    std::atomic_bool sent{false};
+    bool sent{false};
     stlab::future<void> f = a([&]() { sent = true; });
 
     stlab::await(f);
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(actor_send_to_void) {
 BOOST_AUTO_TEST_CASE(actor_send_to_value) {
     {
         stlab::actor<int> a(stlab::default_executor, "send_getting_value", 42);
-        stlab::future<int> f = a([](auto& x) { return x; });
+        stlab::future<int> f = a([](auto x) { return x; });
         int result = stlab::await(f);
 
         BOOST_REQUIRE(result == 42);
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_void) {
     {
         stlab::actor<int> a(stlab::default_executor, "send_then_from_void");
         stlab::future<int> f =
-            a([](int& x) { x += 42; }).then(a.executor(), a.entask([](int& x) { return x; }));
+            a([](int& x) { x += 42; }).then(a.executor(), a.entask([](int x) { return x; }));
 
         int result = stlab::await(f);
 
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_void) {
 BOOST_AUTO_TEST_CASE(actor_then_from_value) {
     stlab::actor<int> a(stlab::default_executor, "send_then_from_type", 42);
     stlab::future<int> f =
-        a([](auto& x) { return x; }).then(a.executor(), a.entask([](auto& x, auto y) {
+        a([](auto x) { return x; }).then(a.executor(), a.entask([](auto x, auto y) {
             BOOST_REQUIRE(x == 42);
             BOOST_REQUIRE(y == 42);
             return x + y;
