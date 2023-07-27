@@ -154,8 +154,10 @@ struct actor_instance
                 const char* what = error.what();
                 (void)what;
                 assert(!"Uncaught actor exception");
+                throw;
             } catch (...) {
                 assert(!"Uncaught actor exception");
+                throw;
             }
         };
     }
