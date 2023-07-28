@@ -20,11 +20,15 @@
 
 void increment_by(int& i, int amount) { i += amount; }
 
-void increment(int& i) { increment_by(i, 1); }
+void increment(int& i) {
+    increment_by(i, 1);
+}
 
 template <class T>
 T get_actor_value(stlab::actor<T>& a) {
-    return stlab::await(a([](auto x) { return x; }));
+    return stlab::await(a([](auto x) {
+        return x;
+    }));
 }
 
 std::string current_test_name() {
@@ -35,11 +39,16 @@ std::string current_test_name() {
 
 BOOST_AUTO_TEST_CASE(actor_construct_with_arguments) {
     stlab::actor<int> a(stlab::default_executor, current_test_name(), 42);
-    stlab::future<void> f = a([](auto i) { BOOST_REQUIRE(i == 42); });
+    bool sent{false};
+    stlab::future<void> f = a([&](auto i) {
+        sent = true;
+        BOOST_REQUIRE(i == 42);
+    });
 
     stlab::await(f);
 
     BOOST_REQUIRE(get_actor_value(a) == 42);
+    BOOST_REQUIRE(sent);
 }
 
 /**************************************************************************************************/
@@ -47,9 +56,10 @@ BOOST_AUTO_TEST_CASE(actor_construct_with_arguments) {
 BOOST_AUTO_TEST_CASE(actor_construct_void) {
     stlab::actor<void> a(stlab::default_executor, current_test_name());
     bool sent{false};
-    stlab::future<void> f = a([&]() { sent = true; });
 
-    stlab::await(f);
+    a.enqueue([&]() { sent = true; });
+
+    a.complete();
 
     BOOST_REQUIRE(sent);
 }
@@ -60,23 +70,23 @@ BOOST_AUTO_TEST_CASE(actor_regularity) {
     stlab::actor<int> empty_ctor;
 
     stlab::actor<int> default_ctor(stlab::default_executor, current_test_name()); // default construction
-    default_ctor(increment).detach();
+    default_ctor.enqueue(increment);
     BOOST_REQUIRE(get_actor_value(default_ctor) == 1);
 
     stlab::actor<int> copy_ctor(default_ctor); // copy construction
-    copy_ctor(increment).detach();
+    copy_ctor.enqueue(increment);
     BOOST_REQUIRE(get_actor_value(copy_ctor) == 2);
 
     stlab::actor<int> move_ctor(std::move(default_ctor)); // move construction
-    move_ctor(increment).detach();
+    move_ctor.enqueue(increment);
     BOOST_REQUIRE(get_actor_value(move_ctor) == 3);
 
     stlab::actor<int> copy_assign = copy_ctor; // copy assignment
-    copy_assign(increment).detach();
+    copy_assign.enqueue(increment);
     BOOST_REQUIRE(get_actor_value(copy_assign) == 4);
 
     stlab::actor<int> move_assign = std::move(move_ctor); // move assignment
-    move_assign(increment).detach();
+    move_assign.enqueue(increment);
     BOOST_REQUIRE(get_actor_value(move_assign) == 5);
 
     // equality comparable
@@ -133,6 +143,7 @@ BOOST_AUTO_TEST_CASE(actor_schedule_to_void) {
         stlab::await(f);
 
         BOOST_REQUIRE(f.get_try());
+        BOOST_REQUIRE(get_actor_value(a) == 1);
     }
 
     {
@@ -152,17 +163,15 @@ BOOST_AUTO_TEST_CASE(actor_schedule_to_value) {
     {
         stlab::actor<int> a(stlab::default_executor, current_test_name(), 42);
         stlab::future<int> f = a([](auto x) { return x; });
-        int result = stlab::await(f);
 
-        BOOST_REQUIRE(result == 42);
+        BOOST_REQUIRE(stlab::await(f) == 42);
     }
 
     {
         stlab::actor<void> a(stlab::default_executor, current_test_name());
         stlab::future<int> f = a([]() { return 42; });
-        int result = stlab::await(f);
 
-        BOOST_REQUIRE(result == 42);
+        BOOST_REQUIRE(stlab::await(f) == 42);
     }
 }
 
@@ -174,9 +183,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_void) {
         stlab::future<int> f =
             a([](int& x) { x += 42; }).then(a.executor(), a.entask([](int x) { return x; }));
 
-        int result = stlab::await(f);
-
-        BOOST_REQUIRE(result == 42);
+        BOOST_REQUIRE(stlab::await(f) == 42);
     }
 
     {
@@ -185,9 +192,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_void) {
                                    .then(a.executor(), a.entask([](auto x) { return 4200 + x; }))
                                    .then(a.executor(), a.entask([](auto x) { return x + 420000; }));
 
-        int result = stlab::await(f);
-
-        BOOST_REQUIRE(result == 424242);
+        BOOST_REQUIRE(stlab::await(f) == 424242);
     }
 }
 
@@ -202,9 +207,47 @@ BOOST_AUTO_TEST_CASE(actor_then_from_value) {
             return x + y;
         }));
 
-    int result = stlab::await(f);
+    BOOST_REQUIRE(stlab::await(f) == 84);
+}
 
-    BOOST_REQUIRE(result == 84);
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(actor_enqueue) {
+    std::size_t count{0};
+    stlab::actor<int> a(stlab::default_executor, current_test_name());
+
+    a.enqueue([&](int){
+        ++count;
+    });
+
+    a.enqueue([&](int){
+        ++count;
+        return 42; // does nothing, really.
+    });
+
+    a.complete();
+
+    BOOST_REQUIRE(count == 2);
+}
+
+/**************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(actor_enqueue_void) {
+    std::size_t count{0};
+    stlab::actor<void> a(stlab::default_executor, current_test_name());
+
+    a.enqueue([&](){
+        ++count;
+    });
+
+    a.enqueue([&](){
+        ++count;
+        return 42; // does nothing, really.
+    });
+
+    a.complete();
+
+    BOOST_REQUIRE(count == 2);
 }
 
 /**************************************************************************************************/

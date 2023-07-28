@@ -15,6 +15,8 @@
 #include <optional>
 
 // stlab
+#include <stlab/concurrency/await.hpp>
+#include <stlab/concurrency/ready_future.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 #include <stlab/concurrency/set_current_thread_name.hpp>
 
@@ -108,17 +110,21 @@ struct actor_instance_base {
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 inline actor_instance_base*& this_actor_accessor() {
-    static thread_local actor_instance_base* this_actor{nullptr};
+    thread_local actor_instance_base* this_actor{nullptr}; // `thread_local` implies `static`
     return this_actor;
 }
 
 struct temp_this_actor {
-    temp_this_actor(actor_instance_base* actor) {
+    // Actors can "nest" if the inner one is running on an immediate executor.
+    temp_this_actor(actor_instance_base* actor) : _old_actor(this_actor_accessor()) {
         assert(actor);
         this_actor_accessor() = actor;
     }
 
-    ~temp_this_actor() { this_actor_accessor() = nullptr; }
+    ~temp_this_actor() { this_actor_accessor() = _old_actor; }
+
+private:
+    actor_instance_base* _old_actor{nullptr};
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -126,26 +132,29 @@ struct temp_this_actor {
 template <class T>
 struct actor_instance : public actor_instance_base,
                         std::enable_shared_from_this<actor_instance<T>> {
+    /// Value which is owned by the instance. If `T` is `void`, nothing will be instantiated.
+    using value_type = T;
+
     template <class Executor>
     actor_instance(Executor e, std::string name) : _q(std::move(e)), _name(std::move(name)) {}
 
     template <class... Args>
     void initialize(Args&&... args) {
-        // We want to construct the object instance in the executor where it will be running. We
-        // cannot initialize in the constructor because `shared_from_this` will throw
-        // `bad_weak_ptr`.
-        //
-        // Unfortunately we cannot use schedule() here as it would dereference the `std::optional`
-        // when it doesn't contain a value, and that's UB...
-        stlab::async(
-            executor(),
-            [_weak = this->weak_from_this()](auto&&... args) {
-                if (auto self = _weak.lock()) {
-                    self->_instance._x = T(std::forward<Args>(args)...);
-                }
-            },
-            std::forward<Args>(args)...)
-            .detach();
+        if constexpr (std::is_same_v<value_type, void>) {
+            _hold = stlab::make_ready_future(executor());
+        } else {
+            // We want to construct the object instance in the executor where it will be running. We
+            // cannot initialize in the constructor because `shared_from_this` will throw
+            // `bad_weak_ptr`.
+            //
+            // Unfortunately we cannot use schedule() here as it would dereference the `std::optional`
+            // when it doesn't contain a value, and that's UB...
+            _hold = stlab::async(
+                executor(),
+                [_this = this->shared_from_this()](auto&&... args) {
+                    _this->_instance._x = T(std::forward<Args>(args)...);
+                }, std::forward<Args>(args)...);
+        }
     }
 
     auto set_name(std::string&& name) { _name = std::move(name); }
@@ -156,7 +165,7 @@ struct actor_instance : public actor_instance_base,
 #ifndef NDEBUG
                 , _id = this->id()
 #endif // NDEBUG
-        ](auto&&... args) mutable {
+        ](auto&&... args) {
             // tasks that are "entasked" for an actor must be executed on that same actor, or
             // Bad Things could happen, namely, a data race between this task and any other
             // task(s) the original actor may run simultaneously.
@@ -166,34 +175,52 @@ struct actor_instance : public actor_instance_base,
             assert(_id == stlab::this_actor::get_id());
 
             if constexpr (std::is_same_v<T, void>) {
-                return std::move(_f)(std::forward<decltype(args)>(args)...);
+                return _f(std::forward<decltype(args)>(args)...);
             } else {
-                return std::move(_f)(const_cast<T&>(*(_this->_instance._x)),
-                                     std::forward<decltype(args)>(args)...);
+                return _f(*(_this->_instance._x),
+                          std::forward<decltype(args)>(args)...);
             }
         };
     }
 
     template <typename F>
     auto operator()(F&& f) {
-        return stlab::async(executor(), entask(std::forward<F>(f)));
+        auto future = _hold.then(executor(), entask(std::forward<F>(f)));
+        using result_type = typename decltype(future)::result_type;
+
+        // ERROR: These assignments to `_hold` are not threadsafe, are they?
+        if constexpr (std::is_same_v<result_type, void>) {
+            _hold = future;
+        } else {
+            _hold = future.then([](auto){});
+        }
+
+        return future;
+    }
+
+    template <typename F>
+    auto enqueue(F&& f) {
+        (void)(*this)(std::forward<F>(f));
+    }
+
+    void complete() {
+        stlab::await(_hold);
     }
 
     auto executor() {
         return [_this = this->shared_from_this()](auto&& task) {
-            _this
-                ->_q([_t = std::forward<decltype(task)>(task), _this = _this]() mutable {
-                    temp_this_actor tta(_this.get());
-                    temp_thread_name ttn(_this->_name.c_str());
-                    std::move(_t)();
-                })
-                .detach();
+            _this->_q.executor()([_t = std::forward<decltype(task)>(task), _this = _this]() mutable {
+                temp_this_actor tta(_this.get());
+                temp_thread_name ttn(_this->_name.c_str());
+                std::move(_t)();
+            });
         };
     }
 
     value_instance<T> _instance;
     stlab::serial_queue_t _q;
     std::string _name;
+    stlab::future<void> _hold;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -206,7 +233,8 @@ struct actor_instance : public actor_instance_base,
 /// @brief Serialized, asynchronous access to a resource
 template <class T>
 class actor {
-    std::shared_ptr<detail::actor_instance<T>> _impl;
+    using instance = detail::actor_instance<T>;
+    std::shared_ptr<instance> _impl;
 
     /// friend declaration to the free function.
     template <class U>
@@ -215,7 +243,7 @@ class actor {
 public:
     /// Value type for the class. `actor` will own this instance. If the `T` is `void`, nothing
     /// will be instantiated.
-    using value_type = T;
+    using value_type = typename instance::value_type;
 
     actor() = default;
 
@@ -227,9 +255,7 @@ public:
     template <class Executor, class... Args>
     actor(Executor e, std::string name, Args&&... args) :
         _impl(std::make_shared<detail::actor_instance<value_type>>(std::move(e), std::move(name))) {
-        if constexpr (!std::is_same_v<value_type, void>) {
-            _impl->initialize(std::forward<Args>(args)...);
-        }
+        _impl->initialize(std::forward<Args>(args)...);
     }
 
     /// @brief Sets the name of the actor to something else.
@@ -252,6 +278,19 @@ public:
     template <typename F>
     auto operator()(F&& f) {
         return (*_impl)(std::forward<F>(f));
+    }
+
+    /// @brief "Fire and forget" a task on the actor.
+    /// @param f The task to run. Note that the first parameter to this task must be `T&`, and
+    ///          will reference the instance owned by the actor.
+    template <typename F>
+    void enqueue(F&& f) {
+        _impl->enqueue(std::forward<F>(f));
+    }
+
+    /// @brief Block until all scheduled tasks have completed.
+    void complete() {
+        _impl->complete();
     }
 
     /// @brief Get the unique `actor_id` of this actor.
