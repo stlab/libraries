@@ -63,15 +63,16 @@ namespace detail {
 
 inline std::string get_current_thread_name() {
     char name[64] = {0};
-    const std::size_t size{sizeof(name) / sizeof(name[0])};
 
 #if STLAB_THREADS(WIN32)
     // Nothing
 #elif STLAB_THREADS(PTHREAD_EMSCRIPTEN)
     // Nothing
 #elif STLAB_THREADS(PTHREAD_APPLE)
+    const std::size_t size{sizeof(name) / sizeof(name[0])};
     pthread_getname_np(pthread_self(), name, size);
 #elif STLAB_THREADS(PTHREAD)
+    const std::size_t size{sizeof(name) / sizeof(name[0])};
     pthread_getname_np(pthread_self(), name, size);
 #elif STLAB_THREADS(NONE)
     // Nothing
