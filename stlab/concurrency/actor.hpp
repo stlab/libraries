@@ -61,35 +61,28 @@ namespace detail {
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-inline std::string get_current_thread_name() {
-    char name[64] = {0};
-
+struct temp_thread_name {
+    explicit temp_thread_name(const char* name) {
 #if STLAB_THREADS(WIN32)
-    // Nothing
+        // Nothing
 #elif STLAB_THREADS(PTHREAD_EMSCRIPTEN)
-    // Nothing
-#elif STLAB_THREADS(PTHREAD_APPLE)
-    const std::size_t size{sizeof(name) / sizeof(name[0])};
-    pthread_getname_np(pthread_self(), name, size);
-#elif STLAB_THREADS(PTHREAD)
-    const std::size_t size{sizeof(name) / sizeof(name[0])};
-    pthread_getname_np(pthread_self(), name, size);
+        // Nothing
+#elif STLAB_THREADS(PTHREAD_APPLE) || STLAB_THREADS(PTHREAD)
+        pthread_getname_np(pthread_self(), _old_name, _old_name_size_k);
 #elif STLAB_THREADS(NONE)
-    // Nothing
+        // Nothing
 #else
-    #error "Unspecified or unknown thread mode set."
+#error "Unspecified or unknown thread mode set."
 #endif
 
-    return std::string(&name[0]);
-}
+        stlab::set_current_thread_name(name);
+    }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+    ~temp_thread_name() { stlab::set_current_thread_name(_old_name); }
 
-struct temp_thread_name {
-    explicit temp_thread_name(const char* name) : _old_name(get_current_thread_name()) { stlab::set_current_thread_name(name); }
-    ~temp_thread_name() { stlab::set_current_thread_name(_old_name.c_str()); }
 private:
-    std::string _old_name;
+    constexpr static std::size_t _old_name_size_k = 64;
+    char _old_name[_old_name_size_k] = {0};
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -131,12 +124,10 @@ struct temp_this_actor {
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 template <class T>
-struct actor_instance
-    : public actor_instance_base
-    , std::enable_shared_from_this<actor_instance<T>> {
+struct actor_instance : public actor_instance_base,
+                        std::enable_shared_from_this<actor_instance<T>> {
     template <class Executor>
-    actor_instance(Executor e, std::string name)
-        : _q(std::move(e)), _name(std::move(name)) {}
+    actor_instance(Executor e, std::string name) : _q(std::move(e)), _name(std::move(name)) {}
 
     template <class... Args>
     void initialize(Args&&... args) {
@@ -144,13 +135,17 @@ struct actor_instance
         // cannot initialize in the constructor because `shared_from_this` will throw
         // `bad_weak_ptr`.
         //
-        // Unfortunately we cannot use schedule() here as it would dereference the std::optional when it
-        // doesn't contain a value, and that's UB...
-        stlab::async(executor(), [_weak = this->weak_from_this()](auto&&... args){
-            if (auto self = _weak.lock()) {
-                self->_instance._x = T(std::forward<Args>(args)...);
-            }
-        }, std::forward<Args>(args)...).detach();
+        // Unfortunately we cannot use schedule() here as it would dereference the `std::optional`
+        // when it doesn't contain a value, and that's UB...
+        stlab::async(
+            executor(),
+            [_weak = this->weak_from_this()](auto&&... args) {
+                if (auto self = _weak.lock()) {
+                    self->_instance._x = T(std::forward<Args>(args)...);
+                }
+            },
+            std::forward<Args>(args)...)
+            .detach();
     }
 
     auto set_name(std::string&& name) { _name = std::move(name); }
@@ -161,7 +156,7 @@ struct actor_instance
 #ifndef NDEBUG
                 , _id = this->id()
 #endif // NDEBUG
-                ](auto&&... args) mutable {
+        ](auto&&... args) mutable {
             // tasks that are "entasked" for an actor must be executed on that same actor, or
             // Bad Things could happen, namely, a data race between this task and any other
             // task(s) the original actor may run simultaneously.
@@ -170,20 +165,11 @@ struct actor_instance
             // but have accidentally tried to execute it on another (including no actor).
             assert(_id == stlab::this_actor::get_id());
 
-            try {
-                if constexpr (std::is_same_v<T, void>) {
-                    return std::move(_f)(std::forward<decltype(args)>(args)...);
-                } else {
-                    return std::move(_f)(const_cast<T&>(*(_this->_instance._x)), std::forward<decltype(args)>(args)...);
-                }
-            } catch (const std::exception& error) {
-                const char* what = error.what();
-                (void)what;
-                assert(!"Uncaught actor exception");
-                throw;
-            } catch (...) {
-                assert(!"Uncaught actor exception");
-                throw;
+            if constexpr (std::is_same_v<T, void>) {
+                return std::move(_f)(std::forward<decltype(args)>(args)...);
+            } else {
+                return std::move(_f)(const_cast<T&>(*(_this->_instance._x)),
+                                     std::forward<decltype(args)>(args)...);
             }
         };
     }
@@ -233,15 +219,14 @@ public:
 
     actor() = default;
 
-    /// @param e The executor where actor lambdas will be scheduled
-    /// @param name The name of the executor. While the actor is running, the thread it is executing on
-    ///             will be temporarily renamed to this value (if the OS supports it.)
-    /// @param args Additional arguments to be passed to the `value_type` of this instance during its
-    ///             construction.
+    /// @param e The executor where actor lambdas will be scheduled.
+    /// @param name The name of the executor. While the actor is running, the thread it is executing
+    ///             on will be temporarily renamed to this value (if the OS supports it.)
+    /// @param args Additional arguments to be passed to the `value_type` of this instance during
+    ///             its construction.
     template <class Executor, class... Args>
-    actor(Executor e, std::string name, Args&&... args)
-        : _impl(std::make_shared<detail::actor_instance<value_type>>(std::move(e),
-                                                                     std::move(name))) {
+    actor(Executor e, std::string name, Args&&... args) :
+        _impl(std::make_shared<detail::actor_instance<value_type>>(std::move(e), std::move(name))) {
         if constexpr (!std::is_same_v<value_type, void>) {
             _impl->initialize(std::forward<Args>(args)...);
         }
@@ -253,8 +238,8 @@ public:
 
     /// @brief Schedule a task for the actor to execute.
     /// @note This routine has identical semantics to `operator()`.
-    /// @param f The function to execute. Note that the first parameter to this function must be `T&`,
-    ///          and will reference the instance owned by the actor.
+    /// @param f The function to execute. Note that the first parameter to this function must be
+    ///          `T&`, and will reference the instance owned by the actor.
     template <typename F>
     auto schedule(F&& f) {
         return (*_impl)(std::forward<F>(f));
@@ -262,8 +247,8 @@ public:
 
     /// @brief Schedule a task for the actor to execute.
     /// @note This routine has identical semantics to `schedule`.
-    /// @param f The function to execute. Note that the first parameter to this function must be `T&`,
-    ///          and will reference the instance owned by the actor.
+    /// @param f The function to execute. Note that the first parameter to this function must be
+    ///          `T&`, and will reference the instance owned by the actor.
     template <typename F>
     auto operator()(F&& f) {
         return (*_impl)(std::forward<F>(f));
@@ -284,7 +269,7 @@ public:
 
     /// @brief Obtain a nullary lambda that can access the `actor`'s task local data.
     /// @return a nullary lambda that, when invoked, will receive the `actor`'s task local data as
-    /// its first argument.
+    ///         its first argument.
 
     template <typename F>
     auto entask(F&& f) {

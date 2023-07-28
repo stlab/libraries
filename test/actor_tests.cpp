@@ -27,10 +27,14 @@ T get_actor_value(stlab::actor<T>& a) {
     return stlab::await(a([](auto x) { return x; }));
 }
 
+std::string current_test_name() {
+    return boost::unit_test::framework::current_test_case().full_name();
+}
+
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(actor_construct_with_arguments) {
-    stlab::actor<int> a(stlab::default_executor, "actor_int", 42);
+    stlab::actor<int> a(stlab::default_executor, current_test_name(), 42);
     stlab::future<void> f = a([](auto i) { BOOST_REQUIRE(i == 42); });
 
     stlab::await(f);
@@ -41,7 +45,7 @@ BOOST_AUTO_TEST_CASE(actor_construct_with_arguments) {
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(actor_construct_void) {
-    stlab::actor<void> a(stlab::default_executor, "actor_void");
+    stlab::actor<void> a(stlab::default_executor, current_test_name());
     bool sent{false};
     stlab::future<void> f = a([&]() { sent = true; });
 
@@ -55,7 +59,7 @@ BOOST_AUTO_TEST_CASE(actor_construct_void) {
 BOOST_AUTO_TEST_CASE(actor_regularity) {
     stlab::actor<int> empty_ctor;
 
-    stlab::actor<int> default_ctor(stlab::default_executor, "foo"); // default construction
+    stlab::actor<int> default_ctor(stlab::default_executor, current_test_name()); // default construction
     default_ctor(increment).detach();
     BOOST_REQUIRE(get_actor_value(default_ctor) == 1);
 
@@ -90,7 +94,7 @@ BOOST_AUTO_TEST_CASE(actor_regularity_void) {
     std::size_t count{0};
     stlab::actor<void> empty_ctor;
 
-    stlab::actor<void> default_ctor(stlab::default_executor, "foo"); // default construction
+    stlab::actor<void> default_ctor(stlab::default_executor, current_test_name()); // default construction
     stlab::await(default_ctor([&] { ++count; }));
     BOOST_REQUIRE(count == 1);
 
@@ -121,9 +125,9 @@ BOOST_AUTO_TEST_CASE(actor_regularity_void) {
 
 /**************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(actor_send_to_void) {
+BOOST_AUTO_TEST_CASE(actor_schedule_to_void) {
     {
-        stlab::actor<int> a(stlab::default_executor, "send_getting_void");
+        stlab::actor<int> a(stlab::default_executor, current_test_name());
         stlab::future<void> f = a(increment);
 
         stlab::await(f);
@@ -132,7 +136,7 @@ BOOST_AUTO_TEST_CASE(actor_send_to_void) {
     }
 
     {
-        stlab::actor<void> a(stlab::default_executor, "send_getting_void");
+        stlab::actor<void> a(stlab::default_executor, current_test_name());
         std::atomic_bool sent{false};
         stlab::future<void> f = a([&] { sent = true; });
 
@@ -144,9 +148,9 @@ BOOST_AUTO_TEST_CASE(actor_send_to_void) {
 
 /**************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(actor_send_to_value) {
+BOOST_AUTO_TEST_CASE(actor_schedule_to_value) {
     {
-        stlab::actor<int> a(stlab::default_executor, "send_getting_value", 42);
+        stlab::actor<int> a(stlab::default_executor, current_test_name(), 42);
         stlab::future<int> f = a([](auto x) { return x; });
         int result = stlab::await(f);
 
@@ -154,7 +158,7 @@ BOOST_AUTO_TEST_CASE(actor_send_to_value) {
     }
 
     {
-        stlab::actor<void> a(stlab::default_executor, "send_getting_value");
+        stlab::actor<void> a(stlab::default_executor, current_test_name());
         stlab::future<int> f = a([]() { return 42; });
         int result = stlab::await(f);
 
@@ -166,7 +170,7 @@ BOOST_AUTO_TEST_CASE(actor_send_to_value) {
 
 BOOST_AUTO_TEST_CASE(actor_then_from_void) {
     {
-        stlab::actor<int> a(stlab::default_executor, "send_then_from_void");
+        stlab::actor<int> a(stlab::default_executor, current_test_name());
         stlab::future<int> f =
             a([](int& x) { x += 42; }).then(a.executor(), a.entask([](int x) { return x; }));
 
@@ -176,7 +180,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_void) {
     }
 
     {
-        stlab::actor<void> a(stlab::default_executor, "send_then_from_void");
+        stlab::actor<void> a(stlab::default_executor, current_test_name());
         stlab::future<int> f = a([]() { return 42; })
                                    .then(a.executor(), a.entask([](auto x) { return 4200 + x; }))
                                    .then(a.executor(), a.entask([](auto x) { return x + 420000; }));
@@ -190,7 +194,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_void) {
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(actor_then_from_value) {
-    stlab::actor<int> a(stlab::default_executor, "send_then_from_type", 42);
+    stlab::actor<int> a(stlab::default_executor, current_test_name(), 42);
     stlab::future<int> f =
         a([](auto x) { return x; }).then(a.executor(), a.entask([](auto x, auto y) {
             BOOST_REQUIRE(x == 42);
@@ -206,7 +210,7 @@ BOOST_AUTO_TEST_CASE(actor_then_from_value) {
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(actor_this_actor) {
-    stlab::actor<void> a(stlab::default_executor, "this_actor");
+    stlab::actor<void> a(stlab::default_executor, current_test_name());
 
     try {
         stlab::this_actor::get<void>();
