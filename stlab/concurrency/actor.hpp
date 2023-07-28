@@ -68,7 +68,7 @@ inline std::string get_current_thread_name() {
 #if STLAB_THREADS(WIN32)
     // Nothing
 #elif STLAB_THREADS(PTHREAD_EMSCRIPTEN)
-    emscripten_get_thread_name(pthread_self(), name, size);
+    // Nothing
 #elif STLAB_THREADS(PTHREAD_APPLE)
     pthread_getname_np(pthread_self(), name, size);
 #elif STLAB_THREADS(PTHREAD)
