@@ -35,31 +35,31 @@ void test0(stlab::schedule_mode mode) {
         output.emplace_back(std::move(str));
     });
 
-    aq([&]() { strout("a1                      ( 1)"); });
+    aq([&]() noexcept { strout("a1                      ( 1)"); });
 
-    bq([&]() { strout("   b1                   ( 2)"); });
+    bq([&]() noexcept { strout("   b1                   ( 2)"); });
 
-    dq([&]() { strout("           d1           ( 3)"); });
+    dq([&]() noexcept { strout("           d1           ( 3)"); });
 
     b([&]() { strout("   b2                   ( 4)"); })
         .then(stlab::immediate_executor, [&]() { strout("   b2.1                 ( 4.1)"); })
         .detach();
 
-    cq([&]() { strout("        c1              ( 5)"); });
+    cq([&]() noexcept { strout("        c1              ( 5)"); });
 
-    cq([&]() { strout("        c2              ( 6)"); });
+    cq([&]() noexcept { strout("        c2              ( 6)"); });
 
-    dq([&]() { strout("           d2           ( 7)"); });
+    dq([&]() noexcept { strout("           d2           ( 7)"); });
 
-    cq([&]() { strout("        c3              ( 8)"); });
+    cq([&]() noexcept { strout("        c3              ( 8)"); });
 
-    bq([&]() { strout("   b3                   ( 9)"); });
+    bq([&]() noexcept { strout("   b3                   ( 9)"); });
 
-    aq([&]() { strout("a2                      (10)"); });
+    aq([&]() noexcept { strout("a2                      (10)"); });
 
-    aq([&]() { strout("a3                      (11)"); });
+    aq([&]() noexcept { strout("a3                      (11)"); });
 
-    dq([&]() { strout("           d3           (12)"); });
+    dq([&]() noexcept { strout("           d3           (12)"); });
 
     while (true) {
         {
@@ -132,7 +132,7 @@ struct serial_hash {
         : _q{stlab::default_executor, mode}, _h(std::move(s), e) {}
 
     void operator()(std::string s, std::uint64_t e) {
-        _q.executor()([this, _e = e, _s = std::move(s)]() {
+        _q.executor()([this, _e = e, _s = std::move(s)]() noexcept {
             _h(_s, _e);
             ++_c;
         });

@@ -11,11 +11,11 @@
 
 /**************************************************************************************************/
 
-#include <stlab/concurrency/task.hpp>
 #include <stlab/config.hpp>
 
 #include <chrono>
 #include <functional>
+#include <type_traits>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
@@ -23,18 +23,13 @@
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
-
 #include <algorithm>
 #include <condition_variable>
 #include <thread>
 #include <vector>
+#endif
 
 #include <stlab/concurrency/task.hpp>
-// REVISIT (sparent) : for testing only
-#if 0 && __APPLE__
-#include <dispatch/dispatch.h>
-#endif
-#endif
 
 /**************************************************************************************************/
 
@@ -55,28 +50,27 @@ namespace detail {
 struct system_timer_type {
     using result_type = void;
 
-
     template <typename F>
-    [[deprecated("Use chrono::duration as parameter instead")]]
-    void operator()(std::chrono::steady_clock::time_point when, F f) const {
+    [[deprecated("Use chrono::duration as parameter instead")]] void operator()(
+        std::chrono::steady_clock::time_point when, F f) const {
         using namespace std::chrono;
         operator()(when - steady_clock::now(), std::move(f));
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    void operator()(std::chrono::duration<Rep, Per> duration, F f) const {
+    auto operator()(std::chrono::duration<Rep, Per> duration, F f) const
+        -> std::enable_if_t<noexcept(f())> {
         using namespace std::chrono;
 
         using f_t = decltype(f);
 
-        dispatch_after_f(
-            dispatch_time(0, duration_cast<nanoseconds>(duration).count()),
-            dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), new f_t(std::move(f)),
-            [](void* f_) {
-                auto f = static_cast<f_t*>(f_);
-                (*f)();
-                delete f;
-            });
+        dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(duration).count()),
+                         dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                         new f_t(std::move(f)), [](void* f_) {
+                             auto f = static_cast<f_t*>(f_);
+                             (*f)();
+                             delete f;
+                         });
     }
 };
 
@@ -108,16 +102,16 @@ public:
         CloseThreadpool(_pool);
     }
 
-
     template <typename F>
-    [[deprecated("Use chrono::duration as parameter instead")]]
-    void operator()(std::chrono::steady_clock::time_point when, F&& f) {
+    [[deprecated("Use chrono::duration as parameter instead")]] void operator()(
+        std::chrono::steady_clock::time_point when, F&& f) {
         using namespace std::chrono;
         operator()(when - steady_clock::now(), std::forward<F>(f));
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    void operator()(std::chrono::duration<Rep, Per> duration, F&& f) {
+    auto operator()(std::chrono::duration<Rep, Per> duration, F&& f)
+        -> std::enable_if_f<noexcept(f())> {
         using namespace std::chrono;
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>, new F(std::forward<F>(f)),
                                            &_callBackEnvironment);
@@ -140,7 +134,7 @@ private:
         (*f)();
     }
 
-    template <typename Rep, typename Per = std::ratio<1 >>
+    template <typename Rep, typename Per = std::ratio<1>>
     FILETIME duration_to_FILETIME(std::chrono::duration<Rep, Per> duration) const {
         using namespace std::chrono;
         FILETIME ft = {0, 0};
@@ -170,7 +164,7 @@ private:
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 
 class system_timer {
-    using element_t = std::pair<std::chrono::steady_clock::time_point, task<void()>>;
+    using element_t = std::pair<std::chrono::steady_clock::time_point, task<void() noexcept>>;
     using queue_t = std::vector<element_t>;
     using lock_t = std::unique_lock<std::mutex>;
 
@@ -191,7 +185,7 @@ class system_timer {
 
     void timed_queue_run() {
         while (true) {
-            task<void()> task;
+            task<void() noexcept> task;
             {
                 lock_t lock(_timed_queue_mutex);
 
@@ -227,14 +221,15 @@ public:
     }
 
     template <typename F>
-    [[deprecated("Use chrono::duration as parameter instead")]]
-    void operator()(std::chrono::steady_clock::time_point when, F&& f) {
+    [[deprecated("Use chrono::duration as parameter instead")]] void operator()(
+        std::chrono::steady_clock::time_point when, F&& f) {
         using namespace std::chrono;
         operator()(when - steady_clock::now(), std::move(f));
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    void operator()(std::chrono::duration<Rep, Per> duration, F&& f) {
+    void operator()(std::chrono::duration<Rep, Per> duration, F&& f)
+        ->std::enable_if_f<noexcept(f())> {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(std::chrono::steady_clock::now() + duration, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
@@ -250,19 +245,19 @@ public:
 
 struct system_timer_type {
     using result_type = void;
-    
+
     static system_timer& get_system_timer() {
         static system_timer only_system_timer;
         return only_system_timer;
     }
 
-    [[deprecated("Use chrono::duration as parameter instead")]]
-    void operator()(std::chrono::steady_clock::time_point when, task<void()> f) const {
+    [[deprecated("Use chrono::duration as parameter instead")]] void operator()(
+        std::chrono::steady_clock::time_point when, task<void() noexcept>&& f) const {
         operator()(when - std::chrono::steady_clock().now(), std::move(f));
     }
 
     template <typename Rep, typename Per = std::ratio<1>>
-    void operator()(std::chrono::duration<Rep, Per> duration, task<void()> f) const {
+    void operator()(std::chrono::duration<Rep, Per> duration, task<void() noexcept>&& f) const {
         get_system_timer()(duration, std::move(f));
     }
 };

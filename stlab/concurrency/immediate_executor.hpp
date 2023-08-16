@@ -10,6 +10,7 @@
 #define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 
 #include <chrono>
+#include <type_traits>
 #include <utility>
 
 /**************************************************************************************************/
@@ -27,12 +28,7 @@ namespace detail {
 
 struct immediate_executor_type {
     template <typename F>
-    void operator()(F&& f) const {
-        std::forward<F>(f)();
-    }
-
-    template <typename F>
-    void operator()(std::chrono::steady_clock::time_point, F&& f) const {
+    auto operator()(F&& f) const -> std::enable_if_t<noexcept(f())> {
         std::forward<F>(f)();
     }
 };
