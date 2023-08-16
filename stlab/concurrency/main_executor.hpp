@@ -14,6 +14,8 @@
 
 #include <stlab/config.hpp>
 
+#include <stlab/type_traits.hpp>
+
 #if STLAB_MAIN_EXECUTOR(QT5) || STLAB_MAIN_EXECUTOR(QT6)
 #include <QtGlobal>
 #if (STLAB_MAIN_EXECUTOR(QT5) &&                                                                \
@@ -85,7 +87,7 @@ class main_executor_type {
 
 public:
     template <typename F>
-    auto operator()(F f) const -> std::enable_if_t<noexcept(f())> {
+    auto operator()(F f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value> {
         auto event = std::make_unique<executor_event>();
         event->set_task(std::move(f));
         auto receiver = event->receiver();
@@ -101,7 +103,7 @@ struct main_executor_type {
     using result_type = void;
 
     template <typename F>
-    auto operator()(F f) const -> std::enable_if_t<noexcept(f())> {
+    auto operator()(F f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value> {
         using f_t = decltype(f);
 
         dispatch_async_f(dispatch_get_main_queue(), new f_t(std::move(f)), [](void* f_) {
@@ -118,7 +120,7 @@ struct main_executor_type {
     using result_type = void;
 
     template <class F>
-    auto operator()(F&& f) const -> std::enable_if_t<noexcept(f())> {
+    auto operator()(F&& f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value> {
         using function_type = typename std::remove_reference<F>::type;
         auto p = new function_type(std::forward<F>(f));
 

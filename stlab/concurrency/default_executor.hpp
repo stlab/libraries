@@ -9,10 +9,13 @@
 #ifndef STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_DEFAULT_EXECUTOR_HPP
 
+#include <stlab/config.hpp>
+
+#include <stlab/pre_exit.hpp>
+#include <stlab/type_traits.hpp>
+
 #include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
-#include <stlab/config.hpp>
-#include <stlab/pre_exit.hpp>
 
 #include <cassert>
 #include <chrono>
@@ -91,7 +94,7 @@ struct executor_type {
     using result_type = void;
 
     template <typename F>
-    auto operator()(F f) const -> std::enable_if_t<noexcept(f())> {
+    auto operator()(F f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>> {
         using f_t = decltype(f);
 
         dispatch_group_async_f(detail::group()._group,

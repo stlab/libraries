@@ -9,9 +9,9 @@
 #ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 
-#include <chrono>
 #include <type_traits>
-#include <utility>
+
+#include <stlab/type_traits.hpp>
 
 /**************************************************************************************************/
 
@@ -28,7 +28,7 @@ namespace detail {
 
 struct immediate_executor_type {
     template <typename F>
-    auto operator()(F&& f) const -> std::enable_if_t<noexcept(f())> {
+    auto operator()(F&& f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value> {
         std::forward<F>(f)();
     }
 };

@@ -37,8 +37,11 @@ inline namespace v1 {
 template <class>
 class task;
 
-template <class R, class... Args, bool NoExcept>
-class task<R(Args...) noexcept(NoExcept)> {
+template <class R, class... Args>
+class task<R(Args..)> {};
+
+template <class R, class... Args>
+class task<R(Args...) noexcept> {
     template <class F>
     constexpr static bool maybe_empty =
         std::is_pointer<std::decay_t<F>>::value || std::is_member_pointer<std::decay_t<F>>::value ||
