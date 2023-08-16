@@ -372,7 +372,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    void reset() { _then.second = task<void()>{}; }
+    void reset() { _then.second = task<void() noexcept>{}; }
 
     template <typename F>
     auto recover(future<T>&& p, F&& f) {
