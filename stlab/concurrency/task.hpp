@@ -149,8 +149,11 @@ class task<R(Args...) noexcept(NoExcept)> {
     static void dtor(void*) noexcept {}
     static void move_ctor(void*, void*) noexcept {}
     static auto invoke(void*, Args...) noexcept(NoExcept) -> R {
-        if constexpr (NoExcept) std::terminate();
-        throw std::bad_function_call();
+        if constexpr (NoExcept) {
+            std::terminate();
+        } else {
+            throw std::bad_function_call();
+        }
     }
     static auto target_type_() noexcept -> const std::type_info& { return typeid(void); }
     static auto pointer(void*) noexcept -> void* { return nullptr; }

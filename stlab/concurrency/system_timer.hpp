@@ -228,7 +228,7 @@ public:
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    void operator()(std::chrono::duration<Rep, Per> duration, F&& f)
+    auto operator()(std::chrono::duration<Rep, Per> duration, F&& f)
         ->std::enable_if_t<noexcept(f())> {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(std::chrono::steady_clock::now() + duration, std::forward<F>(f));
