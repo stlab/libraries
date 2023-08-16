@@ -111,7 +111,7 @@ public:
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
     auto operator()(std::chrono::duration<Rep, Per> duration, F&& f)
-        -> std::enable_if_f<noexcept(f())> {
+        -> std::enable_if_t<noexcept(f())> {
         using namespace std::chrono;
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>, new F(std::forward<F>(f)),
                                            &_callBackEnvironment);
@@ -229,7 +229,7 @@ public:
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
     void operator()(std::chrono::duration<Rep, Per> duration, F&& f)
-        ->std::enable_if_f<noexcept(f())> {
+        ->std::enable_if_t<noexcept(f())> {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(std::chrono::steady_clock::now() + duration, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
