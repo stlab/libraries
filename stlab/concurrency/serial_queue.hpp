@@ -151,7 +151,8 @@ public:
             [_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); }, mode)) {}
 
     auto executor() const {
-        return [_impl = _impl](auto&& f) -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value)> {
+        return [_impl = _impl](
+                   auto&& f) -> std::enable_if_t<stlab::is_nothrow_invocable<decltype(f)>::value> {
             _impl->enqueue(std::forward<decltype(f)>(f));
         };
     }
