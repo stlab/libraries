@@ -31,7 +31,8 @@ void print(const forest<T>& f) {
             --depth;
         }
 
-        for (std::size_t i{0}; i < depth; ++i) std::cout << "    ";
+        for (std::size_t i{0}; i < depth; ++i)
+            std::cout << "    ";
 
         if (is_leading(first)) {
             std::cout << "<";
@@ -174,8 +175,7 @@ auto test_edge_traversal(Forest& f, Iterator fi, Iterator li) {
         Iterator first{fi};
         Iterator last{li};
         while (first != last) {
-            if (first.edge() == Edge)
-                expected += *first;
+            if (first.edge() == Edge) expected += *first;
             ++first;
         }
         BOOST_CHECK(expected.size() == f.size());
@@ -250,13 +250,15 @@ BOOST_AUTO_TEST_CASE(reverse_traversal) {
 
     /*preorder*/ {
         auto a = test_edge_traversal<reverse_iterator_t, forest_edge::leading>(f, rfirst, rlast);
-        auto b = test_edge_traversal<const_reverse_iterator_t, forest_edge::leading>(f, rfirst, rlast);
+        auto b =
+            test_edge_traversal<const_reverse_iterator_t, forest_edge::leading>(f, rfirst, rlast);
         BOOST_CHECK(a == b);
     }
 
     /*postorder*/ {
         auto a = test_edge_traversal<reverse_iterator_t, forest_edge::trailing>(f, rfirst, rlast);
-        auto b = test_edge_traversal<const_reverse_iterator_t, forest_edge::trailing>(f, rfirst, rlast);
+        auto b =
+            test_edge_traversal<const_reverse_iterator_t, forest_edge::trailing>(f, rfirst, rlast);
         BOOST_CHECK(a == b);
     }
 }
@@ -265,7 +267,7 @@ BOOST_AUTO_TEST_CASE(reverse_traversal) {
 
 template <typename Forest, typename T>
 auto find_node(Forest& f, const T& x) {
-    return std::find_if(f.begin(), f.end(), [&](const auto& v){ return v == x; });
+    return std::find_if(f.begin(), f.end(), [&](const auto& v) { return v == x; });
 }
 
 /**************************************************************************************************/
@@ -285,13 +287,13 @@ BOOST_AUTO_TEST_CASE(child_traversal) {
 
     BOOST_CHECK(to_string(child_range(parent)) == expected);
 
-    #if 0
+#if 0
         // I'm not sure reverse_child_iterator ever worked.
         forest<std::string>::reverse_child_iterator first{child_begin(parent)};
         forest<std::string>::reverse_child_iterator last{child_end(parent)};
         std::string result{to_string(first, last)};
         BOOST_CHECK(result == expected);
-    #endif
+#endif
 }
 
 /**************************************************************************************************/
@@ -432,8 +434,9 @@ BOOST_AUTO_TEST_CASE(swap) {
 BOOST_AUTO_TEST_CASE(test_equal_shape) {
     auto f1{big_test_forest()};
     auto f2{f1};
-    
-    for (auto& x : preorder_range(f2)) {
+
+    auto r{preorder_range(f2)};
+    for (auto& x : r) {
         x = "X";
     }
 
@@ -448,7 +451,7 @@ BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
     auto f1{big_test_forest()};
     stlab::forest<std::size_t> f2;
 
-    forests::transcribe(f1, forests::transcriber(f2), [](const std::string& x){
+    forests::transcribe(f1, forests::transcriber(f2), [](const std::string& x) {
         assert(!x.empty());
         return static_cast<std::size_t>(x.front());
     });
