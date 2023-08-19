@@ -197,9 +197,9 @@ public:
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
 
-    template <class F,
-              std::enable_if_t<!NoExcept || noexcept(std::declval<F>()(std::declval<Args>()...)),
-                               bool> = true>
+    template <
+        class F,
+        std::enable_if_t<!NoExcept || stlab::is_nothrow_invocable<F, Args...>::value, bool> = true>
     task_(F&& f) {
         using small_t = model<std::decay_t<F>, true>;
         using large_t = model<std::decay_t<F>, false>;
@@ -230,7 +230,8 @@ public:
 
     template <class F>
     auto operator=(F&& f)
-        -> std::enable_if_t<!NoExcept || noexcept(f(std::declval<Args>()...)), task_&> {
+        -> std::enable_if_t<!NoExcept || stlab::is_nothrow_invocable<decltype(f), Args...>::value,
+                            task_&> {
         return *this = task_(std::forward<F>(f));
     }
 
