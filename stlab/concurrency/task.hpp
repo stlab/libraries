@@ -20,6 +20,8 @@
 
 #include <stlab/config.hpp>
 
+#include <stlab/type_traits.hpp>
+
 /**************************************************************************************************/
 
 namespace stlab {

@@ -9,6 +9,7 @@
 #ifndef STLAB_TYPE_TRAITS_HPP
 #define STLAB_TYPE_TRAITS_HPP
 
+#include <cstddef>
 #include <functional>
 #include <type_traits>
 #include <utility>
@@ -32,6 +33,11 @@ inline namespace v1 {
 template <class F, class... Args>
 struct is_nothrow_invocable {
     static constexpr bool value = noexcept(std::invoke(std::declval<F>(), std::declval<Args>()...));
+};
+
+template <class F>
+struct is_nothrow_invocable<std::nullptr_t> {
+    static constexpr bool value = false; // Not invocable
 };
 
 } // namespace v1
