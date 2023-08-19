@@ -11,8 +11,6 @@
 
 #include <type_traits>
 
-#include <stlab/type_traits.hpp>
-
 /**************************************************************************************************/
 
 namespace stlab {
@@ -28,7 +26,7 @@ namespace detail {
 
 struct immediate_executor_type {
     template <typename F>
-    auto operator()(F&& f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value> {
+    auto operator()(F&& f) const -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         std::forward<F>(f)();
     }
 };

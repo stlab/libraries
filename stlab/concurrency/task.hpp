@@ -20,8 +20,6 @@
 
 #include <stlab/config.hpp>
 
-#include <stlab/type_traits.hpp>
-
 /**************************************************************************************************/
 
 namespace stlab {
@@ -199,9 +197,8 @@ public:
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
 
-    template <
-        class F,
-        std::enable_if_t<!NoExcept || stlab::is_nothrow_invocable<F, Args...>::value, bool> = true>
+    template <class F,
+              std::enable_if_t<!NoExcept || std::is_nothrow_invocable_v<F, Args...>, bool> = true>
     task_(F&& f) {
         using small_t = model<std::decay_t<F>, true>;
         using large_t = model<std::decay_t<F>, false>;
@@ -232,7 +229,7 @@ public:
 
     template <class F>
     auto operator=(F&& f)
-        -> std::enable_if_t<!NoExcept || stlab::is_nothrow_invocable<decltype(f), Args...>::value,
+        -> std::enable_if_t<!NoExcept || std::is_nothrow_invocable_v<decltype(f), Args...>,
                             task_&> {
         return *this = task_(std::forward<F>(f));
     }
@@ -285,69 +282,6 @@ struct noexcept_deducer<T, R(Args...) noexcept> {
 
 template <class F>
 using task = typename noexcept_deducer<task_, F>::type;
-
-/**************************************************************************************************/
-
-#if STLAB_CPP_VERSION_LESS_THAN(17)
-
-// In C++17 constexpr implies inline and these definitions are deprecated
-
-#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
-template <class R, class... Args, bool NoExcept>
-const typename task<R(Args...) noexcept(NoExcept)>::concept_t
-    task<R(Args...) noexcept(NoExcept)>::_vtable = {dtor, move_ctor, target_type_, pointer,
-                                                    const_pointer};
-
-template <class R, class... Args, bool NoExcept>
-const typename task<R(Args...) noexcept(NoExcept)>::invoke_t
-    task<R(Args...) noexcept(NoExcept)>::_invoke = _invoke;
-#else
-template <class R, class... Args, bool NoExcept>
-const typename task<R(Args...) noexcept(NoExcept)>::concept_t
-    task<R(Args...) noexcept(NoExcept)>::_vtable;
-#endif
-
-#ifdef _MSC_VER
-
-template <class R, class... Args, bool NoExcept>
-template <class F>
-const typename task<R(Args...) noexcept(NoExcept)>::concept_t
-    task<R(Args...) noexcept(NoExcept)>::model<F, false>::_vtable;
-
-template <class R, class... Args, bool NoExcept>
-template <class F>
-const typename task<R(Args...) noexcept(NoExcept)>::concept_t
-    task<R(Args...) noexcept(NoExcept)>::model<F, true>::_vtable;
-
-#else
-
-#if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
-
-template <class R, class... Args>
-template <class F>
-const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, false>::_vtable = {
-    dtor, move_ctor, target_type, pointer, const_pointer};
-
-template <class R, class... Args>
-template <class F>
-const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, true>::_vtable = {
-    dtor, move_ctor, target_type, pointer, const_pointer};
-
-#else
-
-template <class R, class... Args>
-template <class F>
-const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, false>::_vtable;
-
-template <class R, class... Args>
-template <class F>
-const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, true>::_vtable;
-
-#endif
-
-#endif
-
-#endif
 
 /**************************************************************************************************/
 

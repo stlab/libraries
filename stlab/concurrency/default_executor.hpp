@@ -12,7 +12,6 @@
 #include <stlab/config.hpp>
 
 #include <stlab/pre_exit.hpp>
-#include <stlab/type_traits.hpp>
 
 #include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
@@ -20,6 +19,7 @@
 #include <cassert>
 #include <chrono>
 #include <functional>
+#include <type_traits>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
@@ -94,7 +94,7 @@ struct executor_type {
     using result_type = void;
 
     template <typename F>
-    auto operator()(F f) const -> std::enable_if_t<stlab::is_nothrow_invocable<F>::value> {
+    auto operator()(F f) const -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         using f_t = decltype(f);
 
         dispatch_group_async_f(detail::group()._group,
