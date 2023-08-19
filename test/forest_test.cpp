@@ -435,8 +435,7 @@ BOOST_AUTO_TEST_CASE(test_equal_shape) {
     auto f1{big_test_forest()};
     auto f2{f1};
 
-    auto r{preorder_range(f2)};
-    for (auto& x : r) {
+    for (auto& x : preorder_range(f2)) {
         x = "X";
     }
 

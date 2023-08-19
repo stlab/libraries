@@ -34,11 +34,9 @@ inline namespace v1 {
     tasks are functions with a mutable call operator to support moving items through for single
     invocations.
 */
-template <class>
-class task;
 
-template <class R, class... Args, bool NoExcept>
-class task<R(Args...) noexcept(NoExcept)> {
+template <bool NoExcept, class R, class... Args>
+class task_ {
     template <class F>
     constexpr static bool maybe_empty =
         std::is_pointer<std::decay_t<F>>::value || std::is_member_pointer<std::decay_t<F>>::value ||
@@ -192,17 +190,17 @@ class task<R(Args...) noexcept(NoExcept)> {
 public:
     using result_type = R;
 
-    constexpr task() noexcept = default;
-    constexpr task(std::nullptr_t) noexcept : task() {}
-    task(const task&) = delete;
-    task(task&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
+    constexpr task_() noexcept = default;
+    constexpr task_(std::nullptr_t) noexcept : task_() {}
+    task_(const task_&) = delete;
+    task_(task_&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
 
     template <class F,
               std::enable_if_t<!NoExcept || noexcept(std::declval<F>()(std::declval<Args>()...)),
                                bool> = true>
-    task(F&& f) {
+    task_(F&& f) {
         using small_t = model<std::decay_t<F>, true>;
         using large_t = model<std::decay_t<F>, false>;
         using model_t = std::conditional_t<(sizeof(small_t) <= small_size) &&
@@ -216,11 +214,11 @@ public:
         _invoke = &model_t::invoke;
     }
 
-    ~task() { _vtable_ptr->dtor(&_model); };
+    ~task_() { _vtable_ptr->dtor(&_model); };
 
-    task& operator=(const task&) = delete;
+    task_& operator=(const task_&) = delete;
 
-    task& operator=(task&& x) noexcept {
+    task_& operator=(task_&& x) noexcept {
         _vtable_ptr->dtor(&_model);
         _vtable_ptr = x._vtable_ptr;
         _invoke = x._invoke;
@@ -228,15 +226,15 @@ public:
         return *this;
     }
 
-    task& operator=(std::nullptr_t) noexcept { return *this = task(); }
+    task_& operator=(std::nullptr_t) noexcept { return *this = task_(); }
 
     template <class F>
     auto operator=(F&& f)
-        -> std::enable_if_t<!NoExcept || noexcept(f(std::declval<Args>()...)), task&> {
-        return *this = task(std::forward<F>(f));
+        -> std::enable_if_t<!NoExcept || noexcept(f(std::declval<Args>()...)), task_&> {
+        return *this = task_(std::forward<F>(f));
     }
 
-    void swap(task& x) noexcept { std::swap(*this, x); }
+    void swap(task_& x) noexcept { std::swap(*this, x); }
 
     explicit operator bool() const { return _vtable_ptr->const_pointer(&_model) != nullptr; }
 
@@ -260,12 +258,32 @@ public:
         return _invoke(&_model, std::forward<Brgs>(brgs)...);
     }
 
-    friend inline void swap(task& x, task& y) { return x.swap(y); }
-    friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
-    friend inline bool operator==(std::nullptr_t, const task& x) { return !static_cast<bool>(x); }
-    friend inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
-    friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
+    friend inline void swap(task_& x, task_& y) { return x.swap(y); }
+    friend inline bool operator==(const task_& x, std::nullptr_t) { return !static_cast<bool>(x); }
+    friend inline bool operator==(std::nullptr_t, const task_& x) { return !static_cast<bool>(x); }
+    friend inline bool operator!=(const task_& x, std::nullptr_t) { return static_cast<bool>(x); }
+    friend inline bool operator!=(std::nullptr_t, const task_& x) { return static_cast<bool>(x); }
 };
+
+/**************************************************************************************************/
+
+template <template <bool, class, class...> class T, class F>
+struct noexcept_deducer;
+
+template <template <bool, class, class...> class T, class R, class... Args>
+struct noexcept_deducer<T, R(Args...)> {
+    using type = T<false, R, Args...>;
+};
+
+template <template <bool, class, class...> class T, class R, class... Args>
+struct noexcept_deducer<T, R(Args...) noexcept> {
+    using type = T<true, R, Args...>;
+};
+
+template <class F>
+using task = typename noexcept_deducer<task_, F>::type;
+
+/**************************************************************************************************/
 
 #if STLAB_CPP_VERSION_LESS_THAN(17)
 
