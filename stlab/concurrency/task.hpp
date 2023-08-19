@@ -30,12 +30,15 @@ inline namespace v1 {
 
 /**************************************************************************************************/
 
-namespace detail {
+/*
+    tasks are functions with a mutable call operator to support moving items through for single
+    invocations.
+*/
+template <class>
+class task;
 
-/**************************************************************************************************/
-
-template <bool NoExcept, class R, class... Args>
-class task_base {
+template <class R, class... Args, bool NoExcept>
+class task<R(Args...) noexcept(NoExcept)> {
     template <class F>
     constexpr static bool maybe_empty =
         std::is_pointer<std::decay_t<F>>::value || std::is_member_pointer<std::decay_t<F>>::value ||
@@ -189,17 +192,17 @@ class task_base {
 public:
     using result_type = R;
 
-    constexpr task_base() noexcept = default;
-    constexpr task_base(std::nullptr_t) noexcept : task_base() {}
-    task_base(const task_base&) = delete;
-    task_base(task_base&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
+    constexpr task() noexcept = default;
+    constexpr task(std::nullptr_t) noexcept : task() {}
+    task(const task&) = delete;
+    task(task&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
 
     template <class F,
               std::enable_if_t<!NoExcept || noexcept(std::declval<F>()(std::declval<Args>()...)),
                                bool> = true>
-    task_base(F&& f) {
+    task(F&& f) {
         using small_t = model<std::decay_t<F>, true>;
         using large_t = model<std::decay_t<F>, false>;
         using model_t = std::conditional_t<(sizeof(small_t) <= small_size) &&
@@ -213,11 +216,11 @@ public:
         _invoke = &model_t::invoke;
     }
 
-    ~task_base() { _vtable_ptr->dtor(&_model); };
+    ~task() { _vtable_ptr->dtor(&_model); };
 
-    task_base& operator=(const task_base&) = delete;
+    task& operator=(const task&) = delete;
 
-    task_base& operator=(task_base&& x) noexcept {
+    task& operator=(task&& x) noexcept {
         _vtable_ptr->dtor(&_model);
         _vtable_ptr = x._vtable_ptr;
         _invoke = x._invoke;
@@ -225,15 +228,15 @@ public:
         return *this;
     }
 
-    task_base& operator=(std::nullptr_t) noexcept { return *this = task_base(); }
+    task& operator=(std::nullptr_t) noexcept { return *this = task(); }
 
     template <class F>
     auto operator=(F&& f)
-        -> std::enable_if_t<!NoExcept || noexcept(f(std::declval<Args>()...)), task_base&> {
-        return *this = task_base(std::forward<F>(f));
+        -> std::enable_if_t<!NoExcept || noexcept(f(std::declval<Args>()...)), task&> {
+        return *this = task(std::forward<F>(f));
     }
 
-    void swap(task_base& x) noexcept { std::swap(*this, x); }
+    void swap(task& x) noexcept { std::swap(*this, x); }
 
     explicit operator bool() const { return _vtable_ptr->const_pointer(&_model) != nullptr; }
 
@@ -257,18 +260,11 @@ public:
         return _invoke(&_model, std::forward<Brgs>(brgs)...);
     }
 
-    friend inline bool operator==(const task_base& x, std::nullptr_t) {
-        return !static_cast<bool>(x);
-    }
-    friend inline bool operator==(std::nullptr_t, const task_base& x) {
-        return !static_cast<bool>(x);
-    }
-    friend inline bool operator!=(const task_base& x, std::nullptr_t) {
-        return static_cast<bool>(x);
-    }
-    friend inline bool operator!=(std::nullptr_t, const task_base& x) {
-        return static_cast<bool>(x);
-    }
+    friend inline void swap(task& x, task& y) { return x.swap(y); }
+    friend inline bool operator==(const task& x, std::nullptr_t) { return !static_cast<bool>(x); }
+    friend inline bool operator==(std::nullptr_t, const task& x) { return !static_cast<bool>(x); }
+    friend inline bool operator!=(const task& x, std::nullptr_t) { return static_cast<bool>(x); }
+    friend inline bool operator!=(std::nullptr_t, const task& x) { return static_cast<bool>(x); }
 };
 
 #if STLAB_CPP_VERSION_LESS_THAN(17)
@@ -277,30 +273,30 @@ public:
 
 #if defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)
 template <class R, class... Args, bool NoExcept>
-const typename task_base<R(Args...) noexcept(NoExcept)>::concept_t
-    task_base<R(Args...) noexcept(NoExcept)>::_vtable = {dtor, move_ctor, target_type_, pointer,
-                                                         const_pointer};
+const typename task<R(Args...) noexcept(NoExcept)>::concept_t
+    task<R(Args...) noexcept(NoExcept)>::_vtable = {dtor, move_ctor, target_type_, pointer,
+                                                    const_pointer};
 
 template <class R, class... Args, bool NoExcept>
-const typename task_base<R(Args...) noexcept(NoExcept)>::invoke_t
-    task_base<R(Args...) noexcept(NoExcept)>::_invoke = _invoke;
+const typename task<R(Args...) noexcept(NoExcept)>::invoke_t
+    task<R(Args...) noexcept(NoExcept)>::_invoke = _invoke;
 #else
 template <class R, class... Args, bool NoExcept>
-const typename task_base<R(Args...) noexcept(NoExcept)>::concept_t
-    task_base<R(Args...) noexcept(NoExcept)>::_vtable;
+const typename task<R(Args...) noexcept(NoExcept)>::concept_t
+    task<R(Args...) noexcept(NoExcept)>::_vtable;
 #endif
 
 #ifdef _MSC_VER
 
 template <class R, class... Args, bool NoExcept>
 template <class F>
-const typename task_base<R(Args...) noexcept(NoExcept)>::concept_t
-    task_base<R(Args...) noexcept(NoExcept)>::model<F, false>::_vtable;
+const typename task<R(Args...) noexcept(NoExcept)>::concept_t
+    task<R(Args...) noexcept(NoExcept)>::model<F, false>::_vtable;
 
 template <class R, class... Args, bool NoExcept>
 template <class F>
-const typename task_base<R(Args...) noexcept(NoExcept)>::concept_t
-    task_base<R(Args...) noexcept(NoExcept)>::model<F, true>::_vtable;
+const typename task<R(Args...) noexcept(NoExcept)>::concept_t
+    task<R(Args...) noexcept(NoExcept)>::model<F, true>::_vtable;
 
 #else
 
@@ -308,84 +304,29 @@ const typename task_base<R(Args...) noexcept(NoExcept)>::concept_t
 
 template <class R, class... Args>
 template <class F>
-const typename task_base<R(Args...)>::concept_t
-    task_base<R(Args...)>::template model<F, false>::_vtable = {dtor, move_ctor, target_type,
-                                                                pointer, const_pointer};
+const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, false>::_vtable = {
+    dtor, move_ctor, target_type, pointer, const_pointer};
 
 template <class R, class... Args>
 template <class F>
-const typename task_base<R(Args...)>::concept_t
-    task_base<R(Args...)>::template model<F, true>::_vtable = {dtor, move_ctor, target_type,
-                                                               pointer, const_pointer};
+const typename task<R(Args...)>::concept_t task<R(Args...)>::template model<F, true>::_vtable = {
+    dtor, move_ctor, target_type, pointer, const_pointer};
 
 #else
 
 template <class R, class... Args>
 template <class F>
-const typename task_base<R(Args...)>::concept_t task_base<R(Args...)>::model<F, false>::_vtable;
+const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, false>::_vtable;
 
 template <class R, class... Args>
 template <class F>
-const typename task_base<R(Args...)>::concept_t task_base<R(Args...)>::model<F, true>::_vtable;
+const typename task<R(Args...)>::concept_t task<R(Args...)>::model<F, true>::_vtable;
 
 #endif
 
 #endif
 
 #endif
-
-/**************************************************************************************************/
-
-} // namespace detail
-
-/**************************************************************************************************/
-
-template <class F>
-class task;
-
-template <class R, class... Args>
-class task<R(Args...)> : detail::task_base<false, R, Args...> {
-    using base_type = detail::task_base<false, R, Args...>;
-
-public:
-    using base_type::base_type;
-    using base_type::target_type;
-    using typename base_type::result_type;
-    using base_type::operator();
-    using base_type::operator bool;
-    using base_type::swap;
-    using base_type::target;
-
-    friend inline void swap(task& x, task& y) { return x.swap(y); }
-    friend inline bool operator==(const task& x, std::nullptr_t) {
-        return static_cast<const base_type&>(x) == nullptr;
-    }
-    friend inline bool operator==(std::nullptr_t, const task& x) { return x == nullptr; }
-    friend inline bool operator!=(const task& x, std::nullptr_t) { return !(x == nullptr); }
-    friend inline bool operator!=(std::nullptr_t, const task& x) { return !(x == nullptr); }
-};
-
-template <class R, class... Args>
-class task<R(Args...) noexcept> : detail::task_base<true, R, Args...> {
-    using base_type = detail::task_base<true, R, Args...>;
-
-public:
-    using base_type::base_type;
-    using base_type::target_type;
-    using typename base_type::result_type;
-    using base_type::operator();
-    using base_type::operator bool;
-    using base_type::swap;
-    using base_type::target;
-
-    friend inline void swap(task& x, task& y) { return x.swap(y); }
-    friend inline bool operator==(const task& x, std::nullptr_t) {
-        return static_cast<const base_type&>(x) == nullptr;
-    }
-    friend inline bool operator==(std::nullptr_t, const task& x) { return x == nullptr; }
-    friend inline bool operator!=(const task& x, std::nullptr_t) { return !(x == nullptr); }
-    friend inline bool operator!=(std::nullptr_t, const task& x) { return !(x == nullptr); }
-};
 
 /**************************************************************************************************/
 
