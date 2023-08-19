@@ -9,8 +9,6 @@
 #ifndef STLAB_TYPE_TRAITS_HPP
 #define STLAB_TYPE_TRAITS_HPP
 
-#include <cstddef>
-#include <functional>
 #include <type_traits>
 #include <utility>
 
@@ -30,14 +28,15 @@ inline namespace v1 {
     This is necessary for GCC prior to 13.2 which does not implement mangling noexcept_expr.
  */
 
-template <class F, class... Args>
+template <typename F, typename... Args>
 struct is_nothrow_invocable {
-    static constexpr bool value = noexcept(std::invoke(std::declval<F>(), std::declval<Args>()...));
-};
+    template <typename U>
+    static auto test(int)
+        -> decltype(noexcept(std::declval<U>()(std::declval<Args>()...)), void(), std::true_type());
+    template <typename U>
+    static auto test(...) -> std::false_type;
 
-template <class F>
-struct is_nothrow_invocable<std::nullptr_t> {
-    static constexpr bool value = false; // Not invocable
+    static constexpr bool value = decltype(test<F>(0))::value;
 };
 
 } // namespace v1
