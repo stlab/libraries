@@ -28,7 +28,7 @@ template <std::size_t no>
 struct custom_scheduler {
     using result_type = void;
 
-    void operator()(stlab::task<void()> f) const {
+    void operator()(stlab::task<void() noexcept> f) const {
         ++counter();
         // The implementation on Windows or the mac uses a scheduler that allows many tasks in the
         // pool in parallel
@@ -43,9 +43,7 @@ struct custom_scheduler {
 
     static int usage_counter() { return counter().load(); }
 
-    static void reset() {
-        counter() = 0;
-    }
+    static void reset() { counter() = 0; }
 
     static std::atomic_int& counter() {
         static std::atomic_int counter;
@@ -56,15 +54,12 @@ private:
     size_t _id = no; // only used for debugging purpose
 };
 
-
-
 template <std::size_t I>
 stlab::executor_t make_executor() {
-    return [_executor = custom_scheduler<I>{}](stlab::task<void()> f) mutable {
+    return [_executor = custom_scheduler<I>{}](stlab::task<void() noexcept> f) mutable {
         _executor(std::move(f));
     };
 }
-
 
 class test_exception : public std::exception {
     std::string _error;
@@ -196,8 +191,8 @@ class test_functor_base : public P {
     std::atomic_int& _task_counter;
 
 public:
-    test_functor_base(F f, std::atomic_int& task_counter)
-        : _f(std::move(f)), _task_counter(task_counter) {}
+    test_functor_base(F f, std::atomic_int& task_counter) :
+        _f(std::move(f)), _task_counter(task_counter) {}
 
     ~test_functor_base() {}
 

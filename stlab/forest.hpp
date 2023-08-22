@@ -60,18 +60,14 @@ auto trailing_of(I i) {
 
 /**************************************************************************************************/
 
-constexpr auto is_leading(forest_edge e) {
-    return e == forest_edge::leading;
-}
+constexpr auto is_leading(forest_edge e) { return e == forest_edge::leading; }
 
 template <class I> // I models a FullorderIterator
 auto is_leading(const I& i) {
     return is_leading(i.edge());
 }
 
-constexpr auto is_trailing(forest_edge e) {
-    return e == forest_edge::trailing;
-}
+constexpr auto is_trailing(forest_edge e) { return e == forest_edge::trailing; }
 
 template <class I> // I models a FullorderIterator
 auto is_trailing(const I& i) {
@@ -779,12 +775,10 @@ public:
         insert(end(), const_child_iterator(x.begin()), const_child_iterator(x.end()));
     }
     forest(forest&& x) noexcept : forest() { splice(end(), x); }
-    forest& operator=(const forest& x) {
-    return *this = forest(x);
-    }
+    forest& operator=(const forest& x) { return *this = forest(x); }
     forest& operator=(forest&& x) noexcept {
         auto tmp{std::move(x)}; // this is `release()`
-        clear(); // these two lines are `reset()`
+        clear();                // these two lines are `reset()`
         splice(end(), tmp);
         return *this;
     }
