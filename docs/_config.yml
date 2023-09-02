@@ -15,7 +15,7 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://www.stlab.cc" # the base hostname & protocol for your site
 twitter_username: SeanParent
 github_username:  stlab
-remote_theme: adobe/hyde-theme@v1.1.0
+remote_theme: adobe/hyde-theme@v2.0.0
 exclude:
     - _source
     - build
@@ -36,7 +36,7 @@ adobe_hyde:
 excerpt_separator: <!--more-->
 markdown: kramdown
 utterances:
-    repo: stlab/stlab.github.io 
+    repo: stlab/stlab.github.io
     label: "utterance"
 plugins:
   - jekyll-redirect-from
