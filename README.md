@@ -113,17 +113,7 @@ STLab uses [hyde](https://github.com/adobe/hyde) to generate documentation boile
 When adding a new public API, you should invoke
 
 ```
-docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host \
-    --tty --interactive \
-    hyde bash
-```
-
-Windows:
-
-```
-docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host `
-    --tty --interactive `
-    hyde bash
+docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host --tty --interactive hyde bash
 ```
 
 ```

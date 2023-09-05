@@ -8,22 +8,32 @@ If you don't already have docker installed, [install Docker](https://docs.docker
 ### Building the docker image
 
 To build the docker image, first, update the VERSION variable below (please use semantic versioning). Add a [release note](#release-notes).
+And update the RUBY_VERSION to match https://pages.github.com/versions/
+
+macOS and Linux:
+
+```bash
+VERSION="1.0.2"
+VOLUME="stlab.libraries"
+RUBY_VERSION="2.7.4"
+```
+
+Windows:
+
+```powershell
+$VERSION="1.0.2"
+$VOLUME="stlab.libraries"
+$RUBY_VERSION="2.7.4"
+
+$PSDefaultParameterValues = @{'Out-File:Encoding' = 'Ascii'}
+```
 
 ```
-VERSION="1.0.1"
 echo $VERSION > ./docs/tools/docker-tools/VERSION
-
-VOLUME="stlab.github.io"
-
-# Specify the ruby version to match https://pages.github.com/versions/
-
-RUBY_VERSION="2.7.4"
 echo $RUBY_VERSION > ./docs/.ruby-version
 
 # build the base image, no-cache is used so the latest tools are installed
-docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile \
-  --target base --tag $VOLUME . \
-  --no-cache
+docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile --target base --tag $VOLUME . --no-cache
 
 # update the docs environment
 docker run --mount type=bind,source="$(pwd)",target=/mnt/host --tty --interactive $VOLUME bash
@@ -33,8 +43,7 @@ cd /mnt/host
 exit
 
 # build the final image
-docker build --build-arg RUBY_VERSION=$RUBY_VERSION \
-  --file ./docs/tools/docker-tools/Dockerfile --target full --tag $VOLUME .
+docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile --target full --tag $VOLUME .
 ```
 
 ## Running the Docker image
@@ -42,10 +51,7 @@ docker build --build-arg RUBY_VERSION=$RUBY_VERSION \
 To run the docker image, execute the following.
 
 ```
-VOLUME="stlab.github.io"
-docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
-    --tty --interactive --publish 3000-3001:3000-3001 \
-    $VOLUME bash
+docker run --mount type=bind,source="$(pwd)",target=/mnt/host --tty --interactive --publish 3000-3001:3000-3001 $VOLUME bash
 ```
 
 This should leave you at bash prompt that looks like:
@@ -98,3 +104,4 @@ docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
 
 - 1.0.0 - Initial release for Jekyll
 - 1.0.1 - Updating toolset
+- 1.0.2 - Updating in for hyde 2.0
