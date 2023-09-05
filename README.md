@@ -118,6 +118,14 @@ docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/
     hyde bash
 ```
 
+Windows:
+
+```
+docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host `
+    --tty --interactive `
+    hyde bash
+```
+
 ```
 cd /mnt/host/libraries
 ./validate_docs.sh --update

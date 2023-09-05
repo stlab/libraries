@@ -1,11 +1,12 @@
 ---
 layout: library
 title: scope.hpp
-owner: sean-parent
-brief: Explicitly scope the lifetime of an object
-tags:
-  - sourcefile
-library-type: sourcefile
+hyde:
+  owner: sean-parent
+  brief: Explicitly scope the lifetime of an object
+  tags:
+    - sourcefile
+  library-type: sourcefile
 ---
 
 Oftentimes developers will add scopes to code where they want to limit the lifetime of an object. For example:

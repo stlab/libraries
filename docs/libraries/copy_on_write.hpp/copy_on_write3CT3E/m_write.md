@@ -1,16 +1,17 @@
 ---
 layout: method
 title: write
-owner: sean-parent
-brief: Obtain a non-`const` reference to the underlying value
-tags:
-  - method
-defined_in_file: copy_on_write.hpp
-overloads:
-  auto write() -> stlab::copy_on_write::element_type &:
-    description: Singular variant
-    return: A reference to the underlying object
-    signature_with_names: auto write() -> stlab::copy_on_write::element_type &
+hyde:
+  owner: sean-parent
+  brief: Obtain a non-`const` reference to the underlying value
+  tags:
+    - method
+  defined_in_file: copy_on_write.hpp
+  overloads:
+    auto write() -> stlab::copy_on_write::element_type &:
+      description: Singular variant
+      return: A reference to the underlying object
+      signature_with_names: auto write() -> stlab::copy_on_write::element_type &
 ---
 
 Obtain a reference to the value the object is referencing. This will copy the underlying value (if necessary) so changes to the value do not affect other `copy_on_write` objects.

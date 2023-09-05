@@ -1,20 +1,24 @@
 ---
 layout: class
 title: future<T, enable_if_copyable<T>>
-owner: sean-parent
-brief: An alternative `future` implementation with support for continuations, splits, and joins
-tags:
-  - class
-defined_in_file: concurrency/future.hpp
-declaration: "\nclass stlab::future;"
-dtor: unspecified
-typedefs:
-  result_type:
-    definition: T
-    description: result type
-namespace:
-  - stlab
-  - v1
+hyde:
+  owner: sean-parent
+  brief: An alternative `future` implementation with support for continuations, splits, and joins
+  tags:
+    - class
+  inline:
+    description:
+      - "***********************************************************************************************"
+  defined_in_file: concurrency/future.hpp
+  declaration: "\nclass stlab::future;"
+  dtor: unspecified
+  typedefs:
+    result_type:
+      definition: T
+      description: result type
+  namespace:
+    - stlab
+    - v1
 ---
 
 `stlab::future` differs from `std::future` in several ways:
