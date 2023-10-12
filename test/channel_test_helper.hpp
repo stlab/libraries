@@ -25,7 +25,7 @@ namespace channel_test_helper {
 
 class manual_scheduler {
     static std::mutex _mutex;
-    static std::queue<stlab::task<void()>> _tasks;
+    static std::queue<stlab::task<void() noexcept>> _tasks;
 
 public:
     static void clear() {

@@ -17,13 +17,15 @@
 
 #else
 
+#include <stlab/pre_exit.hpp>
+
 #include <stlab/concurrency/set_current_thread_name.hpp>
 #include <stlab/concurrency/task.hpp>
-#include <stlab/pre_exit.hpp>
 
 #include <cassert>
 #include <chrono>
 #include <functional>
+#include <type_traits>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
@@ -98,7 +100,7 @@ struct executor_type {
     using result_type = void;
 
     template <typename F>
-    void operator()(F f) const {
+    auto operator()(F f) const -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         using f_t = decltype(f);
 
         dispatch_group_async_f(detail::group()._group,
@@ -231,7 +233,7 @@ public:
 class notification_queue {
     struct element_t {
         std::size_t _priority;
-        task<void()> _task;
+        task<void() noexcept> _task;
 
         template <class F>
         element_t(F&& f, std::size_t priority) : _priority{priority}, _task{std::forward<F>(f)} {}
@@ -257,7 +259,7 @@ class notification_queue {
     }
 
     // Must be called under a lock with a non-empty _q, always returns a valid task
-    auto pop_not_empty() -> task<void()> {
+    auto pop_not_empty() -> task<void() noexcept> {
         auto result = std::move(_q.front()._task);
         std::pop_heap(begin(_q), end(_q), element_t::greater());
         _q.pop_back();
@@ -265,7 +267,7 @@ class notification_queue {
     }
 
 public:
-    auto try_pop() -> task<void()> {
+    auto try_pop() -> task<void() noexcept> {
         lock_t lock{_mutex, std::try_to_lock};
         if (!lock || _q.empty()) return nullptr;
         return pop_not_empty();
@@ -282,7 +284,7 @@ public:
         return true;
     }
 
-    auto pop() -> std::pair<bool, task<void()>> {
+    auto pop() -> std::pair<bool, task<void() noexcept>> {
         lock_t lock{_mutex};
         _waiting = true;
         while (_q.empty() && !_done && _waiting)
@@ -348,7 +350,7 @@ class priority_task_system {
     void run(unsigned i) {
         stlab::set_current_thread_name("cc.stlab.default_executor");
         while (true) {
-            task<void()> f;
+            task<void() noexcept> f;
 
             for (unsigned n = 0; n != _count && !f; ++n) {
                 f = _q[(i + n) % _count].try_pop();
@@ -415,7 +417,7 @@ public:
             stlab::set_current_thread_name("cc.stlab.default_executor.expansion");
 
             while (true) {
-                task<void()> f;
+                task<void() noexcept> f;
 
                 for (unsigned n = 0; n != _count && !f; ++n) {
                     f = _q[(i + n) % _count].try_pop();
@@ -465,7 +467,7 @@ template <executor_priority P = executor_priority::medium>
 struct executor_type {
     using result_type = void;
 
-    void operator()(task<void()> f) const {
+    void operator()(task<void() noexcept>&& f) const {
         static task_system<P> only_task_system{[] {
             at_pre_exit([]() noexcept { only_task_system.join(); });
             return task_system<P>{};
@@ -480,7 +482,7 @@ template <executor_priority P = executor_priority::medium>
 struct executor_type {
     using result_type = void;
 
-    void operator()(task<void()> f) const {
+    void operator()(task<void() noexcept>&& f) const {
         pts().execute<static_cast<std::size_t>(P)>(std::move(f));
     }
 };

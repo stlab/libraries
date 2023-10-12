@@ -348,7 +348,7 @@ auto set_process_error(P& process, std::exception_ptr&& error)
 }
 
 template <typename P>
-auto set_process_error(P&, std::exception_ptr &&)
+auto set_process_error(P&, std::exception_ptr&&)
     -> std::enable_if_t<!has_set_process_error_v<unwrap_reference_t<P>>, void> {}
 
 /**************************************************************************************************/
@@ -597,8 +597,8 @@ template <typename Q, typename T, typename R, typename Arg, std::size_t I, typen
 struct shared_process_sender_indexed : public shared_process_sender<Arg> {
     shared_process<Q, T, R, Args...>& _shared_process;
 
-    explicit
-    shared_process_sender_indexed(shared_process<Q, T, R, Args...>& sp) : _shared_process(sp) {}
+    explicit shared_process_sender_indexed(shared_process<Q, T, R, Args...>& sp) :
+        _shared_process(sp) {}
 
     void add_sender() override { ++_shared_process._sender_count; }
 
@@ -652,9 +652,7 @@ struct shared_process_sender_helper;
 template <typename Q, typename T, typename R, std::size_t... I, typename... Args>
 struct shared_process_sender_helper<Q, T, R, std::index_sequence<I...>, Args...>
     : shared_process_sender_indexed<Q, T, R, Args, I, Args...>... {
-    
-    explicit
-    shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) :
+    explicit shared_process_sender_helper(shared_process<Q, T, R, Args...>& sp) :
         shared_process_sender_indexed<Q, T, R, Args, I, Args...>(sp)... {}
 };
 
@@ -767,8 +765,6 @@ struct shared_process
     std::atomic_size_t _process_buffer_size{1};
 
     const std::tuple<std::shared_ptr<shared_process_receiver<Args>>...> _upstream;
-
-
 
     template <typename E, typename F>
     shared_process(E&& e, F&& f) :
@@ -954,12 +950,12 @@ struct shared_process
                     std::chrono::nanoseconds::min())
                     broadcast(unwrap(*_process).yield());
                 else
-                    execute_at(duration,
-                               _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
-                        auto _this = _weak_this.lock();
-                        if (!_this) return;
-                        _this->try_broadcast();
-                    });
+                    execute_at(duration, _executor)(
+                        [_weak_this = make_weak_ptr(this->shared_from_this())]() noexcept {
+                            auto _this = _weak_this.lock();
+                            if (!_this) return;
+                            _this->try_broadcast();
+                        });
             }
 
             /*
@@ -978,25 +974,25 @@ struct shared_process
             } else {
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
-                execute_at(duration,
-                           _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
-                    auto _this = _weak_this.lock();
-                    // It may be that the complete channel is gone in the meanwhile
-                    if (!_this) return;
+                execute_at(duration, _executor)(
+                    [_weak_this = make_weak_ptr(this->shared_from_this())]() noexcept {
+                        auto _this = _weak_this.lock();
+                        // It may be that the complete channel is gone in the meanwhile
+                        if (!_this) return;
 
-                    // try_lock can fail spuriously
-                    while (true) {
-                        lock_t lock(_this->_timeout_function_control, std::try_to_lock);
-                        if (!lock) continue;
+                        // try_lock can fail spuriously
+                        while (true) {
+                            lock_t lock(_this->_timeout_function_control, std::try_to_lock);
+                            if (!lock) continue;
 
-                        // we were cancelled
-                        if (get_process_state(_this->_process).first != process_state::yield) {
-                            _this->try_broadcast();
-                            _this->_timeout_function_active = false;
+                            // we were cancelled
+                            if (get_process_state(_this->_process).first != process_state::yield) {
+                                _this->try_broadcast();
+                                _this->_timeout_function_active = false;
+                            }
+                            return;
                         }
-                        return;
-                    }
-                });
+                    });
             }
         } catch (...) { // this catches exceptions during _process.await() and _process.yield()
             broadcast(std::move(std::current_exception()));
@@ -1038,12 +1034,12 @@ struct shared_process
                     std::chrono::nanoseconds::min())
                     broadcast(unwrap(*_process).yield());
                 else
-                    execute_at(duration,
-                               _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
-                        auto _this = _weak_this.lock();
-                        if (!_this) return;
-                        _this->try_broadcast();
-                    });
+                    execute_at(duration, _executor)(
+                        [_weak_this = make_weak_ptr(this->shared_from_this())]() noexcept {
+                            auto _this = _weak_this.lock();
+                            if (!_this) return;
+                            _this->try_broadcast();
+                        });
             }
 
             /*
@@ -1062,25 +1058,25 @@ struct shared_process
             } else {
                 /* Schedule a timeout. */
                 _timeout_function_active = true;
-                execute_at(duration,
-                           _executor)([_weak_this = make_weak_ptr(this->shared_from_this())] {
-                    auto _this = _weak_this.lock();
-                    // It may be that the complete channel is gone in the meanwhile
-                    if (!_this) return;
+                execute_at(duration, _executor)(
+                    [_weak_this = make_weak_ptr(this->shared_from_this())]() noexcept {
+                        auto _this = _weak_this.lock();
+                        // It may be that the complete channel is gone in the meanwhile
+                        if (!_this) return;
 
-                    // try_lock can fail spuriously
-                    while (true) {
-                        lock_t lock(_this->_timeout_function_control, std::try_to_lock);
-                        if (!lock) continue;
+                        // try_lock can fail spuriously
+                        while (true) {
+                            lock_t lock(_this->_timeout_function_control, std::try_to_lock);
+                            if (!lock) continue;
 
-                        // we were cancelled
-                        if (get_process_state(_this->_process).first != process_state::yield) {
-                            _this->try_broadcast();
-                            _this->_timeout_function_active = false;
+                            // we were cancelled
+                            if (get_process_state(_this->_process).first != process_state::yield) {
+                                _this->try_broadcast();
+                                _this->_timeout_function_active = false;
+                            }
+                            return;
                         }
-                        return;
-                    }
-                });
+                    });
             }
         } catch (...) { // this catches exceptions during _process.await() and _process.yield()
             broadcast(std::move(std::current_exception()));
@@ -1098,10 +1094,12 @@ struct shared_process
         REVISIT (sparent) : See above comments on step() and ensure consistency.
 
         What is this code doing, if we don't have a yield then it also assumes no await?
+
+        This seems to be doing a lot for a (required) noexcept operation - are we sure?
     */
 
     template <typename U>
-    auto step() -> std::enable_if_t<!has_process_yield_v<unwrap_reference_t<U>>> {
+    auto step() noexcept -> std::enable_if_t<!has_process_yield_v<unwrap_reference_t<U>>> {
         using queue_t = typename Q::value_type;
         stlab::optional<queue_t> message;
         std::array<bool, sizeof...(Args)> do_cts;
@@ -1135,7 +1133,7 @@ struct shared_process
     }
 
     void run() {
-        _executor([_p = make_weak_ptr(this->shared_from_this())] {
+        _executor([_p = make_weak_ptr(this->shared_from_this())]() noexcept {
             auto p = _p.lock();
             if (p) p->template step<T>();
         });
@@ -1352,8 +1350,7 @@ auto zip(S s, R... r) {
 
 /**************************************************************************************************/
 
-struct buffer_size 
-{
+struct buffer_size {
     std::size_t _value;
     buffer_size(std::size_t b) : _value(b) {}
 };
@@ -1378,15 +1375,16 @@ struct annotated_process {
     F _f;
     annotations _annotations;
 
-    explicit annotated_process(executor_task_pair<F>&& etp) : _f(std::move(etp._f)), _annotations(std::move(etp._executor)) {}
+    explicit annotated_process(executor_task_pair<F>&& etp) :
+        _f(std::move(etp._f)), _annotations(std::move(etp._executor)) {}
 
     annotated_process(F f, const executor& e) : _f(std::move(f)), _annotations(e._executor) {}
     annotated_process(F f, buffer_size bs) : _f(std::move(f)), _annotations(bs._value) {}
 
     annotated_process(F f, executor&& e) : _f(std::move(f)), _annotations(std::move(e._executor)) {}
     annotated_process(F f, annotations&& a) : _f(std::move(f)), _annotations(std::move(a)) {}
-    annotated_process(executor_task_pair<F>&& etp, buffer_size bs) : _f(std::move(etp._f)), _annotations(std::move(etp._executor), bs) {}
-    
+    annotated_process(executor_task_pair<F>&& etp, buffer_size bs) :
+        _f(std::move(etp._f)), _annotations(std::move(etp._executor), bs) {}
 };
 
 template <typename B, typename E>
@@ -1553,8 +1551,8 @@ public:
     }
 
     auto operator|(sender<T> send) {
-        return operator|
-            ([_send = std::move(send)](auto&& x) { _send(std::forward<decltype(x)>(x)); });
+        return operator|(
+            [_send = std::move(send)](auto&& x) { _send(std::forward<decltype(x)>(x)); });
     }
 };
 

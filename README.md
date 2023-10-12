@@ -4,11 +4,7 @@ ASL libraries will be migrated here in the `stlab` namespace, new libraries will
 
 ## Branch states
 
-- **`main`:**
-[![Main status](https://github.com/stlab/libraries/actions/workflows/conan.yml/badge.svg)](https://github.com/stlab/libraries/actions/workflows/conan.yml/badge.svg)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/aaf2uibkql1625dl/branch/main?svg=true)](https://ci.appveyor.com/project/fosterbrereton/libraries/branch/main)
-[![Code Coverage](https://codecov.io/github/stlab/libraries/coverage.svg?branch=main)](https://codecov.io/gh/stlab/libraries/branch/main)
-[![Coverty Scan](https://scan.coverity.com/projects/13163/badge.svg)](https://scan.coverity.com/projects/stlab_libraries)
+- **`main`:** [![Build and Tests](https://github.com/stlab/libraries/actions/workflows/stlab.yml/badge.svg)](https://github.com/stlab/libraries/actions/workflows/stlab.yml)
 
 ## Content
 

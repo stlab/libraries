@@ -8,7 +8,7 @@
 
 #include "channel_test_helper.hpp"
 
-std::queue<stlab::task<void()>> channel_test_helper::manual_scheduler::_tasks;
+std::queue<stlab::task<void() noexcept>> channel_test_helper::manual_scheduler::_tasks;
 std::mutex channel_test_helper::manual_scheduler::_mutex;
 
 int channel_test_helper::timed_sum::_x{0};

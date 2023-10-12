@@ -256,7 +256,7 @@ struct shared_task {
 
 template <typename T>
 struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::vector<std::pair<executor_t, task<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, task<void() noexcept>>>;
 
     executor_t _executor;
     stlab::optional<T> _result;
@@ -294,7 +294,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
+        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
     void set_exception(std::exception_ptr error) {
@@ -361,7 +361,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
 template <typename T>
 struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<shared_base<T>> {
-    using then_t = std::pair<executor_t, task<void()>>;
+    using then_t = std::pair<executor_t, task<void() noexcept>>;
 
     executor_t _executor;
     stlab::optional<T> _result;
@@ -372,7 +372,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    void reset() { _then.second = task<void()>{}; }
+    void reset() { _then.second = task<void() noexcept>{}; }
 
     template <typename F>
     auto recover(future<T>&& p, F&& f) {
@@ -399,7 +399,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()] {});
+        if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()] () noexcept {});
     }
 
     void set_exception(std::exception_ptr error) {
@@ -438,7 +438,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
 template <>
 struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
-    using then_t = std::vector<std::pair<executor_t, task<void()>>>;
+    using then_t = std::vector<std::pair<executor_t, task<void() noexcept>>>;
     using result_type = void;
 
     executor_t _executor;
@@ -461,7 +461,7 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()] {});
+        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
     void set_exception(std::exception_ptr error) {
@@ -518,7 +518,7 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
 
     void add_promise() override { ++_promise_count; }
 
-    void operator()(Args... args) override {
+    void operator()(Args... args) noexcept override {
         if (!_f) return;
 
         try {
@@ -582,7 +582,7 @@ public:
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>
-    void operator()(A&&... args) const {
+    void operator()(A&&... args) const noexcept {
         auto p = _p.lock();
         if (p) (*p)(std::forward<A>(args)...);
     }

@@ -74,12 +74,12 @@ BOOST_AUTO_TEST_CASE(all_low_prio_tasks_are_executed) {
     atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
-        queue.executor()([_i = i, &m, &results] {
+        queue.executor()([_i = i, &m, &results]() noexcept {
             unique_lock<mutex> block{m};
             results.push_back(_i);
         });
     }
-    queue.executor()([&done] { done = true; });
+    queue.executor()([&done] () noexcept { done = true; });
 
     while (!done) {
         rest();
@@ -99,12 +99,12 @@ BOOST_AUTO_TEST_CASE(all_default_prio_tasks_get_executed) {
     atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
-        queue.executor()([_i = i, &m, &results] {
+        queue.executor()([_i = i, &m, &results] () noexcept {
             unique_lock<mutex> block{m};
             results.push_back(_i);
         });
     }
-    queue.executor()([&done] { done = true; });
+    queue.executor()([&done] () noexcept { done = true; });
 
     while (!done) {
         rest();
@@ -124,12 +124,12 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
     atomic_bool done{false};
 
     for (auto i = 0; i < 10; ++i) {
-        queue.executor()([_i = i, &m, &results] {
+        queue.executor()([_i = i, &m, &results] () noexcept {
             unique_lock<mutex> block{m};
             results.push_back(_i);
         });
     }
-    queue.executor()([&done] { done = true; });
+    queue.executor()([&done] () noexcept { done = true; });
 
     while (!done) {
         rest();
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     mutex m;
     condition_variable cv;
 
-    default_executor([&] {
+    default_executor([&] () noexcept {
         rest();
         {
             unique_lock<mutex> block{m};
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
         }
     }
 
-    default_executor([&] {
+    default_executor([&] () noexcept {
         rest();
         {
             unique_lock<mutex> block{m};
@@ -226,7 +226,7 @@ struct check_task {
         return 0;
     }
 
-    void operator()() {
+    void operator()() noexcept {
         --_currentPrioCount;
 
         ++taskRunning;
@@ -298,17 +298,17 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     auto start = chrono::high_resolution_clock::now();
 
     for (auto i = 0; i < iterations; ++i) {
-        low_executor([_i = i, &results, &counter] {
+        low_executor([_i = i, &results, &counter] () noexcept  {
             results[_i] = 1;
             fibonacci<mpre::cpp_int>(fiboN);
             ++counter;
         });
-        default_executor([_i = i + iterations, &results, &counter] {
+        default_executor([_i = i + iterations, &results, &counter] () noexcept {
             results[_i] = 2;
             fibonacci<mpre::cpp_int>(fiboN);
             ++counter;
         });
-        high_executor([_i = i + iterations * 2, &results, &counter] {
+        high_executor([_i = i + iterations * 2, &results, &counter] () noexcept  {
             results[_i] = 3;
             fibonacci<mpre::cpp_int>(fiboN);
             ++counter;
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
     }
 
     mutex block;
-    low_executor([&] {
+    low_executor([&] () noexcept  {
         {
             unique_lock<mutex> lock{block};
             done = true;

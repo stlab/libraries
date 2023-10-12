@@ -14,6 +14,7 @@
 #include <deque>
 #include <mutex>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include <stlab/scope.hpp>
@@ -41,8 +42,8 @@ namespace detail {
 /**************************************************************************************************/
 
 class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
-    using executor_t = std::function<void(task<void()>&&)>;
-    using queue_t = std::deque<task<void()>>;
+    using executor_t = std::function<void(task<void() noexcept>&&)>;
+    using queue_t = std::deque<task<void() noexcept>>;
     using lock_t = std::lock_guard<std::mutex>;
 
     std::mutex _m;
@@ -80,7 +81,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
             pop_front_unsafe(local_queue)();
         }
 
-        if (!empty()) _executor([_this(shared_from_this())]() { _this->all(); });
+        if (!empty()) _executor([_this(shared_from_this())]() noexcept { _this->all(); });
     }
 
     void single() {
@@ -90,7 +91,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
 
         f();
 
-        if (!empty()) _executor([_this(shared_from_this())]() { _this->single(); });
+        if (!empty()) _executor([_this(shared_from_this())]() noexcept { _this->single(); });
     }
 
     // The kickstart allows us to grab a pointer to either the single or all
@@ -125,7 +126,7 @@ public:
         });
 
         if (!running) {
-            _executor([_this(shared_from_this())]() { _this->kickstart(); });
+            _executor([_this(shared_from_this())]() noexcept { _this->kickstart(); });
         }
     }
 
@@ -149,7 +150,10 @@ public:
             [_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); }, mode)) {}
 
     auto executor() const {
-        return [_impl = _impl](auto&& f) { _impl->enqueue(std::forward<decltype(f)>(f)); };
+        return [_impl =
+                    _impl](auto&& f) -> std::enable_if_t<std::is_nothrow_invocable_v<decltype(f)>> {
+            _impl->enqueue(std::forward<decltype(f)>(f));
+        };
     }
 
     template <typename F, typename... Args>
