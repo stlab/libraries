@@ -1,58 +1,14 @@
-use std::cmp::{Ordering, max, Eq, Ord, PartialEq, PartialOrd};
+use std::cmp::max;
 use std::mem::MaybeUninit;
 use std::num::NonZeroUsize;
 use std::sync::{Mutex, Once};
 use std::sync::atomic::{AtomicUsize, Ordering as MemoryOrdering};
 
+mod prioritized;
+pub use prioritized::{Priority, Prioritized};
+
 /// A type-erased, heap-allocated function object.
 type Task = Box<dyn FnOnce()->()>;
-
-/// A `usize` constraining valid values to [0, 4) with runtime assertions.
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
-pub struct Priority(pub usize);
-
-impl Priority {
-    pub fn new(value: usize) -> Self {
-        assert!((0..4).contains(&value), "Priorities must be in [0, 4)");
-        Self(value)
-    }
-
-    /// Returns a usize of the form 0bXX000000 where XX is a binary representation of this priority.
-    /// The value of this priority is guaranteed to fit in two bits because `Priority` values are constrained to [0b00, 0b11].
-    pub fn to_highbit_mask(&self) -> usize {
-        &self.0 << (usize::BITS - 2)
-    }
-}
-
-/// Pairs an instance of `T` with a `Priority`. 
-/// Equality and ordering of a Prioritized<T> only considers `priority`, disregarding `element`.
-struct Prioritized <T> {
-    priority: Priority,
-    element: T
-}
-
-impl<T> PartialEq for Prioritized <T> {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.priority == other.priority
-    }
-}
-
-impl <T> Eq for Prioritized <T> {}
-
-impl<T> PartialOrd for Prioritized <T> {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.priority.partial_cmp(&other.priority)
-    }
-}
-
-impl<T> Ord for Prioritized <T> {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.priority.cmp(&other.priority)
-    }
-}
 
 /// The fields of `Waiter` which must be protected by a `Mutex`.
 struct WaiterProtectedData {
@@ -171,7 +127,7 @@ impl<T> NotificationQueue<T> {
     pub fn try_pop(&mut self) -> Option<T> {
         if let Ok(ref mut this) = self.protected.try_lock() {
             if !this.heap.is_empty() { 
-                return Some(this.heap.pop().unwrap().element);
+                return Some(this.heap.pop().unwrap().take_element());
             }
         } 
         return None;
@@ -200,7 +156,7 @@ impl<T> NotificationQueue<T> {
         if this.heap.is_empty() {
             return (this.done, None);
         } 
-        return (false, Some(this.heap.pop().unwrap().element));
+        return (false, Some(this.heap.pop().unwrap().take_element()));
     }
 
     /// Mark this object for teardown, and wake any thread awaiting an available element in `pop()`.
@@ -218,7 +174,7 @@ impl<T> NotificationQueue<T> {
         if let Ok(ref mut this) = self.protected.try_lock() {
             let priority = Self::merge_priority_count(priority, this.count);
             this.count += 1;
-            this.heap.push(Prioritized{ element, priority });
+            this.heap.push(Prioritized::new(priority, element));
         } else {
             return Some(element);
         }
@@ -235,7 +191,7 @@ impl<T> NotificationQueue<T> {
             let mut this = self.protected.lock().expect("the mutex is not poisoned");
             let priority = Self::merge_priority_count(priority, this.count);
             this.count += 1;
-            this.heap.push(Prioritized{ element, priority });
+            this.heap.push(Prioritized::new(priority, element));
         }
         self.ready.notify_one();
     }
