@@ -1,9 +1,5 @@
 include( CMakeFindDependencyMacro )
 
-if ( @STLAB_USE_BOOST_CPP17_SHIMS@ )
-  find_dependency( Boost 1.74.0 )
-endif()
-
 if ( @STLAB_TASK_SYSTEM@ STREQUAL "libdispatch" )
   find_dependency( libdispatch )
 endif()

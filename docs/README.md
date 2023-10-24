@@ -68,7 +68,6 @@ Specify the following options:
  STLAB_NO_STD_COROUTINES          ON
  STLAB_TASK_SYSTEM                portable
  STLAB_THREAD_SYSTEM              pthread
- STLAB_USE_BOOST_CPP17_SHIMS      OFF
  stlab.coverage                   OFF
 ```
 

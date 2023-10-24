@@ -6,10 +6,10 @@ defined-in-header: stlab/concurrency/future.hpp
 tags:
   - function
 overloads:
-  stlab::optional<T> get_try():
+  std::optional<T> get_try():
     description: If `T` is not `void`, it returns an initialized `optional` if the future has succeeded, otherwise an empty `optional<T>`. In case that an error occurred it rethrows the captured exception.
     return: __OPTIONAL__
-    signature_with_names: stlab::optional<T> get_try()
+    signature_with_names: std::optional<T> get_try()
   bool get_try():
     description: If `T` is void it returns `true` if the future succeeded, otherwise `false`. In case that an error occurred it rethrows the captured exception.
     return: __OPTIONAL__

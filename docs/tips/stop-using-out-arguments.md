@@ -150,7 +150,7 @@ string(const char * initial_value) {
 
 How can we work with the cases in the above example? We obviously can't use the empty constructor and we can't use the other constructor as we don't want to waste that memory.
 
-This is where optional shines. It is shipping as standard in C++17 but is also available as `boost::optional`.
+This is where optional shines. It is shipping as standard in C++17 but is also available as `std::optional`.
 
 
 ```cpp
