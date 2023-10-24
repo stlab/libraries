@@ -230,12 +230,13 @@ template <>
 struct invoke_variant_dispatcher<1> {
     template <typename F, typename T, typename... Args>
     static auto invoke(F&& f, [[maybe_unused]] T& t) {
-        if constexpr (std::is_same_v<first_t<Args...>, void>) {
+        using arg1_t = first_t<Args...>;
+        if constexpr (std::is_same_v<arg1_t, void>) {
             return;
-        } else if constexpr (std::is_same_v<first_t<Args...>, detail::avoid_>) {
+        } else if constexpr (std::is_same_v<arg1_t, detail::avoid_>) {
             return std::forward<F>(f)();
         } else {
-            return std::forward<F>(f)(std::move(std::get<first_t<Args...>>(std::get<0>(t))));
+            return std::forward<F>(f)(std::move(std::get<arg1_t>(std::get<0>(t))));
         }
     }
 };
