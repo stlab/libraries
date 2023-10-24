@@ -228,25 +228,15 @@ struct invoke_variant_dispatcher {
 
 template <>
 struct invoke_variant_dispatcher<1> {
-    template <typename F, typename T, typename Arg>
-    static auto invoke_(F&&, T&) -> std::enable_if_t<std::is_same<Arg, void>::value, void> {
-        return;
-    }
-    template <typename F, typename T, typename Arg>
-    static auto invoke_(F&& f, T&) -> std::enable_if_t<std::is_same<Arg, detail::avoid_>::value,
-                                                       decltype(std::forward<F>(f)())> {
-        return std::forward<F>(f)();
-    }
-    template <typename F, typename T, typename Arg>
-    static auto invoke_(F&& f, T& t) -> std::enable_if_t<
-        !(std::is_same<Arg, detail::avoid_>::value || std::is_same<Arg, detail::avoid_>::value),
-        decltype(std::forward<F>(f)(std::move(std::get<Arg>(std::get<0>(t)))))> {
-        return std::forward<F>(f)(std::move(std::get<Arg>(std::get<0>(t))));
-    }
-
     template <typename F, typename T, typename... Args>
-    static auto invoke(F&& f, T& t) {
-        return invoke_<F, T, first_t<Args...>>(std::forward<F>(f), t);
+    static auto invoke(F&& f, [[maybe_unused]] T& t) {
+        if constexpr (std::is_same_v<first_t<Args...>, void>) {
+            return;
+        } else if constexpr (std::is_same_v<first_t<Args...>, detail::avoid_>) {
+            return std::forward<F>(f)();
+        } else {
+            return std::forward<F>(f)(std::move(std::get<first_t<Args...>>(std::get<0>(t))));
+        }
     }
 };
 
