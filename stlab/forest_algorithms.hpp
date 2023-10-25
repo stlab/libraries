@@ -5,8 +5,10 @@
 
 /**************************************************************************************************/
 
+// stdc++
+#include <optional>
+
 // stlab
-#include <stlab/concurrency/optional.hpp>
 #include <stlab/forest.hpp>
 
 /**************************************************************************************************/
@@ -115,7 +117,7 @@ auto flatten(I first, I last, O out) {
         if (is_leading(first)) {
             *out++ = *first;
         } else {
-            *out++ = nullopt;
+            *out++ = std::nullopt;
         }
     }
     return out;
@@ -123,7 +125,7 @@ auto flatten(I first, I last, O out) {
 
 /**************************************************************************************************/
 
-template <class I, // I models ForwardIterator; I::value_type == stlab::optional<T>
+template <class I, // I models ForwardIterator; I::value_type == std::optional<T>
           class F> // F models Forest
 auto unflatten(I first, I last, F& f) {
     return forests::transcribe(

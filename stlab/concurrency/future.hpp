@@ -17,6 +17,7 @@
 #include <initializer_list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 #ifndef STLAB_NO_STD_COROUTINES
@@ -25,7 +26,6 @@
 
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
-#include <stlab/concurrency/optional.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/concurrency/traits.hpp>
 #include <stlab/concurrency/tuple_algorithm.hpp>
@@ -259,7 +259,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
     using then_t = std::vector<std::pair<executor_t, task<void() noexcept>>>;
 
     executor_t _executor;
-    stlab::optional<T> _result;
+    std::optional<T> _result;
     std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
@@ -328,7 +328,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         return *_result;
     }
 
-    auto get_try() -> stlab::optional<T> {
+    auto get_try() -> std::optional<T> {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -338,10 +338,10 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_exception) std::rethrow_exception(_exception);
             return _result;
         }
-        return stlab::nullopt;
+        return std::nullopt;
     }
 
-    auto get_try_r(bool unique) -> stlab::optional<T> {
+    auto get_try_r(bool unique) -> std::optional<T> {
         if (!unique) return get_try();
 
         bool ready = false;
@@ -353,7 +353,7 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
             if (_exception) std::rethrow_exception(_exception);
             return std::move(_result);
         }
-        return stlab::nullopt;
+        return std::nullopt;
     }
 };
 
@@ -364,7 +364,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
     using then_t = std::pair<executor_t, task<void() noexcept>>;
 
     executor_t _executor;
-    stlab::optional<T> _result;
+    std::optional<T> _result;
     std::exception_ptr _exception;
     std::mutex _mutex;
     std::atomic_bool _ready{false};
@@ -418,9 +418,9 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     bool is_ready() const { return _ready; }
 
-    auto get_try() -> stlab::optional<T> { return get_try_r(true); }
+    auto get_try() -> std::optional<T> { return get_try_r(true); }
 
-    auto get_try_r(bool) -> stlab::optional<T> {
+    auto get_try_r(bool) -> std::optional<T> {
         bool ready = false;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -733,9 +733,9 @@ public:
 
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
-    [[deprecated("Use exception() instead")]] stlab::optional<std::exception_ptr> error() const& {
-        return _p->_exception ? stlab::optional<std::exception_ptr>{_p->_exception} :
-                                stlab::nullopt;
+    [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
+        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} :
+                                std::nullopt;
     }
 
     std::exception_ptr exception() const& { return _p->_exception; }
@@ -881,9 +881,9 @@ public:
 
     bool get_try() const& { return _p->get_try(); }
 
-    [[deprecated("Use exception() instead")]] stlab::optional<std::exception_ptr> error() const& {
-        return _p->_exception ? stlab::optional<std::exception_ptr>{_p->_exception} :
-                                stlab::nullopt;
+    [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
+        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} :
+                                std::nullopt;
     }
 
     std::exception_ptr exception() const& { return _p->_exception; }
@@ -986,9 +986,9 @@ public:
 
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
-    [[deprecated("Use exception() instead")]] stlab::optional<std::exception_ptr> error() const& {
-        return _p->_exception ? stlab::optional<std::exception_ptr>{_p->_exception} :
-                                stlab::nullopt;
+    [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
+        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} :
+                                std::nullopt;
     }
 
     std::exception_ptr exception() const& { return _p->_exception; }
@@ -1076,7 +1076,7 @@ template <size_t S, typename R>
 struct when_any_shared {
     using result_type = R;
     // decay
-    stlab::optional<R> _arg;
+    std::optional<R> _arg;
     std::mutex _guard;
     future<void> _holds[S]{};
     std::size_t _remaining{S};

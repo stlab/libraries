@@ -10,9 +10,8 @@
 #ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 #define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
-#include <stlab/concurrency/optional.hpp>
-
 // stdc++
+#include <optional>
 #include <tuple>
 
 /**************************************************************************************************/
@@ -185,7 +184,7 @@ struct map_placeholder<placeholder, N> {
 };
 
 template <std::size_t N>
-struct map_placeholder<stlab::optional<placeholder>, N> {
+struct map_placeholder<std::optional<placeholder>, N> {
     using type = std::index_sequence<>;
 };
 
@@ -225,7 +224,7 @@ using placeholder_tuple = std::tuple<
 // type-function that takes a parameter pack and returns a std::tuple<Ts...>
 // where all T[i] = void have been replaced with stlab::placeholder.
 template <typename... Ts>
-using optional_placeholder_tuple = std::tuple<stlab::optional<
+using optional_placeholder_tuple = std::tuple<std::optional<
     typename std::conditional<std::is_same<void, Ts>::value, detail::placeholder, Ts>::type>...>;
 
 /**************************************************************************************************/

@@ -8,7 +8,7 @@ tags:
 library-type: sourcefile
 typedefs:
   optional_placeholder_tuple:
-    definition: std::tuple<stlab::optional<typename std::conditional<std::is_same<void, Ts>::value, detail::placeholder, Ts>::type>...>
+    definition: std::tuple<std::optional<typename std::conditional<std::is_same<void, Ts>::value, detail::placeholder, Ts>::type>...>
     description: __MISSING__
   placeholder_tuple:
     definition: std::tuple<typename std::conditional<std::is_same<void, Ts>::value, detail::placeholder, Ts>::type...>
