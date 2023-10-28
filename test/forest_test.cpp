@@ -2,6 +2,7 @@
 
 // stdc++
 #include <iostream>
+#include <optional>
 
 // boost
 #include <boost/test/unit_test.hpp>
@@ -130,7 +131,7 @@ auto to_string(const std::string& x) {
 }
 
 template <>
-auto to_string(const stlab::optional<std::string>& x) {
+auto to_string(const std::optional<std::string>& x) {
     return x ? to_string(*x) : "?";
 }
 
@@ -463,7 +464,7 @@ BOOST_AUTO_TEST_CASE(test_transcribe_forest) {
 
 BOOST_AUTO_TEST_CASE(test_flatten) {
     auto f1{big_test_forest()};
-    std::vector<stlab::optional<std::string>> flat;
+    std::vector<std::optional<std::string>> flat;
 
     forests::flatten(f1.begin(), f1.end(), std::back_inserter(flat));
 

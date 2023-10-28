@@ -4,30 +4,6 @@
 include( CheckCXXSymbolExists )
 include( CheckCXXSourceRuns )
 
-# Determine if the selected C++ compiler has functional versions of
-# 'std::variant' and 'std::optional'. Set the specified 'result_var' to 'TRUE'
-# if they are determined to be disfunctional and 'FALSE' otherwise. Note that
-# this check consists of a smoke test and does not check all the ways these
-# library components may be deficient.
-function( stlab_check_disfunctional_variant_optional result_var )
-  check_cxx_source_runs( "
-    #include <variant>
-    #include <optional>
-
-    int main() {
-        std::optional<int> op = 3;
-        op = std::nullopt;
-
-        std::variant<int, char> v = 12;
-        return 0;
-    }" STLAB_HAVE_FUNCTIONAL_VARIANT_OPTIONAL )
-  if( STLAB_HAVE_FUNCTIONAL_VARIANT_OPTIONAL )
-    set( ${result_var} FALSE PARENT_SCOPE )
-  else()
-    set( ${result_var} TRUE PARENT_SCOPE )
-  endif()
-endfunction()
-
 # Determine if the selected C++ compiler has functional coroutines. Set the
 # specified 'result_var' to 'TRUE' if they are determined to be disfunctional
 # and 'FALSE' otherwise. Note that this check consists of a smoke test and does

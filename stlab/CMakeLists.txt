@@ -13,7 +13,6 @@ target_sources( stlab INTERFACE
     concurrency/future.hpp
     concurrency/immediate_executor.hpp
     concurrency/main_executor.hpp
-    concurrency/optional.hpp
     concurrency/progress.hpp
     concurrency/ready_future.hpp
     concurrency/serial_queue.hpp
@@ -23,7 +22,6 @@ target_sources( stlab INTERFACE
     concurrency/traits.hpp
     concurrency/tuple_algorithm.hpp
     concurrency/utility.hpp
-    concurrency/variant.hpp
 
     iterator/set_next.hpp
 

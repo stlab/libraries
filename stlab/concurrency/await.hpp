@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <exception>
 #include <mutex>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -74,7 +75,7 @@ template <class T>
 struct _get_optional;
 
 template <class T>
-struct _get_optional<stlab::optional<T>> {
+struct _get_optional<std::optional<T>> {
     template <class F>
     auto operator()(F&& f) {
         return *std::forward<F>(f);
