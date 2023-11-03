@@ -1,7 +1,8 @@
-use std::cmp::{Ordering};
+use std::cmp::Ordering;
 
 /// A `usize` constraining valid values to [0, 4) with runtime assertions.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+#[repr(C)]
 pub struct Priority(pub usize);
 
 impl Priority {
