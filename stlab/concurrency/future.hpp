@@ -294,7 +294,8 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
+        if (!_ready)
+            _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
     void set_exception(std::exception_ptr error) {
@@ -399,7 +400,7 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()] () noexcept {});
+        if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
     void set_exception(std::exception_ptr error) {
@@ -461,7 +462,8 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 
     void _detach() {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (!_ready) _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
+        if (!_ready)
+            _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
     void set_exception(std::exception_ptr error) {
@@ -734,8 +736,7 @@ public:
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
     [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
-        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} :
-                                std::nullopt;
+        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
     std::exception_ptr exception() const& { return _p->_exception; }
@@ -882,8 +883,7 @@ public:
     bool get_try() const& { return _p->get_try(); }
 
     [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
-        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} :
-                                std::nullopt;
+        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
     std::exception_ptr exception() const& { return _p->_exception; }
@@ -987,8 +987,7 @@ public:
     auto get_try() && { return _p->get_try_r(unique_usage(_p)); }
 
     [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
-        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} :
-                                std::nullopt;
+        return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
     std::exception_ptr exception() const& { return _p->_exception; }
@@ -1560,28 +1559,30 @@ struct _reduce_coroutine : std::enable_shared_from_this<_reduce_coroutine<P, R>>
     _reduce_coroutine(P&& p) : _promise{std::move(p)} {}
     void start(future<future<R>>&& r) {
         // ... co_await r;
-        _tmp0 = std::move(r).recover([_this = this->shared_from_this()](auto&& a) mutable {
-            if (auto e = a.exception()) {
-                _this->_promise.set_exception(e);
-                return;
-            }
-            _this->stage_0(std::move(a));
-        });
+        _tmp0 = std::move(r).recover(immediate_executor,
+                                     [_this = this->shared_from_this()](auto&& a) mutable {
+                                         if (auto e = a.exception()) {
+                                             _this->_promise.set_exception(e);
+                                             return;
+                                         }
+                                         _this->stage_0(std::move(a));
+                                     });
     }
     void stage_0(future<future<R>>&& r) {
         // co_return co_await ...;
         _tmp1 =
-            std::move(*r.get_try()).recover([_this = this->shared_from_this()](auto&& a) mutable {
-                if (auto e = a.exception()) {
-                    _this->_promise.set_exception(e);
-                    return;
-                }
-                if constexpr (std::is_same_v<R, void>) {
-                    _this->_promise();             // co_return
-                } else {
-                    _this->_promise(*a.get_try()); // co_return
-                }
-            });
+            std::move(*r.get_try())
+                .recover(immediate_executor, [_this = this->shared_from_this()](auto&& a) mutable {
+                    if (auto e = a.exception()) {
+                        _this->_promise.set_exception(e);
+                        return;
+                    }
+                    if constexpr (std::is_same_v<R, void>) {
+                        _this->_promise(); // co_return
+                    } else {
+                        _this->_promise(*a.get_try()); // co_return
+                    }
+                });
     }
 };
 
