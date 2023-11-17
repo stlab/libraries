@@ -8,7 +8,7 @@ hyde:
     - function
   inline:
     brief:
-      - "**********************************************************************************************"
+      - "***********************************************************************************************"
   defined_in_file: algorithm/reverse.hpp
   overloads:
     "template <class BidirectionalRange>\nvoid reverse(BidirectionalRange &)":
@@ -19,7 +19,7 @@ hyde:
       description: __INLINED__
       inline:
         description:
-          - "**********************************************************************************************"
+          - "***********************************************************************************************"
       return: __OPTIONAL__
       signature_with_names: "template <class BidirectionalRange>\nvoid reverse(BidirectionalRange & range)"
   namespace:

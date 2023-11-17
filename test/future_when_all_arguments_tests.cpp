@@ -100,8 +100,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_args_int_with_two_ready_element) {
 BOOST_AUTO_TEST_CASE(future_when_all_args) {
 
     auto main_thread_id = std::this_thread::get_id();
-    auto sut = when_all(make_executor<1>(), [] { 
-        return std::this_thread::get_id(); 
+    auto sut = when_all(make_executor<1>(), [] {
+        return std::this_thread::get_id();
     }, make_ready_future(stlab::immediate_executor));
 
     wait_until_future_completed(sut);
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_args_move_only_with_many_elements) {
 
   sut = when_all(
     make_executor<1>(),
-    [](auto x1, auto x2, auto x3, auto x4) { return move_only(7 * x1.member() + 11 * x2.member() + 13 * x3.member() + 17 * x4.member()); }, 
+    [](auto x1, auto x2, auto x3, auto x4) { return move_only(7 * x1.member() + 11 * x2.member() + 13 * x3.member() + 17 * x4.member()); },
     std::move(f1), std::move(f2), std::move(f3), std::move(f4));
 
   check_valid_future(sut);
