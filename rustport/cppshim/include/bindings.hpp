@@ -8,8 +8,16 @@ namespace stlab {
 inline namespace v1 {
 namespace detail {
 
-// REVISIT - have to invert the priority encoding to match old API.
-enum class executor_priority { high = 2, medium = 1, low = 0 };
+enum class executor_priority { high, medium, low };
+
+inline auto bridge_priority(executor_priority p) -> Priority {
+    switch (p) {
+        case executor_priority::high: return Priority::High;
+        case executor_priority::medium: return Priority::Default;
+        case executor_priority::low: return Priority::Low;
+        default: return Priority::Default;
+    }
+}
 
 /// @brief Asynchronously invoke f on the default_executor.
 /// @tparam F function object type
@@ -39,7 +47,7 @@ auto enqueue_priority(F f, executor_priority p) {
             (*f)();
         } catch (...) {}
         delete f;
-    }, static_cast<std::uint64_t>(p));
+    }, bridge_priority(p));
 }
 
 /// @brief A thin invokable wrapper around `enqueue_priority`.
