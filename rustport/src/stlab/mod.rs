@@ -4,10 +4,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering as MemoryOrdering};
 
 mod coarse_priority_queue;
-pub use coarse_priority_queue::{Priority, CoarsePriorityQueue};
+pub use coarse_priority_queue::Priority;
 
-mod scoped_thread_pool;
-use scoped_thread_pool::ScopedThreadPool;
+mod drop_join_thread_pool;
+use drop_join_thread_pool::DropJoinThreadPool;
 
 mod waiter;
 pub use waiter::Waiter;
@@ -17,12 +17,25 @@ use notification_queue::NotificationQueue;
 
 /// A type-erased, heap-allocated function object.
 pub type Task = Box<dyn FnOnce()->() + Send>;
+
+/// A portable work-stealing task scheduler with three priorities.
+///
+/// By default, this scheduler spins up a number of threads corresponding to the amount of
+/// parallelism available on the target platform, namely, std::thread::available_parallelism() - 1.
+/// Each thread is assigned a threadsafe priority queue. To reduce contention on push and pop
+/// operations, a thread will first attempt to acquire the lock for its own queue without blocking.
+/// If that fails, it will attempt the same non-blocking push/pop for each other priority queue in
+/// the scheduler. Finally, if each of those attempts also fail, the thread will attempt a blocking
+/// push/pop on its own priority queue.
+///
+/// The `add_thread` API is intended to mitigate the possibility of deadlock by spinning up a new
+/// worker thread that non-blockingly polls all of the system's priority queues, and then sleeps
+/// until `wake()` is called.
 pub struct PriorityTaskSystem {
-    pool: ScopedThreadPool<Vec<NotificationQueue<Task>>>,
+    pool: DropJoinThreadPool<Vec<NotificationQueue<Task>>>,
     waiters: Arc<Vec<Waiter>>,
     index: AtomicUsize,
     available_parallelism: usize,
-    thread_limit: usize,
 }
 
 impl Drop for PriorityTaskSystem {
@@ -40,39 +53,36 @@ impl Drop for PriorityTaskSystem {
 }
 
 impl PriorityTaskSystem {
+    /// Creates a new PriorityTaskSystem.
     pub fn new() -> Self {
         // SAFETY: We know 1 is not 0.
         let nonzero_available_parallelism = std::thread::available_parallelism().unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) });
         let available_parallelism = max(usize::from(nonzero_available_parallelism), 2) - 1;
         let thread_limit = max(9, available_parallelism * 4 + 1);
-        Self {
-            pool: ScopedThreadPool::new(42, move |i, queues| {
-                loop {
-                    let mut task: Option<Task> = None;
-                    for n in 0..available_parallelism {
-                        match task {
-                            Some(_) => { break } 
-                            _ => {
-                                task = queues.get((i + n) % available_parallelism).unwrap().try_pop();
-                            }
-                        }
-                    }
+        let queues = (0..available_parallelism).map(|_| { NotificationQueue::default() }).collect();
 
-                    if task.is_none() {
-                        let done: bool;
-                        (done, task) = queues.get(i).unwrap().pop();
-                        if done { break }
-                    }
+        let mut pool = DropJoinThreadPool::new(thread_limit, queues);
+        pool.spawn_n(move |i, queues| {
+            loop {
+                let mut task = Self::try_pop(queues, i, available_parallelism);
 
-                    if task.is_some() {
-                        task.unwrap()();
-                    }
+                if task.is_none() {
+                    let done: bool;
+                    (done, task) = queues.get(i).unwrap().pop();
+                    if done { break }
                 }
-            }, (0..available_parallelism).map(|_| { NotificationQueue::default() }).collect()),
+
+                if task.is_some() {
+                    task.unwrap()();
+                }
+            }
+        }, available_parallelism);
+
+        Self {
+            pool,
             waiters: Arc::new((0..(thread_limit - available_parallelism)).map(|_| { Waiter::default() }).collect()),
             index: AtomicUsize::new(0),
             available_parallelism,
-            thread_limit
         }
     }
 
@@ -89,37 +99,30 @@ impl PriorityTaskSystem {
             let i = self.index.fetch_add(1, MemoryOrdering::SeqCst);
             let n = self.available_parallelism;
 
+            // Attempt to push to a queue without blocking, starting with ours.
             for i in (i..i+n).map(|i| i % n) {
                 task = queues.get(i).unwrap().try_push(task.unwrap(), priority);
-                if task.is_none() { return }   
+                if task.is_none() { return } // An empty return means push was successful.
             }
 
+            // Otherwise, attempt to push to our queue, with blocking.
             queues.get(i % n).unwrap().push(task.unwrap(), priority);
         });
     }
 
+    /// Add a work-stealing thread to the scheduler to mitigate deadlock.
     pub fn add_thread(&mut self) {
         let waiters = self.waiters.clone();
-        let available_parallelism = self.available_parallelism;
-        self.pool.add_thread(move |i, queues|{
+        let n = self.available_parallelism;
+        self.pool.spawn(move |i, queues|{
             loop {
-                let mut task: Option<Task> = None;
-                for n in 0..available_parallelism {
-                    match task {
-                        Some(_) => { break } 
-                        _ => {
-                            task = queues.get((i + n) % available_parallelism).unwrap().try_pop()
-                        }
-                    }
-                }
-
-                if task.is_some() {
-                    task.unwrap()();
+                if let Some(task) = Self::try_pop(queues, i, n) {
+                    task();
                     continue;
                 }
 
                 // Note: The following means multiple threads may wait on a single `Waiter`.
-                if waiters[i - available_parallelism].wait() { break; }
+                if waiters[i - n].wait() { break; }
             } 
         });
     }
@@ -133,6 +136,19 @@ impl PriorityTaskSystem {
         if any_queue_woken { true }
         else { self.waiters.iter().any(|waiter| waiter.wake()) }
     }
+
+    /// Attempt to non-blockingly pop a task from each queue in the system, starting at index
+    /// `starting_at`.
+    fn try_pop(queues: &Vec<NotificationQueue<Task>>, starting_at: usize, modulo: usize) -> Option<Task> {
+        for i in (starting_at..starting_at+modulo).map(|i| i % modulo)  {
+            match queues.get(i).unwrap().try_pop() {
+                Some(t) => Some(t),
+                None => continue
+            };
+        }
+        None
+    }
+
 }
 
 unsafe impl Send for PriorityTaskSystem {}

@@ -1,30 +1,7 @@
 use crate::stlab::coarse_priority_queue::{Priority, CoarsePriorityQueue};
 
-/// The fields of `NotificationQueue` which must be protected by a `Mutex`.
-struct NotificationQueueProtectedData <T> {
-    queue: CoarsePriorityQueue<T>,
-    done: bool,
-    waiting: bool,
-}
-
-impl<T> std::default::Default for NotificationQueueProtectedData<T> {
-    fn default() -> Self {
-        Self {
-            queue: CoarsePriorityQueue::new(),
-            done: false,
-            waiting: false
-        }
-    }
-}
-
 /// A threadsafe priority queue.
 pub struct NotificationQueue<T> {
-    // In the C++ implementation, we use a single lock for multiple data fields.
-    // In Rust, we require exactly one mutex per protected field. 
-    // So, put protected fields into a separate struct, and lock on that.
-    // Note the transformation to use multiple locks is non-trivial, because 
-    // this would require the ordering of acquired locks to be identical in all
-    // code paths to prevent deadlock.
     protected: std::sync::Mutex<NotificationQueueProtectedData<T>>,
     ready: std::sync::Condvar,
 }
@@ -112,3 +89,20 @@ impl<T> NotificationQueue<T> {
 
 unsafe impl <T> Send for NotificationQueue<T> {}
 unsafe impl <T> Sync for NotificationQueue<T> {}
+
+/// The fields of `NotificationQueue` which must be protected by a `Mutex`.
+struct NotificationQueueProtectedData <T> {
+    queue: CoarsePriorityQueue<T>,
+    done: bool,
+    waiting: bool,
+}
+
+impl<T> std::default::Default for NotificationQueueProtectedData<T> {
+    fn default() -> Self {
+        Self {
+            queue: CoarsePriorityQueue::new(),
+            done: false,
+            waiting: false
+        }
+    }
+}

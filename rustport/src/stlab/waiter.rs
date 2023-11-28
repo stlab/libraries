@@ -2,12 +2,6 @@ use std::sync::Mutex;
 
 // REVISIT: It may be wise to reimplement this in terms of std::thread::park.
 
-/// The fields of `Waiter` which must be protected by a `Mutex`.
-struct WaiterProtectedData {
-    waiting: bool,
-    done: bool,
-}
-
 /// A utility for suspending a thread using a condition variable.
 pub struct Waiter {
     protected: Mutex<WaiterProtectedData>,
@@ -73,3 +67,9 @@ impl Waiter {
 
 unsafe impl Send for Waiter {}
 unsafe impl Sync for Waiter {}
+
+/// The fields of `Waiter` which must be protected by a `Mutex`.
+struct WaiterProtectedData {
+    waiting: bool,
+    done: bool,
+}
