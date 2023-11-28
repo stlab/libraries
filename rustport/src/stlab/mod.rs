@@ -20,10 +20,10 @@ pub type Task = Box<dyn FnOnce() -> () + Send>;
 
 /// A portable work-stealing task scheduler with three priorities.
 ///
-/// By default, this scheduler spins up a number of threads corresponding to the amount of
-/// parallelism available on the target platform, namely, std::thread::available_parallelism() - 1.
-/// Each thread is assigned a threadsafe priority queue. To reduce contention on push and pop
-/// operations, a thread will first attempt to acquire the lock for its own queue without blocking.
+/// This scheduler spins up a number of threads corresponding to the amount of parallelism available
+/// on the target platform, namely, std::thread::available_parallelism() - 1. Each thread is
+/// assigned a threadsafe priority queue. To reduce contention on push and pop operations, a thread 
+/// will first attempt to acquire the lock for its own queue without blocking.
 /// If that fails, it will attempt the same non-blocking push/pop for each other priority queue in
 /// the scheduler. Finally, if each of those attempts also fail, the thread will attempt a blocking
 /// push/pop on its own priority queue.

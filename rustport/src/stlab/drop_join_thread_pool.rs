@@ -6,6 +6,8 @@ use std::{io::Write, thread::JoinHandle};
 /// threads. As such, it must be Send + Sync, and 'static (having no non-static references). When
 /// tasks in this pool are spawned, they are passed an immutable reference to said object (there is
 /// no way to acquire a mutable reference).
+/// 
+/// If a thread panics, the panic will be propagated while dropping this pool.
 ///
 /// Note: it remains to be seen if it is possible (or useful) to loosen the 'static requirement here
 /// to instead allow any lifetimes which do not outlive this pool. Early attempts at this polluted
@@ -21,9 +23,14 @@ pub struct DropJoinThreadPool<T: Default + Send + Sync + 'static> {
 
 impl<T: Default + Send + Sync + 'static> Drop for DropJoinThreadPool<T> {
     /// Join all spawned threads, and drop `data` manually.
+    /// 
+    /// If a thread in the pool paniced, that panic will propagate here.
     fn drop(&mut self) {
         for thread in std::mem::take(&mut self.threads) {
-            let _ = thread.join(); // TODO handle error? what's the rule for drop?
+            match thread.join() {
+                Ok(..) => continue,
+                Err(e) => std::panic::resume_unwind(e)
+            }
         }
 
         // SAFETY: We only call from_raw once, in this `drop`. We do not permit copies of this
