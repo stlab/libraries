@@ -9,7 +9,6 @@
 
 // Configuration generated from CMake
 
-#cmakedefine STLAB_USE_BOOST_CPP17_SHIMS
 #cmakedefine STLAB_NO_STD_COROUTINES
 
 #define STLAB_THREADS(X) (STLAB_THREADS_##X())

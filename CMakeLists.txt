@@ -18,8 +18,6 @@ cmake_dependent_option( stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
   OFF PROJECT_IS_TOP_LEVEL OFF )
 
-stlab_check_disfunctional_variant_optional(STLAB_DEFAULT_USE_BOOST_CPP17_SHIMS)
-option( STLAB_USE_BOOST_CPP17_SHIMS "Use variant and optional from Boost instead of std. Useful for non-conforming compilers." ${STLAB_DEFAULT_USE_BOOST_CPP17_SHIMS} )
 stlab_check_disfunctional_coroutines(STLAB_DEFAULT_NO_STD_COROUTINES)
 option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES} )
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
@@ -33,10 +31,6 @@ set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main execut
 
 if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
-endif()
-
-if( STLAB_USE_BOOST_CPP17_SHIMS AND NOT Boost_FOUND )
-  message( SEND_ERROR "STLAB_USE_BOOST_CPP17_SHIMS is enabled, but a Boost installation was not found." )
 endif()
 
 if( (NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND )
@@ -89,10 +83,6 @@ target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> 
 
 add_subdirectory( stlab )
 
-if ( STLAB_USE_BOOST_CPP17_SHIMS )
-  target_link_libraries( stlab INTERFACE Boost::boost )
-endif()
-
 if ( NOT STLAB_THREAD_SYSTEM STREQUAL "none"  )
   target_link_libraries( stlab INTERFACE Threads::Threads )
 endif()
@@ -112,8 +102,6 @@ elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt5")
 elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt6")
   target_link_libraries( stlab INTERFACE Qt6::Core )
 endif()
-
-
 
 message(STATUS "stlab: Use Boost C++17 Shims: ${STLAB_USE_BOOST_CPP17_SHIMS}")
 message(STATUS "stlab: Disable Coroutines: ${STLAB_DEFAULT_NO_STD_COROUTINES}")
