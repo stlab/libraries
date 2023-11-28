@@ -142,11 +142,11 @@ impl PriorityTaskSystem {
     fn try_pop(queues: &Vec<NotificationQueue<Task>>, starting_at: usize, modulo: usize) -> Option<Task> {
         for i in (starting_at..starting_at+modulo).map(|i| i % modulo)  {
             match queues.get(i).unwrap().try_pop() {
-                Some(t) => Some(t),
+                Some(t) => { return Some(t) }
                 None => continue
             };
         }
-        None
+        return None;
     }
 
 }
