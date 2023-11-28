@@ -118,7 +118,7 @@ if ( BUILD_TESTING )
   #
   add_library( testing INTERFACE )
   add_library( stlab::testing ALIAS testing )
-  
+
   #
   # CMake targets linking to the stlab::testing target will (transitively)
   # link to the Boost::unit_test_framework and to stlab::stlab target.
