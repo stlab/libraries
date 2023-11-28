@@ -1,4 +1,4 @@
-use std::{thread::JoinHandle, io::Write};
+use std::{io::Write, thread::JoinHandle};
 
 /// A thread pool which joins all spawned threads when dropped.
 ///
@@ -16,11 +16,10 @@ pub struct DropJoinThreadPool<T: Default + Send + Sync + 'static> {
     threads: Vec<JoinHandle<()>>,
     // SAFETY: We store this pointer as a `*mut` so it can be dropped via Box::from_raw, but
     // we only ever hand out immutable references to the pointee.
-    data: *mut T
+    data: *mut T,
 }
 
-impl <T: Default + Send + Sync + 'static> Drop for DropJoinThreadPool <T> {
-
+impl<T: Default + Send + Sync + 'static> Drop for DropJoinThreadPool<T> {
     /// Join all spawned threads, and drop `data` manually.
     fn drop(&mut self) {
         for thread in std::mem::take(&mut self.threads) {
@@ -33,14 +32,13 @@ impl <T: Default + Send + Sync + 'static> Drop for DropJoinThreadPool <T> {
     }
 }
 
-impl <T: Default + Send + Sync + 'static> DropJoinThreadPool <T> {
-
+impl<T: Default + Send + Sync + 'static> DropJoinThreadPool<T> {
     /// Creates a new `DropJoinThreadPool` with a maximum thread capacity of `thread_limit`, moving
     /// `data` onto the heap.
     pub fn new(thread_limit: usize, data: T) -> Self {
         Self {
             threads: Vec::<JoinHandle<()>>::with_capacity(thread_limit),
-            data: Box::into_raw(Box::new(data))
+            data: Box::into_raw(Box::new(data)),
         }
     }
 
@@ -66,7 +64,7 @@ impl <T: Default + Send + Sync + 'static> DropJoinThreadPool <T> {
             let f = f.clone();
             // SAFETY: We only hand out immutable references to this data.
             let data: &T = unsafe { &*self.data };
-            std::thread::spawn(move||{
+            std::thread::spawn(move || {
                 f(i, data);
             })
         }));

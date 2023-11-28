@@ -6,12 +6,12 @@ pub struct CoarsePriorityQueue<T> {
     count: usize,
 }
 
-impl <T> CoarsePriorityQueue<T> {
+impl<T> CoarsePriorityQueue<T> {
     /// Creates a new, empty `CoarsePriorityQueue`.
     pub fn new() -> Self {
         Self {
             inner: std::collections::BinaryHeap::new(),
-            count: 0
+            count: 0,
         }
     }
 
@@ -22,14 +22,15 @@ impl <T> CoarsePriorityQueue<T> {
 
     /// Removes the greatest item from the queue at returns it, or None if it is empty.
     pub fn pop(&mut self) -> Option<T> {
-        self.inner.pop().and_then(|prioritized| {
-            Some(prioritized.take_inner())
-        })
+        self.inner
+            .pop()
+            .and_then(|prioritized| Some(prioritized.take_inner()))
     }
 
     /// Pushes an item onto the queue at the given `priority`.
     pub fn push(&mut self, item: T, priority: Priority) {
-        self.inner.push(Prioritized::new(item, priority, self.count));
+        self.inner
+            .push(Prioritized::new(item, priority, self.count));
         self.count += 1;
     }
 }
@@ -38,9 +39,9 @@ impl <T> CoarsePriorityQueue<T> {
 #[derive(Eq, PartialEq, Copy, Clone)]
 #[repr(C)]
 pub enum Priority {
-    Low, 
-    Default, 
-    High
+    Low,
+    Default,
+    High,
 }
 
 /// Use of `Priority` and `Prioritized` requires the client maintain a nondecreasing count which
@@ -58,7 +59,7 @@ impl Priority {
         match self {
             Priority::Low => 0 << usize::BITS - 2,
             Priority::Default => 1 << usize::BITS - 2,
-            Priority::High => 2 << usize::BITS - 2
+            Priority::High => 2 << usize::BITS - 2,
         }
     }
 
@@ -70,22 +71,24 @@ impl Priority {
 
 impl PartialOrd for Priority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.highbit_mask().partial_cmp(&other.highbit_mask()) 
+        self.highbit_mask().partial_cmp(&other.highbit_mask())
     }
 }
 
-/// Pairs an instance of `T` with a `Priority`. 
+/// Pairs an instance of `T` with a `Priority`.
 /// Equality and ordering of a Prioritized<T> only considers `priority`, and disregards `inner`.
 struct Prioritized<T> {
     inner: T,
-    priority: usize
+    priority: usize,
 }
 
-impl <T> Prioritized<T> {
-
+impl<T> Prioritized<T> {
     /// Precondition: count must be less than 2,305,843,009,213,693,951.
     pub fn new(inner: T, priority: Priority, count: usize) -> Self {
-        Prioritized { inner, priority: priority.merge_priority_count(count) }
+        Prioritized {
+            inner,
+            priority: priority.merge_priority_count(count),
+        }
     }
 
     pub fn take_inner(self) -> T {
@@ -93,23 +96,23 @@ impl <T> Prioritized<T> {
     }
 }
 
-impl<T> PartialEq for Prioritized <T> {
+impl<T> PartialEq for Prioritized<T> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.priority == other.priority
     }
 }
 
-impl <T> Eq for Prioritized <T> {}
+impl<T> Eq for Prioritized<T> {}
 
-impl<T> PartialOrd for Prioritized <T> {
+impl<T> PartialOrd for Prioritized<T> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.priority.partial_cmp(&other.priority)
     }
 }
 
-impl<T> Ord for Prioritized <T> {
+impl<T> Ord for Prioritized<T> {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.priority.cmp(&other.priority)

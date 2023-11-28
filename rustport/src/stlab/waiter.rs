@@ -10,20 +10,19 @@ pub struct Waiter {
 
 impl Default for Waiter {
     fn default() -> Self {
-        Waiter::new() 
+        Waiter::new()
     }
 }
 
 impl Waiter {
-
-    /// Constructs a new Waiter, with `waiting` and `done` set to `false`. 
+    /// Constructs a new Waiter, with `waiting` and `done` set to `false`.
     pub fn new() -> Self {
         Self {
             protected: Mutex::new(WaiterProtectedData {
                 waiting: false,
                 done: false,
             }),
-            ready: std::sync::Condvar::new()
+            ready: std::sync::Condvar::new(),
         }
     }
 

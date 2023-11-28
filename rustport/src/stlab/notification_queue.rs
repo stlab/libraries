@@ -1,4 +1,4 @@
-use crate::stlab::coarse_priority_queue::{Priority, CoarsePriorityQueue};
+use crate::stlab::coarse_priority_queue::{CoarsePriorityQueue, Priority};
 
 /// A threadsafe priority queue.
 pub struct NotificationQueue<T> {
@@ -16,13 +16,12 @@ impl<T> std::default::Default for NotificationQueue<T> {
 }
 
 impl<T> NotificationQueue<T> {
-
     /// Try to pop from the queue without blocking.
     /// Returns `None` if our mutex is already locked or if the queue is empty.
     pub fn try_pop(&self) -> Option<T> {
         if let Ok(ref mut this) = self.protected.try_lock() {
             return this.queue.pop();
-        } 
+        }
         return None;
     }
 
@@ -49,7 +48,7 @@ impl<T> NotificationQueue<T> {
         this.waiting = false;
         if this.queue.is_empty() {
             return (this.done, None);
-        } 
+        }
         return (false, this.queue.pop());
     }
 
@@ -70,7 +69,7 @@ impl<T> NotificationQueue<T> {
         } else {
             return Some(element);
         }
-        
+
         // We successfully locked the mutex, did our push, and released the lock.
         self.ready.notify_one();
         return None;
@@ -87,11 +86,11 @@ impl<T> NotificationQueue<T> {
     }
 }
 
-unsafe impl <T> Send for NotificationQueue<T> {}
-unsafe impl <T> Sync for NotificationQueue<T> {}
+unsafe impl<T> Send for NotificationQueue<T> {}
+unsafe impl<T> Sync for NotificationQueue<T> {}
 
 /// The fields of `NotificationQueue` which must be protected by a `Mutex`.
-struct NotificationQueueProtectedData <T> {
+struct NotificationQueueProtectedData<T> {
     queue: CoarsePriorityQueue<T>,
     done: bool,
     waiting: bool,
@@ -102,7 +101,7 @@ impl<T> std::default::Default for NotificationQueueProtectedData<T> {
         Self {
             queue: CoarsePriorityQueue::new(),
             done: false,
-            waiting: false
+            waiting: false,
         }
     }
 }

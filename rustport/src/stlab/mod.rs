@@ -1,7 +1,7 @@
 use std::cmp::max;
 use std::num::NonZeroUsize;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering as MemoryOrdering};
+use std::sync::Arc;
 
 mod coarse_priority_queue;
 pub use coarse_priority_queue::Priority;
@@ -16,7 +16,7 @@ pub mod notification_queue;
 use notification_queue::NotificationQueue;
 
 /// A type-erased, heap-allocated function object.
-pub type Task = Box<dyn FnOnce()->() + Send>;
+pub type Task = Box<dyn FnOnce() -> () + Send>;
 
 /// A portable work-stealing task scheduler with three priorities.
 ///
@@ -56,31 +56,42 @@ impl PriorityTaskSystem {
     /// Creates a new PriorityTaskSystem.
     pub fn new() -> Self {
         // SAFETY: We know 1 is not 0.
-        let nonzero_available_parallelism = std::thread::available_parallelism().unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) });
+        let nonzero_available_parallelism = std::thread::available_parallelism()
+            .unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) });
         let available_parallelism = max(usize::from(nonzero_available_parallelism), 2) - 1;
         let thread_limit = max(9, available_parallelism * 4 + 1);
-        let queues = (0..available_parallelism).map(|_| { NotificationQueue::default() }).collect();
+        let queues = (0..available_parallelism)
+            .map(|_| NotificationQueue::default())
+            .collect();
 
         let mut pool = DropJoinThreadPool::new(thread_limit, queues);
-        pool.spawn_n(move |i, queues| {
-            loop {
+
+        pool.spawn_n(
+            move |i, queues| loop {
                 let mut task = Self::try_pop(queues, i, available_parallelism);
 
                 if task.is_none() {
                     let done: bool;
                     (done, task) = queues.get(i).unwrap().pop();
-                    if done { break }
+                    if done {
+                        break;
+                    }
                 }
 
                 if task.is_some() {
                     task.unwrap()();
                 }
-            }
-        }, available_parallelism);
+            },
+            available_parallelism,
+        );
 
         Self {
             pool,
-            waiters: Arc::new((0..(thread_limit - available_parallelism)).map(|_| { Waiter::default() }).collect()),
+            waiters: Arc::new(
+                (0..(thread_limit - available_parallelism))
+                    .map(|_| Waiter::default())
+                    .collect(),
+            ),
             index: AtomicUsize::new(0),
             available_parallelism,
         }
@@ -89,7 +100,10 @@ impl PriorityTaskSystem {
     /// Push `f` to the first queue in `queues` whose mutex is not under contention.
     /// If no such queue is found after a single pass, blockingly push `f` to one queue.
     // REVIEW: I'm not sure `execute` is a good name. I think we want `push`, or `push_with_priority`.
-    pub fn execute<F>(&self, f: F, p: Priority) where F: FnOnce() -> () + Send + 'static {
+    pub fn execute<F>(&self, f: F, p: Priority)
+    where
+        F: FnOnce() -> () + Send + 'static,
+    {
         self.execute_task(Box::new(f), p)
     }
 
@@ -100,9 +114,11 @@ impl PriorityTaskSystem {
             let n = self.available_parallelism;
 
             // Attempt to push to a queue without blocking, starting with ours.
-            for i in (i..i+n).map(|i| i % n) {
+            for i in (i..i + n).map(|i| i % n) {
                 task = queues.get(i).unwrap().try_push(task.unwrap(), priority);
-                if task.is_none() { return } // An empty return means push was successful.
+                if task.is_none() {
+                    return;
+                } // An empty return means push was successful.
             }
 
             // Otherwise, attempt to push to our queue, with blocking.
@@ -114,7 +130,7 @@ impl PriorityTaskSystem {
     pub fn add_thread(&mut self) {
         let waiters = self.waiters.clone();
         let n = self.available_parallelism;
-        self.pool.spawn(move |i, queues|{
+        self.pool.spawn(move |i, queues| {
             loop {
                 if let Some(task) = Self::try_pop(queues, i, n) {
                     task();
@@ -122,33 +138,41 @@ impl PriorityTaskSystem {
                 }
 
                 // Note: The following means multiple threads may wait on a single `Waiter`.
-                if waiters[i - n].wait() { break; }
-            } 
+                if waiters[i - n].wait() {
+                    break;
+                }
+            }
         });
     }
 
     // Returns true if any thread was woken.
     pub fn wake(&self) -> bool {
-        let any_queue_woken = self.pool.execute_immediately(|queues| {
-            return queues.iter().any(|queue| queue.wake())
-        });
+        let any_queue_woken = self
+            .pool
+            .execute_immediately(|queues| return queues.iter().any(|queue| queue.wake()));
 
-        if any_queue_woken { true }
-        else { self.waiters.iter().any(|waiter| waiter.wake()) }
+        if any_queue_woken {
+            true
+        } else {
+            self.waiters.iter().any(|waiter| waiter.wake())
+        }
     }
 
     /// Attempt to non-blockingly pop a task from each queue in the system, starting at index
     /// `starting_at`.
-    fn try_pop(queues: &Vec<NotificationQueue<Task>>, starting_at: usize, modulo: usize) -> Option<Task> {
-        for i in (starting_at..starting_at+modulo).map(|i| i % modulo)  {
+    fn try_pop(
+        queues: &Vec<NotificationQueue<Task>>,
+        starting_at: usize,
+        modulo: usize,
+    ) -> Option<Task> {
+        for i in (starting_at..starting_at + modulo).map(|i| i % modulo) {
             match queues.get(i).unwrap().try_pop() {
-                Some(t) => { return Some(t) }
-                None => continue
+                Some(t) => return Some(t),
+                None => continue,
             };
         }
         return None;
     }
-
 }
 
 unsafe impl Send for PriorityTaskSystem {}
