@@ -36,8 +36,7 @@ impl Waiter {
     }
 
     /// Sets waiting to `false`. If waiting was `true`, wake one waiter and return `true`. Otherwise, return `false`.
-    /// If `try_lock` fails, return `false`. (REVIEW: why?)
-    /// (REVIEW: is it redundant to express that `waiting` and `done` are accesed under a mutex?)
+    /// If `try_lock` fails, return `false`.
     pub fn wake(&self) -> bool {
         if let Ok(ref mut this) = self.protected.try_lock() {
             if !this.waiting {

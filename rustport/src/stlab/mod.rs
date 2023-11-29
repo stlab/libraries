@@ -99,7 +99,6 @@ impl PriorityTaskSystem {
 
     /// Push `f` to the first queue in `queues` whose mutex is not under contention.
     /// If no such queue is found after a single pass, blockingly push `f` to one queue.
-    // REVIEW: I'm not sure `execute` is a good name. I think we want `push`, or `push_with_priority`.
     pub fn execute<F>(&self, f: F, p: Priority)
     where
         F: FnOnce() -> () + Send + 'static,
