@@ -106,13 +106,15 @@ impl PriorityTaskSystem {
         self.execute_task(Box::new(f), p)
     }
 
+    /// Push `task` to the first queue in `queues` whose mutex is not under contention.
+    /// If no such queue is found after a single pass, blockingly push `task` to one queue.
     pub fn execute_task(&self, task: Task, priority: Priority) {
         self.pool.execute_immediately(|queues| {
             let mut task: Option<Task> = Some(task);
             let i = self.index.fetch_add(1, MemoryOrdering::SeqCst);
             let n = self.available_parallelism;
 
-            // Attempt to push to a queue without blocking, starting with ours.
+            // Attempt to push to each queue without blocking.
             for i in (i..i + n).map(|i| i % n) {
                 task = queues.get(i).unwrap().try_push(task.unwrap(), priority);
                 if task.is_none() {
@@ -120,7 +122,7 @@ impl PriorityTaskSystem {
                 } // An empty return means push was successful.
             }
 
-            // Otherwise, attempt to push to our queue, with blocking.
+            // Otherwise, attempt to blockingly push to one queue.
             queues.get(i % n).unwrap().push(task.unwrap(), priority);
         });
     }
