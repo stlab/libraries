@@ -1,8 +1,9 @@
 ---
 layout: page
 title: Chat
-tab: Chat
 permalink: /chat/
+hyde:
+  tab: Chat
 ---
 
 For video chats use the Google Hangout below (requires a Google account).

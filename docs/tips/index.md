@@ -1,8 +1,9 @@
 ---
 title: Tips
 layout: page
-tab: Tips
-icon: thumb-tack
+hyde:
+  tab: Tips
+  icon: thumb-tack
 ---
 
 From time to time I've posted programming tips (often these have been internal emails), blog posts, or other short form writings. I'm gathering ones that might be of general interest here, updating them in the process.

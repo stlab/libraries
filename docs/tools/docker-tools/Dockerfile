@@ -69,7 +69,7 @@ RUN (eval "$(rbenv init -)"; \
     rbenv install `cat .ruby-version`; \
     gem install bundler; \
     rbenv rehash; \
-    bundle install)
+    bundle install --frozen)
 
 WORKDIR /home/app
 

@@ -36,7 +36,7 @@ echo $RUBY_VERSION > ./docs/.ruby-version
 # build the base image, no-cache is used so the latest tools are installed
 docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile --target base --tag $VOLUME . --no-cache
 
-# update the docs environment
+# update the docs environment (see below for using local theme)
 docker run --mount type=bind,source="$(pwd)",target=/mnt/host --tty --interactive $VOLUME bash
 ```
 
@@ -97,7 +97,10 @@ docker ps
 docker exec -it <container id> bash
 ```
 
-To test a local copy of the Jekyll theme, edit the Gemfile and use:
+To test a local copy of the Jekyll theme
+
+Edit Gemfile
+Edit _config.yml
 
 ```
 docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
