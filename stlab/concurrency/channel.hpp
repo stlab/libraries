@@ -15,6 +15,7 @@
 #include <cassert>
 #include <chrono>
 #include <deque>
+#include <exception>
 #include <memory>
 #include <mutex>
 #include <numeric>

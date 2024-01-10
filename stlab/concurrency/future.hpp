@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cassert>
+#include <exception>
 #include <initializer_list>
 #include <memory>
 #include <mutex>

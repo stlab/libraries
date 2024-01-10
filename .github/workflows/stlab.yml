@@ -21,6 +21,7 @@ jobs:
         run: echo "::set-output name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)"
 
   builds:
+    # installed tools and runners can be found here: https://github.com/actions/runner-images
     needs: generate-matrix
     runs-on: ${{ matrix.config.os }}
     strategy:
