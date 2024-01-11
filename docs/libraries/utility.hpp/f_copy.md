@@ -1,23 +1,30 @@
 ---
 layout: function
 title: copy
-owner: sean-parent
-brief: Returns a copy of the argument
-tags:
-  - function
-defined_in_file: utility.hpp
-overloads:
-  "template <typename T>\nT copy(const T &)":
-    arguments:
-      - description: __OPTIONAL__
-        name: a
-        type: const T &
-    description: __OPTIONAL__
-    return: __OPTIONAL__
-    signature_with_names: "template <typename T>\nT copy(const T & a)"
-namespace:
-  - stlab
-  - v1
+hyde:
+  owner: sean-parent
+  brief: Returns a copy of the argument
+  tags:
+    - function
+  inline:
+    brief:
+      - Returns a copy of the argument. Used to pass an lvalue to function taking an rvalue or to copy a type with an `explicit` copy-constructor.
+  defined_in_file: utility.hpp
+  overloads:
+    "template <typename T>\nconstexpr std::decay_t<T> copy(T &&)":
+      arguments:
+        - description: __OPTIONAL__
+          name: value
+          type: T &&
+      description: __INLINED__
+      inline:
+        description:
+          - Returns a copy of the argument. Used to pass an lvalue to function taking an rvalue or to copy a type with an `explicit` copy-constructor.
+      return: __OPTIONAL__
+      signature_with_names: "template <typename T>\nconstexpr std::decay_t<T> copy(T && value)"
+  namespace:
+    - stlab
+    - v1
 ---
 
 Useful for functions that only take an rvalue reference or that have an explicit copy constructor.

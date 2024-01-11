@@ -13,6 +13,7 @@
 #endif
 
 #include <queue>
+
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>

@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(task_argument_test) {
         const regular b{42};
         t(b);           // const lvalue->value
     }
-    
+
     // These test mismatched task signature to lambda signature
     {
         task<void(const regular&)> t([](regular a) {

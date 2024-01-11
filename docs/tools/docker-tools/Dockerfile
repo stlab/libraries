@@ -11,15 +11,17 @@ RUN apt-get update && apt-get install -y \
     git \
     libreadline-dev \
     make \
+    nodejs \
     npm \
     rbenv \
     wget \
-    zlib1g-dev \
-    patch \
-&& rm -rf /var/lib/apt/lists/*
+    zlib1g-dev
+
+RUN apt-get install -y libyaml-dev
 
 RUN npm install -g n
-RUN n latest
+# Turn off XZ compression because 20.5.1 had a broken link
+RUN export N_USE_XZ=0; n latest
 
 RUN npm install -g npm@latest
 RUN npm install -g browser-sync
@@ -67,7 +69,7 @@ RUN (eval "$(rbenv init -)"; \
     rbenv install `cat .ruby-version`; \
     gem install bundler; \
     rbenv rehash; \
-    bundle install)
+    bundle install --frozen)
 
 WORKDIR /home/app
 

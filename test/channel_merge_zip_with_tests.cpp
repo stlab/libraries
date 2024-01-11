@@ -274,8 +274,8 @@ BOOST_FIXTURE_TEST_CASE(int_zip_with_channel_2_different_type_void_functor_async
     std::atomic_int result{0};
 
     auto check = stlab::zip(stlab::default_executor, receive<0>(), receive<1>()) |
-        [&](std::tuple<int, std::string> v) { 
-            result += std::get<0>(v) + static_cast<int>(std::get<1>(v).size()); 
+        [&](std::tuple<int, std::string> v) {
+            result += std::get<0>(v) + static_cast<int>(std::get<1>(v).size());
         };
 
     receive<0>().set_ready();

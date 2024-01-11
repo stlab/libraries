@@ -28,10 +28,10 @@ using namespace future_test_helper;
 BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue) {
     BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on r-value");
-    
-    /* 
+
+    /*
     combining the tests as in future_then_tests is not possible because of a bug in gcc
-    
+
     using task_t = function<void(future<void>)>;
     using op_t = future<void>(future<void>::*)(task_t&&)&&;
 

@@ -1,14 +1,15 @@
 ---
 layout: library
 title: API Documentation
-owner: fbrereto
-brief: The stlab libraries
-tags:
-  - library
-library-type: library
-icon: book
-short_title: __OPTIONAL__
-tab: API Docs
+hyde:
+  owner: fbrereto
+  brief: The stlab libraries
+  tags:
+    - library
+  library-type: library
+  icon: book
+  short_title: __OPTIONAL__
+  tab: API Docs
 ---
 
 ### Source Code

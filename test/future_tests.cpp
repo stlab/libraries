@@ -47,7 +47,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
 
         annotate_counters counters;
-        (void)async(immediate_executor, [](annotate) {}, annotate(counters));
+        (void)async(
+            immediate_executor, [](annotate) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -57,7 +58,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](annotate) {}, x);
+        (void)async(
+            immediate_executor, [](annotate) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -67,7 +69,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](annotate) {}, std::ref(x));
+        (void)async(
+            immediate_executor, [](annotate) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -77,7 +80,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](annotate) {}, std::cref(x));
+        (void)async(
+            immediate_executor, [](annotate) {}, std::cref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -109,7 +113,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](annotate&) {}, std::ref(x));
+        (void)async(
+            immediate_executor, [](annotate&) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -131,7 +136,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> const&");
 
         annotate_counters counters;
-        (void)async(immediate_executor, [](const annotate&) {}, annotate(counters));
+        (void)async(
+            immediate_executor, [](const annotate&) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -141,7 +147,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](const annotate&) {}, x);
+        (void)async(
+            immediate_executor, [](const annotate&) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -151,7 +158,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](const annotate&) {}, std::ref(x));
+        (void)async(
+            immediate_executor, [](const annotate&) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -161,7 +169,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](const annotate&) {}, std::cref(x));
+        (void)async(
+            immediate_executor, [](const annotate&) {}, std::cref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -170,7 +179,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &&");
 
         annotate_counters counters;
-        (void)async(immediate_executor, [](annotate&&) {}, annotate(counters));
+        (void)async(
+            immediate_executor, [](annotate&&) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -180,7 +190,8 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(immediate_executor, [](annotate&&) {}, x);
+        (void)async(
+            immediate_executor, [](annotate&&) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -247,7 +258,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters,
 
     test_setup setup;
     {
-        auto sut = async(make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
+        auto sut = async(
+            make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.exception());
 
@@ -265,8 +277,7 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
 
     test_setup setup;
     {
-        auto sut =
-            async(make_executor<0>(), []() -> v1::move_only { return v1::move_only{42}; });
+        auto sut = async(make_executor<0>(), []() -> v1::move_only { return v1::move_only{42}; });
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.exception());
 
@@ -377,16 +388,18 @@ BOOST_FIXTURE_TEST_SUITE(future_then_void, test_fixture<int>)
 BOOST_AUTO_TEST_CASE(future_get_try_refref) {
     BOOST_TEST_MESSAGE("future get_try()&& accessor test");
 
-    sut = async(default_executor, [] { return 42; })
-              .then([](int) -> int { throw test_exception("failure"); })
-              .recover([](auto&& f) {
-                  try {
-                      std::forward<decltype(f)>(f).get_try();
-                      return 0;
-                  } catch (const test_exception&) {
-                      return 42;
-                  }
-              });
+    sut = async(default_executor, [] {
+              return 42;
+          }).then([](int) -> int {
+                throw test_exception("failure");
+            }).recover([](auto&& f) {
+        try {
+            std::forward<decltype(f)>(f).get_try();
+            return 0;
+        } catch (const test_exception&) {
+            return 42;
+        }
+    });
 
     wait_until_future_completed(sut);
     BOOST_REQUIRE_EQUAL(42, *sut.get_try());
@@ -436,9 +449,7 @@ BOOST_AUTO_TEST_CASE(future_wait_void_with_timeout) {
 
 BOOST_AUTO_TEST_CASE(future_wait_void_with_timeout_reached) {
     BOOST_TEST_MESSAGE("future wait with void with a timeout");
-    auto answer = [&] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    };
+    auto answer = [&] { std::this_thread::sleep_for(std::chrono::milliseconds(500)); };
 
     stlab::future<void> f = stlab::async(stlab::default_executor, answer);
     f = stlab::await_for(std::move(f), std::chrono::milliseconds(100));
@@ -579,7 +590,8 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
     bool check = true;
     {
         auto p = package<move_only()>(immediate_executor, [] { return move_only{42}; });
-        auto r = std::move(p.second).then([a = annotate(counter), &_check = check](auto&&) { _check = false; });
+        auto r = std::move(p.second).then(
+            [a = annotate(counter), &_check = check](auto&&) { _check = false; });
         r.detach();
     }
     std::cout << counter;
@@ -602,14 +614,14 @@ BOOST_AUTO_TEST_CASE(future_void_detach_without_execution) {
     BOOST_REQUIRE(check);
 }
 
-
 BOOST_AUTO_TEST_CASE(future_int_detach_with_execution) {
     BOOST_TEST_MESSAGE("future int detach with execution");
     annotate_counters counter;
     int result = 0;
     {
         auto p = package<int()>(stlab::immediate_executor, [] { return 42; });
-        p.second.then([a = stlab::annotate(counter), &_result = result](int x) { _result = x; }).detach();
+        p.second.then([a = stlab::annotate(counter), &_result = result](int x) { _result = x; })
+            .detach();
         p.first();
     }
     std::cout << counter;
@@ -624,7 +636,8 @@ BOOST_AUTO_TEST_CASE(future_void_detach_with_execution) {
     bool check = false;
     {
         auto p = package<void()>(stlab::immediate_executor, [] {});
-        p.second.then([a = stlab::annotate(counter), &_check = check]() { _check = true; }).detach();
+        p.second.then([a = stlab::annotate(counter), &_check = check]() { _check = true; })
+            .detach();
         p.first();
     }
     std::cout << counter;
@@ -639,7 +652,8 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_with_execution) {
     int result = 0;
     {
         auto p = package<move_only()>(stlab::immediate_executor, [] { return move_only{42}; });
-        auto r = std::move(p.second).then([a = stlab::annotate(counter), &_result = result](auto&& x) { _result = x.member(); });
+        auto r = std::move(p.second).then(
+            [a = stlab::annotate(counter), &_result = result](auto&& x) { _result = x.member(); });
         r.detach();
         p.first();
     }
@@ -671,9 +685,7 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_void_task) {
     BOOST_TEST_MESSAGE("future reduction with mutable task");
 
     std::atomic_int check{0};
-    auto func = [&check]() mutable {
-        ++check;
-    };
+    auto func = [&check]() mutable { ++check; };
 
     auto result = stlab::async(stlab::default_executor, [func = std::move(func)]() mutable {
         func();
@@ -724,4 +736,31 @@ BOOST_AUTO_TEST_CASE(future_reduction_with_move_only_mutable_void_task) {
     static_cast<void>(stlab::await(std::move(result)));
 
     BOOST_REQUIRE_EQUAL(3, check);
+}
+
+BOOST_AUTO_TEST_CASE(future_reduction_executor) {
+    BOOST_TEST_MESSAGE("future reduction executor should propagate from outermost future");
+
+    size_t outer_count{0};
+    size_t inner_count{0};
+    auto outer_executor{[&](auto&& f) {
+        ++outer_count;
+        std::forward<decltype(f)>(f)();
+    }};
+    auto inner_executor{[&](auto&& f) {
+        ++inner_count;
+        std::forward<decltype(f)>(f)();
+    }};
+
+    auto f = make_ready_future(5, outer_executor) |
+             [&](int x) { return make_ready_future(x, inner_executor); };
+
+    BOOST_REQUIRE_EQUAL(1, outer_count);
+    BOOST_REQUIRE_EQUAL(0, inner_count);
+
+    auto f1 = f | [](int x) { return x; };
+
+    BOOST_REQUIRE_EQUAL(2, outer_count);
+    BOOST_REQUIRE_EQUAL(0, inner_count);
+    BOOST_REQUIRE_EQUAL(5, *f1.get_try());
 }

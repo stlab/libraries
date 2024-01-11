@@ -1,16 +1,23 @@
 ---
 layout: method
 title: size
-owner: fosterbrereton
-brief: Compute the number of nodes
-tags:
-  - method
-defined_in_file: forest.hpp
-overloads:
-  stlab::forest::size_type size() const:
-    description: __OPTIONAL__
-    return: __OPTIONAL__
-    signature_with_names: stlab::forest::size_type size() const
+hyde:
+  owner: fosterbrereton
+  brief: Compute the number of nodes
+  tags:
+    - method
+  inline:
+    brief:
+      - "***********************************************************************************************"
+  defined_in_file: forest.hpp
+  overloads:
+    stlab::forest::size_type size() const:
+      description: __INLINED__
+      inline:
+        description:
+          - "***********************************************************************************************"
+      return: __OPTIONAL__
+      signature_with_names: stlab::forest::size_type size() const
 ---
 
 If the size of the forest is known (valid), this routine will return in constant time. Otherwise, it will perform a linear walk of the entire forest to derive its size.

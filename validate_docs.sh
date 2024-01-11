@@ -9,6 +9,8 @@
 # Constants
 #
 
+CC=/usr/bin/clang
+CXX=/usr/bin/clang++
 CMAKE_BUILD_DIR=../BUILD-DOCS
 
 # XCODE_TOOLCHAIN=$(xcode-select -p)
@@ -106,14 +108,14 @@ then
 fi
 
 #
-# Invoke CMake, iff: 
+# Invoke CMake, iff:
 # - the build directory does not exist, or
 # - the user specified `--force`
 #
 
 if [ -d $CMAKE_BUILD_DIR ] && [ $FORCE -eq 0 ]
 then
-    echo "$CMAKE_BUILD_DIR already exists. Please delete it or use -f." 
+    echo "$CMAKE_BUILD_DIR already exists. Please delete it or use -f."
     exit 1
 else
     cmake -S. -B $CMAKE_BUILD_DIR $CMAKE_ARGS
