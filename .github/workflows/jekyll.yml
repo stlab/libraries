@@ -31,7 +31,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    steps:
       - name: Set to docs directory
         run: cd ./docs
       - name: Checkout
