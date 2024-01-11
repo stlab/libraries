@@ -1523,7 +1523,7 @@ public:
 
         if (_ready) throw channel_error(channel_error_codes::process_already_running);
 
-        auto executor = std::move(ap._annotations._executor.value_or(_p->executor()));
+        auto executor = ap._annotations._executor.value_or(_p->executor());
         auto p = std::make_shared<detail::shared_process<
             detail::default_queue_strategy<T>, F, detail::yield_type<unwrap_reference_t<F>, T>, T>>(
             executor, std::move(ap._f), _p);
