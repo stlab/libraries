@@ -31,16 +31,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Set to docs directory
+        run: cd ./docs
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Ruby
-        uses: ruby/setup-ruby@8575951200e472d5f2d95c625da0c7bec8217c42 # v1.161.0
+        uses: ruby/setup-ruby@latest
         with:
           # ruby-version: '3.1' # Not needed with a .ruby-version file
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           cache-version: 0 # Increment this number if you need to re-download cached gems
-      - name: update bundler
-        run: gem install bundler
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
@@ -53,8 +53,6 @@ jobs:
       - name: Upload artifact
         # Automatically uploads an artifact from the './_site' directory by default
         uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./docs/_site
 
   # Deployment job
   deploy:
