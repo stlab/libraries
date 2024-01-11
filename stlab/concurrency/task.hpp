@@ -185,7 +185,7 @@ class task_ {
 
     const concept_t* _vtable_ptr = &_vtable;
     invoke_t _invoke = invoke;
-    std::aligned_storage_t<small_size> _model;
+    alignas(std::max_align_t) unsigned char _model[small_size];
 
 public:
     using result_type = R;
