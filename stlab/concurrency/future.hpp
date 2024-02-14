@@ -636,7 +636,7 @@ public:
 
     template <typename F>
     auto then(F&& f) const& {
-        return recover([_f = std::forward<F>(f)](future<result_type>&& p) {
+        return recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             return std::move(_f)(*std::move(p).get_try());
         });
     }

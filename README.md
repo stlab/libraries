@@ -26,8 +26,7 @@ Release changelogs are listed in [CHANGES.md](CHANGES.md).
 
 ## Requirements
 
-- A standards-compliant C++14, C++17, or C++20 compiler
-- **Use with a compiler in C++14-compliant mode** requires Boost.Optional and Boost.Variant >= 1.74.0
+- A standards-compliant C++17, C++20, or C++23 compiler
 - **Building** the library requires CMake 3.23 or later
 - **Testing or developing** the library requires Boost.Test >= 1.74.0
 
@@ -41,16 +40,10 @@ for an introduction to this tool.
 1. Create a build directory outside this library's source tree.  In this guide, we'll use a sibling
    directory called `BUILD`.
 
-2. If you are using the library in C++14-compliant mode or need to run the test suite, be sure you
-   have the necessary parts of Boost >= 1.74.0 installed.  Linux distributions usually make a
-   suitable version available through standard package managers.  On macOS or Linux, you can easilly
-   install Boost using [Homebrew](https://brew.sh/).  To install Boost on Windows, you can use
-   Boost's [binary installers](https://sourceforge.net/projects/boost/files/boost-binaries/).
-
-3. Install a version of CMake >= 3.23.  If you are on Debian or Ubuntu Linux you may need to use
+1. Install a version of CMake >= 3.23.  If you are on Debian or Ubuntu Linux you may need to use
    `snap` to find one that's new enough.
 
-4. If you are using MSVC, you may need to set environment variables appropriately for your target
+1. If you are using MSVC, you may need to set environment variables appropriately for your target
    architecture by invoking `VCVARSALL.BAT` with an appropriate option.
 
 ### Configure
