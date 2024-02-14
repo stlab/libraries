@@ -649,7 +649,7 @@ public:
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](future<result_type>&& p) {
+                       [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
                            return std::move(_f)(*std::move(p).get_try());
                        });
     }
@@ -781,7 +781,7 @@ public:
 
     template <typename F>
     auto then(F&& f) const& {
-        return recover([_f = std::forward<F>(f)](future<result_type>&& p) {
+        return recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             std::move(p).get_try();
             return std::move(_f)();
         });
@@ -795,7 +795,7 @@ public:
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](future<result_type>&& p) {
+                       [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
                            (void)std::move(p).get_try();
                            return std::move(_f)();
                        });
@@ -1264,8 +1264,8 @@ struct make_when_any<void> {
         using result_t = detail::result_t<F, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
-        auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared] {
-            return detail::apply_when_any_arg(_f, _p);
+        auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared]() mutable {
+            return detail::apply_when_any_arg(std::move(_f), std::move(_p));
         });
         shared->_f = std::move(p.first);
 
@@ -1672,12 +1672,13 @@ auto async(E executor, F&& f, Args&&... args)
     using result_type = detail::result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto p = package<result_type()>(
-        executor, std::bind<result_type>(
-                      [_f = std::forward<F>(f)](
-                          unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
-                          return _f(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
-                      },
-                      std::forward<Args>(args)...));
+        executor,
+        std::bind<result_type>(
+            [_f = std::forward<F>(f)](
+                unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
+                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
+            },
+            std::forward<Args>(args)...));
 
     executor(std::move(p.first));
 
