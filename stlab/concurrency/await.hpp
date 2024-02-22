@@ -99,8 +99,10 @@ T await(future<T> x) {
     std::condition_variable condition;
     bool flag{false};
 
+    future<T> result;
+
     auto hold = std::move(x).recover(immediate_executor, [&](future<T>&& r) {
-        x = std::move(r);
+        result = std::move(r);
         {
             std::unique_lock<std::mutex> lock{m};
             flag = true;
@@ -136,7 +138,7 @@ T await(future<T> x) {
 
 #endif
 
-    return detail::_get_ready_future<T>{}(std::move(x));
+    return detail::_get_ready_future<T>{}(std::move(result));
 }
 
 namespace detail {

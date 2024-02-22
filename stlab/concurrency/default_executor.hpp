@@ -64,7 +64,7 @@ constexpr auto platform_priority(executor_priority p) {
         case executor_priority::low:
             return DISPATCH_QUEUE_PRIORITY_LOW;
         default:
-            assert(!"Unknown value!");
+            assert(false && "Unknown value!");
     }
     return DISPATCH_QUEUE_PRIORITY_DEFAULT;
 }

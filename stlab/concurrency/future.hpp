@@ -567,34 +567,30 @@ public:
     packaged_task() = default;
 
     ~packaged_task() {
-        auto p = _p.lock();
-        if (p) p->remove_promise();
+        if (auto p = _p.lock()) p->remove_promise();
     }
 
     packaged_task(const packaged_task& x) : _p(x._p) {
-        auto p = _p.lock();
-        if (p) p->add_promise();
+        if (auto p = _p.lock()) p->add_promise();
     }
 
     packaged_task(packaged_task&&) noexcept = default;
+
     packaged_task& operator=(const packaged_task& x) {
-        auto tmp = x;
-        *this = std::move(tmp);
-        return *this;
+        return *this = packaged_task{x};
     }
+    
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>
     void operator()(A&&... args) const noexcept {
-        auto p = _p.lock();
-        if (p) (*p)(std::forward<A>(args)...);
+        if (auto p = _p.lock()) (*p)(std::forward<A>(args)...);
     }
 
     bool canceled() const { return _p.expired(); }
 
     void set_exception(std::exception_ptr error) const {
-        auto p = _p.lock();
-        if (p) p->set_error(std::move(error));
+        if (auto p = _p.lock()) p->set_error(std::move(error));
     }
 };
 
@@ -1566,7 +1562,7 @@ struct _reduce_coroutine : std::enable_shared_from_this<_reduce_coroutine<P, R>>
                                              _this->_promise.set_exception(e);
                                              return;
                                          }
-                                         _this->stage_0(std::move(a));
+                                         _this->stage_0(std::forward<decltype(a)>(a));
                                      });
     }
     void stage_0(future<future<R>>&& r) {
