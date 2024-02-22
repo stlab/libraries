@@ -15,6 +15,7 @@
 #include <atomic>
 #include <cassert>
 #include <exception>
+#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <mutex>
@@ -576,10 +577,8 @@ public:
 
     packaged_task(packaged_task&&) noexcept = default;
 
-    packaged_task& operator=(const packaged_task& x) {
-        return *this = packaged_task{x};
-    }
-    
+    packaged_task& operator=(const packaged_task& x) { return *this = packaged_task{x}; }
+
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>
@@ -1240,7 +1239,7 @@ struct make_when_any {
         using result_t = detail::result_t<F, T, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
-        auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared] {
+        auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared]() mutable {
             return detail::apply_when_any_arg(_f, _p);
         });
         shared->_f = std::move(p.first);
@@ -1261,7 +1260,7 @@ struct make_when_any<void> {
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
         auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared]() mutable {
-            return detail::apply_when_any_arg(std::move(_f), std::move(_p));
+            return detail::apply_when_any_arg(_f, _p);
         });
         shared->_f = std::move(p.first);
 
@@ -1810,9 +1809,7 @@ struct std::coroutine_traits<stlab::future<T>, Args...> {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
 
         promise_type() {
-            _promise = stlab::package<T(T)>(stlab::immediate_executor, [](auto&& x) -> decltype(x) {
-                return std::forward<decltype(x)>(x);
-            });
+            _promise = stlab::package<T(T)>(stlab::immediate_executor, std::identity{});
         }
 
         stlab::future<T> get_return_object() { return std::move(_promise.second); }
