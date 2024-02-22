@@ -1809,9 +1809,7 @@ struct std::coroutine_traits<stlab::future<T>, Args...> {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
 
         promise_type() {
-            _promise = stlab::package<T(T)>(stlab::immediate_executor, [](auto&& a) {
-                return std::forward<decltype(a)>(a);
-            });
+            _promise = stlab::package<T(T)>(stlab::immediate_executor, std::identity{});
         }
 
         stlab::future<T> get_return_object() { return std::move(_promise.second); }
