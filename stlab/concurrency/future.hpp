@@ -15,6 +15,7 @@
 #include <atomic>
 #include <cassert>
 #include <exception>
+#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <mutex>
@@ -567,34 +568,28 @@ public:
     packaged_task() = default;
 
     ~packaged_task() {
-        auto p = _p.lock();
-        if (p) p->remove_promise();
+        if (auto p = _p.lock()) p->remove_promise();
     }
 
     packaged_task(const packaged_task& x) : _p(x._p) {
-        auto p = _p.lock();
-        if (p) p->add_promise();
+        if (auto p = _p.lock()) p->add_promise();
     }
 
     packaged_task(packaged_task&&) noexcept = default;
-    packaged_task& operator=(const packaged_task& x) {
-        auto tmp = x;
-        *this = std::move(tmp);
-        return *this;
-    }
+
+    packaged_task& operator=(const packaged_task& x) { return *this = packaged_task{x}; }
+
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>
     void operator()(A&&... args) const noexcept {
-        auto p = _p.lock();
-        if (p) (*p)(std::forward<A>(args)...);
+        if (auto p = _p.lock()) (*p)(std::forward<A>(args)...);
     }
 
     bool canceled() const { return _p.expired(); }
 
     void set_exception(std::exception_ptr error) const {
-        auto p = _p.lock();
-        if (p) p->set_error(std::move(error));
+        if (auto p = _p.lock()) p->set_error(std::move(error));
     }
 };
 
@@ -636,7 +631,7 @@ public:
 
     template <typename F>
     auto then(F&& f) const& {
-        return recover([_f = std::forward<F>(f)](future<result_type>&& p) {
+        return recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             return std::move(_f)(*std::move(p).get_try());
         });
     }
@@ -649,7 +644,7 @@ public:
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](future<result_type>&& p) {
+                       [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
                            return std::move(_f)(*std::move(p).get_try());
                        });
     }
@@ -781,7 +776,7 @@ public:
 
     template <typename F>
     auto then(F&& f) const& {
-        return recover([_f = std::forward<F>(f)](future<result_type>&& p) {
+        return recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             std::move(p).get_try();
             return std::move(_f)();
         });
@@ -795,7 +790,7 @@ public:
     template <typename E, typename F>
     auto then(E&& executor, F&& f) const& {
         return recover(std::forward<E>(executor),
-                       [_f = std::forward<F>(f)](future<result_type>&& p) {
+                       [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
                            (void)std::move(p).get_try();
                            return std::move(_f)();
                        });
@@ -1244,7 +1239,7 @@ struct make_when_any {
         using result_t = detail::result_t<F, T, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
-        auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared] {
+        auto p = package<result_t()>(executor, [_f = std::move(f), _p = shared]() mutable {
             return detail::apply_when_any_arg(_f, _p);
         });
         shared->_f = std::move(p.first);
@@ -1264,7 +1259,7 @@ struct make_when_any<void> {
         using result_t = detail::result_t<F, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
-        auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared] {
+        auto p = package<result_t()>(executor, [_f = std::forward<F>(f), _p = shared]() mutable {
             return detail::apply_when_any_arg(_f, _p);
         });
         shared->_f = std::move(p.first);
@@ -1566,7 +1561,7 @@ struct _reduce_coroutine : std::enable_shared_from_this<_reduce_coroutine<P, R>>
                                              _this->_promise.set_exception(e);
                                              return;
                                          }
-                                         _this->stage_0(std::move(a));
+                                         _this->stage_0(std::forward<decltype(a)>(a));
                                      });
     }
     void stage_0(future<future<R>>&& r) {
@@ -1672,12 +1667,13 @@ auto async(E executor, F&& f, Args&&... args)
     using result_type = detail::result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto p = package<result_type()>(
-        executor, std::bind<result_type>(
-                      [_f = std::forward<F>(f)](
-                          unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
-                          return _f(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
-                      },
-                      std::forward<Args>(args)...));
+        executor,
+        std::bind<result_type>(
+            [_f = std::forward<F>(f)](
+                unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
+                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
+            },
+            std::forward<Args>(args)...));
 
     executor(std::move(p.first));
 
@@ -1813,9 +1809,7 @@ struct std::coroutine_traits<stlab::future<T>, Args...> {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
 
         promise_type() {
-            _promise = stlab::package<T(T)>(stlab::immediate_executor, [](auto&& x) -> decltype(x) {
-                return std::forward<decltype(x)>(x);
-            });
+            _promise = stlab::package<T(T)>(stlab::immediate_executor, std::identity{});
         }
 
         stlab::future<T> get_return_object() { return std::move(_promise.second); }

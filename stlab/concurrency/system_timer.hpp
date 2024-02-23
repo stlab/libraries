@@ -224,7 +224,7 @@ public:
     [[deprecated("Use chrono::duration as parameter instead")]] void operator()(
         std::chrono::steady_clock::time_point when, F&& f) {
         using namespace std::chrono;
-        operator()(when - steady_clock::now(), std::move(f));
+        operator()(when - steady_clock::now(), std::forward<decltype(f)>(f));
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
