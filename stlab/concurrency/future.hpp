@@ -47,7 +47,6 @@ inline namespace v1 {
 
 enum class future_error_codes { // names for futures errors
     broken_promise = 1,
-    reduction_failed,
     no_state
 };
 
@@ -63,9 +62,6 @@ inline const char* Future_error_map(
 
         case future_error_codes::no_state:
             return "no state";
-
-        case future_error_codes::reduction_failed:
-            return "reduction failed";
 
         default:
             return nullptr;
@@ -246,8 +242,8 @@ struct shared_future {
 template <typename... Args>
 struct shared_task {
     virtual ~shared_task() = default;
+
     virtual void remove_promise() = 0;
-    virtual void add_promise() = 0;
 
     virtual void operator()(Args... args) = 0;
 
@@ -504,23 +500,19 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 };
 
 template <typename R, typename... Args>
-struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
+struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
     using function_t = task<R(Args...)>;
 
-    std::atomic_size_t _promise_count{1};
     function_t _f;
 
     template <typename F>
     shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {}
 
     void remove_promise() override {
-        if ((--_promise_count == 0) && _f) {
-            this->set_exception(
-                std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
-        }
+        if (!_f) return;
+        this->set_exception(
+            std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
     }
-
-    void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) noexcept override {
         if (!_f) return;
@@ -530,6 +522,7 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
         } catch (...) {
             this->set_exception(std::current_exception());
         }
+
         _f = function_t();
     }
 
@@ -571,14 +564,10 @@ public:
         if (auto p = _p.lock()) p->remove_promise();
     }
 
-    packaged_task(const packaged_task& x) : _p(x._p) {
-        if (auto p = _p.lock()) p->add_promise();
-    }
+    packaged_task(const packaged_task&) = delete;
+    packaged_task& operator=(const packaged_task&) = delete;
 
     packaged_task(packaged_task&&) noexcept = default;
-
-    packaged_task& operator=(const packaged_task& x) { return *this = packaged_task{x}; }
-
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>

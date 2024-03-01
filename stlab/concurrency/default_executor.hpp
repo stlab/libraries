@@ -19,7 +19,9 @@
 #include <cassert>
 #include <chrono>
 #include <functional>
+#include <memory>
 #include <type_traits>
+#include <utility>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
@@ -94,12 +96,12 @@ struct executor_type {
     using result_type = void;
 
     template <typename F>
-    auto operator()(F f) const -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
-        using f_t = decltype(f);
+    auto operator()(F&& f) const -> std::enable_if_t<std::is_nothrow_invocable_v<std::decay_t<F>>> {
+        using f_t = std::decay_t<F>;
 
         dispatch_group_async_f(detail::group()._group,
                                dispatch_get_global_queue(platform_priority(P), 0),
-                               new f_t(std::move(f)), [](void* f_) {
+                               new f_t(std::foward<F>(f)), [](void* f_) {
                                    auto f = static_cast<f_t*>(f_);
                                    (*f)();
                                    delete f;
@@ -161,12 +163,13 @@ public:
 
     template <typename F>
     void operator()(F&& f) {
-        auto work = CreateThreadpoolWork(&callback_impl<F>, new F(std::forward<F>(f)),
-                                         &_callBackEnvironment);
+        auto f = std::make_unique<F>(std::forward<F>(f));
+        auto work = CreateThreadpoolWork(&callback_impl<F>, f.get(), &_callBackEnvironment);
 
         if (work == nullptr) {
             throw std::bad_alloc();
         }
+        f.release(); // ownership was passed to thread
         SubmitThreadpoolWork(work);
     }
 
@@ -177,6 +180,7 @@ private:
                                        PTP_WORK work) {
         std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
+        delete f;
         CloseThreadpoolWork(work);
     }
 };
@@ -461,12 +465,13 @@ template <executor_priority P = executor_priority::medium>
 struct executor_type {
     using result_type = void;
 
-    void operator()(task<void() noexcept>&& f) const {
+    template <class F>
+    auto operator()(F&& f) const -> std::enable_if_t<std::is_nothrow_invocable_v<std::decay_t<F>>> {
         static task_system<P> only_task_system{[] {
             at_pre_exit([]() noexcept { only_task_system.join(); });
             return task_system<P>{};
         }()};
-        only_task_system(std::move(f));
+        only_task_system(std::forward<F>(f));
     }
 };
 
@@ -476,8 +481,9 @@ template <executor_priority P = executor_priority::medium>
 struct executor_type {
     using result_type = void;
 
-    void operator()(task<void() noexcept>&& f) const {
-        pts().execute<static_cast<std::size_t>(P)>(std::move(f));
+    template <class F>
+    auto operator()(F&& f) const -> std::enable_if_t<std::is_nothrow_invocable_v<std::decay_t<F>>> {
+        pts().execute<static_cast<std::size_t>(P)>(std::forward<F>(f));
     }
 };
 
