@@ -101,7 +101,7 @@ struct executor_type {
 
         dispatch_group_async_f(detail::group()._group,
                                dispatch_get_global_queue(platform_priority(P), 0),
-                               new f_t(std::foward<F>(f)), [](void* f_) {
+                               new f_t(std::forward<F>(f)), [](void* f_) {
                                    auto f = static_cast<f_t*>(f_);
                                    (*f)();
                                    delete f;
