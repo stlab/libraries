@@ -163,13 +163,13 @@ public:
 
     template <typename F>
     void operator()(F&& f) {
-        auto f = std::make_unique<F>(std::forward<F>(f));
-        auto work = CreateThreadpoolWork(&callback_impl<F>, f.get(), &_callBackEnvironment);
+        auto p = std::make_unique<F>(std::forward<F>(f));
+        auto work = CreateThreadpoolWork(&callback_impl<F>, p.get(), &_callBackEnvironment);
 
         if (work == nullptr) {
             throw std::bad_alloc();
         }
-        f.release(); // ownership was passed to thread
+        p.release(); // ownership was passed to thread
         SubmitThreadpoolWork(work);
     }
 
@@ -180,7 +180,6 @@ private:
                                        PTP_WORK work) {
         std::unique_ptr<F> f(static_cast<F*>(parameter));
         (*f)();
-        delete f;
         CloseThreadpoolWork(work);
     }
 };
