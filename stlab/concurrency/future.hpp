@@ -1182,9 +1182,9 @@ auto apply_when_any_arg(F& f, P& p) {
 }
 
 template <std::size_t i, typename E, typename P, typename T>
-void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
+void attach_when_arg_(E&& executor, std::shared_ptr<P>& shared, T a) {
     auto holds =
-        std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
+        std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(shared)](auto x) {
             auto p = _w.lock();
             if (!p) return;
 
@@ -1194,8 +1194,8 @@ void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
                 p->template done<i>(std::move(x));
             }
         });
-    std::unique_lock<std::mutex> lock{p->_guard};
-    p->_holds[i] = std::move(holds);
+    std::unique_lock<std::mutex> lock{shared->_guard};
+    shared->_holds[i] = std::move(holds);
 }
 
 template <typename E, typename P, typename... Ts, std::size_t... I>
@@ -1670,8 +1670,8 @@ auto async(E executor, F&& f, Args&&... args)
         executor,
         std::bind<result_type>(
             [_f = std::forward<F>(f)](
-                unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
-                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
+                unwrap_reference_t<std::decay_t<Args>>&... brgs) mutable -> result_type {
+                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(brgs)...);
             },
             std::forward<Args>(args)...));
 
