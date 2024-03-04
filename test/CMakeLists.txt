@@ -48,7 +48,8 @@ add_executable( stlab.test.future
   future_when_any_range_tests.cpp
   tuple_algorithm_test.cpp
   main.cpp
-  future_test_helper.hpp )
+  future_test_helper.hpp
+  future_reduction_tests.cpp)
 
 if( NOT STLAB_NO_STD_COROUTINES )
   target_sources( stlab.test.future PUBLIC future_coroutine_tests.cpp )

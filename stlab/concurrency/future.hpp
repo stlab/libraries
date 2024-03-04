@@ -47,7 +47,6 @@ inline namespace v1 {
 
 enum class future_error_codes { // names for futures errors
     broken_promise = 1,
-    reduction_failed,
     no_state
 };
 
@@ -63,9 +62,6 @@ inline const char* Future_error_map(
 
         case future_error_codes::no_state:
             return "no state";
-
-        case future_error_codes::reduction_failed:
-            return "reduction failed";
 
         default:
             return nullptr;
@@ -246,8 +242,8 @@ struct shared_future {
 template <typename... Args>
 struct shared_task {
     virtual ~shared_task() = default;
+
     virtual void remove_promise() = 0;
-    virtual void add_promise() = 0;
 
     virtual void operator()(Args... args) = 0;
 
@@ -504,23 +500,19 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
 };
 
 template <typename R, typename... Args>
-struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
+struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
     using function_t = task<R(Args...)>;
 
-    std::atomic_size_t _promise_count{1};
     function_t _f;
 
     template <typename F>
     shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {}
 
     void remove_promise() override {
-        if ((--_promise_count == 0) && _f) {
-            this->set_exception(
-                std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
-        }
+        if (!_f) return;
+        this->set_exception(
+            std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
     }
-
-    void add_promise() override { ++_promise_count; }
 
     void operator()(Args... args) noexcept override {
         if (!_f) return;
@@ -530,6 +522,7 @@ struct shared<R(Args...)> : shared_base<R>, shared_task<Args...> {
         } catch (...) {
             this->set_exception(std::current_exception());
         }
+
         _f = function_t();
     }
 
@@ -571,14 +564,10 @@ public:
         if (auto p = _p.lock()) p->remove_promise();
     }
 
-    packaged_task(const packaged_task& x) : _p(x._p) {
-        if (auto p = _p.lock()) p->add_promise();
-    }
+    packaged_task(const packaged_task&) = delete;
+    packaged_task& operator=(const packaged_task&) = delete;
 
     packaged_task(packaged_task&&) noexcept = default;
-
-    packaged_task& operator=(const packaged_task& x) { return *this = packaged_task{x}; }
-
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>
@@ -1182,9 +1171,9 @@ auto apply_when_any_arg(F& f, P& p) {
 }
 
 template <std::size_t i, typename E, typename P, typename T>
-void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
+void attach_when_arg_(E&& executor, std::shared_ptr<P>& shared, T a) {
     auto holds =
-        std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(p)](auto x) {
+        std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(shared)](auto x) {
             auto p = _w.lock();
             if (!p) return;
 
@@ -1194,8 +1183,8 @@ void attach_when_arg_(E&& executor, std::shared_ptr<P>& p, T a) {
                 p->template done<i>(std::move(x));
             }
         });
-    std::unique_lock<std::mutex> lock{p->_guard};
-    p->_holds[i] = std::move(holds);
+    std::unique_lock<std::mutex> lock{shared->_guard};
+    shared->_holds[i] = std::move(holds);
 }
 
 template <typename E, typename P, typename... Ts, std::size_t... I>
@@ -1670,8 +1659,8 @@ auto async(E executor, F&& f, Args&&... args)
         executor,
         std::bind<result_type>(
             [_f = std::forward<F>(f)](
-                unwrap_reference_t<std::decay_t<Args>>&... args) mutable -> result_type {
-                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(args)...);
+                unwrap_reference_t<std::decay_t<Args>>&... brgs) mutable -> result_type {
+                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(brgs)...);
             },
             std::forward<Args>(args)...));
 

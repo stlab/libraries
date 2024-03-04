@@ -97,15 +97,12 @@ T await(future<T> x) {
 
     std::mutex m;
     std::condition_variable condition;
-    bool flag{false};
-
     future<T> result;
 
     auto hold = std::move(x).recover(immediate_executor, [&](future<T>&& r) {
-        result = std::move(r);
         {
             std::unique_lock<std::mutex> lock{m};
-            flag = true;
+            result = std::move(r);
             condition.notify_one(); // must notify under lock
         }
     });
@@ -122,8 +119,8 @@ T await(future<T> x) {
          backoff *= 2) {
         {
             std::unique_lock<std::mutex> lock{m};
-            if (condition.wait_for(lock, backoff, [&] { return flag; })) {
-                break;
+            if (condition.wait_for(lock, backoff, [&] { return result.is_ready(); })) {
+                return detail::_get_ready_future<T>{}(std::move(result));
             }
         }
         detail::pts().wake(); // try to wake something to unstick.
@@ -131,14 +128,11 @@ T await(future<T> x) {
 
 #else
 
-    {
-        std::unique_lock<std::mutex> lock{m};
-        condition.wait(lock, [&] { return flag; });
-    }
+    std::unique_lock<std::mutex> lock{m};
+    condition.wait(lock, [&] { return result.is_ready(); });
+    return detail::_get_ready_future<T>{}(std::move(result));
 
 #endif
-
-    return detail::_get_ready_future<T>{}(std::move(result));
 }
 
 namespace detail {
