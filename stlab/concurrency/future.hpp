@@ -189,6 +189,15 @@ using packaged_task_from_signature_t = typename packaged_task_from_signature<T>:
 
 /**************************************************************************************************/
 
+template <class T>
+struct will_reduce : std::false_type {};
+
+template <class T>
+struct will_reduce<future<T>> : std::true_type {};
+
+template <class T>
+inline constexpr bool will_reduce_v = will_reduce<T>::value;
+
 template <typename>
 struct reduced_;
 
@@ -272,22 +281,31 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
         return recover(std::move(p), _executor, std::forward<F>(f));
     }
 
+    /*
+        NOTE : executor cannot be a reference type here. When invoked it could
+        cause _this_ to be deleted, and the executor passed in may be
+        this->_executor
+    */
     template <typename E, typename F>
     auto recover(future<T>&& p, E executor, F&& f) {
-        auto b = package<detail::result_t<F, future<T>>()>(
-            executor, [_f = std::forward<F>(f), _p = std::move(p)]() mutable {
-                return std::move(_f)(std::move(_p));
-            });
+        using result_type = detail::result_t<F, future<T>>;
+        constexpr bool will_reduce = detail::will_reduce_v<result_type>;
+
+        auto b = package<result_type()>(executor,
+                                        [_f = std::forward<F>(f), _p = std::move(p)]() mutable {
+                                            return std::move(_f)(std::move(_p));
+                                        });
 
         bool ready;
         {
             std::unique_lock<std::mutex> lock(_mutex);
             ready = _ready;
-            if (!ready) _then.emplace_back(std::move(executor), std::move(b.first));
+            if (!ready) _then.emplace_back(move_if<!will_reduce>(executor), std::move(b.first));
         }
-        if (ready) executor(std::move(b.first));
 
-        return detail::reduce(executor, std::move(b.second));
+        if (ready) executor(std::move(b.first)); // cannot reference this after here
+
+        return detail::reduce(move_if<will_reduce>(executor), std::move(b.second));
     }
 
     void _detach() {
@@ -378,22 +396,30 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
         return recover(std::move(p), _executor, std::forward<F>(f));
     }
 
+    /*
+        NOTE : executor cannot be a reference type here. When invoked it could
+        cause _this_ to be deleted, and the executor passed in may be
+        this->_executor
+    */
     template <typename E, typename F>
     auto recover(future<T>&& p, E executor, F&& f) {
-        auto b = package<detail::result_t<F, future<T>>()>(
-            executor, [_f = std::forward<F>(f), _p = std::move(p)]() mutable {
-                return std::move(_f)(std::move(_p));
-            });
+        using result_type = detail::result_t<F, future<T>>;
+        constexpr bool will_reduce = detail::will_reduce_v<result_type>;
+
+        auto b = package<result_type()>(executor,
+                                        [_f = std::forward<F>(f), _p = std::move(p)]() mutable {
+                                            return std::move(_f)(std::move(_p));
+                                        });
 
         bool ready;
         {
             std::unique_lock<std::mutex> lock(_mutex);
             ready = _ready;
-            if (!ready) _then = {std::move(executor), std::move(b.first)};
+            if (!ready) _then = {move_if<!will_reduce>(executor), std::move(b.first)};
         }
-        if (ready) executor(std::move(b.first));
+        if (ready) executor(std::move(b.first)); // cannot reference this after here
 
-        return detail::reduce(executor, std::move(b.second));
+        return detail::reduce(move_if<will_reduce>(executor), std::move(b.second));
     }
 
     void _detach() {
@@ -1666,7 +1692,7 @@ auto async(E executor, F&& f, Args&&... args)
 
     executor(std::move(p.first));
 
-    return detail::reduce(executor, std::move(p.second));
+    return detail::reduce(std::move(executor), std::move(p.second));
 }
 
 /**************************************************************************************************/
@@ -1758,10 +1784,18 @@ void shared_base<void>::set_value(F& f, Args&&... args) {
 
 /**************************************************************************************************/
 
+/*
+    NOTE : executor cannot be a reference type here. When invoked it could
+    cause _this_ to be deleted, and the executor passed in may be
+    this->_executor
+*/
 template <typename E, typename F>
 auto shared_base<void>::recover(future<result_type>&& p, E executor, F&& f) {
-    auto b = package<detail::result_t<F, future<result_type>>()>(
-        executor, [_f = std::forward<F>(f), _p = std::move(p)]() mutable {
+    using result_type = detail::result_t<F, future<result_type>>;
+    constexpr bool will_reduce = detail::will_reduce_v<result_type>;
+
+    auto b =
+        package<result_type()>(executor, [_f = std::forward<F>(f), _p = std::move(p)]() mutable {
             return std::move(_f)(std::move(_p));
         });
 
@@ -1769,11 +1803,11 @@ auto shared_base<void>::recover(future<result_type>&& p, E executor, F&& f) {
     {
         std::unique_lock<std::mutex> lock(_mutex);
         ready = _ready;
-        if (!ready) _then.emplace_back(std::move(executor), std::move(b.first));
+        if (!ready) _then.emplace_back(move_if<!will_reduce>(executor), std::move(b.first));
     }
-    if (ready) executor(std::move(b.first));
+    if (ready) executor(std::move(b.first)); // cannot reference this after here
 
-    return detail::reduce(executor, std::move(b.second));
+    return detail::reduce(move_if<will_reduce>(executor), std::move(b.second));
 }
 
 /**************************************************************************************************/
