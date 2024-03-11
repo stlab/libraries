@@ -36,7 +36,7 @@ jobs:
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
           brew update
-          brew upgrade
+          rm '/usr/local/bin/2to3'
           brew install boost
           brew install ninja
         shell: bash
