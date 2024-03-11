@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies // macOS
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
-          brew update
+          # brew update
           brew install boost
           brew install ninja
         shell: bash
