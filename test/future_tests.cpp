@@ -47,8 +47,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> value");
 
         annotate_counters counters;
-        (void)async(
-            immediate_executor, [](annotate) {}, annotate(counters));
+        (void)async(immediate_executor, [](annotate) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -58,8 +57,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](annotate) {}, x);
+        (void)async(immediate_executor, [](annotate) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -69,8 +67,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](annotate) {}, std::ref(x));
+        (void)async(immediate_executor, [](annotate) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -80,8 +77,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](annotate) {}, std::cref(x));
+        (void)async(immediate_executor, [](annotate) {}, std::cref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -113,8 +109,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](annotate&) {}, std::ref(x));
+        (void)async(immediate_executor, [](annotate&) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -136,8 +131,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> const&");
 
         annotate_counters counters;
-        (void)async(
-            immediate_executor, [](const annotate&) {}, annotate(counters));
+        (void)async(immediate_executor, [](const annotate&) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -147,8 +141,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](const annotate&) {}, x);
+        (void)async(immediate_executor, [](const annotate&) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -158,8 +151,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](const annotate&) {}, std::ref(x));
+        (void)async(immediate_executor, [](const annotate&) {}, std::ref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -169,8 +161,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](const annotate&) {}, std::cref(x));
+        (void)async(immediate_executor, [](const annotate&) {}, std::cref(x));
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -179,8 +170,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
         BOOST_TEST_MESSAGE("running async lambda argument of type rvalue -> &&");
 
         annotate_counters counters;
-        (void)async(
-            immediate_executor, [](annotate&&) {}, annotate(counters));
+        (void)async(immediate_executor, [](annotate&&) {}, annotate(counters));
         BOOST_REQUIRE(counters.remaining() == 0);
         BOOST_REQUIRE(counters._copy_ctor == 0);
     }
@@ -190,8 +180,7 @@ BOOST_AUTO_TEST_CASE(async_lambda_arguments) {
 
         annotate_counters counters;
         annotate x(counters);
-        (void)async(
-            immediate_executor, [](annotate&&) {}, x);
+        (void)async(immediate_executor, [](annotate&&) {}, x);
         BOOST_REQUIRE(counters.remaining() == 1);
         BOOST_REQUIRE(counters._copy_ctor == 1);
     }
@@ -258,8 +247,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters,
 
     test_setup setup;
     {
-        auto sut = async(
-            make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
+        auto sut = async(make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
         BOOST_REQUIRE(sut.valid() == true);
         BOOST_REQUIRE(!sut.exception());
 
