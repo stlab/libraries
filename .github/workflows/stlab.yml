@@ -37,6 +37,7 @@ jobs:
         run: |
           brew update
           rm '/usr/local/bin/2to3'
+          rm '/usr/local/bin/2to3-3.12'
           brew install boost
           brew install ninja
         shell: bash
