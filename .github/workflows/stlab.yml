@@ -42,7 +42,7 @@ jobs:
           rm '/usr/local/bin/idle3.12'
           rm '/usr/local/bin/pydoc3'
           rm '/usr/local/bin/pydoc3.12'
-          brew boost
+          brew install boost
           brew install ninja
         shell: bash
 
