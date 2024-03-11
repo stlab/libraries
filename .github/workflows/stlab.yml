@@ -1,4 +1,4 @@
-name: Build and Tests
+⁸name: Build and Tests
 
 on:
   pull_request:
@@ -44,6 +44,8 @@ jobs:
           rm '/usr/local/bin/pydoc3.12'
           rm '/usr/local/bin/python3'
           rm '/usr/local/bin/python3.12'
+          rm '/usr/local/bin/python3-config'
+          rm '/usr/local/bin/python3.12-config'
           brew install boost
           brew install ninja
         shell: bash
