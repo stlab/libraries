@@ -36,7 +36,8 @@ jobs:
         if: ${{ startsWith(matrix.config.os, 'macos') }}
         run: |
           brew update
-          # brew install boost@1.75
+          brew upgrade
+          brew install boost
           brew install ninja
         shell: bash
 
