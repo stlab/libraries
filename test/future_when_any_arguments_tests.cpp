@@ -440,10 +440,10 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_argument_with_one_argument) {
 
   check_valid_future(sut);
 
-  wait_until_future_completed(sut);
+  auto result = await(std::move(sut));
 
   BOOST_REQUIRE_EQUAL(size_t(0), index);
-  BOOST_REQUIRE_EQUAL(4711, (*sut.get_try()).member());
+  BOOST_REQUIRE_EQUAL(4711, result.member());
   BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
   BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }

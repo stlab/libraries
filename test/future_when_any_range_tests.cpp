@@ -601,6 +601,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
   thread_block_context block_context;
 
   size_t index = 0;
+  std::optional<move_only> result;
   {
     lock_t lock(*block_context._mutex);
     auto start = async(make_executor<0>(), [] { return 4711; });
@@ -630,7 +631,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
       std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    result = await(std::move(sut));
     block_context._go = true;
   }
 
@@ -638,7 +639,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
   wait_until_all_tasks_completed();
 
   BOOST_REQUIRE_EQUAL(size_t(1), index);
-  BOOST_REQUIRE_EQUAL(4711 + 2, (*sut.get_try()).member());
+  BOOST_REQUIRE_EQUAL(4711 + 2, result->member());
   BOOST_REQUIRE_LE(2, custom_scheduler<0>::usage_counter());
   BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }

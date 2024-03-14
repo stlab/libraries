@@ -960,9 +960,9 @@ BOOST_AUTO_TEST_CASE(
                 return move_only(42);
             });
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
     }
     {
@@ -979,9 +979,9 @@ BOOST_AUTO_TEST_CASE(
             return move_only(42);
         };
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
     }
 }
@@ -1008,9 +1008,9 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
                 });
         }
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
     }
     {
@@ -1032,9 +1032,9 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
             };
         }
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
     }
 }
@@ -1057,9 +1057,9 @@ BOOST_AUTO_TEST_CASE(
                 return move_only(42);
             });
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -1081,9 +1081,9 @@ BOOST_AUTO_TEST_CASE(
                 return move_only(42);
             });
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -1112,9 +1112,9 @@ BOOST_AUTO_TEST_CASE(
                 });
         }
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -1140,9 +1140,9 @@ BOOST_AUTO_TEST_CASE(
                 });
         }
 
-        auto result = wait_until_future_r_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, result->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
