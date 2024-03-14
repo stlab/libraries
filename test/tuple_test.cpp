@@ -54,11 +54,10 @@ using namespace stlab;
 /**************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(remove_placeholder_test) {
-    auto x = std::make_tuple(10, detail::placeholder(), 25.0, detail::placeholder());
+    auto x = std::make_tuple(10, placeholder(), 25.0, placeholder());
 
-    detail::apply_indexed<
-        index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
-                                   detail::remove_placeholder<decltype(x)>::function>>(
+    apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
+                                             remove_placeholder<decltype(x)>::function>>(
         [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, x);
 }
 
@@ -67,11 +66,10 @@ BOOST_AUTO_TEST_CASE(remove_placeholder_test) {
 BOOST_AUTO_TEST_CASE(add_placeholder_test) {
     using interim_t = placeholder_tuple<int, void, int, void>;
 
-    auto x = interim_t(10, detail::placeholder(), 25, detail::placeholder());
+    auto x = interim_t(10, placeholder(), 25, placeholder());
 
-    detail::apply_indexed<
-        index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
-                                   detail::remove_placeholder<decltype(x)>::function>>(
+    apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
+                                             remove_placeholder<decltype(x)>::function>>(
         [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, x);
 }
 
@@ -82,7 +80,7 @@ void when_all_typecheck(F, future<Ts>...) {
     using pt_t = placeholder_tuple<Ts...>;
     using opt_t = optional_placeholder_tuple<Ts...>;
     using vt_t = voidless_tuple<Ts...>;
-    using result_t = decltype(detail::apply_tuple(std::declval<F>(), std::declval<vt_t>()));
+    using result_t = decltype(apply_ignore_placeholders(std::declval<F>(), std::declval<vt_t>()));
 
     cout << "pt: " << demangle<pt_t>() << "\n";
     cout << "opt_t: " << demangle<opt_t>() << "\n";
@@ -192,9 +190,9 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void_string_void_bool_void) {
 BOOST_AUTO_TEST_CASE(future_when_any_void) {
     auto fv = [] { return stlab::make_ready_future(stlab::default_executor); };
 
-    auto f =
-        when_any(stlab::default_executor, [](size_t index) { std::cout << "f: " << index << '\n'; },
-                 fv(), fv(), fv(), fv(), fv(), fv());
+    auto f = when_any(
+        stlab::default_executor, [](size_t index) { std::cout << "f: " << index << '\n'; }, fv(),
+        fv(), fv(), fv(), fv(), fv());
 
     while (!f.get_try())
         std::this_thread::sleep_for(std::chrono::milliseconds(1));

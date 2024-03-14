@@ -9,15 +9,15 @@
 #ifndef STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_IMMEDIATE_EXECUTOR_HPP
 
+#include <stlab/config.hpp>
+
 #include <type_traits>
 
 /**************************************************************************************************/
 
 namespace stlab {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
-/**************************************************************************************************/
-
-inline namespace v1 {
 /**************************************************************************************************/
 
 namespace detail {
@@ -41,10 +41,7 @@ constexpr auto immediate_executor = detail::immediate_executor_type{};
 
 /**************************************************************************************************/
 
-} // namespace v1
-
-/**************************************************************************************************/
-
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

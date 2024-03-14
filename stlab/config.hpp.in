@@ -7,6 +7,9 @@
 #ifndef STLAB_CONFIG_HPP
 #define STLAB_CONFIG_HPP
 
+// Release version macro - used for inline namespace increment on each release
+#define STLAB_VERSION_NAMESPACE() v2
+
 // Configuration generated from CMake
 
 #cmakedefine STLAB_NO_STD_COROUTINES

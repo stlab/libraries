@@ -34,10 +34,7 @@
 /**************************************************************************************************/
 
 namespace stlab {
-
-/**************************************************************************************************/
-
-inline namespace v1 {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -58,8 +55,8 @@ struct system_timer_type {
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    auto operator()(std::chrono::duration<Rep, Per> duration, F f) const
-        -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
+    auto operator()(std::chrono::duration<Rep, Per> duration,
+                    F f) const -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         using namespace std::chrono;
 
         using f_t = decltype(f);
@@ -110,8 +107,8 @@ public:
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    auto operator()(std::chrono::duration<Rep, Per> duration, F&& f)
-        -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
+    auto operator()(std::chrono::duration<Rep, Per> duration,
+                    F&& f) -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         using namespace std::chrono;
         auto timer = CreateThreadpoolTimer(&timer_callback_impl<F>, new F(std::forward<F>(f)),
                                            &_callBackEnvironment);
@@ -228,8 +225,8 @@ public:
     }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
-    auto operator()(std::chrono::duration<Rep, Per> duration, F&& f)
-        -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
+    auto operator()(std::chrono::duration<Rep, Per> duration,
+                    F&& f) -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         lock_t lock(_timed_queue_mutex);
         _timed_queue.emplace_back(std::chrono::steady_clock::now() + duration, std::forward<F>(f));
         std::push_heap(std::begin(_timed_queue), std::end(_timed_queue), greater_first());
@@ -272,10 +269,9 @@ struct system_timer_type {
 
 constexpr auto system_timer = detail::system_timer_type{};
 
-} // namespace v1
-
 /**************************************************************************************************/
 
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

@@ -16,8 +16,12 @@
 
 /**************************************************************************************************/
 
+// The namespace for pre_exit cannot be changed without an ABI break. If making an ABI breaking
+// change in this file it needs to be done in a way supporting this version as well.
 namespace stlab {
 inline namespace v1 {
+
+/**************************************************************************************************/
 
 /// Pre-exit handler type.
 #if __cpp_noexcept_function_type >= 201510L
@@ -85,7 +89,9 @@ inline void pre_exit() {
 /// is required to be `noexcept`.
 inline void at_pre_exit(pre_exit_handler f) { detail::_pre_exit_stack().push(f); }
 
-} // namespace v1
+/**************************************************************************************************/
+
+} // namespace inline v1
 } // namespace stlab
 
 /**************************************************************************************************/

@@ -31,10 +31,7 @@
 /**************************************************************************************************/
 
 namespace stlab {
-
-/**************************************************************************************************/
-
-inline namespace v1 {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -203,18 +200,16 @@ template <class T>
 }
 
 template <class T>
-[[deprecated("Use await_for instead.")]] auto blocking_get(future<T> x,
-                                                           const std::chrono::nanoseconds& timeout)
-    -> decltype(x.get_try()) {
+[[deprecated("Use await_for instead.")]] auto blocking_get(
+    future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
     return blocking_get_for(std::move(x), timeout).get_try();
 }
 
 /**************************************************************************************************/
 
-} // namespace v1
+} // namespace STLAB_VERSION_NAMESPACE()
+} // namespace stlab
 
 /**************************************************************************************************/
-
-} // namespace stlab
 
 #endif // STLAB_CONCURRENCY_AWAIT_HPP

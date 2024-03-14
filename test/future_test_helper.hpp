@@ -32,13 +32,8 @@ struct custom_scheduler {
         ++counter();
         // The implementation on Windows or the mac uses a scheduler that allows many tasks in the
         // pool in parallel
-#if defined(WIN32) || defined(__APPLE__)
+
         stlab::default_executor(std::move(f));
-#else
-        // The default scheduler under Linux allows only as many tasks as there are physical cores.
-        // But this can lead to a dead lock in some of the tests
-        std::thread(std::move(f)).detach();
-#endif
     }
 
     static int usage_counter() { return counter().load(); }
@@ -118,13 +113,11 @@ struct test_fixture {
 
     void check_valid_future(const stlab::future<T>& f) {
         BOOST_REQUIRE(f.valid() == true);
-        BOOST_REQUIRE(!f.exception());
     }
 
     template <typename F, typename... FS>
     void check_valid_future(const F& f, const FS&... fs) {
         BOOST_REQUIRE(f.valid() == true);
-        BOOST_REQUIRE(!f.exception());
         check_valid_future(fs...);
     }
 

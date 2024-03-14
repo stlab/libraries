@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_READY_FUTURE_HPP
 #define STLAB_CONCURRENCY_READY_FUTURE_HPP
 
+#include <stlab/config.hpp>
+
 #include <exception>
 #include <type_traits>
 #include <utility>
@@ -18,10 +20,7 @@
 /**************************************************************************************************/
 
 namespace stlab {
-
-/**************************************************************************************************/
-
-inline namespace v1 {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -72,10 +71,9 @@ future<T> make_exceptional_future(std::exception_ptr error, E executor) {
 
 /**************************************************************************************************/
 
-} // namespace v1
+} // namespace STLAB_VERSION_NAMESPACE()
+} // namespace stlab
 
 /**************************************************************************************************/
-
-} // namespace stlab
 
 #endif // STLAB_CONCURRENCY_READY_FUTURE_HPP
