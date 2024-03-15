@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_CHANNEL_HPP
 #define STLAB_CONCURRENCY_CHANNEL_HPP
 
+#include <stlab/config.hpp>
+
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -33,10 +35,7 @@
 /**************************************************************************************************/
 
 namespace stlab {
-
-/**************************************************************************************************/
-
-inline namespace v1 {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -192,7 +191,9 @@ using avoid = std::conditional_t<std::is_same<void, T>::value, avoid_, T>;
 /**************************************************************************************************/
 
 template <typename F, std::size_t... I, typename... T>
-auto invoke_(F&& f, std::tuple<std::variant<T, std::exception_ptr>...>& t, std::index_sequence<I...>) {
+auto invoke_(F&& f,
+             std::tuple<std::variant<T, std::exception_ptr>...>& t,
+             std::index_sequence<I...>) {
     return std::forward<F>(f)(std::move(std::get<I>(t))...);
 }
 
@@ -484,14 +485,12 @@ struct round_robin_queue_strategy {
     queue_t _queue;
 
     bool empty() const {
-        return get_i(
-            _queue, _index, [](const auto& c) { return c.empty(); }, true);
+        return get_i(_queue, _index, [](const auto& c) { return c.empty(); }, true);
     }
 
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
-        return std::make_tuple(get_i(
-            _queue, _index, [](auto& c) { return c.front(); }, item_t{}));
+        return std::make_tuple(get_i(_queue, _index, [](auto& c) { return c.front(); }, item_t{}));
     }
 
     void pop_front() {
@@ -546,8 +545,8 @@ struct unordered_queue_strategy {
     auto front() {
         assert(!empty() && "front on an empty container is a very bad idea!");
         _index = tuple_find(_queue, [](const auto& c) { return !c.empty(); });
-        return std::make_tuple(get_i(
-            _queue, _index, [](auto& c) { return std::move(c.front()); }, item_t{}));
+        return std::make_tuple(
+            get_i(_queue, _index, [](auto& c) { return std::move(c.front()); }, item_t{}));
     }
 
     void pop_front() {
@@ -1705,10 +1704,7 @@ struct function_process<R(Args...)> {
 
 /**************************************************************************************************/
 
-} // namespace v1
-
-/**************************************************************************************************/
-
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

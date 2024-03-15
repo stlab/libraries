@@ -9,6 +9,7 @@
 #ifndef FUTURE_TEST_HELPER_HPP_
 #define FUTURE_TEST_HELPER_HPP_
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
 
@@ -30,15 +31,7 @@ struct custom_scheduler {
 
     void operator()(stlab::task<void() noexcept> f) const {
         ++counter();
-        // The implementation on Windows or the mac uses a scheduler that allows many tasks in the
-        // pool in parallel
-#if defined(WIN32) || defined(__APPLE__)
         stlab::default_executor(std::move(f));
-#else
-        // The default scheduler under Linux allows only as many tasks as there are physical cores.
-        // But this can lead to a dead lock in some of the tests
-        std::thread(std::move(f)).detach();
-#endif
     }
 
     static int usage_counter() { return counter().load(); }
@@ -100,31 +93,17 @@ struct test_fixture {
     stlab::future<T> sut;
 
     template <typename... F>
-    void wait_until_future_completed(F&... f) {
-        (void)std::initializer_list<int>{(wait_until_future_is_ready(f), 0)...};
-    }
-
-    template <typename F>
-    auto wait_until_future_r_completed(F& f) {
-        auto result = f.get_try();
-        while (!result) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            result = f.get_try();
-        }
-        return result;
+    void wait_until_future_completed(F&&... f) {
+        (void)std::initializer_list<int>{(wait_until_future_is_ready(std::forward<F>(f)), 0)...};
     }
 
     void check_valid_future() {}
 
-    void check_valid_future(const stlab::future<T>& f) {
-        BOOST_REQUIRE(f.valid() == true);
-        BOOST_REQUIRE(!f.exception());
-    }
+    void check_valid_future(const stlab::future<T>& f) { BOOST_REQUIRE(f.valid() == true); }
 
     template <typename F, typename... FS>
     void check_valid_future(const F& f, const FS&... fs) {
         BOOST_REQUIRE(f.valid() == true);
-        BOOST_REQUIRE(!f.exception());
         check_valid_future(fs...);
     }
 
@@ -136,13 +115,15 @@ struct test_fixture {
     }
 
     template <typename E, typename... F>
-    void wait_until_future_fails(F&... f) {
-        (void)std::initializer_list<int>{(wait_until_this_future_fails<E>(f), 0)...};
+    void wait_until_future_fails(F&&... f) {
+        (void)std::initializer_list<int>{
+            (wait_until_this_future_fails<E>(std::forward<F>(f)), 0)...};
     }
 
     void wait_until_all_tasks_completed() {
         while (_task_counter.load() != 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            stlab::invoke_waiting(
+                [] { std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
         }
     }
 
@@ -150,18 +131,14 @@ struct test_fixture {
 
 private:
     template <typename F>
-    void wait_until_future_is_ready(F& f) {
-        while (!f.get_try()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
+    void wait_until_future_is_ready(F&& f) {
+        (void)stlab::await(std::forward<F>(f));
     }
 
     template <typename E, typename F>
-    void wait_until_this_future_fails(F& f) {
+    void wait_until_this_future_fails(F&& f) {
         try {
-            while (!f.get_try()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
+            (void)stlab::await(std::forward<F>(f));
         } catch (const E&) {
         }
     }

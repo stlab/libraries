@@ -9,6 +9,8 @@
 #ifndef STLAB_CONCURRENCY_EXECUTOR_BASE_HPP
 #define STLAB_CONCURRENCY_EXECUTOR_BASE_HPP
 
+#include <stlab/config.hpp>
+
 #include <chrono>
 #include <functional>
 
@@ -18,10 +20,8 @@
 /**************************************************************************************************/
 
 namespace stlab {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
-/**************************************************************************************************/
-
-inline namespace v1 {
 /**************************************************************************************************/
 
 using executor_t = std::function<void(stlab::task<void() noexcept>)>;
@@ -82,10 +82,7 @@ executor_task_pair<F> operator&(F&& f, executor e) {
 
 /**************************************************************************************************/
 
-} // namespace v1
-
-/**************************************************************************************************/
-
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

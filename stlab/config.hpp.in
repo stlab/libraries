@@ -7,6 +7,9 @@
 #ifndef STLAB_CONFIG_HPP
 #define STLAB_CONFIG_HPP
 
+// Release version macro - used for inline namespace increment on each release
+#define STLAB_VERSION_NAMESPACE() v2
+
 // Configuration generated from CMake
 
 #cmakedefine STLAB_NO_STD_COROUTINES
@@ -42,44 +45,43 @@
 
 #if __APPLE__
 
-    #if defined(__has_feature)
-        #if __has_feature(objc_arc)
-            #undef STLAB_FEATURE_PRIVATE_OBJC_ARC
-            #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
-        #endif
-    #endif
-
+#if defined(__has_feature)
+#if __has_feature(objc_arc)
+#undef STLAB_FEATURE_PRIVATE_OBJC_ARC
+#define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
+#endif
+#endif
 
 #elif _MSC_VER
 
-    #if _MSVC_LANG == 201103L
-        #define STLAB_CPP_VERSION_PRIVATE() 11
-    #elif _MSVC_LANG == 201402L
-        #define STLAB_CPP_VERSION_PRIVATE() 14
-    #elif _MSC_FULL_VER >= 191225830 && _MSVC_LANG == 201703L
-        #define STLAB_CPP_VERSION_PRIVATE() 17
-    #elif _MSVC_LANG == 202002L
-        #define STLAB_CPP_VERSION_PRIVATE() 20
-    #else
-        #pragma message("Unknown version of C++, assuming C++20.")
-        #define STLAB_CPP_VERSION_PRIVATE() 20
-    #endif
+#if _MSVC_LANG == 201103L
+#define STLAB_CPP_VERSION_PRIVATE() 11
+#elif _MSVC_LANG == 201402L
+#define STLAB_CPP_VERSION_PRIVATE() 14
+#elif _MSC_FULL_VER >= 191225830 && _MSVC_LANG == 201703L
+#define STLAB_CPP_VERSION_PRIVATE() 17
+#elif _MSVC_LANG == 202002L
+#define STLAB_CPP_VERSION_PRIVATE() 20
+#else
+#pragma message("Unknown version of C++, assuming C++20.")
+#define STLAB_CPP_VERSION_PRIVATE() 20
+#endif
 
 #endif
 
 #if !defined(STLAB_CPP_VERSION_PRIVATE)
-    #if __cplusplus == 201103L
-        #define STLAB_CPP_VERSION_PRIVATE() 11
-    #elif __cplusplus == 201402L
-        #define STLAB_CPP_VERSION_PRIVATE() 14
-    #elif __cplusplus == 201703L
-        #define STLAB_CPP_VERSION_PRIVATE() 17
-    #elif __cplusplus == 202002L
-        #define STLAB_CPP_VERSION_PRIVATE() 20
-    #else
-        //#warning Unknown version of C++, assuming C++23.
-        #define STLAB_CPP_VERSION_PRIVATE() 23
-    #endif
+#if __cplusplus == 201103L
+#define STLAB_CPP_VERSION_PRIVATE() 11
+#elif __cplusplus == 201402L
+#define STLAB_CPP_VERSION_PRIVATE() 14
+#elif __cplusplus == 201703L
+#define STLAB_CPP_VERSION_PRIVATE() 17
+#elif __cplusplus == 202002L
+#define STLAB_CPP_VERSION_PRIVATE() 20
+#else
+// #warning Unknown version of C++, assuming C++23.
+#define STLAB_CPP_VERSION_PRIVATE() 23
+#endif
 #endif
 
 // STLAB_NODISCARD macro

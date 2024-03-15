@@ -9,15 +9,15 @@
 #ifndef STLAB_CONCURRENCY_TRAITS_HPP
 #define STLAB_CONCURRENCY_TRAITS_HPP
 
+#include <stlab/config.hpp>
+
 #include <type_traits>
 
 /**************************************************************************************************/
 
 namespace stlab {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
-/**************************************************************************************************/
-
-inline namespace v1 {
 /**************************************************************************************************/
 
 template <bool...>
@@ -27,10 +27,10 @@ using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
 
 /**************************************************************************************************/
 
-template<template<typename> class test, typename T>
+template <template <typename> class test, typename T>
 struct smart_test : test<T> {};
 
-template<typename T>
+template <typename T>
 using smart_is_copy_constructible = smart_test<std::is_copy_constructible, T>;
 
 template <typename T>
@@ -92,7 +92,7 @@ using detected_t = typename detector<nonesuch, void, Op, Args...>::type;
 
 /**************************************************************************************************/
 
-} // namespace v1
+} // namespace STLAB_VERSION_NAMESPACE()
 
 /**************************************************************************************************/
 

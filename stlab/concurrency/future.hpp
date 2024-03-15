@@ -38,10 +38,7 @@
 /**************************************************************************************************/
 
 namespace stlab {
-
-/**************************************************************************************************/
-
-inline namespace v1 {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -274,8 +271,6 @@ struct shared_base<T, enable_if_copyable<T>> : std::enable_shared_from_this<shar
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    void reset() { _then.clear(); } // NEEDS MUTEX
-
     template <typename F>
     auto recover(future<T>&& p, F&& f) {
         return recover(std::move(p), _executor, std::forward<F>(f));
@@ -389,8 +384,6 @@ struct shared_base<T, enable_if_not_copyable<T>> : std::enable_shared_from_this<
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    void reset() { _then.second = task<void() noexcept>{}; }
-
     template <typename F>
     auto recover(future<T>&& p, F&& f) {
         return recover(std::move(p), _executor, std::forward<F>(f));
@@ -473,8 +466,6 @@ struct shared_base<void> : std::enable_shared_from_this<shared_base<void>> {
     then_t _then;
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
-
-    void reset() { _then.clear(); }
 
     template <typename F>
     auto recover(future<result_type>&& p, F&& f) {
@@ -750,7 +741,11 @@ public:
         return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
-    std::exception_ptr exception() const& { return _p->_exception; }
+    // Precondition: is_ready()
+    std::exception_ptr exception() const& {
+        assert(is_ready());
+        return _p->_exception;
+    }
 };
 
 /**************************************************************************************************/
@@ -897,7 +892,11 @@ public:
         return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
-    std::exception_ptr exception() const& { return _p->_exception; }
+    // Precondition: is_ready()
+    std::exception_ptr exception() const& {
+        assert(is_ready());
+        return _p->_exception;
+    }
 };
 
 /**************************************************************************************************/
@@ -1001,7 +1000,11 @@ public:
         return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
-    std::exception_ptr exception() const& { return _p->_exception; }
+    // Precondition: is_ready()
+    std::exception_ptr exception() const& {
+        assert(is_ready());
+        return _p->_exception;
+    }
 };
 
 template <typename Sig, typename E, typename F>
@@ -1233,7 +1236,7 @@ template <typename E, typename F, typename... Ts>
 auto when_all(E executor, F f, future<Ts>... args) {
     using vt_t = voidless_tuple<Ts...>;
     using opt_t = optional_placeholder_tuple<Ts...>;
-    using result_t = decltype(detail::apply_tuple(std::declval<F>(), std::declval<vt_t>()));
+    using result_t = decltype(apply_ignore_placeholders(std::declval<F>(), std::declval<vt_t>()));
 
     auto shared = std::make_shared<detail::when_all_shared<F, opt_t>>();
     auto p = package<result_t()>(
@@ -1816,10 +1819,7 @@ auto shared_base<void>::recover(future<result_type>&& p, E executor, F&& f) {
 
 /**************************************************************************************************/
 
-} // namespace v1
-
-/**************************************************************************************************/
-
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

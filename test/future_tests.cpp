@@ -230,7 +230,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn, T, copyable_test_ty
     {
         auto sut = async(make_executor<0>(), []() -> T { return T(0); });
         BOOST_REQUIRE(sut.valid() == true);
-        BOOST_REQUIRE(!sut.exception());
 
         sut.reset();
         BOOST_REQUIRE(sut.valid() == false);
@@ -249,12 +248,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters,
     {
         auto sut = async(make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
         BOOST_REQUIRE(sut.valid() == true);
-        BOOST_REQUIRE(!sut.exception());
 
         while (!sut.get_try()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
+        BOOST_REQUIRE(!sut.exception());
         BOOST_WARN_EQUAL(T(42) + T(0), *sut.get_try());
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -265,14 +264,14 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
 
     test_setup setup;
     {
-        auto sut = async(make_executor<0>(), []() -> v1::move_only { return v1::move_only{42}; });
+        auto sut = async(make_executor<0>(), []() -> stlab::move_only { return stlab::move_only{42}; });
         BOOST_REQUIRE(sut.valid() == true);
-        BOOST_REQUIRE(!sut.exception());
 
         while (!sut.get_try()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
+        BOOST_REQUIRE(!sut.exception());
         BOOST_REQUIRE_EQUAL(42, sut.get_try()->member());
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());

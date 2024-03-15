@@ -326,10 +326,10 @@ BOOST_AUTO_TEST_CASE(future_when_all_move_range_with_many_elements) {
                    std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    auto result = await(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
-    BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, (*sut.get_try()).member() );
+    BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, result.member() );
     BOOST_REQUIRE_LE(4, custom_scheduler<0>::usage_counter());
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
