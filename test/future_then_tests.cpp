@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(future_then_non_copyable_detach) {
         }).detach();
     }
     while (!check) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        invoke_waiting([] { this_thread::sleep_for(chrono::milliseconds(1)); });
     }
 }
 
@@ -858,7 +858,7 @@ BOOST_AUTO_TEST_CASE(future_int_single_task_detached) {
         detached.detach();
     }
     while (!check) {
-        this_thread::sleep_for(chrono::milliseconds(1));
+        invoke_waiting([] { this_thread::sleep_for(chrono::milliseconds(1)); });
     }
 }
 

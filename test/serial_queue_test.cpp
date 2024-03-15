@@ -2,6 +2,7 @@
 #include <string>
 #include <thread>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
@@ -14,7 +15,9 @@ using namespace stlab;
 
 /**************************************************************************************************/
 
-inline void rest() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+inline void rest() {
+    invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
+}
 
 /**************************************************************************************************/
 
@@ -41,9 +44,11 @@ void test0(stlab::schedule_mode mode) {
 
     dq([&]() noexcept { strout("           d1           ( 3)"); });
 
-    b([&]() { strout("   b2                   ( 4)"); })
-        .then(stlab::immediate_executor, [&]() { strout("   b2.1                 ( 4.1)"); })
-        .detach();
+    b([&]() {
+        strout("   b2                   ( 4)");
+    }).then(stlab::immediate_executor, [&]() {
+          strout("   b2.1                 ( 4.1)");
+      }).detach();
 
     cq([&]() noexcept { strout("        c1              ( 5)"); });
 
@@ -103,9 +108,8 @@ class test_hash_t {
         static std::mutex m;
         std::lock_guard<std::mutex> l(m);
 
-        std::cout << std::hex << _name << " need: "
-                  << "0x" << expected << " have: "
-                  << "0x" << _h << "\n"
+        std::cout << std::hex << _name << " need: " << "0x" << expected << " have: " << "0x" << _h
+                  << "\n"
                   << std::dec;
     }
 
@@ -128,8 +132,8 @@ struct serial_hash {
     std::atomic<int> _c{0};
     test_hash_t _h;
 
-    explicit serial_hash(std::string s, std::uint64_t e, stlab::schedule_mode mode)
-        : _q{stlab::default_executor, mode}, _h(std::move(s), e) {}
+    explicit serial_hash(std::string s, std::uint64_t e, stlab::schedule_mode mode) :
+        _q{stlab::default_executor, mode}, _h(std::move(s), e) {}
 
     void operator()(std::string s, std::uint64_t e) {
         _q.executor()([this, _e = e, _s = std::move(s)]() noexcept {

@@ -249,12 +249,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(future_constructed_minimal_fn_with_parameters,
         auto sut = async(make_executor<0>(), [](auto x) -> T { return x + T(0); }, T(42));
         BOOST_REQUIRE(sut.valid() == true);
 
-        while (!sut.get_try()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE(!sut.exception());
-        BOOST_WARN_EQUAL(T(42) + T(0), *sut.get_try());
+        BOOST_WARN_EQUAL(T(42) + T(0), result);
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
@@ -264,15 +261,13 @@ BOOST_AUTO_TEST_CASE(future_constructed_minimal_fn_moveonly) {
 
     test_setup setup;
     {
-        auto sut = async(make_executor<0>(), []() -> stlab::move_only { return stlab::move_only{42}; });
+        auto sut =
+            async(make_executor<0>(), []() -> stlab::move_only { return stlab::move_only{42}; });
         BOOST_REQUIRE(sut.valid() == true);
 
-        while (!sut.get_try()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE(!sut.exception());
-        BOOST_REQUIRE_EQUAL(42, sut.get_try()->member());
+        BOOST_REQUIRE_EQUAL(42, result.member());
     }
     BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
 }
@@ -436,7 +431,9 @@ BOOST_AUTO_TEST_CASE(future_wait_void_with_timeout) {
 
 BOOST_AUTO_TEST_CASE(future_wait_void_with_timeout_reached) {
     BOOST_TEST_MESSAGE("future wait with void with a timeout");
-    auto answer = [&] { std::this_thread::sleep_for(std::chrono::milliseconds(500)); };
+    auto answer = [&] {
+        invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(500)); });
+    };
 
     stlab::future<void> f = stlab::async(stlab::default_executor, answer);
     f = stlab::await_for(std::move(f), std::chrono::milliseconds(100));
@@ -447,7 +444,7 @@ BOOST_AUTO_TEST_CASE(future_wait_void_with_timeout_reached) {
 BOOST_AUTO_TEST_CASE(future_wait_int_with_timeout_reached) {
     BOOST_TEST_MESSAGE("future wait with int with a timeout");
     auto answer = [&] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        stlab::invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(500)); });
         return 42;
     };
 
@@ -460,7 +457,7 @@ BOOST_AUTO_TEST_CASE(future_wait_int_with_timeout_reached) {
 BOOST_AUTO_TEST_CASE(future_wait_move_only_with_timeout_reached) {
     BOOST_TEST_MESSAGE("future wait with move_only with a timeout");
     auto answer = [&] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        stlab::invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(500)); });
         return move_only(42);
     };
 
@@ -519,7 +516,7 @@ BOOST_AUTO_TEST_CASE(future_wait_void_error_case_with_timeout) {
 BOOST_AUTO_TEST_CASE(future_wait_copyable_value_timeout) {
     BOOST_TEST_MESSAGE("future wait with copyable value with timeout");
     auto answer = [] {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        stlab::invoke_waiting([] { std::this_thread::sleep_for(std::chrono::seconds(1)); });
         return 42;
     };
 
@@ -533,7 +530,7 @@ BOOST_AUTO_TEST_CASE(future_wait_copyable_value_timeout) {
 BOOST_AUTO_TEST_CASE(future_wait_moveonly_value_and_timeout) {
     BOOST_TEST_MESSAGE("future wait with moveonly value");
     auto answer = [] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        stlab::invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
         return stlab::move_only(42);
     };
 

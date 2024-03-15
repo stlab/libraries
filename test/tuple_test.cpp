@@ -115,8 +115,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_int) {
         [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
         fi());
 
-    while (!f.get_try())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    await(std::move(f));
 }
 
 /**************************************************************************************************/
@@ -126,8 +125,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void) {
 
     auto f = when_all(stlab::default_executor, []() { cout << "done!\n"; }, fv());
 
-    while (!f.get_try())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    await(std::move(f));
 }
 
 /**************************************************************************************************/
@@ -144,8 +142,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_int) {
         [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fv(),
         fi());
 
-    while (!f.get_try())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    await(std::move(f));
 }
 
 /**************************************************************************************************/
@@ -162,8 +159,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void) {
         [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
         fv());
 
-    while (!f.get_try())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    await(std::move(f));
 }
 
 /**************************************************************************************************/
@@ -181,8 +177,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void_string_void_bool_void) {
         [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
         fv(), fs(), fv(), fb(), fv());
 
-    while (!f.get_try())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    await(std::move(f));
 }
 
 /**************************************************************************************************/
@@ -194,8 +189,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void) {
         stlab::default_executor, [](size_t index) { std::cout << "f: " << index << '\n'; }, fv(),
         fv(), fv(), fv(), fv(), fv());
 
-    while (!f.get_try())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    await(std::move(f));
 }
 
 /**************************************************************************************************/

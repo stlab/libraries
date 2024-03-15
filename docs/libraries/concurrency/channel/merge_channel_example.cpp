@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 
@@ -16,17 +17,14 @@ int main() {
     tie(send2, receive2) = channel<int>(default_executor);
     tie(send3, receive3) = channel<int>(default_executor);
 
-    std::atomic_int all_done{ 0 };
+    std::atomic_int all_done{0};
 
-    auto merged = merge_channel<unordered_t>(default_executor,
-                        [](int x) { return x; },
-                        receive1,
-                        receive2,
-                        receive3)
-        | [&_all_done = all_done](int x) {
-              cout << x << '\n';
-              ++_all_done;
-          };
+    auto merged = merge_channel<unordered_t>(
+                      default_executor, [](int x) { return x; }, receive1, receive2, receive3) |
+                  [&_all_done = all_done](int x) {
+                      cout << x << '\n';
+                      ++_all_done;
+                  };
 
     receive1.set_ready();
     receive2.set_ready();
@@ -41,7 +39,7 @@ int main() {
 
     // Waiting just for illustrational purpose
     while (all_done < 6) {
-        this_thread::sleep_for(std::chrono::milliseconds(1));
+        invoke_waiting([] { this_thread::sleep_for(std::chrono::milliseconds(1)); });
     }
 
     pre_exit();

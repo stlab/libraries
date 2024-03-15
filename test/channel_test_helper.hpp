@@ -11,13 +11,13 @@
 
 #include <stlab/concurrency/channel.hpp>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/task.hpp>
 #include <stlab/scope.hpp>
 
 #include <queue>
 #include <thread>
-
 
 using lock_t = std::unique_lock<std::mutex>;
 
@@ -42,7 +42,8 @@ public:
 
     static void wait_until_queue_size_of(std::size_t n) {
         while (stlab::scope<lock_t>(_mutex, [&] { return _tasks.size(); }) < n) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            stlab::invoke_waiting(
+                [] { std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
         }
     }
 
@@ -63,7 +64,8 @@ struct channel_test_fixture_base {
     template <typename F>
     void wait_until_done(F&& f) const {
         while (!std::forward<F>(f)()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            stlab::invoke_waiting(
+                [] { std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
         }
     }
 };
@@ -73,9 +75,7 @@ struct channel_test_fixture : channel_test_fixture_base {
     std::array<stlab::sender<T>, N> _send;
     std::array<stlab::receiver<T>, N> _receive;
 
-    channel_test_fixture() {
-        test_reset();
-    }
+    channel_test_fixture() { test_reset(); }
 
     void test_reset() {
         for (std::size_t i = 0; i < N; i++)
@@ -120,7 +120,8 @@ public:
     template <typename F>
     void wait_until_done(F&& f) const {
         while (!std::forward<F>(f)()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
+            stlab::invoke_waiting(
+                [] { std::this_thread::sleep_for(std::chrono::microseconds(1)); });
         }
     }
 };

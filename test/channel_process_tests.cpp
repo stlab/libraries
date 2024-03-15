@@ -8,6 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/channel.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
@@ -16,6 +17,8 @@
 #include <vector>
 
 #include "channel_test_helper.hpp"
+
+using namespace stlab;
 
 using channel_test_fixture_int_1 = channel_test_helper::channel_test_fixture<int, 1>;
 
@@ -164,14 +167,16 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_one_step) {
     std::atomic_int index2{0};
     std::vector<int> results2(10, 0);
 
-    auto check1 = _receive[0] | channel_test_helper::sum<1>() | [& _index = index1, &_results = results1](int x) {
-        _results[x] = x;
-        ++_index;
-    };
-    auto check2 = _receive[0] | channel_test_helper::sum<1>() | [& _index = index2, &_results = results2](int x) {
-        _results[x] = x;
-        ++_index;
-    };
+    auto check1 = _receive[0] | channel_test_helper::sum<1>() |
+                  [&_index = index1, &_results = results1](int x) {
+                      _results[x] = x;
+                      ++_index;
+                  };
+    auto check2 = _receive[0] | channel_test_helper::sum<1>() |
+                  [&_index = index2, &_results = results2](int x) {
+                      _results[x] = x;
+                      ++_index;
+                  };
 
     _receive[0].set_ready();
     for (auto i = 0; i < 10; ++i)
@@ -193,14 +198,16 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_two_steps) {
     std::atomic_int index2{0};
     std::vector<int> results2(5);
 
-    auto check1 = _receive[0] | channel_test_helper::sum<2>() | [& _index = index1, &_results = results1](int x) {
-        _results[_index] = x;
-        ++_index;
-    };
-    auto check2 = _receive[0] | channel_test_helper::sum<2>() | [& _index = index2, &_results = results2](int x) {
-        _results[_index] = x;
-        ++_index;
-    };
+    auto check1 = _receive[0] | channel_test_helper::sum<2>() |
+                  [&_index = index1, &_results = results1](int x) {
+                      _results[_index] = x;
+                      ++_index;
+                  };
+    auto check2 = _receive[0] | channel_test_helper::sum<2>() |
+                  [&_index = index2, &_results = results2](int x) {
+                      _results[_index] = x;
+                      ++_index;
+                  };
 
     _receive[0].set_ready();
     for (auto i = 0; i < 10; ++i)
@@ -221,8 +228,10 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_many_steps) {
     std::atomic_int result1{0};
     std::atomic_int result2{0};
 
-    auto check1 = _receive[0] | channel_test_helper::sum<10>() | [& _result = result1](int x) { _result = x; };
-    auto check2 = _receive[0] | channel_test_helper::sum<10>() | [& _result = result2](int x) { _result = x; };
+    auto check1 =
+        _receive[0] | channel_test_helper::sum<10>() | [&_result = result1](int x) { _result = x; };
+    auto check2 =
+        _receive[0] | channel_test_helper::sum<10>() | [&_result = result2](int x) { _result = x; };
 
     _receive[0].set_ready();
     for (auto i = 0; i < 10; ++i)
@@ -261,7 +270,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed) {
     channel_test_helper::manual_scheduler::run_next_task();
 
     while (result == 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(10)); });
     }
 
     BOOST_REQUIRE_EQUAL(42, result);
@@ -282,13 +291,14 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps_timed_wo_timeout) {
     send(42);
 
     while (channel_test_helper::timed_sum::current_sum() != 42) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(10)); });
     }
 
     send(43);
 
     while (result == 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        invoke_waiting([] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); });
     }
 
     BOOST_REQUIRE_EQUAL(85, result);
@@ -330,7 +340,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) 
     send(42);
 
     while (!check) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(10)); });
     }
 
     BOOST_REQUIRE_EQUAL(true, check.load());
@@ -372,7 +382,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_close_is_called_on_upstream_error) {
     send(42);
 
     while (!check) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(10)); });
     }
 
     BOOST_REQUIRE_EQUAL(true, check.load());
