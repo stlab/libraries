@@ -265,7 +265,7 @@ placement
 margin
 : type: [integer](#integer) or [array](#array)
 : default: [ 0, 0, 0, 0 ]
-: margin is the amount of space from the frame of the container to the children within. The margins of a container can only be encroached upon by the outset of a child widget. A child widget's outset is not allowed to be larger than its container's margin (implying the outset of the child would extend into and possibly beyond the frame of the container.) If the container has no margin, then the outset of the child widgets will propagate to become the outsets of the parent container. If this attribute is specified using a single value (e.g., margin: 20) it implies the value should be used for all the container's margins.
+: margin is the amount of space from the frame of the container to the children within, `[top, left, bottom, right]. The margins of a container can only be encroached upon by the outset of a child widget. A child widget's outset is not allowed to be larger than its container's margin (implying the outset of the child would extend into and possibly beyond the frame of the container.) If the container has no margin, then the outset of the child widgets will propagate to become the outsets of the parent container. If this attribute is specified using a single value (e.g., margin: 20) it implies the value should be used for all the container's margins.
 
 horizontal
 : type: [enumeration](#enumeration)
