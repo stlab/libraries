@@ -19,24 +19,24 @@ This is the layout behavior specifications for the default set of ASL widgets.
 ### Links vs. Buttons
 
 [1/13/09 - sparent \<at\> adobe \<dot\> com]
-The current description of a <code>link</code> in this document refers to the "chain link" indicator in the Ps Image Size dialog. The term <code>link</code> however has come to be used more commonly to refer to a hyper text link. I propose we change that name and add a hyper text link widget. From here forward in the discussion when I refer to a <code>link</code> I mean a hyper text link.
+The current description of a <code>link</code> in this document refers to the "chain link" indicator in the Ps Image Size dialog. The term <code>link</code>, however, has come to be used more commonly to refer to a hypertext link. I propose we change that name and add a hypertext link widget. From here forward in the discussion when I refer to a <code>link</code> I mean a hyper text link.
 
-A <code>link</code> widget is similar in nature to a button except the semantics of the action are constrained to "go to location" where a location could be a dialog, sheet, document page, panel, anchor within a document page, or other 'visual' location. Traditionally in dialogs a button with an ellipses, i.e. (Auto...), implied a link to a dialog (later extended to a sheet). The ellipses also implied "more information needed" - however that distinction is not being consistently applied. The ellipses is also used in menu items with the same implication. A link widget should take a URI as an argument and we should settle on a standard URI format to link to application UI constructs (mostly dialogs).
+A <code>link</code> widget is similar to a button, except the semantics of the action are constrained to "go to a location," where a location could be a dialog, sheet, document page, panel, anchor within a document page, or other 'visual' location. Traditionally in dialogs a button with an ellipses, i.e. (Auto...), implied a link to a dialog (later extended to a sheet). The ellipses also implied "more information needed" - however, that distinction is not consistently applied. The ellipses are also used in menu items with the same implication. A link widget should take a URI as an argument, and we should settle on a standard URI format to link to application UI constructs (mostly dialogs).
 
-I would like to see our UI designers weigh in with a rule set for when to use a <code>link</code> vs. a button with an ellipsis so we can gain some consistency (perhaps we could simply drop this use case for buttons). If the distinction cannot be made programmatically, then I propose we have an attribute on the <code>link</code> widget gives the button/ellipse appearance without the need to embed the ellipse in the string (giving greater flexibility to the UI designers in the future).
+I would like to see our UI designers weigh in with a rule set for when to use a <code>link</code> vs. a button with an ellipsis so we can gain some consistency (perhaps we could simply drop this use case for buttons). If the distinction cannot be made programmatically, then I propose we have an attribute on the <code>link</code> widget that gives the button/ellipse appearance without the need to embed the ellipse in the string (giving greater flexibility to the UI designers in the future).
 
-As we are building more of our own UI, some thought might be given to using a link representation in menus as well.
+As we build more of our UI, we might consider using a link representation in menus as well.
 
-A good <code>display_text</code> widget would allow for embedded links (possibly using an xhtml representation for the display text).
+A good <code>display_text</code> widget would allow for embedded links (possibly using an XHTML representation for the display text).
 
 ### Subordinate Groups
 
 [1/13/09 - sparent \<at\> adobe \<dot\> com]
-A recent question arose regarding adding the ability to add <em>any</em> widget into the header of a <code>group</code> widget. There are cases within our UI where we have a checkbox and a popup and the idea was to generalize this to any widget. However, upon reflection the implied semantics of a widget in the header of a group are that the items within the group are subordinates to the item in the header. The only widgets for which I can envision such a subordinate relationship are those that select from a fixed set of values, specifically, checkbox, radio_button, and popup.
+A recent question arose regarding adding the ability to add <em>any</em> widget into the header of a <code>group</code> widget. There are cases within our UI where we have a checkbox and a popup, and the idea was to generalize this to any widget. However, upon reflection, the implied semantics of a widget in the header of a group are that the items within the group are subordinates to the item in the header. The only widgets I can envision such a subordinate relationship are those that select from a fixed set of values, specifically, checkbox, radio_button, and popup.
 
-For a checkbox, the implication is that the subordinate items only apply when the checkbox is in it's positive state (and would be disabled otherwise). For a radio_button, the implication is that the subordinate items only apply when the state associated with the radio button is selected. For a popup, the implication is that there are multiple panels of subordinate  items and the items on non-visible panels will be disabled (with the items on the current panel being enabled for the current popup selection). This distinguishes the popup group case from the tab panel case where there is no implication that the tabs are making any "choice" other than selecting which view to display.
+For a checkbox, the implication is that the subordinate items only apply when the checkbox is in it's positive state (and would be disabled otherwise). For a radio_button, the implication is that the subordinate items only apply when the state associated with the radio button is selected. For a popup, the implication is that there are multiple panels of subordinate  items, and the items on non-visible panels will be disabled (with the items on the current panel being enabled for the current popup selection). This distinguishes the popup group case from the tab panel case, where there is no implication that the tabs are making any "choice" other than selecting which view to display.
 
-My proposed solution is that we allow checkbox, radio_button and popup to be used as containers:
+My proposed solution is that we allow checkbox, radio_button, and popup to be used as containers:
 
 <pre>
 checkbox(name: "Use File Size:") {
@@ -48,7 +48,7 @@ checkbox(name: "Use File Size:") {
 
 ## CEL Primer
 
-Values expressed in this document are specified using the Common Expression Language (CEL). For a more thorough introduction to the common expression language please visit [http://stlab.adobe.com/group__expression__reference.html the CEL expression reference documentation]. Here is a quick overview of the types available in the CEL and how they are formatted:
+Values expressed in this document are specified using the Common Expression Language (CEL). For a more thorough introduction to the common expression language, please visit [http://stlab.adobe.com/group__expression__reference.html the CEL expression reference documentation]. Here is a quick overview of the types available in the CEL and how they are formatted:
 
 {:auto_ids}
 empty
@@ -265,7 +265,7 @@ placement
 margin
 : type: [integer](#integer) or [array](#array)
 : default: [ 0, 0, 0, 0 ]
-: margin is the amount of space from the frame of the container to the children within, `[top, left, bottom, right]. The margins of a container can only be encroached upon by the outset of a child widget. A child widget's outset is not allowed to be larger than its container's margin (implying the outset of the child would extend into and possibly beyond the frame of the container.) If the container has no margin, then the outset of the child widgets will propagate to become the outsets of the parent container. If this attribute is specified using a single value (e.g., margin: 20) it implies the value should be used for all the container's margins.
+: margin is the amount of space from the frame of the container to the children within, `[top, left, bottom, right]`. The margins of a container can only be encroached upon by the outset of a child widget. A child widget's outset is not allowed to be larger than its container's margin (implying the outset of the child would extend into and possibly beyond the frame of the container.) If the container has no margin, then the outset of the child widgets will propagate to become the outsets of the parent container. If this attribute is specified using a single value (e.g., margin: 20) it implies the value should be used for all the container's margins.
 
 horizontal
 : type: [enumeration](#enumeration)
