@@ -22,7 +22,7 @@
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
-#elif STLAB_TASK_SYSTEM(PORTABLE)
+#elif STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
 #include <algorithm>
 #include <condition_variable>
 #include <thread>
@@ -158,7 +158,7 @@ private:
 
 /**************************************************************************************************/
 
-#elif STLAB_TASK_SYSTEM(PORTABLE)
+#elif STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
 
 class system_timer {
     using element_t = std::pair<std::chrono::steady_clock::time_point, task<void() noexcept>>;
@@ -238,7 +238,7 @@ public:
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
+#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE) || STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
 
 struct system_timer_type {
     using result_type = void;

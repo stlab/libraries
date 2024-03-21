@@ -24,7 +24,7 @@ stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
 stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
-set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
+set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows|experimental_rust).")
 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
@@ -91,6 +91,10 @@ if (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
 endif()
 
+if (STLAB_TASK_SYSTEM STREQUAL "experimental_rust")
+  add_subdirectory( rustport )
+endif()
+
 if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
 elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt5")
@@ -99,6 +103,7 @@ elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt6")
   target_link_libraries( stlab INTERFACE Qt6::Core )
 endif()
 
+message(STATUS "stlab: Use Boost C++17 Shims: ${STLAB_USE_BOOST_CPP17_SHIMS}")
 message(STATUS "stlab: Disable Coroutines: ${STLAB_DEFAULT_NO_STD_COROUTINES}")
 message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
@@ -122,6 +127,10 @@ if ( BUILD_TESTING )
     Boost::unit_test_framework
     stlab::development
     stlab::stlab )
+
+  if (STLAB_TASK_SYSTEM STREQUAL "experimental_rust")
+    target_link_libraries( testing INTERFACE RustyDefaultExecutor )
+  endif ()
 
   #
   # Linking to the Boost unit test framework requires an additional
