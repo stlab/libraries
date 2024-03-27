@@ -126,6 +126,16 @@ constexpr std::decay_t<T> copy(T&& value) noexcept(noexcept(std::decay_t<T>{
 
 /**************************************************************************************************/
 
+/// A standard move implementation but with a compile-time check for const types.
+template <class T>
+constexpr std::remove_reference_t<T>&& move(T&& t) noexcept {
+    static_assert(!std::is_const_v<std::remove_reference_t<T>>,
+                  "move of const type will unintentionally decay to copy");
+    return static_cast<std::remove_reference_t<T>&&>(t);
+}
+
+/**************************************************************************************************/
+
 } // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
