@@ -75,7 +75,7 @@ If you organize the build directory into subdirectories you can support multiple
 
 ```
 rm -rf ../builds/portable
-cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_TASK_SYSTEM=portable -DCMAKE_OSX_DEPLOYMENT_TARGET=14.4  -DCMAKE_OSX_DEPLOYMENT_TARGET=macosx14.4
+cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_TASK_SYSTEM=portable -DCMAKE_OSX_DEPLOYMENT_TARGET=macosx14.4
 ```
 
 ### Build

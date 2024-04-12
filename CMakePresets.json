@@ -1,0 +1,22 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 12,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ninja",
+      "description": "Ninja Debug Build",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_BUILD_TYPE": "DEBUG",
+        "BUILD_TESTING": "ON"
+      }
+    }
+  ]
+}
