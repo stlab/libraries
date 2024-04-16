@@ -160,9 +160,6 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename...>
-struct type_list {};
-
 template <typename>
 struct result_of_;
 
@@ -173,14 +170,6 @@ struct result_of_<R(Args...)> {
 
 template <typename F>
 using result_of_t_ = typename result_of_<F>::type;
-
-template <typename>
-struct arguments_of_;
-
-template <typename R, typename... Args>
-struct arguments_of_<R(Args...)> {
-    using type = type_list<Args...>;
-};
 
 template <typename F, typename T>
 struct result_of_when_all_t;
@@ -324,8 +313,6 @@ struct shared_future {
 template <typename... Args>
 struct shared_task {
     virtual ~shared_task() = default;
-
-    virtual void remove_promise() = 0;
 
     virtual void operator()(Args... args) = 0;
 
@@ -597,6 +584,13 @@ class promise {
 public:
     explicit promise(const std::shared_ptr<shared_base<R>>& p) : _p{p} {}
 
+    ~promise() {
+        if (auto p = _p.lock()) {
+            p->set_exception(
+                std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
+        }
+    }
+
     promise(promise&&) noexcept = default;
     promise& operator=(promise&&) noexcept = default;
 
@@ -605,6 +599,7 @@ public:
 
     void set_value(type&& value) && noexcept {
         if (auto p = _p.lock()) {
+            _p.reset();
             p->set_value(std::move(value));
         }
     }
@@ -613,6 +608,7 @@ public:
 
     void set_exception(std::exception_ptr&& error) && noexcept {
         if (auto p = _p.lock()) {
+            _p.reset();
             p->set_exception(std::move(error));
         }
     }
@@ -634,14 +630,10 @@ struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
 
     shared(executor_t s) : shared_base<R>(std::move(s)) {}
 
-    void remove_promise() override {
-        this->set_error(std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
-    }
-
-    void operator()(Args... args) noexcept override {
+    void operator()(promise&& p, Args... args) noexcept override {
         if (!_f) return;
 
-        _f(promise{this->shared_from_this()}, std::move(args)...);
+        _f(std::move(p), std::move(args)...);
 
         _f = function_t();
     }
@@ -664,8 +656,6 @@ template <typename... Args>
 class packaged_task {
     using ptr_t = std::weak_ptr<detail::shared_task<Args...>>;
 
-    ptr_t _p;
-
     explicit packaged_task(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Sig, typename E, typename F>
@@ -677,10 +667,6 @@ class packaged_task {
 
 public:
     packaged_task() = default;
-
-    ~packaged_task() {
-        if (auto p = _p.lock()) p->remove_promise();
-    }
 
     packaged_task(const packaged_task&) = delete;
     packaged_task& operator=(const packaged_task&) = delete;
