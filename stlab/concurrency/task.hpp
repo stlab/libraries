@@ -190,6 +190,7 @@ public:
     constexpr task_() noexcept = default;
     constexpr task_(std::nullptr_t) noexcept : task_() {}
     task_(const task_&) = delete;
+    task_(const task_&&) = delete;
     task_(task_&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
