@@ -82,7 +82,9 @@ inline group_t& group() {
     // Use an immediately executed lambda to atomically register pre-exit handler
     // and create the dispatch group.
     static group_t g{[] {
-        at_pre_exit([]() noexcept { dispatch_group_wait(g._group, DISPATCH_TIME_FOREVER); });
+        at_pre_exit([]() noexcept { // <br>
+            dispatch_group_wait(g._group, DISPATCH_TIME_FOREVER);
+        });
         return group_t{};
     }()};
     return g;

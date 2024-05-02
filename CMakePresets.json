@@ -15,7 +15,9 @@
       "cacheVariables": {
         "CMAKE_CXX_STANDARD": "17",
         "CMAKE_BUILD_TYPE": "DEBUG",
-        "BUILD_TESTING": "ON"
+        "BUILD_TESTING": "ON",
+        "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined",
+        "CMAKE_VERBOSE_MAKEFILE": "ON"
       }
     }
   ]

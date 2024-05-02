@@ -38,6 +38,14 @@
 
 /**************************************************************************************************/
 
+/*
+    packaged_task<Args...> is a function that holds a type erased promise
+    invoking the packaged task will call with the moved promise
+
+*/
+
+/**************************************************************************************************/
+
 namespace stlab {
 inline namespace STLAB_VERSION_NAMESPACE() {
 
@@ -234,50 +242,34 @@ using packaged_task_from_signature_t = typename packaged_task_from_signature<T>:
 /**************************************************************************************************/
 
 template <class>
-struct reduce_signature;
+struct reduced_signature;
 
 template <class R, class... Args>
-struct reduce_signature<R(Args...)> {
+struct reduced_signature<R(Args...)> {
     using type = R(Args...);
 };
 
 template <class R, class... Args>
-struct reduce_signature<future<R>(Args...)> {
+struct reduced_signature<future<R>(Args...)> {
     using type = R(Args...);
 };
 
 template <class T>
-using reduce_signature_t = typename reduce_signature<T>::type;
+using reduced_signature_t = typename reduced_signature<T>::type;
 
 /**************************************************************************************************/
 
 template <class T>
-struct will_reduce : std::false_type {};
+inline constexpr bool is_future_v = false;
 
 template <class T>
-struct will_reduce<future<T>> : std::true_type {};
-
-template <class T>
-inline constexpr bool will_reduce_v = will_reduce<T>::value;
-
-template <typename>
-struct reduced_;
+inline constexpr bool is_future_v<future<T>> = true;
 
 template <typename T>
-struct reduced_<future<future<T>>> {
-    using type = future<T>;
-};
+using reduced_t = std::conditional_t<is_future_v<T>, T, future<T>>;
 
-template <typename T>
-struct reduced_ {
-    using type = T;
-};
-
-template <typename T>
-using reduced_t = typename reduced_<T>::type;
-
-template <class E, typename R>
-auto reduce(E&& executor, R&& r) -> reduced_t<R>;
+template <typename Sig>
+using reduced_result_t = reduced_t<result_of_t_<Sig>>;
 
 /**************************************************************************************************/
 
@@ -289,8 +281,8 @@ struct value_;
 /**************************************************************************************************/
 
 template <typename Sig, typename E, typename F>
-auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Sig>,
-                                  detail::reduced_t<future<detail::result_of_t_<Sig>>>>;
+auto package(E, F&&)
+    -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
 /**************************************************************************************************/
 
@@ -298,25 +290,19 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename>
+template <class>
 struct shared;
-template <typename, typename = void>
+template <class, class = void>
 struct shared_base;
 
 /**************************************************************************************************/
-
-template <typename T>
-struct shared_future {
-    virtual ~shared_future() = default;
-};
 
 template <typename... Args>
 struct shared_task {
     virtual ~shared_task() = default;
 
     virtual void operator()(Args... args) = 0;
-
-    virtual void set_error(std::exception_ptr error) = 0;
+    virtual void set_exception(std::exception_ptr&& error) = 0;
 };
 
 /**************************************************************************************************/
@@ -385,7 +371,7 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
             _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
-    void set_exception(std::exception_ptr error) noexcept {
+    void _set_exception(std::exception_ptr&& error) noexcept {
         _exception = std::move(error);
         then_t then;
         {
@@ -406,12 +392,8 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
 
     // get_ready() is called internally on continuations when we know _ready is true;
     auto get_ready() -> const type& {
-#ifndef NDEBUG
-        {
-            std::unique_lock<std::mutex> lock(_mutex);
-            assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
-        }
-#endif
+        assert(is_ready() && "FATAL (sean.parent) : get_ready() called but not ready!");
+
         if (_exception) std::rethrow_exception(_exception);
         return *_result;
     }
@@ -419,12 +401,7 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
     auto get_ready_r(bool unique) -> type {
         if (!unique) return get_ready();
 
-#ifndef NDEBUG
-        {
-            std::unique_lock<std::mutex> lock(_mutex);
-            assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
-        }
-#endif
+        assert(is_ready() && "FATAL (sean.parent) : get_ready() called but not ready!");
 
         if (_exception) std::rethrow_exception(_exception);
         return std::move(*_result);
@@ -526,7 +503,7 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
         if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
-    void set_exception(std::exception_ptr error) noexcept {
+    void _set_exception(std::exception_ptr&& error) noexcept {
         _exception = std::move(error);
         then_t then;
         {
@@ -537,6 +514,7 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
         // propagate exception with scheduling
         if (then.second) then.first(std::move(then.second));
     }
+
     template <class A>
     void set_value(A&& a);
 
@@ -576,6 +554,10 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
 
 /**************************************************************************************************/
 
+// class promise
+
+/**************************************************************************************************/
+
 template <class R>
 class promise {
     using type = void_to_monostate_t<R>;
@@ -586,7 +568,7 @@ public:
 
     ~promise() {
         if (auto p = _p.lock()) {
-            p->set_exception(
+            p->_set_exception(
                 std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
         }
     }
@@ -609,7 +591,7 @@ public:
     void set_exception(std::exception_ptr&& error) && noexcept {
         if (auto p = _p.lock()) {
             _p.reset();
-            p->set_exception(std::move(error));
+            p->_set_exception(std::move(error));
         }
     }
 
@@ -630,18 +612,18 @@ struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
 
     shared(executor_t s) : shared_base<R>(std::move(s)) {}
 
-    void operator()(promise&& p, Args... args) noexcept override {
+    void operator()(Args... args) noexcept override {
         if (!_f) return;
 
-        _f(std::move(p), std::move(args)...);
+        _f(promise{this->shared_from_this()}, std::move(args)...);
 
         _f = function_t();
     }
 
-    void set_error(std::exception_ptr error) override {
+    void set_exception(std::exception_ptr&& error) override {
         if (!_f) return;
 
-        this->set_exception(std::move(error));
+        this->_set_exception(std::move(error));
         _f = function_t();
     }
 };
@@ -655,18 +637,25 @@ struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
 template <typename... Args>
 class packaged_task {
     using ptr_t = std::weak_ptr<detail::shared_task<Args...>>;
+    ptr_t _p;
 
-    explicit packaged_task(ptr_t p) : _p(std::move(p)) {}
+    explicit packaged_task(ptr_t&& p) : _p(std::move(p)) {}
 
     template <typename Sig, typename E, typename F>
-    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Sig>,
-                                             detail::reduced_t<future<detail::result_of_t_<Sig>>>>;
+    friend auto package(E, F&&)
+        -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
     template <class T, class E>
-    friend auto future_with_broken_promise(E) -> detail::reduced_t<future<T>>;
+    friend auto future_with_broken_promise(E) -> detail::reduced_t<T>;
 
 public:
     packaged_task() = default;
+    ~packaged_task() {
+        if (auto p = _p.lock()) {
+            p->set_exception(
+                std::make_exception_ptr(future_error(future_error_codes::broken_promise)));
+        }
+    }
 
     packaged_task(const packaged_task&) = delete;
     packaged_task& operator=(const packaged_task&) = delete;
@@ -675,14 +664,20 @@ public:
     packaged_task& operator=(packaged_task&& x) noexcept = default;
 
     template <typename... A>
-    void operator()(A&&... args) const noexcept {
-        if (auto p = _p.lock()) (*p)(std::forward<A>(args)...);
+    void operator()(A&&... args) noexcept {
+        if (auto p = _p.lock()) {
+            _p.reset();
+            (*p)(std::forward<A>(args)...);
+        }
     }
 
     bool canceled() const { return _p.expired(); }
 
-    void set_exception(std::exception_ptr error) const noexcept {
-        if (auto p = _p.lock()) p->set_error(std::move(error));
+    void set_exception(std::exception_ptr&& error) noexcept {
+        if (auto p = _p.lock()) {
+            _p.reset();
+            p->set_exception(std::move(error));
+        }
     }
 };
 
@@ -697,11 +692,11 @@ class STLAB_NODISCARD() future<T, enable_if_copyable<void_to_monostate_t<T>>> {
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <typename Sig, typename E, typename F>
-    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Sig>,
-                                             detail::reduced_t<future<detail::result_of_t_<Sig>>>>;
+    friend auto package(E, F&&)
+        -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
     template <class U, class E>
-    friend auto future_with_broken_promise(E) -> detail::reduced_t<future<U>>;
+    friend auto future_with_broken_promise(E) -> detail::reduced_t<U>;
 
     friend struct detail::shared_base<type>;
 
@@ -863,11 +858,11 @@ class STLAB_NODISCARD() future<T, enable_if_not_copyable<void_to_monostate_t<T>>
     future(const future&) = default;
 
     template <typename Sig, typename E, typename F>
-    friend auto package(E, F&&) -> std::pair<detail::packaged_task_from_signature_t<Sig>,
-                                             detail::reduced_t<future<detail::result_of_t_<Sig>>>>;
+    friend auto package(E, F&&)
+        -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
     template <class U, class E>
-    friend auto future_with_broken_promise(E) -> detail::reduced_t<future<U>>;
+    friend auto future_with_broken_promise(E) -> detail::reduced_t<U>;
 
     friend struct detail::shared_base<T>;
 
@@ -969,17 +964,17 @@ public:
 };
 
 template <typename Sig, typename E, typename F>
-auto package(E executor, F&& f) -> std::pair<detail::packaged_task_from_signature_t<Sig>,
-                                             detail::reduced_t<future<detail::result_of_t_<Sig>>>> {
+auto package(E executor, F&& f)
+    -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>> {
     if constexpr (std::is_same_v<E, executor_t>) {
         assert(executor && "FATAL (sean.parent) : executor is null!");
     }
 
     using result_t = detail::result_of_t_<Sig>;
 
-    if constexpr (detail::will_reduce_v<result_t>) {
+    if constexpr (detail::is_future_v<result_t>) {
         auto p =
-            std::make_shared<detail::shared<detail::reduce_signature_t<Sig>>>(std::move(executor));
+            std::make_shared<detail::shared<detail::reduced_signature_t<Sig>>>(std::move(executor));
 
         p->_f = [_f = std::forward<F>(f)](auto&& promise, auto&&... args) mutable noexcept {
             if (promise.canceled()) return;
@@ -1024,14 +1019,13 @@ auto package(E executor, F&& f) -> std::pair<detail::packaged_task_from_signatur
 }
 
 template <class T, class E>
-auto future_with_broken_promise(E executor) -> detail::reduced_t<future<T>> {
-    using Sig = detail::reduce_signature_t<T()>;
-
-    auto p = std::make_shared<detail::shared<Sig>>(std::move(executor));
+auto future_with_broken_promise(E executor) -> detail::reduced_t<T> {
+    auto p =
+        std::make_shared<detail::shared<detail::reduced_signature_t<T()>>>(std::move(executor));
     p->_exception = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
     p->_ready = true;
 
-    return detail::reduced_t<future<T>>{p};
+    return detail::reduced_t<T>{p};
 }
 
 /**************************************************************************************************/
@@ -1607,7 +1601,7 @@ auto when_any(E executor, F&& f, std::pair<I, I> range) {
 
 template <typename E, typename F, typename... Args>
 auto async(E executor, F&& f, Args&&... args)
-    -> detail::reduced_t<future<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>>> {
+    -> detail::reduced_t<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>> {
     using result_type = detail::result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto [pro, fut] = package<result_type()>(

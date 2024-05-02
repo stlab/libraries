@@ -153,35 +153,36 @@ struct thread_block_context {
     thread_block_context() : _mutex(std::make_shared<std::mutex>()) {}
 };
 
-class scoped_decrementer {
-    std::atomic_int& _v;
-
-public:
-    explicit scoped_decrementer(std::atomic_int& v) : _v(v) {}
-
-    ~scoped_decrementer() { --_v; }
-};
-
 template <typename F, typename P>
 class test_functor_base : public P {
     F _f;
-    std::atomic_int& _task_counter;
+    std::atomic_int* _task_counter{nullptr};
 
 public:
     test_functor_base(F f, std::atomic_int& task_counter) :
-        _f(std::move(f)), _task_counter(task_counter) {}
+        _f(std::move(f)), _task_counter(&task_counter) {
+        ++*_task_counter;
+    }
 
-    ~test_functor_base() {}
+    ~test_functor_base() {
+        if (_task_counter) --*_task_counter;
+    }
 
-    test_functor_base(const test_functor_base&) = default;
-    test_functor_base& operator=(const test_functor_base&) = default;
-    test_functor_base(test_functor_base&&) = default;
-    test_functor_base& operator=(test_functor_base&&) = default;
+    test_functor_base(const test_functor_base&) = delete;
+    test_functor_base& operator=(const test_functor_base&) = delete;
+
+    test_functor_base(test_functor_base&& a) noexcept :
+        P{std::move(a)}, _f{std::move(a._f)},
+        _task_counter{std::exchange(a._task_counter, nullptr)} {}
+    test_functor_base& operator=(test_functor_base&& a) noexcept {
+        static_cast<P*>(*this) = std::move(a); // move base
+        _f = std::move(a._f);
+        _task_counter = std::exchange(a._task_counter, nullptr);
+    }
 
     template <typename... Args>
     auto operator()(Args&&... args) const {
-        ++_task_counter;
-        scoped_decrementer d(_task_counter);
+        assert(_task_counter);
         P::action();
         return _f(std::forward<Args>(args)...);
     }
