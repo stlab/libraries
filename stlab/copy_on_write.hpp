@@ -13,6 +13,7 @@
 #include <atomic>
 #include <cassert>
 #include <cstddef>
+#include <type_traits>
 #include <utility>
 
 /**************************************************************************************************/
@@ -45,14 +46,18 @@ class copy_on_write {
     using disable_copy_assign =
         std::enable_if_t<!std::is_same<std::decay_t<U>, copy_on_write>::value, copy_on_write&>;
 
+    model* default_model() noexcept(std::is_nothrow_constructible<T>::value) {
+        static model default_s;
+        return &default_s;
+    }
+
 public:
     /* [[deprecated]] */ using value_type = T;
 
     using element_type = T;
 
     copy_on_write() noexcept(std::is_nothrow_constructible<T>::value) {
-        static model default_s;
-        _self = &default_s;
+        _self = default_model();
 
         // coverity[useless_call]
         ++_self->_count;
@@ -77,7 +82,12 @@ public:
     }
 
     ~copy_on_write() {
-        if (_self && (--_self->_count == 0)) delete _self;
+        if (_self && (--_self->_count == 0)) {
+            if constexpr (std::is_default_constructible_v<element_type>) {
+                assert(_self != default_model());
+            }
+            delete _self;
+        }
     }
 
     auto operator=(const copy_on_write& x) noexcept -> copy_on_write& {

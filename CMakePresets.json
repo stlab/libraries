@@ -7,17 +7,62 @@
   },
   "configurePresets": [
     {
-      "name": "ninja",
+      "name": "ninja-cpp20-debug-thread-undefined",
       "description": "Ninja Debug Build",
       "hidden": false,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/../build",
+      "binaryDir": "${sourceDir}/../build/ninja-cpp20-debug-thread-undefined",
       "cacheVariables": {
         "CMAKE_CXX_STANDARD": "20",
         "CMAKE_BUILD_TYPE": "DEBUG",
         "BUILD_TESTING": "ON",
         "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined",
         "CMAKE_LINKER_FLAGS": "-fsanitize=thread -fsanitize=undefined",
+        "CMAKE_VERBOSE_MAKEFILE": "ON"
+      }
+    },
+    {
+      "name": "ninja-cpp17-debug",
+      "description": "Ninja Debug Build",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build/ninja-cpp17-debug",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_BUILD_TYPE": "DEBUG",
+        "BUILD_TESTING": "ON",
+        "CMAKE_VERBOSE_MAKEFILE": "ON"
+      }
+    },
+    {
+      "name": "ninja-cpp20-debug-address",
+      "description": "Ninja Debug Build",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build/ninja-cpp20-debug-address",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_BUILD_TYPE": "DEBUG",
+        "BUILD_TESTING": "ON",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address",
+        "CMAKE_LINKER_FLAGS": "-fsanitize=address",
+        "CMAKE_VERBOSE_MAKEFILE": "ON"
+      }
+    },
+    {
+      "name": "clang-tidy",
+      "description": "Ninja Debug Build",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build/ninja-clang-tidy",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_BUILD_TYPE": "DEBUG",
+        "BUILD_TESTING": "ON",
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix,--enable-check-profile;--header-filter=*/stlab/*;--checks=-*,abseil-string-find-startswith,bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,google-*,hicpp-*,llvm-*,misc-*,modernize-*,performance-*,readability-*,portability-*
+            -readability-identifier-length,
+            -readability-magic-numbers,
+            -cppcoreguidelines-avoid-magic-numbers"
         "CMAKE_VERBOSE_MAKEFILE": "ON"
       }
     }
