@@ -6,16 +6,25 @@
 
 /**************************************************************************************************/
 
+#include <cstddef>
+#include <numbers>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
+
 #include <boost/test/unit_test.hpp>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
-
-#include <string>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/concurrency/ready_future.hpp>
+#include <stlab/test/model.hpp>
+#include <stlab/utility.hpp>
 
 #include "future_test_helper.hpp"
-#include <stlab/test/model.hpp>
 
 using namespace stlab;
 using namespace future_test_helper;
@@ -122,18 +131,19 @@ BOOST_AUTO_TEST_CASE(future_when_all_Arguments_with_mutable_task) {
             return i;
         }
     };
-    mutable_int func1, func2;
+    mutable_int func1;
+    mutable_int func2;
 
     auto sut = when_all(
         stlab::default_executor, [](auto f1, auto f2) { return f1() + f2(); },
         async(stlab::default_executor,
-              [func = std::move(func1)]() mutable {
+              [func = func1]() mutable {
                   func();
-                  return std::move(func);
+                  return func;
               }),
-        async(stlab::default_executor, [func = std::move(func2)]() mutable {
+        async(stlab::default_executor, [func = func2]() mutable {
             func();
-            return std::move(func);
+            return func;
         }));
 
     BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(sut)));
@@ -148,7 +158,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_arguments_with_mutable_move_onlytask) {
             return std::move(i);
         }
     };
-    mutable_move_only func1, func2;
+    mutable_move_only func1;
+    mutable_move_only func2;
 
     auto sut = when_all(
         stlab::default_executor, [](auto f1, auto f2) { return f1().member() + f2().member(); },

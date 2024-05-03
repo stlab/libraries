@@ -6,13 +6,17 @@
 
 /**************************************************************************************************/
 
+#include <atomic>
+#include <cstddef>
+#include <mutex>
+#include <utility>
+
 #include <boost/test/unit_test.hpp>
 
-#include <array>
-#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
 #include <stlab/test/model.hpp>
+#include <stlab/utility.hpp>
 
 #include "future_test_helper.hpp"
 
@@ -67,7 +71,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_arguments_first_su
     auto a4 = async(make_executor<0>(),
                     make_blocking_functor([] { return 5; }, _task_counter, block_context));
     {
-        lock_t block(*block_context._mutex);
+        lock_t const block(*block_context._mutex);
 
         sut = when_any(
             make_executor<1>(),
@@ -117,7 +121,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_argument_with_many_arguments_middl
                     make_blocking_functor([] { return 5; }, _task_counter, block_context));
 
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
 
         sut = when_any(
             make_executor<1>(),
@@ -166,7 +170,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_argument_with_many_arguments_last_
                                             },
                                             _task_counter));
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
 
         sut = when_any(
             make_executor<1>(),
@@ -230,7 +234,7 @@ BOOST_AUTO_TEST_CASE(
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_arguments_with_many_arguments_all_fail) {
     BOOST_TEST_MESSAGE("running future when_any int void arguments all fail");
-    std::atomic_size_t failures{0};
+    std::atomic_size_t const failures{0};
     size_t index = 4711;
     int r = 0;
 
@@ -305,7 +309,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_arguments_with_many_arguments_last_
                                             _task_counter));
 
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
         sut = when_any(
             make_executor<1>(),
             [&_used_future_index = used_future_index,
@@ -390,7 +394,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_arguments_with_diamond_formation_argume
 
     size_t index = 0;
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
         auto start = async(make_executor<0>(), [] { return 4711; });
 
         auto a1 =

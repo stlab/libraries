@@ -6,13 +6,18 @@
 
 /**************************************************************************************************/
 
+#include <exception>
+#include <mutex>
+#include <utility>
+
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/await.hpp>
+#include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
-
+#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/test/model.hpp>
+#include <stlab/utility.hpp>
 
 #include "future_test_helper.hpp"
 
@@ -46,7 +51,9 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
                   _error = true;
                   throw test_exception("failure");
               }).recover([](future<void> failedFuture) {
-            if (failedFuture.exception()) check_failure<test_exception>(failedFuture, "failure");
+            if (failedFuture.exception()) {
+                check_failure<test_exception>(failedFuture, "failure");
+            }
         });
         wait_until_future_completed(std::move(sut));
 
@@ -62,8 +69,9 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
                          throw test_exception("failure");
                      }) ^
                [](future<void> failedFuture) {
-                   if (failedFuture.exception())
+                   if (failedFuture.exception()) {
                        check_failure<test_exception>(failedFuture, "failure");
+                   }
                });
         wait_until_future_completed(std::move(sut));
 
@@ -215,9 +223,9 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_rvalue)
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             sut = async(make_executor<0>(), [&_error = error, &_block = block] {
-                      lock_t lock(_block);
+                      lock_t const lock(_block);
                       _error = true;
                       throw test_exception("failure");
                   }).recover([](auto failedFuture) {
@@ -259,9 +267,9 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_lvalue)
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -281,9 +289,9 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_lvalue)
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -309,9 +317,9 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             sut = async(make_executor<0>(), [&_error = error, &_block = block] {
-                      lock_t lock(_block);
+                      lock_t const lock(_block);
                       _error = true;
                       throw test_exception("failure");
                   }).recover(make_executor<1>(), [](auto failedFuture) {
@@ -334,10 +342,10 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             sut = async(make_executor<0>(),
                         [&_error = error, &_block = block] {
-                            lock_t lock(_block);
+                            lock_t const lock(_block);
                             _error = true;
                             throw test_exception("failure");
                         }) ^
@@ -364,9 +372,9 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -391,9 +399,9 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -423,10 +431,10 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
         sut = when_all(
                   make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2)
                   .recover([](auto error) {
-                      if (error.exception())
+                      if (error.exception()) {
                           return 815;
-                      else
-                          return 0;
+                      }
+                      return 0;
                   })
                   .then([&](int x) { result = x; });
 
@@ -442,10 +450,10 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
         sut = (when_all(
                    make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2) ^
                [](auto error) {
-                   if (error.exception())
+                   if (error.exception()) {
                        return 815;
-                   else
-                       return 0;
+                   }
+                   return 0;
                }) |
               [&](int x) { result = x; };
 
@@ -554,10 +562,10 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
-                      lock_t lock(_block);
+                      lock_t const lock(_block);
                       _error = true;
                       throw test_exception("failure");
                   }).recover([](auto failedFuture) {
@@ -577,11 +585,11 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             sut = async(make_executor<0>(),
                         [&_error = error, &_block = block]() -> int {
-                            lock_t lock(_block);
+                            lock_t const lock(_block);
                             _error = true;
                             throw test_exception("failure");
                         }) ^
@@ -608,10 +616,10 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -633,10 +641,10 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -766,10 +774,10 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
-                      lock_t lock(_block);
+                      lock_t const lock(_block);
                       _error = true;
                       throw test_exception("failure");
                   }).recover(make_executor<1>(), [](auto failedFuture) {
@@ -794,11 +802,11 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             sut = async(make_executor<0>(),
                         [&_error = error, &_block = block]() -> int {
-                            lock_t lock(_block);
+                            lock_t const lock(_block);
                             _error = true;
                             throw test_exception("failure");
                         }) ^
@@ -827,9 +835,9 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -856,9 +864,9 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
 
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
-                lock_t lock(_block);
+                lock_t const lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
@@ -975,10 +983,10 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
         auto error = false;
         mutex block;
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> move_only {
-                      lock_t lock(_block);
+                      lock_t const lock(_block);
                       _error = true;
                       throw test_exception("failure");
                   }).recover([](auto failedFuture) {
@@ -997,11 +1005,11 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
         auto error = false;
         mutex block;
         {
-            lock_t hold(block);
+            lock_t const hold(block);
 
             sut = async(make_executor<0>(),
                         [&_error = error, &_block = block]() -> move_only {
-                            lock_t lock(_block);
+                            lock_t const lock(_block);
                             _error = true;
                             throw test_exception("failure");
                         }) ^
@@ -1076,9 +1084,9 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
         mutex block;
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> move_only {
-                      lock_t lock(_block);
+                      lock_t const lock(_block);
                       _error = true;
                       throw test_exception("failure");
                   }).recover(make_executor<1>(), [](auto failedFuture) {
@@ -1102,10 +1110,10 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
         mutex block;
         {
-            lock_t hold(block);
+            lock_t const hold(block);
             sut = async(make_executor<0>(),
                         [&_error = error, &_block = block]() -> move_only {
-                            lock_t lock(_block);
+                            lock_t const lock(_block);
                             _error = true;
                             throw test_exception("failure");
                         }) ^

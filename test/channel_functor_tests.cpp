@@ -6,6 +6,8 @@
 
 /**************************************************************************************************/
 
+#include <atomic>
+
 #include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/channel.hpp>
@@ -16,8 +18,6 @@
 #include <vector>
 
 #include "channel_test_helper.hpp"
-
-
 
 using channel_test_fixture_int_1 = channel_test_helper::channel_test_fixture<int, 1>;
 
@@ -59,8 +59,9 @@ BOOST_AUTO_TEST_CASE(int_channel_void_functor_many_values) {
     auto check = _receive[0] | [&](int x) { result += x; };
 
     _receive[0].set_ready();
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 10; ++i) {
         _send[0](1);
+    }
 
     wait_until_done([&]() { return result == 10; });
     BOOST_REQUIRE_EQUAL(10, result);
@@ -72,12 +73,13 @@ BOOST_AUTO_TEST_CASE(int_channel_split_void_functor) {
     std::atomic_int result1{0};
     std::atomic_int result2{0};
 
-    auto check1 = _receive[0] | [& _result = result1](int x) { _result += x; };
-    auto check2 = _receive[0] | [& _result = result2](int x) { _result += x; };
+    auto check1 = _receive[0] | [&_result = result1](int x) { _result += x; };
+    auto check2 = _receive[0] | [&_result = result2](int x) { _result += x; };
 
     _receive[0].set_ready();
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 10; ++i) {
         _send[0](i);
+    }
 
     wait_until_done([&]() { return result1 == 45 && result2 == 45; });
 
@@ -93,8 +95,9 @@ BOOST_AUTO_TEST_CASE(int_channel_int_functor) {
     auto check = _receive[0] | [](int x) { return x + x; } | [&](int x) { result += x; };
 
     _receive[0].set_ready();
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 10; ++i) {
         _send[0](i);
+    }
 
     wait_until_done([&]() { return result == 90; });
     BOOST_REQUIRE_EQUAL(90, result);
@@ -106,13 +109,14 @@ BOOST_AUTO_TEST_CASE(int_channel_split_int_functor) {
     std::atomic_int result2{0};
 
     auto check1 =
-        _receive[0] | [](int x) { return x + x; } | [& _result = result1](int x) { _result += x; };
+        _receive[0] | [](int x) { return x + x; } | [&_result = result1](int x) { _result += x; };
     auto check2 =
-        _receive[0] | [](int x) { return x + x; } | [& _result = result2](int x) { _result += x; };
+        _receive[0] | [](int x) { return x + x; } | [&_result = result2](int x) { _result += x; };
 
     _receive[0].set_ready();
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 10; ++i) {
         _send[0](i);
+    }
 
     wait_until_done([&] { return result1 == 90 && result2 == 90; });
 
@@ -126,16 +130,16 @@ BOOST_AUTO_TEST_CASE(int_channel_split_int_functor_async) {
     inputs.reserve(10);
     for (auto i = 0; i < 10; ++i) {
         inputs.emplace_back(
-            stlab::async(stlab::default_executor, [& _send = _send, i]() { _send[0](i); }));
+            stlab::async(stlab::default_executor, [&_send = _send, i]() { _send[0](i); }));
     }
 
     std::atomic_int result1{0};
     std::atomic_int result2{0};
 
     auto check1 =
-        _receive[0] | [](int x) { return x + x; } | [& _result = result1](int x) { _result += x; };
+        _receive[0] | [](int x) { return x + x; } | [&_result = result1](int x) { _result += x; };
     auto check2 =
-        _receive[0] | [](int x) { return x + x; } | [& _result = result2](int x) { _result += x; };
+        _receive[0] | [](int x) { return x + x; } | [&_result = result2](int x) { _result += x; };
 
     _receive[0].set_ready();
 
@@ -147,11 +151,10 @@ BOOST_AUTO_TEST_CASE(int_channel_split_int_functor_async) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-
-using channel_test_fixture_move_only_1 = channel_test_helper::channel_test_fixture<stlab::move_only, 1>;
+using channel_test_fixture_move_only_1 =
+    channel_test_helper::channel_test_fixture<stlab::move_only, 1>;
 
 BOOST_FIXTURE_TEST_SUITE(move_only_channel_void_functor, channel_test_fixture_move_only_1)
-
 
 BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor) {
     BOOST_TEST_MESSAGE("move only int channel void functor");
@@ -180,7 +183,8 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_void_functor_async) {
     std::vector<stlab::future<void>> f;
     f.reserve(10);
     for (int i = 0; i < 10; ++i) {
-        f.push_back(stlab::async(stlab::default_executor, [& _send = _send[0]] { _send(stlab::move_only(1)); }));
+        f.push_back(stlab::async(stlab::default_executor,
+                                 [&_send = _send[0]] { _send(stlab::move_only(1)); }));
     }
 
     wait_until_done([&]() { return result == 10; });
@@ -205,7 +209,6 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor) {
     BOOST_REQUIRE_EQUAL(20, result);
 }
 
-
 BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor_async) {
     BOOST_TEST_MESSAGE("move only int channel int functor asynchronously");
 
@@ -218,13 +221,13 @@ BOOST_AUTO_TEST_CASE(move_only_int_channel_int_functor_async) {
     std::vector<stlab::future<void>> f;
     f.reserve(10);
     for (int i = 0; i < 10; ++i) {
-        f.push_back(stlab::async(stlab::default_executor, [& _send = _send[0]] { _send(stlab::move_only(1)); }));
+        f.push_back(stlab::async(stlab::default_executor,
+                                 [&_send = _send[0]] { _send(stlab::move_only(1)); }));
     }
 
     wait_until_done([&]() { return result >= 20; });
 
     BOOST_REQUIRE_EQUAL(20, result);
 }
-
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -6,22 +6,26 @@
 
 /**************************************************************************************************/
 
+#include <atomic>
+#include <chrono>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <utility>
+
 #include <boost/test/unit_test.hpp>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
-
 #include <stlab/test/model.hpp>
-
-#include <thread>
 
 #include "future_test_helper.hpp"
 
 using namespace stlab;
 using namespace future_test_helper;
 
-stlab::future<int> get_the_answer() { co_return 42; }
+auto get_the_answer() -> stlab::future<int> { co_return 42; }
 
 BOOST_AUTO_TEST_CASE(future_coroutine_int) {
     BOOST_TEST_MESSAGE("future coroutine int");
@@ -31,7 +35,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_int) {
     BOOST_REQUIRE(42 == await(std::move(w)));
 }
 
-stlab::future<move_only> get_move_only_answer() { co_return move_only{42}; }
+auto get_move_only_answer() -> stlab::future<move_only> { co_return move_only{42}; }
 
 BOOST_AUTO_TEST_CASE(future_coroutine_move_only) {
     BOOST_TEST_MESSAGE("future coroutine move only");
@@ -42,7 +46,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_move_only) {
     BOOST_REQUIRE(42 == r.member());
 }
 
-stlab::future<void> just_wait() { co_return; }
+auto just_wait() -> stlab::future<void> { co_return; }
 
 BOOST_AUTO_TEST_CASE(future_coroutine_void) {
     BOOST_TEST_MESSAGE("future coroutine void");
@@ -52,7 +56,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_void) {
     BOOST_REQUIRE_NO_THROW(await(std::move(w)));
 }
 
-stlab::future<int> get_the_answer_with_failure() {
+auto get_the_answer_with_failure() -> stlab::future<int> {
     auto result = co_await stlab::async(stlab::default_executor, [] {
         invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); });
         return 42;
@@ -73,7 +77,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_int_failure) {
                             }));
 }
 
-stlab::future<move_only> get_the_answer_move_only_with_failure() {
+auto get_the_answer_move_only_with_failure() -> stlab::future<move_only> {
     auto result = co_await stlab::async(stlab::default_executor, [] {
         invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); });
         return move_only{42};
@@ -94,7 +98,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_move_only_failure) {
                             }));
 }
 
-future<void> do_it(future<int> x, std::atomic_int& result) {
+auto do_it(future<int> x, std::atomic_int& result) -> future<void> {
     int v = co_await x;
     result = v;
     std::cout << v << '\n';

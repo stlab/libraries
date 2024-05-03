@@ -6,14 +6,22 @@
 
 /**************************************************************************************************/
 
+#include <array>
+#include <atomic>
+#include <cstddef>
+#include <mutex>
+#include <optional>
+#include <utility>
+#include <vector>
+
 #include <boost/test/unit_test.hpp>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
+#include <stlab/concurrency/ready_future.hpp>
 #include <stlab/test/model.hpp>
-
-#include <array>
+#include <stlab/utility.hpp>
 
 #include "future_test_helper.hpp"
 
@@ -123,7 +131,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_first_suc
     futures.push_back(async(make_executor<0>(),
                             make_blocking_functor([] { return 5; }, _task_counter, block_context)));
     {
-        lock_t block(*block_context._mutex);
+        lock_t const block(*block_context._mutex);
 
         sut = when_any(
             make_executor<1>(),
@@ -173,7 +181,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_middle_su
                             make_blocking_functor([] { return 5; }, _task_counter, block_context)));
 
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
 
         sut = when_any(
             make_executor<1>(),
@@ -223,7 +231,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_last_succ
                                                     },
                                                     _task_counter)));
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
 
         sut = when_any(
             make_executor<1>(),
@@ -311,7 +319,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_all_are_ready_at_the_beginning) {
 
 BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_elements_all_fails) {
     BOOST_TEST_MESSAGE("running future when_any int void with range all fails");
-    std::atomic_size_t failures{0};
+    std::atomic_size_t const failures{0};
     size_t index = 4711;
     int r = 0;
 
@@ -359,7 +367,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_void_range_with_diamond_formation_elements)
     std::array<int, 4> intrim_results = {{0, 0, 0, 0}};
 
     {
-        lock_t block(*block_context._mutex);
+        lock_t const block(*block_context._mutex);
         auto start = async(make_executor<0>(), [] { return 4711; });
         std::vector<future<void>> futures;
         futures.push_back(start.then(
@@ -476,7 +484,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_range_with_many_elements) {
                                                     _task_counter)));
 
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
         sut = when_any(
             make_executor<1>(),
             [&_used_future_index = used_future_index,
@@ -560,7 +568,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_range_with_diamond_formation_elements) 
 
     size_t index = 0;
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
         auto start = async(make_executor<0>(), [] { return 4711; });
         std::vector<stlab::future<int>> futures;
         futures.push_back(
@@ -612,7 +620,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_range_with_diamond_formation_elem
     size_t index = 0;
     std::optional<move_only> result;
     {
-        lock_t lock(*block_context._mutex);
+        lock_t const lock(*block_context._mutex);
         auto start = async(make_executor<0>(), [] { return 4711; });
         std::vector<stlab::future<stlab::move_only>> futures;
         futures.push_back(start.then(

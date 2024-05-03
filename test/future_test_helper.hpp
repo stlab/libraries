@@ -60,7 +60,7 @@ class test_exception : public std::exception {
 public:
     test_exception() {}
 
-    explicit test_exception(const std::string& error);
+    explicit test_exception(std::string  error);
 
     explicit test_exception(const char* error);
 

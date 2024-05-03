@@ -59,10 +59,7 @@
         "CMAKE_CXX_STANDARD": "20",
         "CMAKE_BUILD_TYPE": "DEBUG",
         "BUILD_TESTING": "ON",
-        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix,--enable-check-profile;--header-filter=*/stlab/*;--checks=-*,abseil-string-find-startswith,bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,google-*,hicpp-*,llvm-*,misc-*,modernize-*,performance-*,readability-*,portability-*
-            -readability-identifier-length,
-            -readability-magic-numbers,
-            -cppcoreguidelines-avoid-magic-numbers"
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix;--enable-check-profile;--header-filter=*/stlab/*;--checks=-*,abseil-string-find-startswith,bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,google-*,hicpp-*,llvm-*,misc-*,modernize-*,performance-*,readability-*,portability-*, -readability-identifier-length, -readability-magic-numbers, -cppcoreguidelines-avoid-magic-numbers",
         "CMAKE_VERBOSE_MAKEFILE": "ON"
       }
     }

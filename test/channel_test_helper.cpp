@@ -6,6 +6,11 @@
 
 /**************************************************************************************************/
 
+#include <mutex>
+#include <queue>
+
+#include <stlab/concurrency/task.hpp>
+
 #include "channel_test_helper.hpp"
 
 std::queue<stlab::task<void() noexcept>> channel_test_helper::manual_scheduler::_tasks;

@@ -6,13 +6,22 @@
 
 /**************************************************************************************************/
 
-#include <boost/mpl/list.hpp>
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <utility>
+#include <vector>
+
 #include <boost/test/unit_test.hpp>
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/concurrency/traits.hpp>
 #include <stlab/test/model.hpp>
+#include <stlab/utility.hpp>
 
 #include "future_test_helper.hpp"
 
@@ -350,7 +359,7 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
                   return move_only(42);
               }).then([&_result = result](auto&& x) {
             return async(
-                default_executor, [&_result](auto&& x) { _result = std::move(x); },
+                default_executor, [&_result](auto&& x) { _result = std::forward<decltype(x)>(x); },
                 std::forward<move_only>(x));
         });
 
@@ -368,7 +377,8 @@ BOOST_AUTO_TEST_CASE(reduction_future_move_only_to_void) {
                   return move_only(42);
               }).then([&_result = result](auto&& x) {
             return async(
-                immediate_executor, [&_result](auto&& x) { _result = std::move(x); },
+                immediate_executor,
+                [&_result](auto&& x) { _result = std::forward<decltype(x)>(x); },
                 std::forward<move_only>(x));
         });
 
