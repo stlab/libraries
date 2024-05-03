@@ -24,7 +24,6 @@ using namespace future_test_helper;
 //                                  void
 // ----------------------------------------------------------------------------
 
-
 BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue) {
     BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on r-value");
@@ -43,15 +42,13 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
     {
         custom_scheduler<0>::reset();
         auto error = false;
-        sut = async(make_executor<0>(),
-                    [& _error = error]() ->void {
-                        _error = true;
-                        throw test_exception("failure");
-                    })
-            .recover([](future<void> failedFuture) {
-                if (failedFuture.exception()) check_failure<test_exception>(failedFuture, "failure");
-            });
-        wait_until_future_completed(sut);
+        sut = async(make_executor<0>(), [&_error = error]() -> void {
+                  _error = true;
+                  throw test_exception("failure");
+              }).recover([](future<void> failedFuture) {
+            if (failedFuture.exception()) check_failure<test_exception>(failedFuture, "failure");
+        });
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_GE(2, custom_scheduler<0>::usage_counter());
@@ -60,14 +57,15 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue
         custom_scheduler<0>::reset();
         auto error = false;
         sut = (async(make_executor<0>(),
-                     [& _error = error]() ->void {
+                     [&_error = error]() -> void {
                          _error = true;
                          throw test_exception("failure");
-                     })
-               ^ [](future<void> failedFuture) {
-                    if (failedFuture.exception()) check_failure<test_exception>(failedFuture, "failure");
-                });
-        wait_until_future_completed(sut);
+                     }) ^
+               [](future<void> failedFuture) {
+                   if (failedFuture.exception())
+                       check_failure<test_exception>(failedFuture, "failure");
+               });
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_GE(2, custom_scheduler<0>::usage_counter());
@@ -80,17 +78,17 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_lvalue
     {
         custom_scheduler<0>::reset();
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error] {
+        auto interim = async(make_executor<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
         sut = interim.recover(
             [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); });
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
@@ -98,17 +96,17 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_lvalue
     {
         custom_scheduler<0>::reset();
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error] {
+        auto interim = async(make_executor<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
         sut = interim ^
-            [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); };
+              [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); };
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
@@ -123,16 +121,14 @@ BOOST_AUTO_TEST_CASE(
     {
         auto error = false;
 
-        sut = async(make_executor<0>(),
-                    [& _error = error] {
-                        _error = true;
-                        throw test_exception("failure");
-                    })
-            .recover(make_executor<1>(), [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-            });
+        sut = async(make_executor<0>(), [&_error = error] {
+                  _error = true;
+                  throw test_exception("failure");
+              }).recover(make_executor<1>(), [](auto failedFuture) {
+            check_failure<test_exception>(failedFuture, "failure");
+        });
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -146,14 +142,14 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
 
         sut = async(make_executor<0>(),
-                    [& _error = error] {
+                    [&_error = error] {
                         _error = true;
                         throw test_exception("failure");
                     }) ^
               (executor{make_executor<1>()} &
                [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); });
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -168,18 +164,18 @@ BOOST_AUTO_TEST_CASE(
 
     {
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error] {
+        auto interim = async(make_executor<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
         sut = interim.recover(make_executor<1>(), [](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
         });
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -191,18 +187,18 @@ BOOST_AUTO_TEST_CASE(
 
     {
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error] {
+        auto interim = async(make_executor<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
-        sut = interim ^ ( executor{make_executor<1>()} & [](auto failedFuture) {
+        sut = interim ^ (executor{make_executor<1>()} & [](auto failedFuture) {
                   check_failure<test_exception>(failedFuture, "failure");
               });
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -220,18 +216,16 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_rvalue)
 
         {
             lock_t hold(block);
-            sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block] {
-                            lock_t lock(_block);
-                            _error = true;
-                            throw test_exception("failure");
-                        })
-                .recover([](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                });
+            sut = async(make_executor<0>(), [&_error = error, &_block = block] {
+                      lock_t lock(_block);
+                      _error = true;
+                      throw test_exception("failure");
+                  }).recover([](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+            });
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_GE(2, custom_scheduler<0>::usage_counter());
@@ -239,17 +233,17 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_rvalue)
     {
         custom_scheduler<0>::reset();
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error] {
+        auto interim = async(make_executor<0>(), [&_error = error] {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
         sut = interim ^
-            [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); };
+              [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); };
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(2, custom_scheduler<0>::usage_counter());
@@ -266,7 +260,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_lvalue)
 
         {
             lock_t hold(block);
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block] {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
@@ -276,7 +270,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_lvalue)
                 [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); });
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_GE(2, custom_scheduler<0>::usage_counter());
@@ -288,17 +282,17 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_after_recover_initialized_on_lvalue)
 
         {
             lock_t hold(block);
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block] {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
 
             sut = interim ^
-                [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); };
+                  [](auto failedFuture) { check_failure<test_exception>(failedFuture, "failure"); };
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_GE(2, custom_scheduler<0>::usage_counter());
@@ -316,18 +310,16 @@ BOOST_AUTO_TEST_CASE(
 
         {
             lock_t hold(block);
-            sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block] {
-                            lock_t lock(_block);
-                            _error = true;
-                            throw test_exception("failure");
-                        })
-                .recover(make_executor<1>(), [](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                });
+            sut = async(make_executor<0>(), [&_error = error, &_block = block] {
+                      lock_t lock(_block);
+                      _error = true;
+                      throw test_exception("failure");
+                  }).recover(make_executor<1>(), [](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+            });
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -344,7 +336,7 @@ BOOST_AUTO_TEST_CASE(
         {
             lock_t hold(block);
             sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block] {
+                        [&_error = error, &_block = block] {
                             lock_t lock(_block);
                             _error = true;
                             throw test_exception("failure");
@@ -354,7 +346,7 @@ BOOST_AUTO_TEST_CASE(
                   });
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -373,7 +365,7 @@ BOOST_AUTO_TEST_CASE(
 
         {
             lock_t hold(block);
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block] {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
@@ -384,7 +376,7 @@ BOOST_AUTO_TEST_CASE(
             });
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -400,18 +392,18 @@ BOOST_AUTO_TEST_CASE(
 
         {
             lock_t hold(block);
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block] {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block] {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
 
-            sut = interim ^ ( executor{make_executor<1>()} & [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-            });
+            sut = interim ^ (executor{make_executor<1>()} & [](auto failedFuture) {
+                      check_failure<test_exception>(failedFuture, "failure");
+                  });
         }
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
 
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
@@ -428,16 +420,17 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
         auto f1 = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
         auto f2 = async(make_executor<1>(), [] { return 42; });
 
-        sut = when_all(make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2)
-            .recover([](auto error) {
-                if (error.exception())
-                    return 815;
-                else
-                    return 0;
-            })
-            .then([&](int x) { result = x; });
+        sut = when_all(
+                  make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2)
+                  .recover([](auto error) {
+                      if (error.exception())
+                          return 815;
+                      else
+                          return 0;
+                  })
+                  .then([&](int x) { result = x; });
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
         BOOST_REQUIRE_EQUAL(815, result);
     }
     {
@@ -446,16 +439,17 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
         auto f1 = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
         auto f2 = async(make_executor<1>(), [] { return 42; });
 
-        sut = (when_all(make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2) ^
-                  [](auto error) {
-                      if (error.exception())
-                          return 815;
-                      else
-                          return 0;
-                  }) |
+        sut = (when_all(
+                   make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2) ^
+               [](auto error) {
+                   if (error.exception())
+                       return 815;
+                   else
+                       return 0;
+               }) |
               [&](int x) { result = x; };
 
-        wait_until_future_completed(sut);
+        wait_until_future_completed(std::move(sut));
         BOOST_REQUIRE_EQUAL(815, result);
     }
 }
@@ -464,7 +458,6 @@ BOOST_AUTO_TEST_SUITE_END()
 // ----------------------------------------------------------------------------
 //                             Copyable Values
 // ----------------------------------------------------------------------------
-
 
 BOOST_FIXTURE_TEST_SUITE(future_recover_int, test_fixture<int>)
 BOOST_AUTO_TEST_CASE(
@@ -475,19 +468,17 @@ BOOST_AUTO_TEST_CASE(
         custom_scheduler<0>::reset();
         auto error = false;
 
-        sut = async(make_executor<0>(),
-                    [& _error = error]() -> int {
-                        _error = true;
-                        throw test_exception("failure");
-                    })
-                  .recover([](auto failedFuture) {
-                      check_failure<test_exception>(failedFuture, "failure");
-                      return 42;
-                  });
+        sut = async(make_executor<0>(), [&_error = error]() -> int {
+                  _error = true;
+                  throw test_exception("failure");
+              }).recover([](auto failedFuture) {
+            check_failure<test_exception>(failedFuture, "failure");
+            return 42;
+        });
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
     {
@@ -495,18 +486,18 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
 
         sut = async(make_executor<0>(),
-                    [& _error = error]() -> int {
+                    [&_error = error]() -> int {
                         _error = true;
                         throw test_exception("failure");
-                    })
-            ^ [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return 42;
-            };
+                    }) ^
+              [](auto failedFuture) {
+                  check_failure<test_exception>(failedFuture, "failure");
+                  return 42;
+              };
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
 }
@@ -518,7 +509,7 @@ BOOST_AUTO_TEST_CASE(
     {
         custom_scheduler<0>::reset();
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error]() -> int {
+        auto interim = async(make_executor<0>(), [&_error = error]() -> int {
             _error = true;
             throw test_exception("failure");
         });
@@ -528,15 +519,15 @@ BOOST_AUTO_TEST_CASE(
             return 42;
         });
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
     {
         custom_scheduler<0>::reset();
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error]() -> int {
+        auto interim = async(make_executor<0>(), [&_error = error]() -> int {
             _error = true;
             throw test_exception("failure");
         });
@@ -546,9 +537,9 @@ BOOST_AUTO_TEST_CASE(
             return 42;
         };
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
 }
@@ -565,21 +556,19 @@ BOOST_AUTO_TEST_CASE(
         {
             lock_t hold(block);
 
-            sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> int {
-                            lock_t lock(_block);
-                            _error = true;
-                            throw test_exception("failure");
-                        })
-                .recover([](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return 42;
-                });
+            sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
+                      lock_t lock(_block);
+                      _error = true;
+                      throw test_exception("failure");
+                  }).recover([](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+                return 42;
+            });
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
     {
@@ -591,20 +580,20 @@ BOOST_AUTO_TEST_CASE(
             lock_t hold(block);
 
             sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> int {
+                        [&_error = error, &_block = block]() -> int {
                             lock_t lock(_block);
                             _error = true;
                             throw test_exception("failure");
-                        })
-                ^ [](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return 42;
-                };
+                        }) ^
+                  [](auto failedFuture) {
+                      check_failure<test_exception>(failedFuture, "failure");
+                      return 42;
+                  };
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
 }
@@ -621,7 +610,7 @@ BOOST_AUTO_TEST_CASE(
         {
             lock_t hold(block);
 
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block]() -> int {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
@@ -633,9 +622,9 @@ BOOST_AUTO_TEST_CASE(
             });
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
     {
@@ -646,7 +635,7 @@ BOOST_AUTO_TEST_CASE(
         {
             lock_t hold(block);
 
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block]() -> int {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
@@ -658,9 +647,9 @@ BOOST_AUTO_TEST_CASE(
             };
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
     }
 }
@@ -673,19 +662,17 @@ BOOST_AUTO_TEST_CASE(
     {
         auto error = false;
 
-        sut = async(make_executor<0>(),
-                    [& _error = error]() -> int {
-                        _error = true;
-                        throw test_exception("failure");
-                    })
-            .recover(make_executor<1>(), [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return 42;
-            });
+        sut = async(make_executor<0>(), [&_error = error]() -> int {
+                  _error = true;
+                  throw test_exception("failure");
+              }).recover(make_executor<1>(), [](auto failedFuture) {
+            check_failure<test_exception>(failedFuture, "failure");
+            return 42;
+        });
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -698,18 +685,18 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
 
         sut = async(make_executor<0>(),
-                    [& _error = error]() -> int {
+                    [&_error = error]() -> int {
                         _error = true;
                         throw test_exception("failure");
                     }) ^
-            ( executor{make_executor<1>()} & [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return 42;
-            });
+              (executor{make_executor<1>()} & [](auto failedFuture) {
+                  check_failure<test_exception>(failedFuture, "failure");
+                  return 42;
+              });
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -723,21 +710,21 @@ BOOST_AUTO_TEST_CASE(
 
     {
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error]() -> int {
+        auto interim = async(make_executor<0>(), [&_error = error]() -> int {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
         sut = interim.recover(make_executor<1>(), [](auto failedFuture) {
             check_failure<test_exception>(failedFuture, "failure");
             return 42;
         });
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -748,21 +735,21 @@ BOOST_AUTO_TEST_CASE(
 
     {
         auto error = false;
-        auto interim = async(make_executor<0>(), [& _error = error]() -> int {
+        auto interim = async(make_executor<0>(), [&_error = error]() -> int {
             _error = true;
             throw test_exception("failure");
         });
 
-        wait_until_future_fails<test_exception>(interim);
+        wait_until_future_fails<test_exception>(copy(interim));
 
-        sut = interim ^ ( executor{make_executor<1>()} & [](auto failedFuture) {
-            check_failure<test_exception>(failedFuture, "failure");
-            return 42;
-        });
+        sut = interim ^ (executor{make_executor<1>()} & [](auto failedFuture) {
+                  check_failure<test_exception>(failedFuture, "failure");
+                  return 42;
+              });
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<1>::usage_counter());
@@ -781,21 +768,19 @@ BOOST_AUTO_TEST_CASE(
         {
             lock_t hold(block);
 
-            sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> int {
-                            lock_t lock(_block);
-                            _error = true;
-                            throw test_exception("failure");
-                        })
-                .recover(make_executor<1>(), [](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return 42;
-                });
+            sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
+                      lock_t lock(_block);
+                      _error = true;
+                      throw test_exception("failure");
+                  }).recover(make_executor<1>(), [](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+                return 42;
+            });
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -812,19 +797,20 @@ BOOST_AUTO_TEST_CASE(
             lock_t hold(block);
 
             sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> int {
+                        [&_error = error, &_block = block]() -> int {
                             lock_t lock(_block);
                             _error = true;
                             throw test_exception("failure");
-                        }) ^ ( executor{make_executor<1>()} & [](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return 42;
-                });
+                        }) ^
+                  (executor{make_executor<1>()} & [](auto failedFuture) {
+                      check_failure<test_exception>(failedFuture, "failure");
+                      return 42;
+                  });
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -842,7 +828,7 @@ BOOST_AUTO_TEST_CASE(
 
         {
             lock_t hold(block);
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block]() -> int {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
@@ -854,9 +840,9 @@ BOOST_AUTO_TEST_CASE(
             });
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
@@ -871,27 +857,26 @@ BOOST_AUTO_TEST_CASE(
 
         {
             lock_t hold(block);
-            auto interim = async(make_executor<0>(), [& _error = error, &_block = block]() -> int {
+            auto interim = async(make_executor<0>(), [&_error = error, &_block = block]() -> int {
                 lock_t lock(_block);
                 _error = true;
                 throw test_exception("failure");
             });
 
             sut = interim ^ (executor{make_executor<1>()} & [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return 42;
-            });
+                      check_failure<test_exception>(failedFuture, "failure");
+                      return 42;
+                  });
         }
 
-        wait_until_future_completed(sut);
+        auto result = await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(42, *sut.get_try());
+        BOOST_REQUIRE_EQUAL(42, result);
         BOOST_REQUIRE(error);
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
     }
 }
-
 
 BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
     BOOST_TEST_MESSAGE("running future int recover with broken promise");
@@ -932,8 +917,6 @@ BOOST_AUTO_TEST_CASE(future_recover_int_with_broken_promise) {
     }
 }
 
-
-
 BOOST_AUTO_TEST_SUITE_END()
 
 // ----------------------------------------------------------------------------
@@ -950,15 +933,13 @@ BOOST_AUTO_TEST_CASE(
         custom_scheduler<0>::reset();
         auto error = false;
 
-        sut = async(make_executor<0>(),
-                    [& _error = error]() -> move_only {
-                        _error = true;
-                        throw test_exception("failure");
-                    })
-            .recover([](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return move_only(42);
-            });
+        sut = async(make_executor<0>(), [&_error = error]() -> move_only {
+                  _error = true;
+                  throw test_exception("failure");
+              }).recover([](auto failedFuture) {
+            check_failure<test_exception>(failedFuture, "failure");
+            return move_only(42);
+        });
 
         auto result = await(std::move(sut));
 
@@ -970,14 +951,14 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
 
         sut = async(make_executor<0>(),
-                     [& _error = error]() -> move_only {
-                         _error = true;
-                         throw test_exception("failure");
-                     })
-               ^ [](auto failedFuture) {
-            check_failure<test_exception>(failedFuture, "failure");
-            return move_only(42);
-        };
+                    [&_error = error]() -> move_only {
+                        _error = true;
+                        throw test_exception("failure");
+                    }) ^
+              [](auto failedFuture) {
+                  check_failure<test_exception>(failedFuture, "failure");
+                  return move_only(42);
+              };
 
         auto result = await(std::move(sut));
 
@@ -996,16 +977,14 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
         {
             lock_t hold(block);
 
-            sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> move_only {
-                            lock_t lock(_block);
-                            _error = true;
-                            throw test_exception("failure");
-                        })
-                .recover([](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return move_only(42);
-                });
+            sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> move_only {
+                      lock_t lock(_block);
+                      _error = true;
+                      throw test_exception("failure");
+                  }).recover([](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+                return move_only(42);
+            });
         }
 
         auto result = await(std::move(sut));
@@ -1021,15 +1000,15 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_types_recover_failure_after_recove
             lock_t hold(block);
 
             sut = async(make_executor<0>(),
-                         [& _error = error, &_block = block]() -> move_only {
-                             lock_t lock(_block);
-                             _error = true;
-                             throw test_exception("failure");
-                         })
-                   ^ [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return move_only(42);
-            };
+                        [&_error = error, &_block = block]() -> move_only {
+                            lock_t lock(_block);
+                            _error = true;
+                            throw test_exception("failure");
+                        }) ^
+                  [](auto failedFuture) {
+                      check_failure<test_exception>(failedFuture, "failure");
+                      return move_only(42);
+                  };
         }
 
         auto result = await(std::move(sut));
@@ -1047,15 +1026,13 @@ BOOST_AUTO_TEST_CASE(
     {
         auto error = false;
 
-        sut = async(make_executor<0>(),
-                    [& _error = error]() -> move_only {
-                        _error = true;
-                        throw test_exception("failure");
-                    })
-            .recover(make_executor<1>(), [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return move_only(42);
-            });
+        sut = async(make_executor<0>(), [&_error = error]() -> move_only {
+                  _error = true;
+                  throw test_exception("failure");
+              }).recover(make_executor<1>(), [](auto failedFuture) {
+            check_failure<test_exception>(failedFuture, "failure");
+            return move_only(42);
+        });
 
         auto result = await(std::move(sut));
 
@@ -1072,14 +1049,14 @@ BOOST_AUTO_TEST_CASE(
         auto error = false;
 
         sut = async(make_executor<0>(),
-                    [& _error = error]() -> move_only {
+                    [&_error = error]() -> move_only {
                         _error = true;
                         throw test_exception("failure");
                     }) ^
-            ( executor{make_executor<1>()} & [](auto failedFuture) {
-                check_failure<test_exception>(failedFuture, "failure");
-                return move_only(42);
-            });
+              (executor{make_executor<1>()} & [](auto failedFuture) {
+                  check_failure<test_exception>(failedFuture, "failure");
+                  return move_only(42);
+              });
 
         auto result = await(std::move(sut));
 
@@ -1100,16 +1077,14 @@ BOOST_AUTO_TEST_CASE(
         mutex block;
         {
             lock_t hold(block);
-            sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> move_only {
-                            lock_t lock(_block);
-                            _error = true;
-                            throw test_exception("failure");
-                        })
-                .recover(make_executor<1>(), [](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return move_only(42);
-                });
+            sut = async(make_executor<0>(), [&_error = error, &_block = block]() -> move_only {
+                      lock_t lock(_block);
+                      _error = true;
+                      throw test_exception("failure");
+                  }).recover(make_executor<1>(), [](auto failedFuture) {
+                check_failure<test_exception>(failedFuture, "failure");
+                return move_only(42);
+            });
         }
 
         auto result = await(std::move(sut));
@@ -1129,15 +1104,15 @@ BOOST_AUTO_TEST_CASE(
         {
             lock_t hold(block);
             sut = async(make_executor<0>(),
-                        [& _error = error, &_block = block]() -> move_only {
+                        [&_error = error, &_block = block]() -> move_only {
                             lock_t lock(_block);
                             _error = true;
                             throw test_exception("failure");
                         }) ^
-                ( executor{make_executor<1>()} & [](auto failedFuture) {
-                    check_failure<test_exception>(failedFuture, "failure");
-                    return move_only(42);
-                });
+                  (executor{make_executor<1>()} & [](auto failedFuture) {
+                      check_failure<test_exception>(failedFuture, "failure");
+                      return move_only(42);
+                  });
         }
 
         auto result = await(std::move(sut));
@@ -1147,7 +1122,6 @@ BOOST_AUTO_TEST_CASE(
         BOOST_REQUIRE_EQUAL(1, custom_scheduler<0>::usage_counter());
         BOOST_REQUIRE_GE(1, custom_scheduler<1>::usage_counter());
     }
-
 }
 
 BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {

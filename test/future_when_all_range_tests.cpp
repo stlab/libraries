@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_void_empty_range) {
         std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE(check);
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_empty_range) {
         std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(0), p);
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(1), p);
     BOOST_REQUIRE_EQUAL(size_t(42), r);
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_all_delayed) {
         stlab::default_executor, [&done] { done = true; },
         std::make_pair(test_futures.begin(), test_futures.end()));
 
-    stlab::await(done_future);
+    stlab::await(std::move(done_future));
 
     BOOST_REQUIRE(done);
 }
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(size_t(1 + 2 + 3 + 5), r);
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_and_immediate
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(1000), p);
     BOOST_REQUIRE_EQUAL(size_t(1000), r);
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements)
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(4711 + 1 + 4711 + 2 + 4711 + 3 + 4711 + 5, r);
     BOOST_REQUIRE_LE(5, custom_scheduler<0>::usage_counter());
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_empty_range) {
         make_executor<0>(), [](std::vector<int> v) { return static_cast<int>(v.size()); },
         std::make_pair(emptyFutures.begin(), emptyFutures.end()));
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(0, *sut.get_try());
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_one_element) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(1), p);
     BOOST_REQUIRE_EQUAL(42, *sut.get_try());
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_many_elements) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, *sut.get_try());
@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_diamond_formation_elements) 
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(4711 + 1 + 4711 + 2 + 4711 + 3 + 4711 + 5, *sut.get_try());
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_task) {
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    BOOST_REQUIRE_EQUAL(4, stlab::await(sut));
+    BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(sut)));
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
         stlab::default_executor, [_func = mutable_int{check}]() mutable { _func(); },
         std::make_pair(futures.begin(), futures.end()));
 
-    stlab::await(sut);
+    stlab::await(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(3, check);
 }
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_one_failing) 
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
@@ -481,7 +481,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_all_failing) 
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
@@ -518,7 +518,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
@@ -551,7 +551,7 @@ BOOST_AUTO_TEST_CASE(
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
         make_executor<1>(), []() { throw test_exception("failure"); },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
@@ -609,7 +609,7 @@ BOOST_AUTO_TEST_CASE(
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);

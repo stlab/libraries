@@ -525,12 +525,7 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
     auto get_ready() -> const T& { return get_ready_r(true); }
 
     auto get_ready_r(bool) -> T {
-#ifndef NDEBUG
-        {
-            std::unique_lock<std::mutex> lock(_mutex);
-            assert(_ready && "FATAL (sean.parent) : get_ready() called but not ready!");
-        }
-#endif
+        assert(is_ready() && "FATAL (sean.parent) : get_ready() called but not ready!");
 
         if (_exception) std::rethrow_exception(_exception);
         return std::move(*_result);
@@ -1743,34 +1738,16 @@ template <typename R>
 auto operator co_await(stlab::future<R> f) {
     struct Awaiter {
         stlab::future<R> _input;
-        R _result;
 
         bool await_ready() { return _input.is_ready(); }
 
-        auto await_resume() { return std::move(_result); }
+        auto await_resume() { return std::move(_input).get_ready(); }
 
         void await_suspend(std::coroutine_handle<> ch) {
-            std::move(_input)
-                .then([this, ch](auto&& result) mutable {
-                    this->_result = std::forward<decltype(result)>(result);
-                    ch.resume();
-                })
-                .detach();
-        }
-    };
-    return Awaiter{std::move(f), {}};
-}
-
-inline auto operator co_await(stlab::future<void> f) {
-    struct Awaiter {
-        stlab::future<void> _input;
-
-        inline bool await_ready() { return _input.is_ready(); }
-
-        inline auto await_resume() {}
-
-        inline void await_suspend(std::coroutine_handle<> ch) {
-            std::move(_input).then([ch]() mutable { ch.resume(); }).detach();
+            std::move(_input).detach([this, ch](stlab::future<R>&& f) {
+                _input = std::move(f);
+                ch.resume();
+            });
         }
     };
     return Awaiter{std::move(f)};

@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_int) {
 
     auto w = get_the_answer();
 
-    BOOST_REQUIRE(42 == await(w));
+    BOOST_REQUIRE(42 == await(std::move(w)));
 }
 
 stlab::future<move_only> get_move_only_answer() { co_return move_only{42}; }
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_void) {
 
     auto w = just_wait();
 
-    BOOST_REQUIRE_NO_THROW(await(w));
+    BOOST_REQUIRE_NO_THROW(await(std::move(w)));
 }
 
 stlab::future<int> get_the_answer_with_failure() {
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_int_failure) {
 
     auto w = get_the_answer_with_failure();
 
-    BOOST_REQUIRE_EXCEPTION(await(w), test_exception,
+    BOOST_REQUIRE_EXCEPTION(await(std::move(w)), test_exception,
                             ([_m = std::string("failure")](const auto& e) {
                                 return std::string(_m) == std::string(e.what());
                             }));
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(future_coroutine_combined_void_int) {
     auto done = do_it(async(default_executor, [] { return 42; }), intCheck);
     auto hold = done.then([&boolCheck] { boolCheck = true; });
 
-    await(hold);
+    await(std::move(hold));
 
     BOOST_REQUIRE_EQUAL(42, intCheck);
     BOOST_REQUIRE(boolCheck.load());
