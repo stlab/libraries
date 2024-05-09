@@ -57,13 +57,12 @@ BOOST_AUTO_TEST_CASE(future_coroutine_void) {
 }
 
 auto get_the_answer_with_failure() -> stlab::future<int> {
-    auto result = co_await stlab::async(stlab::default_executor, [] {
+    (void)co_await stlab::async(stlab::default_executor, [] {
         invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); });
         return 42;
     });
-    throw test_exception("failure");
 
-    co_return result;
+    throw test_exception("failure");
 }
 
 BOOST_AUTO_TEST_CASE(future_coroutine_int_failure) {
@@ -78,13 +77,11 @@ BOOST_AUTO_TEST_CASE(future_coroutine_int_failure) {
 }
 
 auto get_the_answer_move_only_with_failure() -> stlab::future<move_only> {
-    auto result = co_await stlab::async(stlab::default_executor, [] {
+    (void)co_await stlab::async(stlab::default_executor, [] {
         invoke_waiting([] { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); });
         return move_only{42};
     });
     throw test_exception("failure");
-
-    co_return std::move(result);
 }
 
 BOOST_AUTO_TEST_CASE(future_coroutine_move_only_failure) {

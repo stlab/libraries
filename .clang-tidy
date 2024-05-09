@@ -1,0 +1,8 @@
+Checks: >
+  cert-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -cppcoreguidelines-avoid-magic-numbers
+CheckOptions:
+  - key: readability-identifier-length.MinLength
+    value: 3

@@ -76,12 +76,12 @@ public:
         // coverity[useless_call]
         ++_self->_count;
     }
-    copy_on_write(copy_on_write&& x) noexcept : _self(x._self) {
+    copy_on_write(copy_on_write&& x) noexcept : _self{std::exchange(x._self, nullptr)} {
         assert(_self && "WARNING (sparent) : using a moved copy_on_write object");
-        x._self = nullptr;
     }
 
     ~copy_on_write() {
+        assert(!_self || (_self->_count > 0) && "FATAL (sparent) : double delete");
         if (_self && (--_self->_count == 0)) {
             if constexpr (std::is_default_constructible_v<element_type>) {
                 assert(_self != default_model());
@@ -95,7 +95,7 @@ public:
     }
 
     auto operator=(copy_on_write&& x) noexcept -> copy_on_write& {
-        auto tmp = std::move(x);
+        auto tmp{std::move(x)};
         swap(*this, tmp);
         return *this;
     }
