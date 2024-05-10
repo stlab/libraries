@@ -109,7 +109,8 @@ void test_copy_on_write() {
 
         bar = mv(6); // allocation
 
-        BOOST_CHECK(bar.unique() && foo.unique());
+        BOOST_CHECK(bar.unique());
+        BOOST_CHECK(foo.unique());
     }
 
     // Test move-assignment using null object_m

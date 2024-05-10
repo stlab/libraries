@@ -62,7 +62,7 @@ auto get_optional(T&& x) {
 
 } // namespace detail
 
-template <typename T>
+template <class T>
 auto await(future<T>&& x) -> T {
     if (x.is_ready()) return std::move(x).get_ready(); // if ready, done
 
@@ -104,6 +104,13 @@ auto await(future<T>&& x) -> T {
     return std::move(result).get_ready();
 
 #endif
+}
+
+template <class T>
+[[deprecated("implicit copy deprecated, use `await(std::move(f))` or `await(stlab::copy(f))`"
+             " instead.")]]
+auto await(const future<T>& x) -> T {
+    return await(future<T>{x});
 }
 
 namespace detail {
@@ -160,22 +167,30 @@ auto await_for(future<T>&& x, const std::chrono::nanoseconds& timeout) -> future
     return result.valid() ? std::move(result) : std::move(hold);
 }
 
+template <class T>
+[[deprecated("implicit copy deprecated, use `await_for(std::move(f), t)` or"
+             " `await_for(stlab::copy(f), t)` instead.")]]
+auto await_for(const future<T>& x, const std::chrono::nanoseconds& timeout) -> future<T> {
+    return await_for(future<T>{x}, timeout);
+}
+
 /**************************************************************************************************/
 
-template <typename T>
-[[deprecated("Use await instead.")]] auto blocking_get(future<T> x) -> T {
+template <class T>
+[[deprecated("Use await instead.")]]
+auto blocking_get(future<T> x) -> T {
     return await(std::move(x));
 }
 
 template <class T>
-[[deprecated("Use await_for instead.")]] auto blocking_get_for(
-    future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
+[[deprecated("Use await_for instead.")]]
+auto blocking_get_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
     await_for(std::move(x), timeout);
 }
 
 template <class T>
-[[deprecated("Use await_for instead.")]] auto blocking_get(
-    future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
+[[deprecated("Use await_for instead.")]]
+auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
     return blocking_get_for(std::move(x), timeout).get_try();
 }
 

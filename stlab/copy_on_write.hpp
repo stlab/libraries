@@ -30,8 +30,7 @@ class copy_on_write {
         model() noexcept(std::is_nothrow_constructible<T>::value) = default;
 
         template <class... Args>
-        explicit model(Args&&... args) noexcept(
-            std::is_nothrow_constructible_v<T, Args&&...>) :
+        explicit model(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args&&...>) :
             _value(std::forward<Args>(args)...) {}
 
         T _value;
@@ -91,6 +90,8 @@ public:
     }
 
     auto operator=(const copy_on_write& x) noexcept -> copy_on_write& {
+        // self-assignment is not allowed to disable cert-oop54-cpp warning (and is likely a bug)
+        assert(this != &x && "self-assignment is not allowed");
         return *this = copy_on_write(x);
     }
 

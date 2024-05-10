@@ -117,7 +117,7 @@ struct child_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> child_iterator {
         auto result{*this};
         increment();
         return result;
@@ -126,7 +126,7 @@ struct child_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> child_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -193,7 +193,7 @@ struct edge_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> edge_iterator {
         auto result{*this};
         increment();
         return result;
@@ -202,7 +202,7 @@ struct edge_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> edge_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -266,7 +266,7 @@ struct filter_fullorder_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> filter_fullorder_iterator {
         auto result{*this};
         increment();
         return result;
@@ -275,7 +275,7 @@ struct filter_fullorder_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> filter_fullorder_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -373,7 +373,7 @@ struct reverse_fullorder_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> reverse_fullorder_iterator {
         auto result{*this};
         increment();
         return result;
@@ -382,7 +382,7 @@ struct reverse_fullorder_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> reverse_fullorder_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -449,7 +449,7 @@ struct depth_fullorder_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> depth_fullorder_iterator {
         auto result{*this};
         increment();
         return result;
@@ -458,7 +458,7 @@ struct depth_fullorder_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> depth_fullorder_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -570,7 +570,7 @@ struct forest_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> forest_iterator {
         auto result{*this};
         increment();
         return result;
@@ -579,7 +579,7 @@ struct forest_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> forest_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -666,7 +666,7 @@ struct forest_const_iterator {
         increment();
         return *this;
     }
-    auto operator++(int) {
+    auto operator++(int) -> forest_const_iterator {
         auto result{*this};
         increment();
         return result;
@@ -675,7 +675,7 @@ struct forest_const_iterator {
         decrement();
         return *this;
     }
-    auto operator--(int) {
+    auto operator--(int) -> forest_const_iterator {
         auto result{*this};
         decrement();
         return result;
@@ -792,11 +792,16 @@ public:
     forest() = default;
     ~forest() { clear(); }
 
-    forest(const forest& x) : forest() {
+    forest(const forest& x) {
         insert(end(), const_child_iterator(x.begin()), const_child_iterator(x.end()));
     }
     forest(forest&& x) noexcept : forest() { splice(end(), x); }
-    auto operator=(const forest& x) -> forest& { return *this = forest(x); }
+    auto operator=(const forest& x) -> forest& {
+        // self-assignment is not allowed to disable cert-oop54-cpp warning (and is likely a bug)
+        assert(this != &x && "self-assignment is not allowed");
+        return *this = forest(x);
+    }
+
     auto operator=(forest&& x) noexcept -> forest& {
         auto tmp{std::move(x)}; // this is `release()`
         clear();                // these two lines are `reset()`
@@ -899,7 +904,7 @@ private:
     friend struct detail::forest_const_iterator<value_type>;
     friend struct unsafe::set_next_fn<iterator>;
 
-    mutable size_type _size{0};
+    mutable std::atomic<size_type> _size{0};
     detail::node_base<node_t> _tail;
 
     auto tail() -> node_t* { return static_cast<node_t*>(&_tail); }

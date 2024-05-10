@@ -1481,7 +1481,11 @@ public:
 
     receiver(receiver&&) noexcept = default;
 
-    auto operator=(const receiver& x) -> receiver& { return *this = receiver(x); }
+    auto operator=(const receiver& x) -> receiver& {
+        // self-assignment is not allowed to disable cert-oop54-cpp warning (and is likely a bug)
+        assert(this != &x && "self-assignment is not allowed");
+        return *this = receiver(x);
+    }
 
     auto operator=(receiver&& x) noexcept -> receiver& = default;
 
@@ -1565,19 +1569,21 @@ public:
     sender() = default;
 
     ~sender() {
-        auto p = _p.lock();
-        if (p) p->remove_sender();
+        if (auto p = _p.lock()) p->remove_sender();
     }
 
     sender(const sender& x) : _p(x._p) {
-        auto p = _p.lock();
-        if (p) p->add_sender();
+        if (auto p = _p.lock()) p->add_sender();
     }
 
     sender(sender&&) noexcept = default;
 
     // copy-assign uses copy-ctor to keep sender count correct.
-    auto operator=(const sender& x) -> sender& { return *this = sender(x); }
+    auto operator=(const sender& x) -> sender& {
+        // self-assignment is not allowed to disable cert-oop54-cpp warning (and is likely a bug)
+        assert(this != &x && "self-assignment is not allowed");
+        return *this = sender(x);
+    }
 
     auto operator=(sender&&) noexcept -> sender& = default;
 

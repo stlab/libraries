@@ -1,11 +1,7 @@
-# -cert-oop54-cpp because it gives false positives
-# -cert-dcl21-cpp because it gives false positives and conflicts with clang-diagnostic-ignored-qualifiers
 Checks: >
   cert-*,
   performance-*,
   modernize-*,
-  -cert-oop54-cpp,
-  -cert-dcl21-cpp,
   -readability-identifier-length,
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-magic-numbers
@@ -14,3 +10,4 @@ CheckOptions:
   - key: readability-identifier-length.MinLength
     value: 3
 HeaderFilterRegex: "^.*\/stlab\/.*$"
+WarningsAsErrors: "*"

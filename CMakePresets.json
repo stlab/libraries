@@ -50,24 +50,40 @@
       }
     },
     {
-      "name": "clang-tidy",
-      "description": "Ninja Debug Build",
+      "name": "clang-tidy-fix",
       "hidden": false,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/../build/ninja-clang-tidy",
+      "binaryDir": "${sourceDir}/../build/clang-tidy-fix",
       "cacheVariables": {
         "CMAKE_CXX_STANDARD": "17",
         "CMAKE_BUILD_TYPE": "DEBUG",
         "BUILD_TESTING": "ON",
-        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix;--enable-check-profile"
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix"
+      }
+    },
+    {
+      "name": "clang-tidy-nofix",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build/clang-tidy-nofix",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_BUILD_TYPE": "DEBUG",
+        "BUILD_TESTING": "ON",
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "one-job",
-      "configurePreset": "clang-tidy",
+      "name": "clang-tidy-fix",
+      "configurePreset": "clang-tidy-fix",
       "jobs": 1
+    },
+
+    {
+      "name": "clang-tidy-nofix",
+      "configurePreset": "clang-tidy-nofix"
     }
   ]
 }
