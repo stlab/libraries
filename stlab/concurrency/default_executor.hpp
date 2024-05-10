@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -48,7 +49,7 @@ namespace detail {
 
 /**************************************************************************************************/
 
-enum class executor_priority { high, medium, low };
+enum class executor_priority : std::uint8_t { high, medium, low };
 
 /**************************************************************************************************/
 
@@ -78,7 +79,7 @@ struct group_t {
     }
 };
 
-inline group_t& group() {
+inline auto group() -> group_t& {
     // Use an immediately executed lambda to atomically register pre-exit handler
     // and create the dispatch group.
     static group_t g{[] {

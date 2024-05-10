@@ -6,6 +6,7 @@
 
 /**************************************************************************************************/
 
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -182,7 +183,7 @@ start           sut
 */
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements) {
     BOOST_TEST_MESSAGE("running future when_all void with range with diamond formation");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int r = 0;
     auto start = async(make_executor<0>(), [] { return 4711; });
     std::vector<stlab::future<void>> futures(4);
@@ -511,7 +512,7 @@ start           sut
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_start_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with diamond formation and start failing");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int r = 0;
     auto start = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
     std::vector<stlab::future<void>> futures(4);
@@ -544,7 +545,7 @@ BOOST_AUTO_TEST_CASE(
     future_when_all_void_range_with_diamond_formation_elements_one_parallel_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with diamond formation and one of the parallel tasks is failing");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int r = 0;
     auto start = async(make_executor<0>(), []() -> int { return 42; });
     std::vector<stlab::future<void>> futures(4);
@@ -573,7 +574,7 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_join_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with diamond formation and the joining tasks is failing");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int const r = 0;
     auto start = async(make_executor<0>(), []() -> int { return 42; });
     std::vector<stlab::future<void>> futures(4);

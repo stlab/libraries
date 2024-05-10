@@ -102,7 +102,7 @@ struct index_sequence_transform<Seq, F, Index, 1> {
 /**************************************************************************************************/
 
 template <bool P, class T>
-constexpr detail::move_if_helper_t<P, T> move_if(T&& t) noexcept {
+constexpr auto move_if(T&& t) noexcept -> detail::move_if_helper_t<P, T> {
     return static_cast<detail::move_if_helper_t<P, T>>(t);
 }
 
@@ -118,9 +118,9 @@ void for_each_argument(F&& f, Args&&... args) {
 /// Returns a copy of the argument. Used to pass an lvalue to function taking an rvalue or to
 /// copy a type with an `explicit` copy-constructor.
 template <typename T>
-constexpr std::decay_t<T> copy(T&& value) noexcept(noexcept(std::decay_t<T>{
-    static_cast<T&&>(value)})) {
-    static_assert(!std::is_same<std::decay_t<T>, T>::value, "explicit copy of rvalue.");
+constexpr auto copy(T&& value) noexcept(noexcept(std::decay_t<T>{
+    static_cast<T&&>(value)})) -> std::decay_t<T> {
+    static_assert(!std::is_same_v<std::decay_t<T>, T>, "explicit copy of rvalue.");
     return std::decay_t<T>{static_cast<T&&>(value)};
 }
 
@@ -128,7 +128,7 @@ constexpr std::decay_t<T> copy(T&& value) noexcept(noexcept(std::decay_t<T>{
 
 /// A standard move implementation but with a compile-time check for const types.
 template <class T>
-constexpr std::remove_reference_t<T>&& move(T&& t) noexcept {
+constexpr auto move(T&& t) noexcept -> std::remove_reference_t<T>&& {
     static_assert(!std::is_const_v<std::remove_reference_t<T>>,
                   "move of const type will unintentionally decay to copy");
     return static_cast<std::remove_reference_t<T>&&>(t);

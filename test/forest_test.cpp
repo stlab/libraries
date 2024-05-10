@@ -10,6 +10,7 @@
 // stlab
 #include <stlab/forest.hpp>
 #include <stlab/forest_algorithms.hpp>
+#include <stlab/utility.hpp>
 
 /**************************************************************************************************/
 
@@ -174,7 +175,7 @@ auto test_edge_traversal(Forest& f, Iterator fi, Iterator li) {
 
     {
         Iterator first{fi};
-        Iterator last{li};
+        const Iterator& last{li};
         while (first != last) {
             if (first.edge() == Edge) expected += *first;
             ++first;
@@ -365,7 +366,7 @@ BOOST_AUTO_TEST_CASE(construction) {
     auto f{big_test_forest()};
 
     /* copy construction */ {
-        auto f2 = f;
+        auto f2{copy(f)};
         BOOST_CHECK(f2 == f);
     }
 

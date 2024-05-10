@@ -17,7 +17,8 @@
 // #include <adobe/test/check_null.hpp>
 
 #include <stlab/copy_on_write.hpp>
-//#include <adobe/memory.hpp>
+#include <stlab/utility.hpp>
+// #include <adobe/memory.hpp>
 
 /**************************************************************************************************/
 
@@ -26,14 +27,14 @@ namespace {
 /**************************************************************************************************/
 
 template <typename R, typename T>
-R make_value(const T& x) {
+auto make_value(const T& x) -> R {
     return R(x);
 }
 
 /**************************************************************************************************/
 
 template <>
-std::string make_value(const long& x) {
+auto make_value(const long& x) -> std::string {
     std::stringstream s;
     s << x;
     return std::string(s.str());
@@ -189,15 +190,17 @@ BOOST_AUTO_TEST_CASE(copy_on_write_interface) {
     {
         // noexcept-correct default construction:
         static_assert(noexcept(int()), "int() had better be noexcept!");
-        static_assert(noexcept(copy_on_write<int>()), "Default c'tor should be noexcept if the type's c'tor is.");
+        static_assert(noexcept(copy_on_write<int>()),
+                      "Default c'tor should be noexcept if the type's c'tor is.");
         struct not_noexcept_ctor {
             not_noexcept_ctor() { throw std::exception(); }
         };
-        static_assert(!noexcept(not_noexcept_ctor()), "Default c'tor should be noexcept if the type is noexcept.");
-        static_assert(!noexcept(copy_on_write<not_noexcept_ctor>()), "Default c'tor shouldn't be noexcept if the type's c'tor isn't.");
-        BOOST_CHECK_THROW([] {
-          copy_on_write<not_noexcept_ctor> ctor_will_throw;
-        }(), std::exception);
+        static_assert(!noexcept(not_noexcept_ctor()),
+                      "Default c'tor should be noexcept if the type is noexcept.");
+        static_assert(!noexcept(copy_on_write<not_noexcept_ctor>()),
+                      "Default c'tor shouldn't be noexcept if the type's c'tor isn't.");
+        BOOST_CHECK_THROW([] { copy_on_write<not_noexcept_ctor> ctor_will_throw; }(),
+                          std::exception);
     }
 
     {
@@ -223,7 +226,7 @@ BOOST_AUTO_TEST_CASE(copy_on_write_interface) {
     {
         // copy construction
         copy_on_write<int> a = 3;
-        copy_on_write<int> b = a;
+        auto b = copy(a);
         BOOST_CHECK_MESSAGE(a.identity(b), "copy construction error");
         BOOST_CHECK_MESSAGE(b == 3, "copy construction error");
     }
@@ -301,8 +304,8 @@ BOOST_AUTO_TEST_CASE(copy_on_write_interface) {
         copy_on_write<std::pair<int, int>> a(1, 2);
         BOOST_CHECK(a.unique());
         {
-            auto b = a;
-            BOOST_CHECK(!a.unique());
+            auto b = copy(a);
+            BOOST_CHECK(!a.unique() && !b.unique());
         }
         BOOST_CHECK(a.unique());
     }

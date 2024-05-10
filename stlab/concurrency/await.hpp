@@ -63,7 +63,7 @@ auto get_optional(T&& x) {
 } // namespace detail
 
 template <typename T>
-T await(future<T>&& x) {
+auto await(future<T>&& x) -> T {
     if (x.is_ready()) return std::move(x).get_ready(); // if ready, done
 
     std::mutex m;
@@ -163,7 +163,7 @@ auto await_for(future<T>&& x, const std::chrono::nanoseconds& timeout) -> future
 /**************************************************************************************************/
 
 template <typename T>
-[[deprecated("Use await instead.")]] T blocking_get(future<T> x) {
+[[deprecated("Use await instead.")]] auto blocking_get(future<T> x) -> T {
     return await(std::move(x));
 }
 

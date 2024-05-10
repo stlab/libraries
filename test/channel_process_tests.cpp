@@ -7,6 +7,7 @@
 /**************************************************************************************************/
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -95,7 +96,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_with_two_steps) {
 
     wait_until_done([&] { return index == 5; });
 
-    int const expectation[] = {1, 5, 9, 13, 17};
+    std::array expectation{1, 5, 9, 13, 17};
     for (auto i = 0; i < 5; ++i) {
         BOOST_REQUIRE_EQUAL(expectation[i], results[i]);
     }
@@ -227,7 +228,7 @@ BOOST_AUTO_TEST_CASE(int_channel_split_process_two_steps) {
 
     wait_until_done([&] { return index1 == 5 && index2 == 5; });
 
-    int const expectation[] = {1, 5, 9, 13, 17};
+    const std::array expectation{1, 5, 9, 13, 17};
     for (auto i = 0; i < 5; ++i) {
         BOOST_REQUIRE_EQUAL(expectation[i], results1[i]);
         BOOST_REQUIRE_EQUAL(expectation[i], results2[i]);

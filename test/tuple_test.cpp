@@ -29,7 +29,7 @@ namespace {
 /**************************************************************************************************/
 
 template <typename T>
-std::string demangle() {
+auto demangle() -> std::string {
 #if defined(__clang__)
     struct freer_t {
         void operator()(void* x) const { std::free(x); }

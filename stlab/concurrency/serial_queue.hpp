@@ -13,6 +13,7 @@
 
 #include <stlab/config.hpp>
 
+#include <cstdint>
 #include <deque>
 #include <mutex>
 #include <tuple>
@@ -35,7 +36,7 @@ inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
-enum class schedule_mode { single, all };
+enum class schedule_mode : std::uint8_t { single, all };
 
 /**************************************************************************************************/
 
@@ -60,7 +61,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
         return f;
     }
 
-    bool empty() {
+    auto empty() -> bool {
         bool empty;
 
         scope<lock_t>(_m, [&]() {
@@ -151,7 +152,7 @@ public:
         _impl(std::make_shared<detail::serial_instance_t>(
             [_e = std::move(e)](auto&& f) { _e(std::forward<decltype(f)>(f)); }, mode)) {}
 
-    auto executor() const {
+    [[nodiscard]] auto executor() const {
         return [_impl =
                     _impl](auto&& f) -> std::enable_if_t<std::is_nothrow_invocable_v<decltype(f)>> {
             _impl->enqueue(std::forward<decltype(f)>(f));

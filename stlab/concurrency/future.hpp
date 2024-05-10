@@ -12,8 +12,10 @@
 #include <stlab/config.hpp>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cassert>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <initializer_list>
@@ -108,7 +110,7 @@ auto invoke_remove_monostate_arguments(F&& f, Args&&... args) {
 
 /**************************************************************************************************/
 
-enum class future_error_codes { // names for futures errors
+enum class future_error_codes : std::uint8_t { // names for futures errors
     broken_promise = 1,
     no_state
 };
@@ -117,9 +119,9 @@ enum class future_error_codes { // names for futures errors
 
 namespace detail {
 
-inline const char* Future_error_map(
-    future_error_codes code) noexcept { // convert to name of future error
-    switch (code) {                     // switch on error code value
+inline auto Future_error_map(future_error_codes code) noexcept -> const
+    char* {         // convert to name of future error
+    switch (code) { // switch on error code value
         case future_error_codes::broken_promise:
             return "broken promise";
 
@@ -154,9 +156,11 @@ class future_error : public std::logic_error {
 public:
     explicit future_error(future_error_codes code) : logic_error(""), _code(code) {}
 
-    const future_error_codes& code() const noexcept { return _code; }
+    [[nodiscard]] auto code() const noexcept -> const future_error_codes& { return _code; }
 
-    const char* what() const noexcept override { return detail::Future_error_map(_code); }
+    [[nodiscard]] auto what() const noexcept -> const char* override {
+        return detail::Future_error_map(_code);
+    }
 
 private:
     const future_error_codes _code; // the stored error code
@@ -206,7 +210,7 @@ struct result_of_when_any_t {
 };
 
 template <typename T>
-bool unique_usage(const std::shared_ptr<T>& p) {
+auto unique_usage(const std::shared_ptr<T>& p) -> bool {
     return p.use_count() == 1;
 }
 
@@ -302,7 +306,7 @@ struct shared_task {
     virtual ~shared_task() = default;
 
     virtual void operator()(Args... args) = 0;
-    virtual void set_exception(std::exception_ptr&& error) = 0;
+    virtual void set_exception(const std::exception_ptr& error) = 0;
 };
 
 /**************************************************************************************************/
@@ -371,8 +375,8 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
             _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
-    void _set_exception(std::exception_ptr&& error) noexcept {
-        _exception = std::move(error);
+    void _set_exception(const std::exception_ptr& error) noexcept {
+        _exception = error;
         then_t then;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -388,7 +392,7 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
     template <class A>
     void set_value(A&& a);
 
-    bool is_ready() const& { return _ready; }
+    auto is_ready() const& -> bool { return _ready; }
 
     // get_ready() is called internally on continuations when we know _ready is true;
     auto get_ready() -> const type& {
@@ -503,8 +507,8 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
         if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
 
-    void _set_exception(std::exception_ptr&& error) noexcept {
-        _exception = std::move(error);
+    void _set_exception(const std::exception_ptr& error) noexcept {
+        _exception = error;
         then_t then;
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -518,7 +522,7 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
     template <class A>
     void set_value(A&& a);
 
-    bool is_ready() const {
+    auto is_ready() const -> bool {
         return _ready;
     } // get_ready() is called internally on continuations when we know _ready is true;
 
@@ -569,10 +573,10 @@ public:
     }
 
     promise(promise&&) noexcept = default;
-    promise& operator=(promise&&) noexcept = default;
+    auto operator=(promise&&) noexcept -> promise& = default;
 
     promise(const promise&) = delete;
-    promise& operator=(const promise&) = delete;
+    auto operator=(const promise&) -> promise& = delete;
 
     void set_value(type&& value) && noexcept {
         if (auto p = _p.lock()) {
@@ -583,14 +587,14 @@ public:
 
     auto set_value() && noexcept { set_value(std::monostate{}); }
 
-    void set_exception(std::exception_ptr&& error) && noexcept {
+    void set_exception(const std::exception_ptr& error) && noexcept {
         if (auto p = _p.lock()) {
             _p.reset();
-            p->_set_exception(std::move(error));
+            p->_set_exception(error);
         }
     }
 
-    bool canceled() const { return _p.expired(); }
+    [[nodiscard]] auto canceled() const -> bool { return _p.expired(); }
 };
 
 template <class R>
@@ -615,10 +619,10 @@ struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
         _f = function_t();
     }
 
-    void set_exception(std::exception_ptr&& error) override {
+    void set_exception(const std::exception_ptr& error) override {
         if (!_f) return;
 
-        this->_set_exception(std::move(error));
+        this->_set_exception(error);
         _f = function_t();
     }
 };
@@ -653,10 +657,10 @@ public:
     }
 
     packaged_task(const packaged_task&) = delete;
-    packaged_task& operator=(const packaged_task&) = delete;
+    auto operator=(const packaged_task&) -> packaged_task& = delete;
 
     packaged_task(packaged_task&&) noexcept = default;
-    packaged_task& operator=(packaged_task&& x) noexcept = default;
+    auto operator=(packaged_task&& x) noexcept -> packaged_task& = default;
 
     template <typename... A>
     void operator()(A&&... args) noexcept {
@@ -666,12 +670,12 @@ public:
         }
     }
 
-    bool canceled() const { return _p.expired(); }
+    [[nodiscard]] auto canceled() const -> bool { return _p.expired(); }
 
-    void set_exception(std::exception_ptr&& error) noexcept {
+    void set_exception(const std::exception_ptr& error) noexcept {
         if (auto p = _p.lock()) {
             _p.reset();
-            p->set_exception(std::move(error));
+            p->set_exception(error);
         }
     }
 };
@@ -705,11 +709,11 @@ public:
 
     void swap(future& x) noexcept { std::swap(_p, x._p); }
 
-    inline friend void swap(future& x, future& y) { x.swap(y); }
-    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
-    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+    inline friend void swap(future& x, future& y) noexcept { x.swap(y); }
+    inline friend auto operator==(const future& x, const future& y) -> bool { return x._p == y._p; }
+    inline friend auto operator!=(const future& x, const future& y) -> bool { return !(x == y); }
 
-    bool valid() const { return static_cast<bool>(_p); }
+    [[nodiscard]] auto valid() const -> bool { return static_cast<bool>(_p); }
 
     template <typename F>
     auto then(F&& f) const& {
@@ -821,22 +825,23 @@ public:
 
     void reset() { _p.reset(); }
 
-    bool is_ready() const& { return _p && _p->is_ready(); }
+    [[nodiscard]] auto is_ready() const& -> bool { return _p && _p->is_ready(); }
 
-    auto get_try() const& { return optional_monostate_to_bool(_p->get_try()); }
+    [[nodiscard]] auto get_try() const& { return optional_monostate_to_bool(_p->get_try()); }
 
     auto get_try() && { return optional_monostate_to_bool(_p->get_try_r(unique_usage(_p))); }
 
-    auto get_ready() const& { return monostate_to_void(_p->get_ready()); }
+    [[nodiscard]] auto get_ready() const& { return monostate_to_void(_p->get_ready()); }
 
     auto get_ready() && { return monostate_to_void(_p->get_ready_r(unique_usage(_p))); }
 
-    [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
+    [[deprecated("Use exception() instead")]] [[nodiscard]] auto error()
+        const& -> std::optional<std::exception_ptr> {
         return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
     // Precondition: is_ready()
-    std::exception_ptr exception() const& {
+    [[nodiscard]] auto exception() const& -> std::exception_ptr {
         assert(is_ready());
         return _p->_exception;
     }
@@ -869,16 +874,16 @@ public:
 
     future() = default;
     future(future&&) noexcept = default;
-    future& operator=(const future&) = delete;
-    future& operator=(future&&) noexcept = default;
+    auto operator=(const future&) -> future& = delete;
+    auto operator=(future&&) noexcept -> future& = default;
 
     void swap(future& x) noexcept { std::swap(_p, x._p); }
 
-    inline friend void swap(future& x, future& y) { x.swap(y); }
-    inline friend bool operator==(const future& x, const future& y) { return x._p == y._p; }
-    inline friend bool operator!=(const future& x, const future& y) { return !(x == y); }
+    inline friend void swap(future& x, future& y) noexcept { x.swap(y); }
+    inline friend auto operator==(const future& x, const future& y) -> bool { return x._p == y._p; }
+    inline friend auto operator!=(const future& x, const future& y) -> bool { return !(x == y); }
 
-    bool valid() const { return static_cast<bool>(_p); }
+    [[nodiscard]] auto valid() const -> bool { return static_cast<bool>(_p); }
 
     template <typename F>
     auto then(F&& f) && {
@@ -937,22 +942,23 @@ public:
 
     void reset() { _p.reset(); }
 
-    bool is_ready() const& { return _p && _p->is_ready(); }
+    [[nodiscard]] auto is_ready() const& -> bool { return _p && _p->is_ready(); }
 
-    auto get_try() const& { return optional_monostate_to_bool(_p->get_try()); }
+    [[nodiscard]] auto get_try() const& { return optional_monostate_to_bool(_p->get_try()); }
 
     auto get_try() && { return optional_monostate_to_bool(_p->get_try_r(unique_usage(_p))); }
 
-    auto get_ready() const& { return monostate_to_void(_p->get_ready()); }
+    [[nodiscard]] auto get_ready() const& { return monostate_to_void(_p->get_ready()); }
 
     auto get_ready() && { return monostate_to_void(_p->get_ready_r(unique_usage(_p))); }
 
-    [[deprecated("Use exception() instead")]] std::optional<std::exception_ptr> error() const& {
+    [[deprecated("Use exception() instead")]] [[nodiscard]] auto error()
+        const& -> std::optional<std::exception_ptr> {
         return _p->_exception ? std::optional<std::exception_ptr>{_p->_exception} : std::nullopt;
     }
 
     // Precondition: is_ready()
-    std::exception_ptr exception() const& {
+    [[nodiscard]] auto exception() const& -> std::exception_ptr {
         assert(is_ready());
         return _p->_exception;
     }
@@ -1038,7 +1044,7 @@ struct assign_ready_future {
 template <>
 struct assign_ready_future<future<void>> {
     template <typename T>
-    static void assign(T& x, future<void>) {
+    static void assign(T& x, const future<void>&) {
         x = std::move(typename T::value_type()); // to set the optional
     }
 };
@@ -1048,7 +1054,7 @@ struct when_all_shared {
     // decay
     Args _args;
     std::mutex _guard;
-    future<void> _holds[std::tuple_size<Args>::value]{};
+    std::array<future<void>, std::tuple_size_v<Args>> _holds;
     std::size_t _remaining{std::tuple_size<Args>::value};
     std::exception_ptr _exception;
     packaged_task<> _f;
@@ -1066,14 +1072,14 @@ struct when_all_shared {
         if (run) _f();
     }
 
-    void failure(std::exception_ptr error) {
+    void failure(const std::exception_ptr& error) {
         auto run{false};
         {
             std::unique_lock<std::mutex> lock{_guard};
             if (!_exception) {
                 for (auto& h : _holds)
                     h.reset();
-                _exception = std::move(error);
+                _exception = error;
                 run = true;
             }
         }
@@ -1087,18 +1093,18 @@ struct when_any_shared {
     // decay
     std::optional<R> _arg;
     std::mutex _guard;
-    future<void> _holds[S]{};
+    std::array<future<void>, S> _holds;
     std::size_t _remaining{S};
     std::exception_ptr _exception;
     std::size_t _index = std::numeric_limits<std::size_t>::max();
     packaged_task<> _f;
 
-    void failure(std::exception_ptr error) {
+    void failure(const std::exception_ptr& error) {
         auto run{false};
         {
             std::unique_lock<std::mutex> lock{_guard};
             if (--_remaining == 0) {
-                _exception = std::move(error);
+                _exception = error;
                 run = true;
             }
         }
@@ -1130,18 +1136,18 @@ struct when_any_shared<S, void> {
     using result_type = void;
     // decay
     std::mutex _guard;
-    future<void> _holds[S]{};
+    std::array<future<void>, S> _holds;
     std::size_t _remaining{S};
     std::exception_ptr _exception;
     std::size_t _index = std::numeric_limits<std::size_t>::max();
     packaged_task<> _f;
 
-    void failure(std::exception_ptr error) {
+    void failure(const std::exception_ptr& error) {
         auto run{false};
         std::unique_lock<std::mutex> lock{_guard};
         {
             if (--_remaining == 0) {
-                _exception = std::move(error);
+                _exception = error;
                 run = true;
             }
         }
@@ -1371,7 +1377,7 @@ struct context_result {
         value_storer<R>::store(*this, std::forward<FF>(f), index);
     }
 
-    void apply(std::exception_ptr error, std::size_t) { _exception = std::move(error); }
+    void apply(const std::exception_ptr& error, std::size_t) { _exception = error; }
 
     auto operator()() { return result_creator<Indexed, R>::go(*this); }
 };
@@ -1389,7 +1395,7 @@ struct context_result<F, Indexed, void> {
         _index = index;
     }
 
-    void apply(std::exception_ptr error, std::size_t) { _exception = std::move(error); }
+    void apply(const std::exception_ptr& error, std::size_t) { _exception = error; }
 
     auto operator()() { return result_creator<Indexed, void>::go(*this); }
 };
@@ -1404,7 +1410,7 @@ struct context_result<F, Indexed, void> {
  */
 struct single_trigger {
     template <typename C, typename F>
-    static bool go(C& context, F&& f, size_t index) {
+    static auto go(C& context, F&& f, size_t index) -> bool {
         auto run{false};
         {
             std::unique_lock<std::mutex> lock{context._guard};
@@ -1429,7 +1435,7 @@ struct single_trigger {
  */
 struct all_trigger {
     template <typename C, typename F>
-    static bool go(C& context, F&& f, size_t index) {
+    static auto go(C& context, F&& f, size_t index) -> bool {
         auto run{false};
         {
             std::unique_lock<std::mutex> lock{context._guard};
@@ -1440,12 +1446,12 @@ struct all_trigger {
     }
 
     template <typename C>
-    static bool go(C& context, std::exception_ptr error, size_t index) {
+    static auto go(C& context, const std::exception_ptr& error, size_t index) -> bool {
         auto run{false};
         {
             std::unique_lock<std::mutex> lock{context._guard};
             if (--context._remaining == 0) {
-                context.apply(std::move(error), index);
+                context.apply(error, index);
                 run = true;
             }
         }
@@ -1470,7 +1476,7 @@ struct common_context : CR {
         return CR::operator()();
     }
 
-    void failure(std::exception_ptr& error, size_t index) {
+    void failure(const std::exception_ptr& error, size_t index) {
         if (FailureCollector::go(*this, error, index)) _f();
     }
 
@@ -1556,7 +1562,7 @@ auto when_all(E executor, F f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
     using context_result_t =
-        std::conditional_t<std::is_same<void, param_t>::value, void, std::vector<param_t>>;
+        std::conditional_t<std::is_same_v<void, param_t>, void, std::vector<param_t>>;
     using context_t = detail::common_context<detail::context_result<F, false, context_result_t>, F,
                                              detail::all_trigger, detail::single_trigger>;
 
@@ -1580,7 +1586,7 @@ template <typename E, // models task executor
 auto when_any(E executor, F&& f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
-    using context_result_t = std::conditional_t<std::is_same<void, param_t>::value, void, param_t>;
+    using context_result_t = std::conditional_t<std::is_same_v<void, param_t>, void, param_t>;
     using context_t = detail::common_context<detail::context_result<F, true, context_result_t>, F,
                                              detail::single_trigger, detail::all_trigger>;
 
@@ -1594,6 +1600,15 @@ auto when_any(E executor, F&& f, std::pair<I, I> range) {
 
 /**************************************************************************************************/
 
+#if 0
+        std::bind<result_type>(
+            [_f = std::forward<F>(f)](
+                unwrap_reference_t<std::decay_t<Args>>&... brgs) mutable -> result_type {
+                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(brgs)...);
+            },
+            std::forward<Args>(args)...));
+#endif
+
 template <typename E, typename F, typename... Args>
 auto async(E executor, F&& f, Args&&... args)
     -> detail::reduced_t<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>> {
@@ -1601,12 +1616,8 @@ auto async(E executor, F&& f, Args&&... args)
 
     auto [pro, fut] = package<result_type()>(
         executor,
-        std::bind<result_type>(
-            [_f = std::forward<F>(f)](
-                unwrap_reference_t<std::decay_t<Args>>&... brgs) mutable -> result_type {
-                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(brgs)...);
-            },
-            std::forward<Args>(args)...));
+        [f = std::forward<F>(f), args = std::make_tuple(std::forward<Args>(args)...)]() mutable
+        -> result_type { return std::apply(std::move(f), std::move(args)); });
 
     executor(std::move(pro));
 

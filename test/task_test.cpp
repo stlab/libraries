@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(task_argument_test) {
     }
 
     {
-        task<void(regular)> t([](regular a) { BOOST_CHECK_EQUAL(a._x, 42); });
+        task<void(regular)> t([](const regular& a) { BOOST_CHECK_EQUAL(a._x, 42); });
         t(regular{42}); // rvalue->value
         regular a{42};
         t(a); // lvalue->value
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(task_argument_test) {
 
     // These test mismatched task signature to lambda signature
     {
-        task<void(const regular&)> t([](regular a) { BOOST_CHECK_EQUAL(a._x, 42); });
+        task<void(const regular&)> t([](const regular& a) { BOOST_CHECK_EQUAL(a._x, 42); });
         t(regular{42}); // rvalue->const &
         regular a{42};
         t(a); // lvalue->const &
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(task_argument_test) {
     }
 
     {
-        task<void(regular&)> t([](regular a) { BOOST_CHECK_EQUAL(a._x, 42); });
+        task<void(regular&)> t([](const regular& a) { BOOST_CHECK_EQUAL(a._x, 42); });
         regular a{42};
         t(a); // lvalue->&
     }
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(task_n_ary_tests) {
     }
 
     {
-        task<int(int, float, std::string)> t([](int x, float y, std::string z) {
+        task<int(int, float, std::string)> t([](int x, float y, const std::string& z) {
             return x + static_cast<int>(y) + static_cast<int>(z.size());
         });
         BOOST_CHECK_EQUAL(t(20, 20.f, "00"), 42);
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(task_n_ary_tests) {
 /**************************************************************************************************/
 
 struct large_model {
-    char buffer[512] = {42};
+    std::array<char, 512> buffer{42};
     auto operator()() const { return buffer[0]; }
 };
 

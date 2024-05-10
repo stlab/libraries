@@ -31,7 +31,7 @@ class copy_on_write {
 
         template <class... Args>
         explicit model(Args&&... args) noexcept(
-            std::is_nothrow_constructible<T, Args&&...>::value) :
+            std::is_nothrow_constructible_v<T, Args&&...>) :
             _value(std::forward<Args>(args)...) {}
 
         T _value;
@@ -40,13 +40,13 @@ class copy_on_write {
     model* _self;
 
     template <class U>
-    using disable_copy = std::enable_if_t<!std::is_same<std::decay_t<U>, copy_on_write>::value>*;
+    using disable_copy = std::enable_if_t<!std::is_same_v<std::decay_t<U>, copy_on_write>>*;
 
     template <typename U>
     using disable_copy_assign =
-        std::enable_if_t<!std::is_same<std::decay_t<U>, copy_on_write>::value, copy_on_write&>;
+        std::enable_if_t<!std::is_same_v<std::decay_t<U>, copy_on_write>, copy_on_write&>;
 
-    model* default_model() noexcept(std::is_nothrow_constructible<T>::value) {
+    auto default_model() noexcept(std::is_nothrow_constructible_v<T>) -> model* {
         static model default_s;
         return &default_s;
     }
@@ -56,7 +56,7 @@ public:
 
     using element_type = T;
 
-    copy_on_write() noexcept(std::is_nothrow_constructible<T>::value) {
+    copy_on_write() noexcept(std::is_nothrow_constructible_v<T>) {
         _self = default_model();
 
         // coverity[useless_call]
@@ -116,7 +116,7 @@ public:
         return _self->_value;
     }
 
-    auto read() const noexcept -> const element_type& {
+    [[nodiscard]] auto read() const noexcept -> const element_type& {
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");
 
         return _self->_value;
@@ -128,14 +128,14 @@ public:
 
     auto operator->() const noexcept -> const element_type* { return &read(); }
 
-    bool unique() const noexcept {
+    [[nodiscard]] auto unique() const noexcept -> bool {
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");
 
         return _self->_count == 1;
     }
-    [[deprecated]] bool unique_instance() const noexcept { return unique(); }
+    [[deprecated]] [[nodiscard]] auto unique_instance() const noexcept -> bool { return unique(); }
 
-    bool identity(const copy_on_write& x) const noexcept {
+    [[nodiscard]] auto identity(const copy_on_write& x) const noexcept -> bool {
         assert((_self && x._self) && "FATAL (sparent) : using a moved copy_on_write object");
 
         return _self == x._self;
@@ -145,75 +145,75 @@ public:
         std::swap(x._self, y._self);
     }
 
-    friend inline bool operator<(const copy_on_write& x, const copy_on_write& y) noexcept {
+    friend inline auto operator<(const copy_on_write& x, const copy_on_write& y) noexcept -> bool {
         return !x.identity(y) && (*x < *y);
     }
 
-    friend inline bool operator<(const copy_on_write& x, const element_type& y) noexcept {
+    friend inline auto operator<(const copy_on_write& x, const element_type& y) noexcept -> bool {
         return *x < y;
     }
 
-    friend inline bool operator<(const element_type& x, const copy_on_write& y) noexcept {
+    friend inline auto operator<(const element_type& x, const copy_on_write& y) noexcept -> bool {
         return x < *y;
     }
 
-    friend inline bool operator>(const copy_on_write& x, const copy_on_write& y) noexcept {
+    friend inline auto operator>(const copy_on_write& x, const copy_on_write& y) noexcept -> bool {
         return y < x;
     }
 
-    friend inline bool operator>(const copy_on_write& x, const element_type& y) noexcept {
+    friend inline auto operator>(const copy_on_write& x, const element_type& y) noexcept -> bool {
         return y < x;
     }
 
-    friend inline bool operator>(const element_type& x, const copy_on_write& y) noexcept {
+    friend inline auto operator>(const element_type& x, const copy_on_write& y) noexcept -> bool {
         return y < x;
     }
 
-    friend inline bool operator<=(const copy_on_write& x, const copy_on_write& y) noexcept {
+    friend inline auto operator<=(const copy_on_write& x, const copy_on_write& y) noexcept -> bool {
         return !(y < x);
     }
 
-    friend inline bool operator<=(const copy_on_write& x, const element_type& y) noexcept {
+    friend inline auto operator<=(const copy_on_write& x, const element_type& y) noexcept -> bool {
         return !(y < x);
     }
 
-    friend inline bool operator<=(const element_type& x, const copy_on_write& y) noexcept {
+    friend inline auto operator<=(const element_type& x, const copy_on_write& y) noexcept -> bool {
         return !(y < x);
     }
 
-    friend inline bool operator>=(const copy_on_write& x, const copy_on_write& y) noexcept {
+    friend inline auto operator>=(const copy_on_write& x, const copy_on_write& y) noexcept -> bool {
         return !(x < y);
     }
 
-    friend inline bool operator>=(const copy_on_write& x, const element_type& y) noexcept {
+    friend inline auto operator>=(const copy_on_write& x, const element_type& y) noexcept -> bool {
         return !(x < y);
     }
 
-    friend inline bool operator>=(const element_type& x, const copy_on_write& y) noexcept {
+    friend inline auto operator>=(const element_type& x, const copy_on_write& y) noexcept -> bool {
         return !(x < y);
     }
 
-    friend inline bool operator==(const copy_on_write& x, const copy_on_write& y) noexcept {
+    friend inline auto operator==(const copy_on_write& x, const copy_on_write& y) noexcept -> bool {
         return x.identity(y) || (*x == *y);
     }
 
-    friend inline bool operator==(const copy_on_write& x, const element_type& y) noexcept {
+    friend inline auto operator==(const copy_on_write& x, const element_type& y) noexcept -> bool {
         return *x == y;
     }
 
-    friend inline bool operator==(const element_type& x, const copy_on_write& y) noexcept {
+    friend inline auto operator==(const element_type& x, const copy_on_write& y) noexcept -> bool {
         return x == *y;
     }
 
-    friend inline bool operator!=(const copy_on_write& x, const copy_on_write& y) noexcept {
+    friend inline auto operator!=(const copy_on_write& x, const copy_on_write& y) noexcept -> bool {
         return !(x == y);
     }
 
-    friend inline bool operator!=(const copy_on_write& x, const element_type& y) noexcept {
+    friend inline auto operator!=(const copy_on_write& x, const element_type& y) noexcept -> bool {
         return !(x == y);
     }
 
-    friend inline bool operator!=(const element_type& x, const copy_on_write& y) noexcept {
+    friend inline auto operator!=(const element_type& x, const copy_on_write& y) noexcept -> bool {
         return !(x == y);
     }
 };
