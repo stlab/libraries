@@ -11,6 +11,7 @@
 /**************************************************************************************************/
 
 #include <array>
+#include <atomic>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
