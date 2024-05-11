@@ -50,18 +50,6 @@ auto invoke_waiting(F&& f) {
 
 /**************************************************************************************************/
 
-namespace detail {
-
-template <class T>
-auto get_optional(T&& x) {
-    if constexpr (std::is_same_v<T, bool>)
-        return;
-    else
-        return *std::forward<T>(x);
-}
-
-} // namespace detail
-
 template <class T>
 auto await(future<T>&& x) -> T {
     if (x.is_ready()) return std::move(x).get_ready(); // if ready, done
