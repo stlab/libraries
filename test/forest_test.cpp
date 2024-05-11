@@ -1,7 +1,10 @@
 /**************************************************************************************************/
 
 // stdc++
+#include <cstddef>
+#include <cassert>
 #include <iostream>
+#include <iterator>
 #include <optional>
 
 // boost
@@ -11,6 +14,9 @@
 #include <stlab/forest.hpp>
 #include <stlab/forest_algorithms.hpp>
 #include <stlab/utility.hpp>
+#include <string>
+#include <utility>
+#include <vector>
 
 /**************************************************************************************************/
 

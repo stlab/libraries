@@ -7,7 +7,6 @@
 /**************************************************************************************************/
 
 #include <cstddef>
-#include <numbers>
 #include <sstream>
 #include <string>
 #include <thread>

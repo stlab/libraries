@@ -7,8 +7,10 @@
 
 // #include <adobe/config.hpp>
 
-#include <functional>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <tuple>
 #include <utility>
 
 #include <boost/test/unit_test.hpp>

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -146,7 +147,11 @@ class task_ {
     static void move_ctor(void*, void*) noexcept {}
     static auto invoke(void*, Args...) noexcept(NoExcept) -> R {
         if constexpr (NoExcept) {
-            std::terminate();
+            try {
+                throw std::bad_function_call();
+            } catch (...) {
+                std::terminate();
+            }
         } else {
             throw std::bad_function_call();
         }

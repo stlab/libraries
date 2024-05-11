@@ -5,18 +5,22 @@
 */
 /**************************************************************************************************/
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/test/unit_test.hpp>
-
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 
 #include <array>
-#include <cmath>
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <iostream>
+#include <mutex>
 #include <thread>
+#include <type_traits>
+#include <vector>
+
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/test/unit_test.hpp>
 
 using namespace stlab;
 using namespace std;

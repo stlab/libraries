@@ -6,9 +6,14 @@
 
 /**************************************************************************************************/
 
+#include <stlab/concurrency/tuple_algorithm.hpp>
+
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/concurrency/tuple_algorithm.hpp>
+#include <cstddef>
+#include <list>
+#include <tuple>
+#include <vector>
 
 using namespace stlab;
 

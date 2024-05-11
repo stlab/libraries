@@ -6,7 +6,12 @@
 /**************************************************************************************************/
 
 // stdc++
+#include <array>
+#include <cstddef>
+#include <functional>
 #include <iostream>
+#include <string>
+#include <utility>
 
 // boost
 #include <boost/test/unit_test.hpp>

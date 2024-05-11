@@ -8,7 +8,7 @@
 
 #include <array>
 #include <atomic>
-#include <chrono>
+#include <chrono> // IWYU pragma: keep
 #include <cstddef>
 #include <numeric>
 #include <thread>
