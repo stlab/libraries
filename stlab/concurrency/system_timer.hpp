@@ -19,6 +19,7 @@
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
+#include <stlab/concurrency/default_executor.hpp>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
 #include <Windows.h>
 #include <memory>
@@ -59,11 +60,18 @@ struct system_timer_type {
                     F f) const -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
         using namespace std::chrono;
 
-        using f_t = decltype(f);
+        dispatch_group_enter(detail::group()._group);
+
+        auto grouped = [_group = detail::group()._group, f = std::move(f)]() mutable {
+            f();
+            dispatch_group_leave(_group);
+        };
+
+        using f_t = decltype(grouped);
 
         dispatch_after_f(dispatch_time(0, duration_cast<nanoseconds>(duration).count()),
                          dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                         new f_t(std::move(f)), [](void* f_) {
+                         new f_t(std::move(grouped)), [](void* f_) {
                              auto f = static_cast<f_t*>(f_);
                              (*f)();
                              delete f;

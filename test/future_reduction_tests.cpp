@@ -6,11 +6,11 @@
 
 /**************************************************************************************************/
 
-#include <stlab/concurrency/future.hpp>
-
 #include <boost/test/unit_test.hpp>
 
-#include <stlab/concurrency/utility.hpp>
+#include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/concurrency/ready_future.hpp>
 
 using namespace stlab;
 

@@ -8,12 +8,15 @@
 
 #include "future_test_helper.hpp"
 
+#include <utility>
+#include <string>
+
 namespace future_test_helper {
 
-test_exception::test_exception(const std::string& error) : _error(error) {}
+test_exception::test_exception(std::string  error) : _error(std::move(error)) {}
 
 test_exception::test_exception(const char* error) : _error(error) {}
 
-const char* test_exception::what() const noexcept { return _error.c_str(); }
+auto test_exception::what() const noexcept -> const char* { return _error.c_str(); }
 
 } // namespace future_test_helper

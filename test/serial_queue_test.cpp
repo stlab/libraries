@@ -1,13 +1,19 @@
+#include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
+#include <vector>
+
+#include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
-
-#include <boost/test/unit_test.hpp>
 
 /**************************************************************************************************/
 
@@ -24,17 +30,17 @@ inline void rest() {
 void test0(stlab::schedule_mode mode) {
     std::vector<std::string> output;
     std::mutex m;
-    serial_queue_t a(stlab::default_executor, mode);
-    serial_queue_t b(stlab::default_executor, mode);
-    serial_queue_t c(stlab::default_executor, mode);
-    serial_queue_t d(stlab::default_executor, mode);
+    serial_queue_t const a(stlab::default_executor, mode);
+    serial_queue_t const b(stlab::default_executor, mode);
+    serial_queue_t const c(stlab::default_executor, mode);
+    serial_queue_t const d(stlab::default_executor, mode);
     auto aq(a.executor());
     auto bq(b.executor());
     auto cq(c.executor());
     auto dq(d.executor());
 
     auto strout([&](std::string str) {
-        std::lock_guard<std::mutex> l(m);
+        std::lock_guard<std::mutex> const l(m);
         output.emplace_back(std::move(str));
     });
 
@@ -68,31 +74,35 @@ void test0(stlab::schedule_mode mode) {
 
     while (true) {
         {
-            std::lock_guard<std::mutex> l(m);
+            std::lock_guard<std::mutex> const l(m);
 
-            if (output.size() == 13) break;
+            if (output.size() == 13) {
+                break;
+            }
         }
         rest();
     }
 
-    for (const auto& s : output)
+    for (const auto& s : output) {
         std::cout << s << '\n';
+    }
 }
 
 /**************************************************************************************************/
 
-inline std::uint64_t str_hash(const std::string& x) {
+inline auto str_hash(const std::string& x) -> std::uint64_t {
     std::uint64_t result(0xcbf29ce484222325);
 
-    for (auto c : x)
+    for (auto c : x) {
         result = (result ^ static_cast<std::uint64_t>(c)) * 0x100000001b3;
+    }
 
     return result;
 }
 
 /**************************************************************************************************/
 
-inline std::uint64_t hash_combine(std::uint64_t hash, const std::string& x) {
+inline auto hash_combine(std::uint64_t hash, const std::string& x) -> std::uint64_t {
     return hash ^ (str_hash(x) << 1);
 }
 
@@ -103,10 +113,12 @@ class test_hash_t {
     std::uint64_t _h{0};
 
     void confirm(std::uint64_t expected) {
-        if (_h == expected) return;
+        if (_h == expected) {
+            return;
+        }
 
         static std::mutex m;
-        std::lock_guard<std::mutex> l(m);
+        std::lock_guard<std::mutex> const l(m);
 
         std::cout << std::hex << _name << " need: " << "0x" << expected << " have: " << "0x" << _h
                   << "\n"
@@ -164,14 +176,18 @@ void test1(stlab::schedule_mode mode) {
     a("3", 0xf1a486d58a02a59a);
     d("3", 0xf1a483d58a02ae65);
 
-    while (a._c != 3)
+    while (a._c != 3) {
         rest();
-    while (b._c != 3)
+    }
+    while (b._c != 3) {
         rest();
-    while (c._c != 3)
+    }
+    while (c._c != 3) {
         rest();
-    while (d._c != 3)
+    }
+    while (d._c != 3) {
         rest();
+    }
 }
 
 /**************************************************************************************************/

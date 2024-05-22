@@ -50,47 +50,9 @@ auto invoke_waiting(F&& f) {
 
 /**************************************************************************************************/
 
-namespace detail {
-
 template <class T>
-struct _get_ready_future {
-    template <class F>
-    auto operator()(F&& f) {
-        return *std::forward<F>(f).get_try();
-    }
-};
-
-template <>
-struct _get_ready_future<void> {
-    template <class F>
-    void operator()(F&& f) {
-        std::forward<F>(f).get_try();
-    }
-};
-
-template <class T>
-struct _get_optional;
-
-template <class T>
-struct _get_optional<std::optional<T>> {
-    template <class F>
-    auto operator()(F&& f) {
-        return *std::forward<F>(f);
-    }
-};
-
-template <>
-struct _get_optional<bool> {
-    template <class F>
-    auto operator()(F&&) {}
-};
-
-} // namespace detail
-
-template <typename T>
-T await(future<T> x) {
-    if (auto result = x.get_try())
-        return detail::_get_optional<decltype(result)>{}(std::move(result)); // if ready, done
+auto await(future<T>&& x) -> T {
+    if (x.is_ready()) return std::move(x).get_ready(); // if ready, done
 
     std::mutex m;
     std::condition_variable condition;
@@ -117,7 +79,7 @@ T await(future<T> x) {
         {
             std::unique_lock<std::mutex> lock{m};
             if (condition.wait_for(lock, backoff, [&] { return result.is_ready(); })) {
-                return detail::_get_ready_future<T>{}(std::move(result));
+                return std::move(result).get_ready();
             }
         }
         detail::pts().wake(); // try to wake something to unstick.
@@ -127,9 +89,16 @@ T await(future<T> x) {
 
     std::unique_lock<std::mutex> lock{m};
     condition.wait(lock, [&] { return result.is_ready(); });
-    return detail::_get_ready_future<T>{}(std::move(result));
+    return std::move(result).get_ready();
 
 #endif
+}
+
+template <class T>
+[[deprecated("implicit copy deprecated, use `await(std::move(f))` or `await(stlab::copy(f))`"
+             " instead.")]]
+auto await(const future<T>& x) -> T {
+    return await(future<T>{x});
 }
 
 namespace detail {
@@ -168,8 +137,8 @@ struct blocking_get_guarded {
 } // namespace detail
 
 template <class T>
-auto await_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
-    if (x.is_ready()) return x;
+auto await_for(future<T>&& x, const std::chrono::nanoseconds& timeout) -> future<T> {
+    if (x.is_ready()) return std::move(x);
 
 #if STLAB_TASK_SYSTEM(PORTABLE)
     if (!detail::pts().wake()) detail::pts().add_thread();
@@ -186,22 +155,30 @@ auto await_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T
     return result.valid() ? std::move(result) : std::move(hold);
 }
 
+template <class T>
+[[deprecated("implicit copy deprecated, use `await_for(std::move(f), t)` or"
+             " `await_for(stlab::copy(f), t)` instead.")]]
+auto await_for(const future<T>& x, const std::chrono::nanoseconds& timeout) -> future<T> {
+    return await_for(future<T>{x}, timeout);
+}
+
 /**************************************************************************************************/
 
-template <typename T>
-[[deprecated("Use await instead.")]] T blocking_get(future<T> x) {
+template <class T>
+[[deprecated("Use await instead.")]]
+auto blocking_get(future<T> x) -> T {
     return await(std::move(x));
 }
 
 template <class T>
-[[deprecated("Use await_for instead.")]] auto blocking_get_for(
-    future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
+[[deprecated("Use await_for instead.")]]
+auto blocking_get_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
     await_for(std::move(x), timeout);
 }
 
 template <class T>
-[[deprecated("Use await_for instead.")]] auto blocking_get(
-    future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
+[[deprecated("Use await_for instead.")]]
+auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
     return blocking_get_for(std::move(x), timeout).get_try();
 }
 

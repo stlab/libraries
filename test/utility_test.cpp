@@ -22,7 +22,7 @@ namespace {
 
 // revisit - this should go into the library, but we're not certain of the form
 template <class T, class R>
-using enable_if_rvalue_reference_t = std::enable_if_t<std::is_rvalue_reference<T>::value, R>;
+using enable_if_rvalue_reference_t = std::enable_if_t<std::is_rvalue_reference_v<T>, R>;
 
 // a test function that only excepts rvalue references
 template <class T>

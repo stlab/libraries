@@ -12,7 +12,9 @@
 /**************************************************************************************************/
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -36,8 +38,8 @@ template <bool NoExcept, class R, class... Args>
 class task_ {
     template <class F>
     constexpr static bool maybe_empty =
-        std::is_pointer<std::decay_t<F>>::value || std::is_member_pointer<std::decay_t<F>>::value ||
-        std::is_same<std::function<R(Args...)>, std::decay_t<F>>::value;
+        std::is_pointer_v<std::decay_t<F>> || std::is_member_pointer_v<std::decay_t<F>> ||
+        std::is_same_v<std::function<R(Args...)>, std::decay_t<F>>;
 
     template <class F>
     constexpr static auto is_empty(const F& f) -> std::enable_if_t<maybe_empty<F>, bool> {
@@ -145,7 +147,11 @@ class task_ {
     static void move_ctor(void*, void*) noexcept {}
     static auto invoke(void*, Args...) noexcept(NoExcept) -> R {
         if constexpr (NoExcept) {
-            std::terminate();
+            try {
+                throw std::bad_function_call();
+            } catch (...) {
+                std::terminate();
+            }
         } else {
             throw std::bad_function_call();
         }
@@ -182,7 +188,7 @@ class task_ {
 
     const concept_t* _vtable_ptr = &_vtable;
     invoke_t _invoke = invoke;
-    alignas(std::max_align_t) unsigned char _model[small_size];
+    alignas(std::max_align_t) std::array<unsigned char, small_size> _model;
 
 public:
     using result_type = R;
@@ -190,6 +196,7 @@ public:
     constexpr task_() noexcept = default;
     constexpr task_(std::nullptr_t) noexcept : task_() {}
     task_(const task_&) = delete;
+    task_(const task_&&) = delete;
     task_(task_&& x) noexcept : _vtable_ptr(x._vtable_ptr), _invoke(x._invoke) {
         _vtable_ptr->move_ctor(&x._model, &_model);
     }
@@ -212,9 +219,9 @@ public:
 
     ~task_() { _vtable_ptr->dtor(&_model); };
 
-    task_& operator=(const task_&) = delete;
+    auto operator=(const task_&) -> task_& = delete;
 
-    task_& operator=(task_&& x) noexcept {
+    auto operator=(task_&& x) noexcept -> task_& {
         _vtable_ptr->dtor(&_model);
         _vtable_ptr = x._vtable_ptr;
         _invoke = x._invoke;
@@ -222,7 +229,7 @@ public:
         return *this;
     }
 
-    task_& operator=(std::nullptr_t) noexcept { return *this = task_(); }
+    auto operator=(std::nullptr_t) noexcept -> task_& { return *this = task_(); }
 
     template <class F>
     auto operator=(F&& f)
@@ -235,16 +242,18 @@ public:
 
     explicit operator bool() const { return _vtable_ptr->const_pointer(&_model) != nullptr; }
 
-    const std::type_info& target_type() const noexcept { return _vtable_ptr->target_type(); }
+    [[nodiscard]] auto target_type() const noexcept -> const std::type_info& {
+        return _vtable_ptr->target_type();
+    }
 
     template <class T>
-    T* target() {
+    auto target() -> T* {
         return (target_type() == typeid(T)) ? static_cast<T*>(_vtable_ptr->pointer(&_model)) :
                                               nullptr;
     }
 
     template <class T>
-    const T* target() const {
+    [[nodiscard]] [[nodiscard]] [[nodiscard]] auto target() const -> const T* {
         return (target_type() == typeid(T)) ?
                    static_cast<const T*>(_vtable_ptr->const_pointer(&_model)) :
                    nullptr;
@@ -255,11 +264,19 @@ public:
         return _invoke(&_model, std::forward<Brgs>(brgs)...);
     }
 
-    friend inline void swap(task_& x, task_& y) { return x.swap(y); }
-    friend inline bool operator==(const task_& x, std::nullptr_t) { return !static_cast<bool>(x); }
-    friend inline bool operator==(std::nullptr_t, const task_& x) { return !static_cast<bool>(x); }
-    friend inline bool operator!=(const task_& x, std::nullptr_t) { return static_cast<bool>(x); }
-    friend inline bool operator!=(std::nullptr_t, const task_& x) { return static_cast<bool>(x); }
+    friend inline void swap(task_& x, task_& y) noexcept { return x.swap(y); }
+    friend inline auto operator==(const task_& x, std::nullptr_t) -> bool {
+        return !static_cast<bool>(x);
+    }
+    friend inline auto operator==(std::nullptr_t, const task_& x) -> bool {
+        return !static_cast<bool>(x);
+    }
+    friend inline auto operator!=(const task_& x, std::nullptr_t) -> bool {
+        return static_cast<bool>(x);
+    }
+    friend inline auto operator!=(std::nullptr_t, const task_& x) -> bool {
+        return static_cast<bool>(x);
+    }
 };
 
 /**************************************************************************************************/

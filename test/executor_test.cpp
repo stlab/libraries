@@ -5,17 +5,22 @@
 */
 /**************************************************************************************************/
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/test/unit_test.hpp>
-
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 
 #include <array>
-#include <cmath>
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <iostream>
+#include <mutex>
 #include <thread>
+#include <type_traits>
+#include <vector>
+
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/test/unit_test.hpp>
 
 using namespace stlab;
 using namespace std;
@@ -27,7 +32,7 @@ namespace {
 void rest() { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 
 template <typename T, typename N, typename O>
-T power(T x, N n, O op) {
+auto power(T x, N n, O op) -> T {
     if (n == 0) return identity_element(op);
 
     while ((n & 1) == 0) {
@@ -47,18 +52,18 @@ T power(T x, N n, O op) {
 
 template <typename N>
 struct multiply_2x2 {
-    std::array<N, 4> operator()(const std::array<N, 4>& x, const std::array<N, 4>& y) {
+    auto operator()(const std::array<N, 4>& x, const std::array<N, 4>& y) -> std::array<N, 4> {
         return {x[0] * y[0] + x[1] * y[2], x[0] * y[1] + x[1] * y[3], x[2] * y[0] + x[3] * y[2],
                 x[2] * y[1] + x[3] * y[3]};
     }
 };
 template <typename N>
-std::array<N, 4> identity_element(const multiply_2x2<N>&) {
+auto identity_element(const multiply_2x2<N>&) -> std::array<N, 4> {
     return {N(1), N(0), N(0), N(1)};
 }
 
 template <typename R, typename N>
-R fibonacci(N n) {
+auto fibonacci(N n) -> R {
     if (n == 0) return R(0);
     return power(std::array<R, 4>{1, 1, 1, 0}, N(n - 1), multiply_2x2<R>())[0];
 }
@@ -199,7 +204,7 @@ atomic_int correctLow{0};
 atomic_int correctDefault{0};
 atomic_int correctHigh{0};
 
-enum class executor_priority { high, medium, low };
+enum class executor_priority : std::uint8_t { high, medium, low };
 
 template <executor_priority P>
 struct check_task {

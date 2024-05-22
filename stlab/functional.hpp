@@ -49,22 +49,22 @@ constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 /**************************************************************************************************/
 
 template <typename T>
-T& unwrap(T& val) {
+auto unwrap(T& val) -> T& {
     return val;
 }
 
 template <typename T>
-const T& unwrap(const T& val) {
+auto unwrap(const T& val) -> const T& {
     return val;
 }
 
 template <typename T>
-T& unwrap(std::reference_wrapper<T>& val) {
+auto unwrap(std::reference_wrapper<T>& val) -> T& {
     return val.get();
 }
 
 template <typename T>
-const T& unwrap(const std::reference_wrapper<T>& val) {
+auto unwrap(const std::reference_wrapper<T>& val) -> const T& {
     return val.get();
 }
 

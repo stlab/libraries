@@ -6,15 +6,24 @@
 
 /**************************************************************************************************/
 
-#include <boost/test/unit_test.hpp>
+#include <array>
+#include <atomic>
+#include <chrono> // IWYU pragma: keep
+#include <cstddef>
 #include <numeric>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include <boost/test/unit_test.hpp>
 
 #include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/immediate_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
-#include <stlab/concurrency/utility.hpp>
 #include <stlab/test/model.hpp>
+#include <stlab/utility.hpp>
 
 #include "future_test_helper.hpp"
 
@@ -32,7 +41,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_void_empty_range) {
         std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE(check);
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -44,11 +53,11 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_empty_range) {
     std::vector<stlab::future<int>> emptyFutures;
 
     sut = when_all(
-        make_executor<0>(), [&_p = p](std::vector<int> v) { _p = v.size(); },
+        make_executor<0>(), [&_p = p](const std::vector<int>& v) { _p = v.size(); },
         std::make_pair(emptyFutures.begin(), emptyFutures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(0), p);
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -70,7 +79,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(1), p);
     BOOST_REQUIRE_EQUAL(size_t(42), r);
@@ -81,9 +90,9 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_all_delayed) {
     using namespace std::chrono_literals;
 
-    stlab::serial_queue_t seriel_queue_1{stlab::default_executor};
-    stlab::serial_queue_t seriel_queue_2{stlab::default_executor};
-    stlab::serial_queue_t seriel_queue_3{stlab::default_executor};
+    stlab::serial_queue_t const seriel_queue_1{stlab::default_executor};
+    stlab::serial_queue_t const seriel_queue_2{stlab::default_executor};
+    stlab::serial_queue_t const seriel_queue_3{stlab::default_executor};
 
     std::vector<stlab::future<void>> test_futures;
     test_futures.emplace_back(stlab::async(seriel_queue_1.executor(), [] {
@@ -102,7 +111,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_all_delayed) {
         stlab::default_executor, [&done] { done = true; },
         std::make_pair(test_futures.begin(), test_futures.end()));
 
-    stlab::await(done_future);
+    stlab::await(std::move(done_future));
 
     BOOST_REQUIRE(done);
 }
@@ -119,7 +128,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
 
     sut = when_all(
         make_executor<1>(),
-        [&_p = p, &_r = r](std::vector<int> v) {
+        [&_p = p, &_r = r](const std::vector<int>& v) {
             _p = v.size();
             for (auto i : v) {
                 _r += i;
@@ -128,7 +137,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(size_t(1 + 2 + 3 + 5), r);
@@ -142,13 +151,14 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_and_immediate
     size_t p = 0;
     size_t r = 0;
     std::vector<stlab::future<int>> futures;
+    futures.reserve(1000);
     for (auto i = 0; i < 1000; ++i) {
         futures.push_back(async(make_executor<0>(), [] { return 1; }));
     }
 
     sut = when_all(
         immediate_executor,
-        [&_p = p, &_r = r](std::vector<int> v) {
+        [&_p = p, &_r = r](const std::vector<int>& v) {
             _p = v.size();
             for (auto i : v) {
                 _r += i;
@@ -157,7 +167,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_and_immediate
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(1000), p);
     BOOST_REQUIRE_EQUAL(size_t(1000), r);
@@ -173,7 +183,7 @@ start           sut
 */
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements) {
     BOOST_TEST_MESSAGE("running future when_all void with range with diamond formation");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int r = 0;
     auto start = async(make_executor<0>(), [] { return 4711; });
     std::vector<stlab::future<void>> futures(4);
@@ -192,7 +202,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements)
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(4711 + 1 + 4711 + 2 + 4711 + 3 + 4711 + 5, r);
     BOOST_REQUIRE_LE(5, custom_scheduler<0>::usage_counter());
@@ -207,10 +217,10 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_empty_range) {
     std::vector<stlab::future<int>> emptyFutures;
 
     sut = when_all(
-        make_executor<0>(), [](std::vector<int> v) { return static_cast<int>(v.size()); },
+        make_executor<0>(), [](const std::vector<int>& v) { return static_cast<int>(v.size()); },
         std::make_pair(emptyFutures.begin(), emptyFutures.end()));
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(0, *sut.get_try());
     BOOST_REQUIRE_LE(1, custom_scheduler<0>::usage_counter());
@@ -231,7 +241,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_one_element) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(1), p);
     BOOST_REQUIRE_EQUAL(42, *sut.get_try());
@@ -250,7 +260,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_many_elements) {
 
     sut = when_all(
         make_executor<1>(),
-        [&_p = p](std::vector<int> v) {
+        [&_p = p](const std::vector<int>& v) {
             _p = v.size();
             auto r = 0;
             for (auto i : v) {
@@ -261,7 +271,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_many_elements) {
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(1 + 2 + 3 + 5, *sut.get_try());
@@ -288,7 +298,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_diamond_formation_elements) 
 
     sut = when_all(
         make_executor<1>(),
-        [&_p = p](std::vector<int> v) {
+        [&_p = p](const std::vector<int>& v) {
             _p = v.size();
             auto r = 0;
             for (auto i : v) {
@@ -299,7 +309,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_range_with_diamond_formation_elements) 
         std::make_pair(futures.begin(), futures.end()));
 
     check_valid_future(sut);
-    wait_until_future_completed(sut);
+    wait_until_future_completed(copy(sut));
 
     BOOST_REQUIRE_EQUAL(size_t(4), p);
     BOOST_REQUIRE_EQUAL(4711 + 1 + 4711 + 2 + 4711 + 3 + 4711 + 5, *sut.get_try());
@@ -322,7 +332,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_move_range_with_many_elements) {
 
     sut = when_all(
         make_executor<1>(),
-        [&_p = p](std::vector<stlab::move_only> v) {
+        [&_p = p](const std::vector<stlab::move_only>& v) {
             _p = v.size();
             auto r = 0;
             for (const auto& i : v) {
@@ -352,16 +362,17 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_task) {
             return i;
         }
     };
-    mutable_int func1, func2;
+    mutable_int func1;
+    mutable_int func2;
     std::vector<future<mutable_int>> futures{
         async(stlab::default_executor,
-              [func = std::move(func1)]() mutable {
+              [func = func1]() mutable {
                   func();
-                  return std::move(func);
+                  return func;
               }),
-        async(stlab::default_executor, [func = std::move(func2)]() mutable {
+        async(stlab::default_executor, [func = func2]() mutable {
             func();
-            return std::move(func);
+            return func;
         })};
     auto sut = when_all(
         stlab::default_executor,
@@ -371,7 +382,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_task) {
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    BOOST_REQUIRE_EQUAL(4, stlab::await(sut));
+    BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(sut)));
 }
 
 BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
@@ -387,7 +398,8 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
         }
     };
 
-    mutable_int func1{check}, func2{check};
+    mutable_int func1{check};
+    mutable_int func2{check};
     std::vector<future<void>> futures{
         async(stlab::default_executor, [func = func1]() mutable { func(); }),
         async(stlab::default_executor, [func = func2]() mutable { func(); })};
@@ -396,7 +408,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_range_with_mutable_void_task) {
         stlab::default_executor, [_func = mutable_int{check}]() mutable { _func(); },
         std::make_pair(futures.begin(), futures.end()));
 
-    stlab::await(sut);
+    stlab::await(std::move(sut));
 
     BOOST_REQUIRE_EQUAL(3, check);
 }
@@ -421,7 +433,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_one_element) {
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
@@ -451,7 +463,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_one_failing) 
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
@@ -481,7 +493,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_many_elements_all_failing) 
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(size_t(0), p);
@@ -500,7 +512,7 @@ start           sut
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_start_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with diamond formation and start failing");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int r = 0;
     auto start = async(make_executor<0>(), []() -> int { throw test_exception("failure"); });
     std::vector<stlab::future<void>> futures(4);
@@ -518,7 +530,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
@@ -533,7 +545,7 @@ BOOST_AUTO_TEST_CASE(
     future_when_all_void_range_with_diamond_formation_elements_one_parallel_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with diamond formation and one of the parallel tasks is failing");
-    int v[4] = {0, 0, 0, 0};
+    std::array v{0, 0, 0, 0};
     int r = 0;
     auto start = async(make_executor<0>(), []() -> int { return 42; });
     std::vector<stlab::future<void>> futures(4);
@@ -551,7 +563,7 @@ BOOST_AUTO_TEST_CASE(
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
@@ -562,8 +574,8 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_join_failing) {
     BOOST_TEST_MESSAGE(
         "running future when_all void with range with diamond formation and the joining tasks is failing");
-    int v[4] = {0, 0, 0, 0};
-    int r = 0;
+    std::array v{0, 0, 0, 0};
+    int const r = 0;
     auto start = async(make_executor<0>(), []() -> int { return 42; });
     std::vector<stlab::future<void>> futures(4);
     futures[0] = start.then(make_executor<0>(), [&_p = v[0]](auto x) { _p = x + 1; });
@@ -575,7 +587,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_void_range_with_diamond_formation_elements_
         make_executor<1>(), []() { throw test_exception("failure"); },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);
@@ -590,6 +602,7 @@ BOOST_AUTO_TEST_CASE(
     size_t p = 0;
     size_t r = 0;
     std::vector<stlab::future<int>> futures;
+    futures.reserve(500);
     for (auto i = 0; i < 500; ++i) {
         futures.push_back(async(make_executor<0>(), [] { return 1; }));
     }
@@ -601,7 +614,7 @@ BOOST_AUTO_TEST_CASE(
 
     sut = when_all(
         immediate_executor,
-        [&_p = p, &_r = r](std::vector<int> v) {
+        [&_p = p, &_r = r](const std::vector<int>& v) {
             _p = v.size();
             for (auto i : v) {
                 _r += i;
@@ -609,7 +622,7 @@ BOOST_AUTO_TEST_CASE(
         },
         std::make_pair(futures.begin(), futures.end()));
 
-    wait_until_future_fails<test_exception>(sut);
+    wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
     BOOST_REQUIRE_EQUAL(0, r);

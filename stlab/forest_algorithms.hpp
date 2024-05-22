@@ -13,16 +13,14 @@
 
 /**************************************************************************************************/
 
-namespace stlab {
-
 /**************************************************************************************************/
 
-namespace forests {
+namespace stlab::forests {
 
 /**************************************************************************************************/
 // "Congruent" would be a nice name here, but in geometry that also implies reflection.
 template <class Forest1, class Forest2>
-bool equal_shape(const Forest1& x, const Forest2& y) {
+auto equal_shape(const Forest1& x, const Forest2& y) -> bool {
     if (x.size_valid() && y.size_valid() && x.size() != y.size()) return false;
     auto pos{y.begin()};
     for (auto first(x.begin()), last(x.end()); first != last; ++first, ++pos) {
@@ -44,23 +42,23 @@ struct transcribe_iterator {
 
     transcribe_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
 
-    constexpr auto& operator*() { return *this; }
-    constexpr auto& operator++() {
+    constexpr auto operator*() -> auto& { return *this; }
+    constexpr auto operator++() -> auto& {
         ++_i;
         return *this;
     }
-    constexpr auto operator++(int) {
+    constexpr auto operator++(int) -> auto {
         auto result{*this};
         ++_i;
         return result;
     }
 
-    constexpr auto& operator=(const typename Container::value_type& value) {
+    constexpr auto operator=(const typename Container::value_type& value) -> auto& {
         _i = _c->insert(_i, value);
         return *this;
     }
 
-    constexpr auto& operator=(typename Container::value_type&& value) {
+    constexpr auto operator=(typename Container::value_type&& value) -> auto& {
         _i = _c->insert(_i, std::move(value));
         return *this;
     }
@@ -135,11 +133,9 @@ auto unflatten(I first, I last, F& f) {
 
 /**************************************************************************************************/
 
-} // namespace forests
+} // namespace stlab::forests
 
 /**************************************************************************************************/
-
-} // namespace stlab
 
 /**************************************************************************************************/
 

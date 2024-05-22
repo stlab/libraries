@@ -94,12 +94,12 @@ struct channel_types_test_fixture : channel_test_fixture_base {
     }
 
     template <std::size_t I>
-    auto& send() {
+    auto send() -> auto& {
         return std::get<I>(_send);
     }
 
     template <std::size_t I>
-    auto& receive() {
+    auto receive() -> auto& {
         return std::get<I>(_receive);
     }
 };
@@ -140,7 +140,7 @@ struct sum {
         }
     }
 
-    int yield() {
+    auto yield() -> int {
         auto result = _x;
         _state = stlab::await_forever;
         _number_additions = 0;
@@ -148,10 +148,10 @@ struct sum {
         return result;
     }
 
-    auto state() const { return _state; }
+    [[nodiscard]] auto state() const { return _state; }
 };
 
-inline stlab::process_state_scheduled await_soon() {
+inline auto await_soon() -> stlab::process_state_scheduled {
     return std::make_pair(stlab::process_state::await, std::chrono::seconds(1));
 }
 
@@ -174,7 +174,7 @@ struct timed_sum {
         }
     }
 
-    int yield() {
+    auto yield() -> int {
         int result = 0;
         {
             lock_t guard(_mutex);
@@ -186,12 +186,12 @@ struct timed_sum {
         return result;
     }
 
-    static int current_sum() {
+    static auto current_sum() -> int {
         lock_t guard(_mutex);
         return _x;
     }
 
-    auto state() const {
+    [[nodiscard]] auto state() const {
         lock_t guard(_mutex);
         return _state;
     }
@@ -212,7 +212,7 @@ struct collector {
         }
     }
 
-    std::vector<int> yield() {
+    auto yield() -> std::vector<int> {
         auto result = _c;
         _state = stlab::await_forever;
         _collected_items = 0;
@@ -220,7 +220,7 @@ struct collector {
         return result;
     }
 
-    auto state() const { return _state; }
+    [[nodiscard]] auto state() const { return _state; }
 };
 
 } // namespace channel_test_helper

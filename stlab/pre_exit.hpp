@@ -50,7 +50,7 @@ struct _pre_exit_stack_t {
     }
 
     /// Pop one exit handler, returns `nullptr` and closes stack if empty.
-    pre_exit_handler pop() {
+    auto pop() -> pre_exit_handler {
         lock_t lock{_mutex};
         if (_stack.empty()) {
             assert(!_closed && "WARNING `pre_exit()` invoked more than once.");
@@ -68,7 +68,7 @@ struct _pre_exit_stack_t {
 };
 
 /// Returns a reference to the pre-exit stack singleton.
-inline auto& _pre_exit_stack() {
+inline auto _pre_exit_stack() -> auto& {
     static _pre_exit_stack_t _q;
     return _q;
 }

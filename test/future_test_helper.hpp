@@ -34,11 +34,11 @@ struct custom_scheduler {
         stlab::default_executor(std::move(f));
     }
 
-    static int usage_counter() { return counter().load(); }
+    static auto usage_counter() -> int { return counter().load(); }
 
     static void reset() { counter() = 0; }
 
-    static std::atomic_int& counter() {
+    static auto counter() -> std::atomic_int& {
         static std::atomic_int counter;
         return counter;
     }
@@ -48,7 +48,7 @@ private:
 };
 
 template <std::size_t I>
-stlab::executor_t make_executor() {
+auto make_executor() -> stlab::executor_t {
     return [_executor = custom_scheduler<I>{}](stlab::task<void() noexcept> f) mutable {
         _executor(std::move(f));
     };
@@ -58,20 +58,20 @@ class test_exception : public std::exception {
     std::string _error;
 
 public:
-    test_exception() {}
+    test_exception() = default;
 
-    explicit test_exception(const std::string& error);
+    explicit test_exception(std::string error);
 
     explicit test_exception(const char* error);
 
-    test_exception& operator=(const test_exception&) = default;
+    auto operator=(const test_exception&) -> test_exception& = default;
     test_exception(const test_exception&) = default;
-    test_exception& operator=(test_exception&&) = default;
+    auto operator=(test_exception&&) -> test_exception& = default;
     test_exception(test_exception&&) = default;
 
-    virtual ~test_exception() {}
+    ~test_exception() override = default;
 
-    const char* what() const noexcept override;
+    [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
 struct test_setup {
@@ -88,7 +88,7 @@ struct test_fixture {
         custom_scheduler<1>::reset();
     }
 
-    ~test_fixture() {}
+    ~test_fixture() = default;
 
     stlab::future<T> sut;
 
@@ -109,7 +109,7 @@ struct test_fixture {
 
     template <typename E, typename F>
     static void check_failure(F& f, const char* message) {
-        BOOST_REQUIRE_EXCEPTION(f.get_try(), E, ([_m = message](const auto& e) {
+        BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
                                     return std::string(_m) == std::string(e.what());
                                 }));
     }
@@ -153,35 +153,36 @@ struct thread_block_context {
     thread_block_context() : _mutex(std::make_shared<std::mutex>()) {}
 };
 
-class scoped_decrementer {
-    std::atomic_int& _v;
-
-public:
-    explicit scoped_decrementer(std::atomic_int& v) : _v(v) {}
-
-    ~scoped_decrementer() { --_v; }
-};
-
 template <typename F, typename P>
 class test_functor_base : public P {
     F _f;
-    std::atomic_int& _task_counter;
+    std::atomic_int* _task_counter{nullptr};
 
 public:
     test_functor_base(F f, std::atomic_int& task_counter) :
-        _f(std::move(f)), _task_counter(task_counter) {}
+        _f(std::move(f)), _task_counter(&task_counter) {
+        ++*_task_counter;
+    }
 
-    ~test_functor_base() {}
+    ~test_functor_base() {
+        if (_task_counter) --*_task_counter;
+    }
 
-    test_functor_base(const test_functor_base&) = default;
-    test_functor_base& operator=(const test_functor_base&) = default;
-    test_functor_base(test_functor_base&&) = default;
-    test_functor_base& operator=(test_functor_base&&) = default;
+    test_functor_base(const test_functor_base&) = delete;
+    auto operator=(const test_functor_base&) -> test_functor_base& = delete;
+
+    test_functor_base(test_functor_base&& a) noexcept :
+        P{std::move(a)}, _f{std::move(a._f)},
+        _task_counter{std::exchange(a._task_counter, nullptr)} {}
+    auto operator=(test_functor_base&& a) noexcept -> test_functor_base& {
+        static_cast<P*>(*this) = std::move(a); // move base
+        _f = std::move(a._f);
+        _task_counter = std::exchange(a._task_counter, nullptr);
+    }
 
     template <typename... Args>
     auto operator()(Args&&... args) const {
-        ++_task_counter;
-        scoped_decrementer d(_task_counter);
+        assert(_task_counter);
         P::action();
         return _f(std::forward<Args>(args)...);
     }

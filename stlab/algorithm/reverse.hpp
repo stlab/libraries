@@ -24,7 +24,7 @@ namespace unsafe {
 /**************************************************************************************************/
 
 template <typename I> // I models NodeIterator
-I reverse_append(I first, I last, I result) {
+auto reverse_append(I first, I last, I result) -> I {
     while (first != last) {
         I prior(first);
         ++first;
@@ -36,17 +36,17 @@ I reverse_append(I first, I last, I result) {
 
 template <typename R, // R models NodeRange
           typename I> // I models NodeIterator
-inline I reverse_append(R& range, I result) {
+inline auto reverse_append(R& range, I result) -> I {
     return stlab::unsafe::reverse_append(std::begin(range), std::end(range), result);
 }
 
 template <typename I> // I models NodeIterator
-inline I reverse_nodes(I first, I last) {
+inline auto reverse_nodes(I first, I last) -> I {
     return stlab::unsafe::reverse_append(first, last, last);
 }
 
 template <typename R> // R models NodeRange
-inline typename R::iterator reverse_nodes(R& range) {
+inline auto reverse_nodes(R& range) -> typename R::iterator {
     return stlab::unsafe::reverse_nodes(std::begin(range), std::end(range));
 }
 
@@ -74,7 +74,7 @@ inline void reverse_copy(const BidirectionalRange& range, OutputIterator result)
 /**************************************************************************************************/
 
 template <typename I> // I models BidirectionalIterator
-std::pair<I, I> reverse_until(I f, I m, I l) {
+auto reverse_until(I f, I m, I l) -> std::pair<I, I> {
     while (f != m && m != l) {
         --l;
 
