@@ -108,6 +108,7 @@ constexpr auto move_if(T&& t) noexcept -> detail::move_if_helper_t<P, T> {
 
 /**************************************************************************************************/
 
+/// @brief Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`. Returns `void`.
 template <class F, class... Args>
 void for_each_argument(F&& f, Args&&... args) {
     return (void)std::initializer_list<int>{(std::forward<F>(f)(args), 0)...};
@@ -118,8 +119,8 @@ void for_each_argument(F&& f, Args&&... args) {
 /// Returns a copy of the argument. Used to pass an lvalue to function taking an rvalue or to
 /// copy a type with an `explicit` copy-constructor.
 template <typename T>
-constexpr auto copy(T&& value) noexcept(noexcept(std::decay_t<T>{
-    static_cast<T&&>(value)})) -> std::decay_t<T> {
+constexpr auto copy(T&& value) noexcept(noexcept(std::decay_t<T>{static_cast<T&&>(value)}))
+    -> std::decay_t<T> {
     static_assert(!std::is_same_v<std::decay_t<T>, T>, "explicit copy of rvalue.");
     return std::decay_t<T>{static_cast<T&&>(value)};
 }

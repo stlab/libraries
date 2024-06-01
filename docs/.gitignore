@@ -3,7 +3,6 @@
 .sass-cache/
 _site/
 build/
-stlab/
 boost/
 boost.tgz
 *.bbprojectsettings

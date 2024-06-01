@@ -7,6 +7,21 @@
   },
   "configurePresets": [
     {
+      "name": "hyde-build-docs",
+      "description": "Build documentation",
+      "hidden": false,
+      "binaryDir": "${sourceDir}/../build/hyde",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "BUILD_TESTING": "OFF",
+        "STLAB_MAIN_EXECUTOR": "none",
+        "STLAB_NO_STD_COROUTINES": "ON",
+        "STLAB_TASK_SYSTEM": "portable",
+        "STLAB_THREAD_SYSTEM": "pthread",
+        "stlab.coverage": "OFF"
+      }
+    },
+    {
       "name": "ninja-cpp20-debug-thread-undefined",
       "description": "Ninja Debug Build",
       "hidden": false,
@@ -17,8 +32,7 @@
         "CMAKE_BUILD_TYPE": "DEBUG",
         "BUILD_TESTING": "ON",
         "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined",
-        "CMAKE_LINKER_FLAGS": "-fsanitize=thread -fsanitize=undefined",
-        "CMAKE_VERBOSE_MAKEFILE": "ON"
+        "CMAKE_LINKER_FLAGS": "-fsanitize=thread -fsanitize=undefined"
       }
     },
     {
@@ -80,7 +94,6 @@
       "configurePreset": "clang-tidy-fix",
       "jobs": 1
     },
-
     {
       "name": "clang-tidy-nofix",
       "configurePreset": "clang-tidy-nofix"

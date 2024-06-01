@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <utility>
 
+#include <stlab/iterator/concepts.hpp>
 #include <stlab/iterator/set_next.hpp>
 
 /**************************************************************************************************/
@@ -23,7 +24,7 @@ namespace unsafe {
 
 /**************************************************************************************************/
 
-template <typename I> // I models NodeIterator
+template <STLAB_CONCEPT(FORWARD_NODE_ITERATOR) I> // I models NodeIterator
 auto reverse_append(I first, I last, I result) -> I {
     while (first != last) {
         I prior(first);
@@ -52,7 +53,7 @@ inline auto reverse_nodes(R& range) -> typename R::iterator {
 
 /**************************************************************************************************/
 
-} // namspace unsafe
+} // namespace unsafe
 
 /**************************************************************************************************/
 
