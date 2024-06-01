@@ -36,6 +36,8 @@
 #include <condition_variable>
 #include <thread>
 #include <vector>
+#elif STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
+#include "bindings.hpp"
 #endif
 
 /**************************************************************************************************/
@@ -490,6 +492,36 @@ struct executor_type {
 
 /**************************************************************************************************/
 
+#if STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
+
+inline auto bridge_priority(executor_priority p) -> Priority {
+    switch (p) {
+        case executor_priority::high: return Priority::High;
+        case executor_priority::medium: return Priority::Default;
+        case executor_priority::low: return Priority::Low;
+        default: return Priority::Default;
+    }
+}
+
+/// @brief A thin invokable wrapper around `enqueue_priority`.
+/// @tparam Priority the priority at which all given function objects will be enqueued.
+template <executor_priority Priority>
+struct executor_type {
+    using result_type = void;
+
+    /// @brief Enqueues the given task on the default_executor with this object's Priority value.
+    /// @tparam F function object type
+    /// @param f function object
+    template <class F>
+    void operator()(F&& f) const {
+        rust::enqueue_priority(std::forward<F>(f), bridge_priority(Priority));
+    }
+};
+
+#endif // STLAB_TASK_SYSTEM(EXPERIMENTAL_RUST)
+
+/**************************************************************************************************/
+
 } // namespace detail
 
 /**************************************************************************************************/
@@ -497,6 +529,7 @@ struct executor_type {
 constexpr auto low_executor = detail::executor_type<detail::executor_priority::low>{};
 constexpr auto default_executor = detail::executor_type<detail::executor_priority::medium>{};
 constexpr auto high_executor = detail::executor_type<detail::executor_priority::high>{};
+
 
 /**************************************************************************************************/
 
