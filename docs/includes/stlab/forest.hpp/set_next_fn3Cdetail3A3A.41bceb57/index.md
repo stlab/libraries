@@ -2,7 +2,7 @@
 layout: class
 title: set_next_fn<detail::forest_iterator<T>>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

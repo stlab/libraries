@@ -17,4 +17,3 @@ hyde:
       return: __OPTIONAL__
       signature_with_names: "template <typename... A>\nvoid operator()(A &&... args) const"
 ---
-

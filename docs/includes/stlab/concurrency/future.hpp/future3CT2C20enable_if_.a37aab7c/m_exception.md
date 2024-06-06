@@ -2,7 +2,7 @@
 layout: method
 title: exception
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - method

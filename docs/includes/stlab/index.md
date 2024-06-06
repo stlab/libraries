@@ -1,15 +1,10 @@
 ---
-layout: library
+layout: directory
 title: stlab
 hyde:
   owner: fbrereto
-  brief: The stlab libraries
-  tags:
-    - library
-  library-type: library
+  brief: The stlab libraries.
   short_title: __OPTIONAL__
-  icon: book
-  tab: Documentation
 ---
 
 ### Source Code

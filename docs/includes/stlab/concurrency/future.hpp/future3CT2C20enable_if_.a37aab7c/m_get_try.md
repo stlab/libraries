@@ -2,7 +2,7 @@
 layout: method
 title: get_try
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - method

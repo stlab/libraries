@@ -51,4 +51,5 @@ hyde:
     - stlab
     - v3
 ---
+
 Creates a future that continues on the first success of any futures passed. The results of all passed futures must be convertible to the first parameter of the continuing function. The function must accept the a second parameter of std::size_t. It will receive the index of the future that succeeded first.

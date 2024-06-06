@@ -2,7 +2,7 @@
 layout: function
 title: invoke_void_to_monostate_result
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

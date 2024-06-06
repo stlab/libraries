@@ -2,7 +2,7 @@
 layout: class
 title: safe_underlying_type<T, false>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

@@ -2,7 +2,7 @@
 layout: function
 title: skip_next_node
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

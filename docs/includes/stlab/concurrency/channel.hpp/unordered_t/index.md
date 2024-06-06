@@ -2,7 +2,7 @@
 layout: class
 title: unordered_t
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

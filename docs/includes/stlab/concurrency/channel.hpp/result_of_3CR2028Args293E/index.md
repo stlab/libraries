@@ -2,7 +2,7 @@
 layout: class
 title: result_of_<R (Args...)>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

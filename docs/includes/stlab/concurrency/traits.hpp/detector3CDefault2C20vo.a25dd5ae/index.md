@@ -2,7 +2,7 @@
 layout: class
 title: detector<Default, void_t<Op<Args...>>, Op, Args...>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

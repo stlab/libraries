@@ -2,7 +2,7 @@
 layout: function
 title: reverse_nodes
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

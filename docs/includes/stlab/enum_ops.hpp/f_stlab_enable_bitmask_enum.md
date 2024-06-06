@@ -2,7 +2,7 @@
 layout: function
 title: stlab_enable_bitmask_enum
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

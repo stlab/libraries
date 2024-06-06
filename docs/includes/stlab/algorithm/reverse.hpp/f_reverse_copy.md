@@ -2,10 +2,12 @@
 layout: function
 title: reverse_copy
 hyde:
-  owner: __MISSING__
-  brief: __MISSING__
+  owner: sean-parent
+  brief: __INLINED__
   tags:
     - function
+  inline:
+    brief: _multiple descriptions_
   defined_in_file: stlab/algorithm/reverse.hpp
   overloads:
     "template <class BidirectionalRange, class OutputIterator>\nvoid reverse_copy(BidirectionalRange &, OutputIterator)":
@@ -16,7 +18,10 @@ hyde:
         - description: __OPTIONAL__
           name: result
           type: OutputIterator
-      description: __MISSING__
+      description: __INLINED__
+      inline:
+        description:
+          - Range-based `reverse_copy` algorithm, will be deprecated in C++20 in favor of [`std::ranges::reverse_copy`](https://en.cppreference.com/w/cpp/algorithm/ranges/reverse_copy).
       return: __OPTIONAL__
       signature_with_names: "template <class BidirectionalRange, class OutputIterator>\nvoid reverse_copy(BidirectionalRange & range, OutputIterator result)"
     "template <class BidirectionalRange, class OutputIterator>\nvoid reverse_copy(const BidirectionalRange &, OutputIterator)":
@@ -27,7 +32,10 @@ hyde:
         - description: __OPTIONAL__
           name: result
           type: OutputIterator
-      description: __MISSING__
+      description: __INLINED__
+      inline:
+        description:
+          - Range-based `reverse_copy` algorithm, will be deprecated in C++20 in favor of [`std::ranges::reverse_copy`](https://en.cppreference.com/w/cpp/algorithm/ranges/reverse_copy).
       return: __OPTIONAL__
       signature_with_names: "template <class BidirectionalRange, class OutputIterator>\nvoid reverse_copy(const BidirectionalRange & range, OutputIterator result)"
   namespace:

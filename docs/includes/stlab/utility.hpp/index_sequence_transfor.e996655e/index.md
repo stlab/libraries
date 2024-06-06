@@ -2,7 +2,7 @@
 layout: class
 title: index_sequence_transform<Seq, F, Index, 0>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

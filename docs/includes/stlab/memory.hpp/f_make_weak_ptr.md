@@ -2,7 +2,7 @@
 layout: function
 title: make_weak_ptr
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

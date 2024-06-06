@@ -2,7 +2,7 @@
 layout: function
 title: apply_indexed
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

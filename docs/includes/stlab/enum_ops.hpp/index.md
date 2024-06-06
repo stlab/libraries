@@ -2,7 +2,7 @@
 layout: library
 title: stlab/enum_ops.hpp
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - sourcefile

@@ -2,7 +2,7 @@
 layout: method
 title: await
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - method

@@ -2,7 +2,7 @@
 layout: function
 title: future_with_broken_promise
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

@@ -2,7 +2,7 @@
 layout: class
 title: unwrap_reference<T>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

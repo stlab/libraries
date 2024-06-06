@@ -2,7 +2,7 @@
 layout: library
 title: stlab/forest_algorithms.hpp
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - sourcefile

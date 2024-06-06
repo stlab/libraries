@@ -2,7 +2,7 @@
 layout: method
 title: progress_tracker
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __OPTIONAL__
   tags:
     - method

@@ -2,7 +2,7 @@
 layout: function
 title: set_current_thread_name
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

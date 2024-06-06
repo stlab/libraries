@@ -2,7 +2,7 @@
 layout: function
 title: flatten
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

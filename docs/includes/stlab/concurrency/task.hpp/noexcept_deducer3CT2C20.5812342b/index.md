@@ -2,7 +2,7 @@
 layout: class
 title: noexcept_deducer<T, R (Args...) noexcept>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

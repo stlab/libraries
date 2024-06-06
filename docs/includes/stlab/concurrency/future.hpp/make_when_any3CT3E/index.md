@@ -2,7 +2,7 @@
 layout: class
 title: make_when_any<T>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

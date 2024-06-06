@@ -37,4 +37,5 @@ hyde:
     - stlab
     - v3
 ---
+
 Creates a future that is already fulfilled

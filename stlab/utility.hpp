@@ -108,7 +108,7 @@ constexpr auto move_if(T&& t) noexcept -> detail::move_if_helper_t<P, T> {
 
 /**************************************************************************************************/
 
-/// @brief Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`. Returns `void`.
+/// Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`.
 template <class F, class... Args>
 void for_each_argument(F&& f, Args&&... args) {
     return (void)std::initializer_list<int>{(std::forward<F>(f)(args), 0)...};

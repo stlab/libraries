@@ -2,7 +2,7 @@
 layout: class
 title: set_next_fn<child_iterator<I>>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

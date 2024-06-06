@@ -2,7 +2,7 @@
 layout: class
 title: is_reference_wrapper<std::reference_wrapper<T>>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

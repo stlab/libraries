@@ -2,7 +2,7 @@
 layout: function
 title: stlab_enable_arithmetic_enum
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

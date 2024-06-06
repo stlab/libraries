@@ -30,10 +30,11 @@ hyde:
 Useful for functions that only take an rvalue reference or that have an explicit copy constructor.
 
 Example:
+
 ```cpp
 void f(vector<int>&&);
 //...
-vector<int> a = ...;
-f(copy(a)); // pass a copy
-f(move(a)); // sink a
+vector<int> c = ...;
+f(copy(c)); // pass a copy of `c`
+f(move(c)); // sink `c`
 ```

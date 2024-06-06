@@ -2,7 +2,7 @@
 layout: function
 title: optional_monostate_to_bool
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

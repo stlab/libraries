@@ -2,7 +2,7 @@
 layout: library
 title: stlab/concurrency/concurrency.hpp
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - sourcefile

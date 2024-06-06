@@ -2,7 +2,7 @@
 layout: function
 title: move_if
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

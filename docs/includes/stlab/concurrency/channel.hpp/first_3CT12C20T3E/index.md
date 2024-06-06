@@ -2,7 +2,7 @@
 layout: class
 title: first_<T1, T>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

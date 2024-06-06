@@ -2,7 +2,7 @@
 layout: class
 title: task_<NoExcept, R, Args>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

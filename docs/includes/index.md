@@ -2,12 +2,12 @@
 layout: library
 title: includes
 hyde:
-  owner: fbrereto
-  brief: The `stlab` libraries.
+  owner: sean-parent
+  brief: Documentation and examples for the stlab libraries.
   tags:
     - library
   library-type: library
-  icon: __MISSING__
-  short_title: __OPTIONAL__
-  tab: __MISSING__
+  icon: book
+  short_title: Documentation
+  tab: Documentation
 ---

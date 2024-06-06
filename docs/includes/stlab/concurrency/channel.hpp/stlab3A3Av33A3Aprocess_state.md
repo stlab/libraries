@@ -2,7 +2,7 @@
 layout: enumeration
 title: process_state
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - enumeration

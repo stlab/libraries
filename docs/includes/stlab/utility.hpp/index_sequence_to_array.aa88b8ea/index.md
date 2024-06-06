@@ -2,7 +2,7 @@
 layout: class
 title: index_sequence_to_array<std::index_sequence<N...>>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

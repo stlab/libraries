@@ -2,7 +2,7 @@
 layout: enumeration
 title: channel_error_codes
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - enumeration

@@ -2,7 +2,7 @@
 layout: function
 title: invoke_remove_monostate_arguments
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - function

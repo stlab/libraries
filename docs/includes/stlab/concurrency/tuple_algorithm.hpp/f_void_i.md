@@ -2,7 +2,7 @@
 layout: function
 title: void_i
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __INLINED__
   tags:
     - function

@@ -2,7 +2,7 @@
 layout: class
 title: packaged_task<Args>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

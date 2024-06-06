@@ -2,7 +2,7 @@
 layout: class
 title: remove_placeholder<Tuple>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

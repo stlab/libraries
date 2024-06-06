@@ -2,7 +2,7 @@
 layout: method
 title: function_process<R (Args...)>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __OPTIONAL__
   tags:
     - method

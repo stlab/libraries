@@ -2,7 +2,7 @@
 layout: method
 title: transcribe_iterator<Container>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __OPTIONAL__
   tags:
     - method

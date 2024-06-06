@@ -3,6 +3,7 @@ gem 'jekyll'
 gem 'jekyll-redirect-from', group: [:jekyll_plugins]
 gem 'jekyll-compose', group: [:jekyll_plugins]
 gem "jekyll-remote-theme", group: [:jekyll_plugins]
+
 # don't submit this line to the upstream repo
 ## Enable this line for local theme development
 # gem 'jekyll-theme-adobe-hyde', path: '../../themes'

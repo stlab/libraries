@@ -2,7 +2,7 @@
 layout: class
 title: future<T, enable_if_copyable<void_to_monostate_t<T>>>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class

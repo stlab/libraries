@@ -7,7 +7,8 @@ hyde:
   tags:
     - function
   inline:
-    brief: Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`. Returns `void`.
+    brief:
+      - Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`.
   defined_in_file: stlab/utility.hpp
   overloads:
     "template <class F, class... Args>\nvoid for_each_argument(F &&, Args &&...)":
@@ -18,9 +19,10 @@ hyde:
         - description: Arguments to be passed one-by-one to `f`
           name: args
           type: Args &&...
-      description: __OPTIONAL__
+      description: __INLINED__
       inline:
-        brief: Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`. Returns `void`.
+        description:
+          - Invokes `f(arg0)`, `f(arg1)`, ... `f(argN)`.
       return: __OPTIONAL__
       signature_with_names: "template <class F, class... Args>\nvoid for_each_argument(F && f, Args &&... args)"
   namespace:

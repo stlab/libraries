@@ -16,7 +16,6 @@ for CUR_FILE in ${SRC_FILE_SET}; do
     echo "Processing $CUR_FILE"
     CUR_COMMAND="hyde --access-filter-protected --namespace-blacklist=detail --hyde-update \"${CUR_FILE}\" --hyde-yaml-dir=${HYDE_DST_ROOT} --hyde-src-root=${SRC_ROOT} -- -std=c++20 -I${SRC_ROOT}/../build/hyde/ -I${SRC_ROOT}/"
 
-    # CUR_COMMAND="hyde --access-filter-protected --namespace-blacklist=detail --hyde-src-root=${SRC_ROOT} --hyde-yaml-dir=${HYDE_DST_ROOT} --hyde-update \"${CUR_FILE}\" -- -I${SRC_ROOT} -Wno-everything"
     echo $CUR_COMMAND
     eval $CUR_COMMAND
 done

@@ -2,7 +2,7 @@
 layout: class
 title: index_sequence_cat<std::index_sequence<N1...>, std::index_sequence<N2...>>
 hyde:
-  owner: __MISSING__
+  owner: sean-parent
   brief: __MISSING__
   tags:
     - class
