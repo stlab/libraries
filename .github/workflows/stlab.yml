@@ -56,7 +56,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build
           sudo apt-get install -y libboost-all-dev
-          sudo apt-get install -y gcc-${{matrix.config.version}} g++-${{matrix.config.version}}
         shell: bash
 
       - name: Install dependencies // Windows
