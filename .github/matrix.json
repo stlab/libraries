@@ -1,10 +1,10 @@
 {
   "config": [
     {
-      "name": "Linux GCC 12",
+      "name": "Linux GCC 13",
       "compiler": "gcc",
-      "version": "12",
-      "os": "ubuntu-22.04"
+      "version": "13",
+      "os": "ubuntu-24.04"
     },
     {
       "name": "Linux Clang 15",
