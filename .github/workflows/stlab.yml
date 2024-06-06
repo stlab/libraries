@@ -13,12 +13,12 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4.1.6
 
       - name: Generate job matrix
         id: set-matrix
         # Note: The json in this variable must be a single line for parsing to succeed.
-        run: echo "::set-output name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)"
+        run: echo "name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)" >> $GITHUB_OUTPUT
 
   builds:
     # installed tools and runners can be found here: https://github.com/actions/runner-images
