@@ -62,7 +62,9 @@ jobs:
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
           choco install --yes ninja
-          choco install --yes boost-msvc-14.3
+          dotnet add package boost --version 1.85.0
+
+        # choco install --yes boost-msvc-14.3
         # vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows boost-variant:x64-windows
         shell: cmd
 
