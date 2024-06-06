@@ -27,7 +27,7 @@ hyde:
       definition: detail::result_t<std::decay_t<F>, std::decay_t<Args>...>
       description: __MISSING__
     void_to_monostate_t:
-      definition: std::conditional_t<std::is_void_v<T>, std::monostate, T>
+      definition: typename void_to_monostate<T>::type
       description: __MISSING__
     vt_t:
       definition: voidless_tuple<Ts...>

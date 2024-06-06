@@ -1,34 +1,34 @@
 {
-    "config": [
-        {
-            "name": "Linux GCC 13",
-            "compiler": "gcc",
-            "version": "13",
-            "os": "ubuntu-22.04"
-        },
-        {
-            "name": "Linux Clang 15",
-            "compiler": "clang",
-            "version": "15",
-            "os": "ubuntu-22.04"
-        },
-        {
-            "name": "macOS apple-clang 15.1.0",
-            "compiler": "apple-clang",
-            "version": "15.1.0",
-            "os": "macos-13"
-        },
-        {
-            "name": "Windows VS2022",
-            "compiler": "Visual Studio",
-            "version": "17",
-            "os": "windows-2022",
-            "cmake_toolset": "Visual Studio 17 2022"
-        },
-        {
-            "name": "Linux Webassembly",
-            "compiler": "emscripten",
-            "os": "ubuntu-22.04"
-        }
-    ]
+  "config": [
+    {
+      "name": "Linux GCC 14",
+      "compiler": "gcc",
+      "version": "14",
+      "os": "ubuntu-22.04"
+    },
+    {
+      "name": "Linux Clang 15",
+      "compiler": "clang",
+      "version": "15",
+      "os": "ubuntu-22.04"
+    },
+    {
+      "name": "macOS apple-clang 15.1.0",
+      "compiler": "apple-clang",
+      "version": "15.1.0",
+      "os": "macos-13"
+    },
+    {
+      "name": "Windows VS2022",
+      "compiler": "Visual Studio",
+      "version": "17",
+      "os": "windows-2022",
+      "cmake_toolset": "Visual Studio 17 2022"
+    },
+    {
+      "name": "Linux Webassembly",
+      "compiler": "emscripten",
+      "os": "ubuntu-22.04"
+    }
+  ]
 }

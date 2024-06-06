@@ -2,7 +2,7 @@
 layout: method
 title: ~nonesuch
 hyde:
-  owner: __OPTIONAL__
+  owner: sean-parent
   brief: __OPTIONAL__
   tags:
     - method

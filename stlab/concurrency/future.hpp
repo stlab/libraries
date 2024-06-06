@@ -64,8 +64,16 @@ auto invoke_void_to_monostate_result(F&& f, Args&&... args) {
     }
 }
 
+// REVISIT (sean-parent) : As a typedef, this generates file names in the hyde documentation that
+// are too long for windows. Moving to a class for now, but I may also change how this is used and
+// have a single future<> class with conditional members for easier documentation.
 template <class T>
-using void_to_monostate_t = std::conditional_t<std::is_void_v<T>, std::monostate, T>;
+struct void_to_monostate {
+    using type = std::conditional_t<std::is_void_v<T>, std::monostate, T>;
+};
+
+template <class T>
+using void_to_monostate_t = typename void_to_monostate<T>::type;
 
 template <class T>
 inline constexpr bool is_monostate_v = std::is_same_v<T, std::monostate>;

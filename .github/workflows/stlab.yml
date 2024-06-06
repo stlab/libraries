@@ -30,7 +30,7 @@ jobs:
     name: ${{ matrix.config.name }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4.1.6
 
       - name: Install dependencies // macOS
         if: ${{ startsWith(matrix.config.os, 'macos') }}

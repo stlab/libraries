@@ -260,6 +260,7 @@ struct filter_fullorder_iterator {
     }
 
     auto base() const -> I { return _x; }
+    auto base_reference() -> I& { return _x; }
 
     auto operator*() -> reference { return dereference(); }
     auto operator->() -> pointer { return &dereference(); }
@@ -282,12 +283,12 @@ struct filter_fullorder_iterator {
         return result;
     }
 
-    friend auto operator==(const filter_fullorder_iterator& a,
-                           const filter_fullorder_iterator& b) -> bool {
+    friend auto operator==(const filter_fullorder_iterator& a, const filter_fullorder_iterator& b)
+        -> bool {
         return a.base() == b.base();
     }
-    friend auto operator!=(const filter_fullorder_iterator& a,
-                           const filter_fullorder_iterator& b) -> bool {
+    friend auto operator!=(const filter_fullorder_iterator& a, const filter_fullorder_iterator& b)
+        -> bool {
         return !(a == b);
     }
 
@@ -389,12 +390,12 @@ struct reverse_fullorder_iterator {
         return result;
     }
 
-    friend auto operator==(const reverse_fullorder_iterator& a,
-                           const reverse_fullorder_iterator& b) -> bool {
+    friend auto operator==(const reverse_fullorder_iterator& a, const reverse_fullorder_iterator& b)
+        -> bool {
         return a.equal(b);
     }
-    friend auto operator!=(const reverse_fullorder_iterator& a,
-                           const reverse_fullorder_iterator& b) -> bool {
+    friend auto operator!=(const reverse_fullorder_iterator& a, const reverse_fullorder_iterator& b)
+        -> bool {
         return !(a == b);
     }
 
@@ -465,12 +466,12 @@ struct depth_fullorder_iterator {
         return result;
     }
 
-    friend auto operator==(const depth_fullorder_iterator& a,
-                           const depth_fullorder_iterator& b) -> bool {
+    friend auto operator==(const depth_fullorder_iterator& a, const depth_fullorder_iterator& b)
+        -> bool {
         return a.base() == b.base();
     }
-    friend auto operator!=(const depth_fullorder_iterator& a,
-                           const depth_fullorder_iterator& b) -> bool {
+    friend auto operator!=(const depth_fullorder_iterator& a, const depth_fullorder_iterator& b)
+        -> bool {
         return !(a == b);
     }
 
@@ -881,16 +882,13 @@ public:
         erase(--end());
     }
 
-    auto insert(iterator position,
-                const_child_iterator first,
-                const_child_iterator last) -> iterator;
+    auto insert(iterator position, const_child_iterator first, const_child_iterator last)
+        -> iterator;
 
     auto splice(iterator position, forest<T>& x) -> iterator;
     auto splice(iterator position, forest<T>& x, iterator i) -> iterator;
-    auto splice(iterator position,
-                forest<T>& x,
-                child_iterator first,
-                child_iterator last) -> iterator;
+    auto splice(iterator position, forest<T>& x, child_iterator first, child_iterator last)
+        -> iterator;
     auto splice(iterator position,
                 forest<T>& x,
                 child_iterator first,
@@ -1044,11 +1042,9 @@ auto forest<T>::insert(iterator pos, const_child_iterator f, const_child_iterato
 /**************************************************************************************************/
 
 template <class T>
-auto forest<T>::splice(iterator pos,
-                       forest<T>& x,
-                       child_iterator first,
-                       child_iterator last,
-                       size_type count) -> iterator {
+auto forest<T>::splice(
+    iterator pos, forest<T>& x, child_iterator first, child_iterator last, size_type count)
+    -> iterator {
     if (first == last || first.base() == pos) return pos;
 
     if (&x != this) {

@@ -2,7 +2,7 @@
 layout: method
 title: executor
 hyde:
-  owner: __OPTIONAL__
+  owner: sean-parent
   brief: __OPTIONAL__
   tags:
     - method
