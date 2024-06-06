@@ -18,7 +18,7 @@ jobs:
       - name: Generate job matrix
         id: set-matrix
         # Note: The json in this variable must be a single line for parsing to succeed.
-        run: echo "name=matrix::$(cat .github/matrix.json | scripts/flatten_json.py)" >> $GITHUB_OUTPUT
+        run: echo "matrix=$(cat .github/matrix.json | scripts/flatten_json.py)" >> $GITHUB_OUTPUT
 
   builds:
     # installed tools and runners can be found here: https://github.com/actions/runner-images
