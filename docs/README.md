@@ -87,4 +87,5 @@ From the docker prompt
 ```
 cd /mnt/host/libraries/docs
 ./generate_docs.sh
+./about.sh
 ```
