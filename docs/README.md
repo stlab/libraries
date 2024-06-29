@@ -89,3 +89,7 @@ cd /mnt/host/libraries/docs
 ./generate_docs.sh
 ./about.sh
 ```
+
+\[ this is from the old docs - need to update the docs and script.
+> (or, simply `-u`) to generate the boilerplate for it. Then, fill in any fields marked as `__MISSING__`. Fields marked as `__OPTIONAL__` may be omitted.
+\]
