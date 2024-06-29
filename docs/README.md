@@ -52,26 +52,7 @@ The following directory structure is assumed.
 Configure the build as follows:
 
 ```
-cd ../builds/hyde
-ccmake ../../libraries
-cd -
-```
-
-Specify the following options:
-
-```
- BUILD_TESTING                    OFF
- CMAKE_BUILD_TYPE
- CMAKE_INSTALL_PREFIX             /usr/local
- CMAKE_OSX_ARCHITECTURES
- CMAKE_OSX_DEPLOYMENT_TARGET
- CMAKE_OSX_SYSROOT                /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/
- Qt6_DIR                          Qt6_DIR-NOTFOUND
- STLAB_MAIN_EXECUTOR              none
- STLAB_NO_STD_COROUTINES          ON
- STLAB_TASK_SYSTEM                portable
- STLAB_THREAD_SYSTEM              pthread
- stlab.coverage                   OFF
+cmake --preset=hyde-build-docs
 ```
 
 - Build the docker image per the instructions in the hyde repo, [current using the clang13 branch](https://github.com/adobe/hyde/tree/fosterbrereton/llvm13-updates).
