@@ -10,7 +10,7 @@ ASL libraries will be migrated here in the `stlab` namespace, new libraries will
 
 ### [Concurrency](https://www.stlab.cc/libraries/concurrency/)
 
-This library provides futures and channels, high level abstractions for implementing algorithms that eases the use of multiple CPU cores while minimizing contention. This library solves several problems of the C++11 and C++17 TS futures.
+This library provides futures and channels, high-level abstractions for implementing algorithms that ease the use of multiple CPU cores while minimizing contention. This library solves several problems of the C++11 and C++17 TS futures.
 
 ## Documentation
 
@@ -58,7 +58,7 @@ cmake -S . -B ../BUILD -DCMAKE_BUILD_TYPE=# SEE BELOW
 
 but there are other options you may need to append in order to be successful. Among them:
 
-- `-DCMAKE_BUILD_TYPE=`[`Release`|`Debug`] to build the given configuration (required unless you're using visual studio or another multi-config generator).
+- `-DCMAKE_BUILD_TYPE=`[`Release`|`Debug`] to build the given configuration (required unless you're using Visual Studio or another multi-config generator).
 - `-DCMAKE_CXX_STANDARD=`[`17`|`20`|`23`] to build with compliance to the given C++ standard.
 - `-DBUILD_TESTING=OFF` if you only intend to build, but not test, this library.
 - `-DBoost_USE_STATIC_LIBS=TRUE` if you will be testing on Windows.
@@ -101,21 +101,8 @@ or
 ctest -C Release
 ```
 
-depending on which configuration (`CMAKE_BUILD_TYPE`) you chose to build.
+depending on which configuration (`CMAKE_BUILD_TYPE) you choose to build.
 
 ## Generating Documentation
 
-STLab uses [hyde](https://github.com/adobe/hyde) to generate documentation boilerplate by scanning its public headers. You will need to follow Hyde's installation instructions and have `hyde` on your `$PATH` (detectable by `which hyde`).
-
-When adding a new public API, you should invoke
-
-```
-docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host --tty --interactive hyde bash
-```
-
-```
-cd /mnt/host/libraries
-./validate_docs.sh --update
-```
-
-(or, simply `-u`) to generate the boilerplate for it. Then, fill in any fields marked as `__MISSING__`. Fields marked as `__OPTIONAL__` may be omitted.
+For generating the documentation, see the [README.md](docs/README.md) in the `docs` directory.

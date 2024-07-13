@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "This script is deprecated. Please use the new generate_docs.sh script instead."
+echo "Keep this script temporarily until we move all the options into generate_docs."
+exit 1
+
 #
 # This script invokes Hyde on the headers in the stlab directory.
 # Also see .hyde-config.
@@ -118,7 +122,7 @@ then
     echo "$CMAKE_BUILD_DIR already exists. Please delete it or use -f."
     exit 1
 else
-    cmake -S. -B $CMAKE_BUILD_DIR $CMAKE_ARGS
+    cmake --preset="hyde-build-docs"
 fi
 
 #
