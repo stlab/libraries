@@ -22,8 +22,7 @@
       "name": "Windows VS2022",
       "compiler": "Visual Studio",
       "version": "17",
-      "os": "windows-2022",
-      "cmake_toolset": "Visual Studio 17 2022"
+      "os": "windows-2022"
     },
     {
       "name": "Linux Webassembly",
