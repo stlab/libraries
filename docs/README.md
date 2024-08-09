@@ -1,53 +1,14 @@
 # `stlab` Documentation
 
+This site is available at [stlab.cc](https://stlab.cc).
+
 Pull requests for typos, examples, and other improvements are welcome. To file an issue, please use the [libraries repository](https://github.com/stlab/libraries).
 
-# Branch states
+## Building the Documentation
 
-\[ These are from the old site - FIX ME \]
-
-- **`master`:** [![master build](https://travis-ci.org/stlab/stlab.github.io.svg?branch=master)](https://travis-ci.org/stlab/stlab.github.io) [![master coverage](https://codecov.io/github/stlab/stlab.github.io/coverage.svg?branch=master)](https://codecov.io/gh/stlab/stlab.github.io/branch/master)
-
-- **`develop`:** [![develop build](https://travis-ci.org/stlab/stlab.github.io.svg?branch=develop)](https://travis-ci.org/stlab/stlab.github.io)
-  [![develop coverage](https://codecov.io/github/stlab/stlab.github.io/coverage.svg?branch=develop)](https://codecov.io/gh/stlab/stlab.github.io/branch/develop)
-
-# Building (Mac)
-
-You'll need Homebrew to make sure you have the most recent version of Ruby.
-
-## Setup
-
-1. Clone the repo
-2. `brew install ruby`
-3. `sudo gem install bundle jekyll github-pages liquid`
-
-Periodically run `gem update` and `bundle update` to make sure you have the latest jekyll tooling.
-
-## Building Docs
-
-```
-cd ./docs
-bundle exec jekyll serve --watch
-```
-
-Documentation viewable at `localhost:4000`
-Modifying sources should auto-regenerate the documentation
-
-## Building Examples
-
-1. `./build.sh` will download dependencies, build, and run all the `*.cpp` files in the `libraries` directory.
+To run a local Jekyll server, see the instructions in the docker-tools [README](../tools/docker-tools/README.md).
 
 ## Running Hyde in Docker
-
-The following directory structure is assumed.
-
-[ The longer term plan is to migrate the docs for the libraries into the library repo. We also need a plan for the structure of the build directory, a]
-
-```
-.             # This directory stlab.github.io
-../libraries  # The stlab/libraries repo
-../builds/hyde      # The cmake build directory configures for building docs
-```
 
 Configure the build as follows:
 
@@ -55,12 +16,14 @@ Configure the build as follows:
 cmake --preset=hyde-build-docs
 ```
 
-- Build the docker image per the instructions in the hyde repo, [current using the clang13 branch](https://github.com/adobe/hyde/tree/fosterbrereton/llvm13-updates).
+Run the docker hyde tool:
 
 ```
+docker pull ghcr.io/adobe/hyde:latest
+
 docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host \
     --tty --interactive \
-    hyde bash
+    ghcr.io/adobe/hyde:latest bash
 ```
 
 From the docker prompt
@@ -72,5 +35,6 @@ cd /mnt/host/libraries/docs
 ```
 
 \[ this is from the old docs - need to update the docs and script.
+
 > (or, simply `-u`) to generate the boilerplate for it. Then, fill in any fields marked as `__MISSING__`. Fields marked as `__OPTIONAL__` may be omitted.
-\]
+> \]

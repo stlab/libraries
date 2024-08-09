@@ -3,6 +3,7 @@
 ## Setup
 
 ### Install Docker
+
 If you don't already have Docker installed, [install Docker](https://docs.docker.com/get-docker/).
 
 ### Building the docker image
@@ -14,17 +15,17 @@ Specify the ruby version to match the latest stable - https://www.ruby-lang.org/
 macOS and Linux:
 
 ```bash
-VERSION="1.0.3"
+VERSION="1.0.4"
 VOLUME="stlab.libraries"
-RUBY_VERSION="3.2.2"
+RUBY_VERSION="3.3.4"
 ```
 
 Windows:
 
 ```powershell
-$VERSION="1.0.3"
+VERSION="1.0.4"
 $VOLUME="stlab.libraries"
-$RUBY_VERSION="3.2.2"
+RUBY_VERSION="3.3.4"
 
 $PSDefaultParameterValues = @{'Out-File:Encoding' = 'Ascii'}
 ```
@@ -99,14 +100,38 @@ docker exec -it <container id> bash
 
 To test a local copy of the Jekyll theme
 
-Edit Gemfile
-Edit _config.yml
-
+```zsh
+code ./docs/Gemfile
+code ./docs/_config.yml
 ```
+
+Clone the adobe/hyde-theme repository to your local machine and mount it in the docker image.
+
+Set the path to where you want the repo located on your local machine.
+
+```zsh
+PATH_TO_HYDE_THEME=$HOME/repos/github.com/adobe/hyde-theme
+```
+
+```zsh
+cd $PATH_TO_HYDE_THEME
+gh repo clone adobe/hyde-theme
+cd -
+```
+
+```zsh
 docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
-    --mount type=bind,source=$HOME/Projects/github.com/adobe/hyde-theme,target=/mnt/themes \
-    --tty --interactive --publish 3000-3001:3000-3001 \
-    $VOLUME bash
+    --mount type=bind,source=$PATH_TO_HYDE_THEME,target=/mnt/themes \
+ --tty --interactive --publish 3000-3001:3000-3001 \
+ $VOLUME bash
+```
+
+Then from the docker prompt, update the bundle to use the local theme.
+
+```bash
+git config --global --add safe.directory /mnt/themes
+cd /mnt/theme
+bundle update
 ```
 
 ### Release Notes
@@ -115,3 +140,4 @@ docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
 - 1.0.1 - Updating tool set
 - 1.0.2 - Updating in for Hyde 2.0
 - 1.0.3 - Updating Jekyll to 4.2.0 for new Hyde and moving to GitHub Actions.
+- 1.0.4 - Updating Ruby to 3.3.4

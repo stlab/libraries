@@ -5,17 +5,17 @@ FROM ubuntu:latest AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-    apt-utils \
-    fswatch \
-    g++ \
-    git \
-    libreadline-dev \
-    make \
-    nodejs \
-    npm \
-    rbenv \
-    wget \
-    zlib1g-dev
+  apt-utils \
+  fswatch \
+  g++ \
+  git \
+  libreadline-dev \
+  make \
+  nodejs \
+  npm \
+  rbenv \
+  wget \
+  zlib1g-dev
 
 RUN apt-get install -y libyaml-dev
 
@@ -32,9 +32,9 @@ USER app
 WORKDIR /home/app
 
 # Set UTF language (assumed by jekyll)
-ENV LC_ALL "C.UTF-8"
-ENV LANG "en_US.UTF-8"
-ENV LANGUAGE "en_US.UTF-8"
+ENV LC_ALL="C.UTF-8"
+ENV LANG="en_US.UTF-8"
+ENV LANGUAGE="en_US.UTF-8"
 
 # Install ruby environment
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
@@ -44,12 +44,12 @@ RUN git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ru
 #  Install ruby
 ARG RUBY_VERSION
 RUN if [ -z ${RUBY_VERSION+x} ]; then \
-      rbenv install $(rbenv install -l | grep -v - | tail -1); \
-      rbenv global  $(rbenv install -l | grep -v - | tail -1); \
-    else \
-      rbenv install $RUBY_VERSION; \
-      rbenv global $RUBY_VERSION; \
-    fi
+  rbenv install $(rbenv install -l | grep -v - | tail -1); \
+  rbenv global  $(rbenv install -l | grep -v - | tail -1); \
+  else \
+  rbenv install $RUBY_VERSION; \
+  rbenv global $RUBY_VERSION; \
+  fi
 
 #  Install bundler in global ruby
 RUN (eval "$(rbenv init -)"; gem install bundler)
@@ -66,10 +66,10 @@ COPY ./docs/Gemfile.lock .
 COPY ./docs/.ruby-version .
 
 RUN (eval "$(rbenv init -)"; \
-    rbenv install `cat .ruby-version`; \
-    gem install bundler; \
-    rbenv rehash; \
-    bundle install --frozen)
+  rbenv install `cat .ruby-version`; \
+  gem install bundler; \
+  rbenv rehash; \
+  bundle install --frozen)
 
 WORKDIR /home/app
 
