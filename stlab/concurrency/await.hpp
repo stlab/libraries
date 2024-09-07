@@ -50,6 +50,10 @@ auto invoke_waiting(F&& f) {
 
 /**************************************************************************************************/
 
+/// Synchronously wait for the result `x`. If `x` resolves as an exception, the exception is
+/// rethrown. When using the portable task system, an additional thread is added to the pool if no
+/// threads are available and the maximum number of threads has not been reached.
+
 template <class T>
 auto await(future<T>&& x) -> T {
     if (x.is_ready()) return std::move(x).get_ready(); // if ready, done
@@ -66,33 +70,12 @@ auto await(future<T>&& x) -> T {
         }
     });
 
-#if STLAB_TASK_SYSTEM(PORTABLE)
-    if (!detail::pts().wake()) detail::pts().add_thread();
-
-    /*
-        If no tasks are available we wait for one tick of the system clock and exponentially
-        back off on the wait as long as no tasks are available.
-    */
-
-    for (auto backoff{std::chrono::steady_clock::duration{std::chrono::milliseconds{1}}}; true;
-         backoff *= 2) {
-        {
-            std::unique_lock<std::mutex> lock{m};
-            if (condition.wait_for(lock, backoff, [&] { return result.is_ready(); })) {
-                return std::move(result).get_ready();
-            }
-        }
-        detail::pts().wake(); // try to wake something to unstick.
-    }
-
-#else
-
     std::unique_lock<std::mutex> lock{m};
-    condition.wait(lock, [&] { return result.is_ready(); });
+    invoke_waiting([&] { condition.wait(lock, [&] { return result.is_ready(); }); });
     return std::move(result).get_ready();
-
-#endif
 }
+
+/// Equivalent to `await(copy(x))`.
 
 template <class T>
 [[deprecated("implicit copy deprecated, use `await(std::move(f))` or `await(stlab::copy(f))`"
@@ -129,7 +112,8 @@ struct blocking_get_guarded {
 
     auto wait_for(const std::chrono::nanoseconds& timeout) -> future<T> {
         std::unique_lock<std::mutex> lock{_mutex};
-        _timed_out = !_condition.wait_for(lock, timeout, [&] { return _result.valid(); });
+        _timed_out = !invoke_waiting(
+            [&] { _condition.wait_for(lock, timeout, [&] { return _result.valid(); }); });
         return _timed_out ? future<T>{} : std::move(_result);
     }
 };
@@ -139,10 +123,6 @@ struct blocking_get_guarded {
 template <class T>
 auto await_for(future<T>&& x, const std::chrono::nanoseconds& timeout) -> future<T> {
     if (x.is_ready()) return std::move(x);
-
-#if STLAB_TASK_SYSTEM(PORTABLE)
-    if (!detail::pts().wake()) detail::pts().add_thread();
-#endif
 
     auto p = std::make_shared<detail::blocking_get_guarded<T>>();
 
@@ -154,6 +134,8 @@ auto await_for(future<T>&& x, const std::chrono::nanoseconds& timeout) -> future
     auto result = p->wait_for(timeout);
     return result.valid() ? std::move(result) : std::move(hold);
 }
+
+/// Equivalent to `await_for(copy(x), timeout)`.
 
 template <class T>
 [[deprecated("implicit copy deprecated, use `await_for(std::move(f), t)` or"
