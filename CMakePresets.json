@@ -72,7 +72,7 @@
         "CMAKE_CXX_STANDARD": "17",
         "CMAKE_BUILD_TYPE": "DEBUG",
         "BUILD_TESTING": "ON",
-        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix"
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix;-header-filter=stlab/.*"
       }
     },
     {
