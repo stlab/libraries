@@ -9,6 +9,7 @@
 #define STLAB_ITERATOR_SET_NEXT_HPP
 
 #include <iterator>
+#include <utility>
 
 /**************************************************************************************************/
 
@@ -26,8 +27,8 @@ struct set_next_fn;   // Must be specialized
 /**************************************************************************************************/
 
 template <typename I> // I models NodeIterator
-inline void set_next(I x, I y) {
-    set_next_fn<I>()(x, y);
+inline void set_next(const I& x, const I& y) {
+    set_next_fn<I>()(std::move(x), std::move(y));
 }
 
 /**************************************************************************************************/

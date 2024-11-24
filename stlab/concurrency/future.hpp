@@ -1302,7 +1302,7 @@ struct make_when_any<void> {
 /**************************************************************************************************/
 
 template <typename E, typename F, typename T, typename... Ts>
-auto when_any(E executor, F&& f, future<T> arg, future<Ts>... args) {
+auto when_any(const E& executor, F&& f, future<T> arg, future<Ts>... args) {
     return make_when_any<T>::make(std::move(executor), std::forward<F>(f), std::move(arg),
                                   std::move(args)...);
 }

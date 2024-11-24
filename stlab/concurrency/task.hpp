@@ -145,6 +145,7 @@ class task_ {
     // empty (default) vtable
     static void dtor(void*) noexcept {}
     static void move_ctor(void*, void*) noexcept {}
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     static auto invoke(void*, Args...) noexcept(NoExcept) -> R {
         if constexpr (NoExcept) {
             try {
