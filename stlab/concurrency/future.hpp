@@ -1264,7 +1264,7 @@ auto when_all(const E& executor, F f, future<Ts>... args) {
 template <typename T>
 struct make_when_any {
     template <typename E, typename F, typename... Ts>
-    static auto make(E executor, F f, future<T> arg, future<Ts>... args) {
+    static auto make(const E& executor, F f, future<T> arg, future<Ts>... args) {
         using result_t = detail::result_t<F, T, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
@@ -1500,7 +1500,7 @@ struct common_context : CR {
 template <typename C, typename E, typename T>
 void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
     auto&& hold = std::forward<T>(a).recover(
-        std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
+        std::move(executor), [_context = make_weak_ptr(context), _i = index](const auto& x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception()) {
@@ -1520,7 +1520,7 @@ struct create_range_of_futures;
 template <typename R, typename T, typename C>
 struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
     template <typename E, typename F, typename I>
-    static auto do_it(E executor, F&& f, I first, I last) {
+    static auto do_it(const E& executor, F&& f, I first, I last) {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
@@ -1540,7 +1540,7 @@ struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
 template <typename R, typename T, typename C>
 struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
     template <typename E, typename F, typename I>
-    static auto do_it(E executor, F&& f, I first, I last) {
+    static auto do_it(const E& executor, F&& f, I first, I last) {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
@@ -1567,7 +1567,7 @@ template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same
                       // type
-auto when_all(E executor, F f, std::pair<I, I> range) {
+auto when_all(const E& executor, F f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
     using context_result_t =
@@ -1592,7 +1592,7 @@ template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same
                       // type
-auto when_any(E executor, F&& f, std::pair<I, I> range) {
+auto when_any(const E& executor, F&& f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same_v<void, param_t>, void, param_t>;

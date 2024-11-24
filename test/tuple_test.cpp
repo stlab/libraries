@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(add_placeholder_test) {
 /**************************************************************************************************/
 
 template <typename F, typename... Ts>
-void when_all_typecheck(F, future<Ts>...) {
+void when_all_typecheck(F, const future<Ts>&&...) {
     using pt_t = placeholder_tuple<Ts...>;
     using opt_t = optional_placeholder_tuple<Ts...>;
     using vt_t = voidless_tuple<Ts...>;
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_int_void_string_void_bool_void) {
 
     auto f = when_all(
         stlab::default_executor,
-        [](auto... args) { for_each_argument([](auto x) { cout << x << "\n"; }, args...); }, fi(),
+        [](const auto&... args) { for_each_argument([](const auto& x) { cout << x << "\n"; }, args...); }, fi(),
         fv(), fs(), fv(), fb(), fv());
 
     await(std::move(f));
