@@ -1,8 +1,8 @@
 /**************************************************************************************************/
 
 // stdc++
-#include <cstddef>
 #include <cassert>
+#include <cstddef>
 #include <iostream>
 #include <iterator>
 #include <optional>
@@ -169,7 +169,9 @@ auto to_string(I first, const I& last) {
 /**************************************************************************************************/
 
 template <typename Iterator>
-void test_fullorder_traversal(const Iterator& first, const Iterator& last, const std::string& expected) {
+void test_fullorder_traversal(const Iterator& first,
+                              const Iterator& last,
+                              const std::string& expected) {
     BOOST_CHECK(to_string(first, last) == expected);
 }
 

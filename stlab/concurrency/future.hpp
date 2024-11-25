@@ -1284,7 +1284,7 @@ struct make_when_any {
 template <>
 struct make_when_any<void> {
     template <typename E, typename F, typename... Ts>
-    static auto make(E executor, F&& f, future<Ts>... args) {
+    static auto make(E&& executor, F&& f, future<Ts>... args) {
         using result_t = detail::result_t<F, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
@@ -1293,7 +1293,7 @@ struct make_when_any<void> {
         });
         shared->_f = std::move(p.first);
 
-        detail::attach_when_args(executor, shared, std::move(args)...);
+        detail::attach_when_args(std::forward<E>(executor), shared, std::move(args)...);
 
         return std::move(p.second);
     }
@@ -1302,8 +1302,8 @@ struct make_when_any<void> {
 /**************************************************************************************************/
 
 template <typename E, typename F, typename T, typename... Ts>
-auto when_any(const E& executor, F&& f, future<T> arg, future<Ts>... args) {
-    return make_when_any<T>::make(std::move(executor), std::forward<F>(f), std::move(arg),
+auto when_any(E&& executor, F&& f, future<T>&& arg, future<Ts>&&... args) {
+    return make_when_any<T>::make(std::forward<E>(executor), std::forward<F>(f), std::move(arg),
                                   std::move(args)...);
 }
 
@@ -1498,9 +1498,9 @@ struct common_context : CR {
 /**************************************************************************************************/
 
 template <typename C, typename E, typename T>
-void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
+void attach_tasks(size_t index, E&& executor, const std::shared_ptr<C>& context, T&& a) {
     auto&& hold = std::forward<T>(a).recover(
-        std::move(executor), [_context = make_weak_ptr(context), _i = index](const auto& x) {
+        std::forward<E>(executor), [_context = make_weak_ptr(context), _i = index](const auto& x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception()) {
@@ -1626,7 +1626,7 @@ auto async(const E& executor, F&& f, Args&&... args)
     auto [pro, fut] = package<result_type()>(
         executor,
         [f = std::forward<F>(f), args = std::make_tuple(std::forward<Args>(args)...)]() mutable
-        -> result_type { return std::apply(std::move(f), std::move(args)); });
+            -> result_type { return std::apply(std::move(f), std::move(args)); });
 
     executor(std::move(pro));
 

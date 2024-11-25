@@ -106,7 +106,8 @@ struct child_iterator {
     using iterator_category = typename std::iterator_traits<I>::iterator_category;
 
     child_iterator() = default;
-    explicit child_iterator(const I& x) : _x(std::move(x)) {}
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    explicit child_iterator(I x) : _x(std::move(x)) {}
     template <class U>
     child_iterator(const child_iterator<U>& u) : _x(u.base()) {}
 
@@ -182,7 +183,8 @@ struct edge_iterator {
     using iterator_category = typename std::iterator_traits<I>::iterator_category;
 
     edge_iterator() = default;
-    explicit edge_iterator(const I& x) : _x(find_edge(std::move(x), Edge)) {}
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    explicit edge_iterator(I x) : _x(find_edge(x, Edge)) {}
     template <class U>
     edge_iterator(const edge_iterator<U, Edge>& u) : _x(u.base()) {}
 

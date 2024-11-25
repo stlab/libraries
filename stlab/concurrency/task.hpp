@@ -82,6 +82,7 @@ class task_ {
             signature to the actual captured model.
         */
 
+        // NOLINTNEXTLINE(performance-unnecessary-value-param)
         static auto invoke(void* self, Args... args) noexcept(NoExcept) -> R {
             return (static_cast<model*>(self)->_f)(std::forward<Args>(args)...);
         }

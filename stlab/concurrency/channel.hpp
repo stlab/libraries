@@ -1314,16 +1314,16 @@ template <typename S, typename F, typename... R>
 
 template <typename M, typename S, typename F, typename... R>
 auto merge_channel(S s, F f, R&&... upstream_receiver) {
-    return detail::channel_combiner::merge_helper<M>(
-        std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+    return detail::channel_combiner::merge_helper<M>(std::move(s), std::move(f),
+                                                     std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename F, typename... R>
 auto zip_with(S s, F f, const R&... upstream_receiver) {
-    return detail::channel_combiner::merge_helper<zip_with_t>(
-        std::move(s), std::move(f), upstream_receiver...);
+    return detail::channel_combiner::merge_helper<zip_with_t>(std::move(s), std::move(f),
+                                                              upstream_receiver...);
 }
 
 /**************************************************************************************************/

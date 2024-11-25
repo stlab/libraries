@@ -40,7 +40,8 @@ struct transcribe_iterator {
     using reference = void;
     using container_type = Container;
 
-    transcribe_iterator(Container& c, const typename Container::iterator& i) : _c{&c}, _i{std::move(i)} {}
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    transcribe_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
 
     constexpr auto operator*() -> auto& { return *this; }
     constexpr auto operator++() -> auto& {
@@ -97,7 +98,7 @@ auto transcribe(const R& range, O out, P proj, UP pred) {
 
 template <class I, class O, class P>
 auto transcribe(const I& first, const I& last, O out, P proj) {
-    return transcribe(std::move(first), std::move(last), std::move(out), std::move(proj),
+    return transcribe(first, last, std::move(out), std::move(proj),
                       [](const auto& p) { return is_leading(p); });
 }
 
