@@ -40,8 +40,7 @@ struct transcribe_iterator {
     using reference = void;
     using container_type = Container;
 
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    transcribe_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
+    transcribe_iterator(Container& c, const typename Container::iterator& i) : _c{&c}, _i{i} {}
 
     constexpr auto operator*() -> auto& { return *this; }
     constexpr auto operator++() -> auto& {
