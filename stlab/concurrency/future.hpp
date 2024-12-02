@@ -979,32 +979,34 @@ auto package(E executor, F&& f)
     using result_t = detail::result_of_t_<Sig>;
 
     if constexpr (detail::is_future_v<result_t>) {
-        auto p =
-            std::make_shared<detail::shared<detail::reduced_signature_t<Sig>>>(std::move(executor));
-
-        p->_f = [_f = std::forward<F>(f)](auto&& promise, auto&&... args) mutable noexcept {
-            if (promise.canceled()) return;
-
-            try {
-                auto r = std::move(_f)(std::forward<decltype(args)>(args)...);
+        auto p = detail::make_shared_state<detail::reduced_signature_t<Sig>>(
+            std::move(executor),
+            [_f = std::make_optional(std::forward<F>(f)),
+             _hold = future<void>{}](auto&& promise, auto&&... args) mutable noexcept {
+                assert(_f && "packaged task invoked twice");
                 try {
-                    std::move(r).detach([_p = std::move(promise)](auto&& f) mutable noexcept {
-                        if (auto e = f.exception()) {
-                            std::move(_p).set_exception(e);
-                        } else {
-                            std::move(_p).set_value(invoke_void_to_monostate_result(
-                                [&] { return std::forward<decltype(f)>(f).get_ready(); }));
-                        }
-                    });
+                    auto r = std::move(*_f)(std::forward<decltype(args)>(args)...);
+                    try {
+                        _hold = std::move(r).recover(
+                            immediate_executor,
+                            [_p = std::move(promise)](auto&& f) mutable noexcept {
+                                if (auto e = f.exception()) {
+                                    std::move(_p).set_exception(std::move(e));
+                                } else {
+                                    std::move(_p).set_value(invoke_void_to_monostate_result(
+                                        [&] { return std::forward<decltype(f)>(f).get_ready(); }));
+                                }
+                            });
+                    } catch (...) {
+                        /* NOTE: an exception here is reported as a broken promise. Ideally recover
+                         * would be passed the initial promise (it flows through the chain), but the
+                         * API isn't there yet. */
+                    }
                 } catch (...) {
-                    /* NOTE: an exception here is reported as a broken promise. Ideally detach
-                     * would be passed the initial promise (it flows through the chain), but the
-                     * API isn't there yet. */
+                    std::move(promise).set_exception(std::current_exception());
                 }
-            } catch (...) {
-                std::move(promise).set_exception(std::current_exception());
-            }
-        };
+                _f.reset();
+            });
         return {detail::packaged_task_from_signature_t<Sig>{p}, result_t{p}};
     } else {
         auto p = detail::make_shared_state<Sig>(
