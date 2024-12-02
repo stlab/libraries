@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
 
         sut = when_all(
                   make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2)
-                  .recover([](auto error) {
+                  .recover([](const auto& error) {
                       if (error.exception()) {
                           return 815;
                       }
@@ -449,7 +449,7 @@ BOOST_AUTO_TEST_CASE(future_recover_failure_during_when_all_on_lvalue) {
 
         sut = (when_all(
                    make_executor<0>(), [](int x, int y) { return x + y; }, f1, f2) ^
-               [](auto error) {
+               [](const auto& error) {
                    if (error.exception()) {
                        return 815;
                    }
@@ -1140,7 +1140,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
         sut = [&check]() {
             auto p{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
-            return std::move(p.second).recover([&check](auto f) {
+            return std::move(p.second).recover([&check](const auto& f) {
                 check = true;
                 try {
                     return *std::move(f.get_try());
@@ -1158,7 +1158,7 @@ BOOST_AUTO_TEST_CASE(future_recover_move_only_with_broken_promise) {
         sut = [&check]() {
             auto p{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
-            return std::move(p.second) ^ [&check](auto f) {
+            return std::move(p.second) ^ [&check](const auto& f) {
                 check = true;
                 try {
                     return *std::move(f.get_try());

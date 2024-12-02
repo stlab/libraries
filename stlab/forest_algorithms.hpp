@@ -40,7 +40,7 @@ struct transcribe_iterator {
     using reference = void;
     using container_type = Container;
 
-    transcribe_iterator(Container& c, typename Container::iterator i) : _c{&c}, _i{std::move(i)} {}
+    transcribe_iterator(Container& c, const typename Container::iterator& i) : _c{&c}, _i{i} {}
 
     constexpr auto operator*() -> auto& { return *this; }
     constexpr auto operator++() -> auto& {
@@ -78,7 +78,7 @@ auto transcriber(Container& c) {
 /**************************************************************************************************/
 
 template <class I, class O, class P, class UP>
-auto transcribe(I first, I last, O out, P proj, UP pred) {
+auto transcribe(I first, const I& last, O out, P proj, UP pred) {
     for (; first != last; ++first, ++out) {
         if (pred(first)) {
             out = proj(*first);
@@ -96,8 +96,8 @@ auto transcribe(const R& range, O out, P proj, UP pred) {
 }
 
 template <class I, class O, class P>
-auto transcribe(I first, I last, O out, P proj) {
-    return transcribe(std::move(first), std::move(last), std::move(out), std::move(proj),
+auto transcribe(const I& first, const I& last, O out, P proj) {
+    return transcribe(first, last, std::move(out), std::move(proj),
                       [](const auto& p) { return is_leading(p); });
 }
 
@@ -110,7 +110,7 @@ auto transcribe(const R& range, O out, P proj) {
 
 template <class I, // models ForestFullorderIterator
           class O> // models OutputIterator
-auto flatten(I first, I last, O out) {
+auto flatten(I first, const I& last, O out) {
     for (; first != last; ++first) {
         if (is_leading(first)) {
             *out++ = *first;

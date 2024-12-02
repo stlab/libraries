@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_one_argument) {
             _i = index;
             _r = x;
         },
-        a1);
+        std::move(a1));
 
     check_valid_future(sut);
     wait_until_future_completed(std::move(sut));
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_range_with_many_arguments_first_su
                 ++_counter;
                 _r = x;
             },
-            a1, a2, a3, a4);
+            std::move(a1), std::move(a2), std::move(a3), std::move(a4));
 
         check_valid_future(sut);
         wait_until_future_completed(std::move(sut));
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_argument_with_many_arguments_middl
                 ++_counter;
                 _r = x;
             },
-            a1, a2, a3, a4);
+            std::move(a1), std::move(a2), std::move(a3), std::move(a4));
 
         check_valid_future(sut);
         wait_until_future_completed(std::move(sut));
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_argument_with_many_arguments_last_
                 ++_counter;
                 _r = x;
             },
-            a1, a2, a3, a4);
+            std::move(a1), std::move(a2), std::move(a3), std::move(a4));
 
         check_valid_future(sut);
         wait_until_future_completed(std::move(sut));
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(
             _i = index;
             _result = x;
         },
-        a1, a2, a3, a4);
+        std::move(a1), std::move(a2), std::move(a3), std::move(a4));
 
     check_valid_future(sut);
     wait_until_future_completed(std::move(sut));
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_void_arguments_with_many_arguments_all_
             _i = index;
             _r = x;
         },
-        a1, a2, a3, a4);
+        std::move(a1), std::move(a2), std::move(a3), std::move(a4));
 
     wait_until_all_tasks_completed();
     wait_until_future_fails<test_exception>(std::move(sut));
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_argument_with_one_argument) {
             _i = index;
             return x;
         },
-        a1);
+        std::move(a1));
     check_valid_future(sut);
 
     auto result = await(std::move(sut));
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_int_arguments_with_many_arguments_last_
                 ++_counter;
                 return x;
             },
-            a1, a2, a3, a4);
+            std::move(a1), std::move(a2), std::move(a3), std::move(a4));
         check_valid_future(sut);
         wait_until_future_completed(copy(sut));
         block_context._go = true;
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(
             _index = index;
             return x;
         },
-        a1, a2, a3, a4);
+        std::move(a1), std::move(a2), std::move(a3), std::move(a4));
     check_valid_future(sut);
 
     auto result = await(std::move(sut));
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_arguments_with_diamond_formation_argume
                 _i = index;
                 return x;
             },
-            a1, a2, a3, a4);
+            std::move(a1), std::move(a2), std::move(a3), std::move(a4));
 
         check_valid_future(sut);
         wait_until_future_completed(copy(sut));

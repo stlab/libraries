@@ -993,7 +993,7 @@ auto package(E executor, F&& f)
                 try {
                     std::move(r).detach([_p = std::move(promise)](auto&& f) mutable noexcept {
                         if (auto e = f.exception()) {
-                            std::move(_p).set_exception(std::move(e));
+                            std::move(_p).set_exception(e);
                         } else {
                             std::move(_p).set_value(invoke_void_to_monostate_result(
                                 [&] { return std::forward<decltype(f)>(f).get_ready(); }));
@@ -1044,7 +1044,7 @@ namespace detail {
 template <typename F>
 struct assign_ready_future {
     template <typename T>
-    static void assign(T& x, F f) {
+    static void assign(T& x, F&& f) {
         x = std::move(*(std::move(f).get_try()));
     }
 };
@@ -1067,13 +1067,14 @@ struct when_all_shared {
     std::exception_ptr _exception;
     packaged_task<> _f;
 
+    // require f is sink.
     template <std::size_t index, typename FF>
-    void done(FF&& f) {
+    auto done(FF&& f) -> std::enable_if_t<!std::is_lvalue_reference_v<FF>> {
         auto run{false};
         {
             std::unique_lock<std::mutex> lock{_guard};
             if (!_exception) {
-                assign_ready_future<FF>::assign(std::get<index>(_args), std::forward<FF>(f));
+                assign_ready_future<FF>::assign(std::get<index>(_args), std::move(f));
                 if (--_remaining == 0) run = true;
             }
         }
@@ -1181,7 +1182,7 @@ struct when_any_shared<S, void> {
     }
 };
 
-inline void rethrow_if_false(bool x, std::exception_ptr& p) {
+inline void rethrow_if_false(bool x, const std::exception_ptr& p) {
     if (!x) std::rethrow_exception(p);
 }
 
@@ -1212,12 +1213,12 @@ auto apply_when_any_arg(F& f, P& p) {
 template <std::size_t i, typename E, typename P, typename T>
 void attach_when_arg_(E&& executor, std::shared_ptr<P>& shared, T a) {
     auto holds =
-        std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(shared)](auto x) {
+        std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(shared)](auto&& x) {
             auto p = _w.lock();
             if (!p) return;
 
             if (auto ex = x.exception()) {
-                p->failure(ex);
+                p->failure(std::move(ex));
             } else {
                 p->template done<i>(std::move(x));
             }
@@ -1243,7 +1244,7 @@ void attach_when_args(E&& executor, std::shared_ptr<P>& p, Ts... a) {
 /**************************************************************************************************/
 
 template <typename E, typename F, typename... Ts>
-auto when_all(E executor, F f, future<Ts>... args) {
+auto when_all(const E& executor, F f, future<Ts>... args) {
     using vt_t = voidless_tuple<Ts...>;
     using opt_t = optional_placeholder_tuple<Ts...>;
     using result_t = decltype(apply_ignore_placeholders(std::declval<F>(), std::declval<vt_t>()));
@@ -1263,7 +1264,7 @@ auto when_all(E executor, F f, future<Ts>... args) {
 template <typename T>
 struct make_when_any {
     template <typename E, typename F, typename... Ts>
-    static auto make(E executor, F f, future<T> arg, future<Ts>... args) {
+    static auto make(const E& executor, F f, future<T> arg, future<Ts>... args) {
         using result_t = detail::result_t<F, T, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts) + 1, T>>();
@@ -1283,7 +1284,7 @@ struct make_when_any {
 template <>
 struct make_when_any<void> {
     template <typename E, typename F, typename... Ts>
-    static auto make(E executor, F&& f, future<Ts>... args) {
+    static auto make(E&& executor, F&& f, future<Ts>... args) {
         using result_t = detail::result_t<F, size_t>;
 
         auto shared = std::make_shared<detail::when_any_shared<sizeof...(Ts), void>>();
@@ -1292,7 +1293,7 @@ struct make_when_any<void> {
         });
         shared->_f = std::move(p.first);
 
-        detail::attach_when_args(executor, shared, std::move(args)...);
+        detail::attach_when_args(std::forward<E>(executor), shared, std::move(args)...);
 
         return std::move(p.second);
     }
@@ -1301,8 +1302,8 @@ struct make_when_any<void> {
 /**************************************************************************************************/
 
 template <typename E, typename F, typename T, typename... Ts>
-auto when_any(E executor, F&& f, future<T> arg, future<Ts>... args) {
-    return make_when_any<T>::make(std::move(executor), std::forward<F>(f), std::move(arg),
+auto when_any(E&& executor, F&& f, future<T>&& arg, future<Ts>&&... args) {
+    return make_when_any<T>::make(std::forward<E>(executor), std::forward<F>(f), std::move(arg),
                                   std::move(args)...);
 }
 
@@ -1497,13 +1498,13 @@ struct common_context : CR {
 /**************************************************************************************************/
 
 template <typename C, typename E, typename T>
-void attach_tasks(size_t index, E executor, const std::shared_ptr<C>& context, T&& a) {
+void attach_tasks(size_t index, E&& executor, const std::shared_ptr<C>& context, T&& a) {
     auto&& hold = std::forward<T>(a).recover(
-        std::move(executor), [_context = make_weak_ptr(context), _i = index](auto x) {
+        std::forward<E>(executor), [_context = make_weak_ptr(context), _i = index](const auto& x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception()) {
-                p->failure(ex, _i);
+                p->failure(std::move(ex), _i);
             } else {
                 p->done(std::move(x), _i);
             }
@@ -1519,7 +1520,7 @@ struct create_range_of_futures;
 template <typename R, typename T, typename C>
 struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
     template <typename E, typename F, typename I>
-    static auto do_it(E executor, F&& f, I first, I last) {
+    static auto do_it(const E& executor, F&& f, I first, I last) {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
@@ -1539,7 +1540,7 @@ struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
 template <typename R, typename T, typename C>
 struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
     template <typename E, typename F, typename I>
-    static auto do_it(E executor, F&& f, I first, I last) {
+    static auto do_it(const E& executor, F&& f, I first, I last) {
         assert(first != last);
 
         auto context = std::make_shared<C>(std::forward<F>(f), std::distance(first, last));
@@ -1566,7 +1567,7 @@ template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same
                       // type
-auto when_all(E executor, F f, std::pair<I, I> range) {
+auto when_all(const E& executor, F f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
     using context_result_t =
@@ -1591,7 +1592,7 @@ template <typename E, // models task executor
           typename F, // models functional object
           typename I> // models ForwardIterator that reference to a range of futures of the same
                       // type
-auto when_any(E executor, F&& f, std::pair<I, I> range) {
+auto when_any(const E& executor, F&& f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
     using context_result_t = std::conditional_t<std::is_same_v<void, param_t>, void, param_t>;
@@ -1618,14 +1619,14 @@ auto when_any(E executor, F&& f, std::pair<I, I> range) {
 #endif
 
 template <typename E, typename F, typename... Args>
-auto async(E executor, F&& f, Args&&... args)
+auto async(const E& executor, F&& f, Args&&... args)
     -> detail::reduced_t<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>> {
     using result_type = detail::result_t<std::decay_t<F>, std::decay_t<Args>...>;
 
     auto [pro, fut] = package<result_type()>(
         executor,
         [f = std::forward<F>(f), args = std::make_tuple(std::forward<Args>(args)...)]() mutable
-        -> result_type { return std::apply(std::move(f), std::move(args)); });
+            -> result_type { return std::apply(std::move(f), std::move(args)); });
 
     executor(std::move(pro));
 
