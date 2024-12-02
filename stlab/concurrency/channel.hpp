@@ -71,7 +71,7 @@ constexpr process_state_scheduled yield_immediate{process_state::yield,
 enum class channel_error_codes : std::uint8_t { // names for channel errors
     broken_channel = 1,
     process_already_running = 2,
-    no_state
+    no_state = 3
 };
 
 /**************************************************************************************************/
@@ -761,8 +761,8 @@ struct shared_process
         shared_process_sender_helper<Q, T, R, std::make_index_sequence<sizeof...(Args)>, Args...>(
             *this),
         _executor(std::forward<E>(e)), _process(std::forward<F>(f)) {
-        _sender_count = std::is_same<result_t, void>::value ? 0 : 1;
-        _receiver_count = !std::is_same<result_t, void>::value;
+        _sender_count = std::is_same_v<result_t, void> ? 0 : 1;
+        _receiver_count = !std::is_same_v<result_t, void>;
     }
 
     template <typename E, typename F, typename... U>
@@ -772,16 +772,16 @@ struct shared_process
         _executor(std::forward<E>(e)), _process(std::forward<F>(f)),
         _upstream(std::forward<U>(u)...) {
         _sender_count = sizeof...(Args);
-        _receiver_count = !std::is_same<result_t, void>::value;
+        _receiver_count = !std::is_same_v<result_t, void>;
     }
 
     void add_receiver() override {
-        if (std::is_same<result_t, void>::value) return;
+        if (std::is_same_v<result_t, void>) return;
         ++_receiver_count;
     }
 
     void remove_receiver() override {
-        if (std::is_same<result_t, void>::value) return;
+        if (std::is_same_v<result_t, void>) return;
         /*
             NOTE (sparent) : Decrementing the receiver count can allow this to start running on a
             send before we can get to the check - so we need to see if we are already running
@@ -792,7 +792,7 @@ struct shared_process
             bool do_run;
             {
                 std::unique_lock<std::mutex> lock(_process_mutex);
-                do_run = ((!_queue.empty() || std::is_same<first_t<Args...>, void>::value) ||
+                do_run = ((!_queue.empty() || std::is_same_v<first_t<Args...>, void>) ||
                           _process_close_queue) &&
                          !_process_running;
                 _process_running = _process_running || do_run;
@@ -1313,24 +1313,24 @@ template <typename S, typename F, typename... R>
 /**************************************************************************************************/
 
 template <typename M, typename S, typename F, typename... R>
-auto merge_channel(S s, F f, R... upstream_receiver) {
-    return detail::channel_combiner::merge_helper<M, S, F, R...>(std::move(s), std::move(f),
-                                                                 std::move(upstream_receiver)...);
+auto merge_channel(S s, F f, R&&... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<M>(std::move(s), std::move(f),
+                                                     std::forward<R>(upstream_receiver)...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename F, typename... R>
-auto zip_with(S s, F f, R... upstream_receiver) {
-    return detail::channel_combiner::merge_helper<zip_with_t, S, F, R...>(
-        std::move(s), std::move(f), std::forward<R>(upstream_receiver)...);
+auto zip_with(S s, F f, const R&... upstream_receiver) {
+    return detail::channel_combiner::merge_helper<zip_with_t>(std::move(s), std::move(f),
+                                                              upstream_receiver...);
 }
 
 /**************************************************************************************************/
 
 template <typename S, typename... R>
-auto zip(S s, R... r) {
-    return zip_with(std::move(s), detail::zip_helper{}, std::move(r)...);
+auto zip(S s, const R&... r) {
+    return zip_with(std::move(s), detail::zip_helper{}, r...);
 }
 
 // template <typename S, typename F, typename... R>

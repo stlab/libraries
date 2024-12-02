@@ -106,7 +106,7 @@ struct child_iterator {
     using iterator_category = typename std::iterator_traits<I>::iterator_category;
 
     child_iterator() = default;
-    explicit child_iterator(I x) : _x(std::move(x)) {}
+    explicit child_iterator(const I& x) : _x(std::move(x)) {}
     template <class U>
     child_iterator(const child_iterator<U>& u) : _x(u.base()) {}
 
@@ -182,7 +182,7 @@ struct edge_iterator {
     using iterator_category = typename std::iterator_traits<I>::iterator_category;
 
     edge_iterator() = default;
-    explicit edge_iterator(I x) : _x(find_edge(x, Edge)) {}
+    explicit edge_iterator(const I& x) : _x(find_edge(x, Edge)) {}
     template <class U>
     edge_iterator(const edge_iterator<U, Edge>& u) : _x(u.base()) {}
 
@@ -882,17 +882,18 @@ public:
         erase(--end());
     }
 
-    auto insert(iterator position, const_child_iterator first, const_child_iterator last)
-        -> iterator;
+    auto insert(iterator position,
+                const const_child_iterator& first,
+                const const_child_iterator& last) -> iterator;
 
-    auto splice(iterator position, forest<T>& x) -> iterator;
-    auto splice(iterator position, forest<T>& x, iterator i) -> iterator;
-    auto splice(iterator position, forest<T>& x, child_iterator first, child_iterator last)
+    auto splice(const iterator& position, forest<T>& x) -> iterator;
+    auto splice(const iterator& position, forest<T>& x, iterator i) -> iterator;
+    auto splice(const iterator& position, forest<T>& x, child_iterator first, child_iterator last)
         -> iterator;
-    auto splice(iterator position,
+    auto splice(const iterator& position,
                 forest<T>& x,
-                child_iterator first,
-                child_iterator last,
+                const child_iterator& first,
+                const child_iterator& last,
                 size_type count) -> iterator;
 
     auto insert_parent(child_iterator front, child_iterator back, const T& x) -> iterator;
@@ -937,7 +938,7 @@ namespace unsafe {
 
 template <class I> // I models a FullorderIterator
 struct set_next_fn<child_iterator<I>> {
-    void operator()(child_iterator<I> x, child_iterator<I> y) {
+    void operator()(const child_iterator<I>& x, const child_iterator<I>& y) {
         unsafe::set_next(pivot_of(x.base()), y.base());
     }
 };
@@ -1014,7 +1015,7 @@ auto forest<T>::erase(const iterator& position) -> iterator {
 /**************************************************************************************************/
 
 template <class T>
-auto forest<T>::splice(iterator position, forest<T>& x) -> iterator {
+auto forest<T>::splice(const iterator& position, forest<T>& x) -> iterator {
     return splice(position, x, child_iterator(x.begin()), child_iterator(x.end()),
                   x.size_valid() ? x.size() : 0);
 }
@@ -1022,7 +1023,7 @@ auto forest<T>::splice(iterator position, forest<T>& x) -> iterator {
 /**************************************************************************************************/
 
 template <class T>
-auto forest<T>::splice(iterator position, forest<T>& x, iterator i) ->
+auto forest<T>::splice(const iterator& position, forest<T>& x, iterator i) ->
     typename forest<T>::iterator {
     i.edge() = forest_edge::leading;
     return splice(position, x, child_iterator(i), ++child_iterator(i), has_children(i) ? 0 : 1);
@@ -1031,7 +1032,8 @@ auto forest<T>::splice(iterator position, forest<T>& x, iterator i) ->
 /**************************************************************************************************/
 
 template <class T>
-auto forest<T>::insert(iterator pos, const_child_iterator f, const_child_iterator l) -> iterator {
+auto forest<T>::insert(iterator pos, const const_child_iterator& f, const const_child_iterator& l)
+    -> iterator {
     for (const_iterator first(f.base()), last(l.base()); first != last; ++first, ++pos) {
         if (is_leading(first)) pos = insert(pos, *first);
     }
@@ -1042,9 +1044,11 @@ auto forest<T>::insert(iterator pos, const_child_iterator f, const_child_iterato
 /**************************************************************************************************/
 
 template <class T>
-auto forest<T>::splice(
-    iterator pos, forest<T>& x, child_iterator first, child_iterator last, size_type count)
-    -> iterator {
+auto forest<T>::splice(const iterator& pos,
+                       forest<T>& x,
+                       const child_iterator& first,
+                       const child_iterator& last,
+                       size_type count) -> iterator {
     if (first == last || first.base() == pos) return pos;
 
     if (&x != this) {
@@ -1070,8 +1074,8 @@ auto forest<T>::splice(
 /**************************************************************************************************/
 
 template <class T>
-auto forest<T>::splice(iterator pos, forest<T>& x, child_iterator first, child_iterator last) ->
-    typename forest<T>::iterator {
+auto forest<T>::splice(const iterator& pos, forest<T>& x, child_iterator first, child_iterator last)
+    -> typename forest<T>::iterator {
     return splice(pos, x, first, last, 0);
 }
 
