@@ -1608,15 +1608,6 @@ auto when_any(const E& executor, F&& f, std::pair<I, I> range) {
 
 /**************************************************************************************************/
 
-#if 0
-        std::bind<result_type>(
-            [_f = std::forward<F>(f)](
-                unwrap_reference_t<std::decay_t<Args>>&... brgs) mutable -> result_type {
-                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(brgs)...);
-            },
-            std::forward<Args>(args)...));
-#endif
-
 template <class E, class F, class... Args>
 auto async(const E& executor, F&& f, Args&&... args)
     -> detail::reduced_t<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>> {
