@@ -180,44 +180,44 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename>
+template <class>
 struct result_of_;
 
-template <typename R, typename... Args>
+template <class R, class... Args>
 struct result_of_<R(Args...)> {
     using type = R;
 };
 
-template <typename F>
+template <class F>
 using result_of_t_ = typename result_of_<F>::type;
 
-template <typename F, typename T>
+template <class F, class T>
 struct result_of_when_all_t;
 
-template <typename F>
+template <class F>
 struct result_of_when_all_t<F, void> {
     using result_type = detail::result_t<F>;
 };
 
-template <typename F, typename T>
+template <class F, class T>
 struct result_of_when_all_t {
     using result_type = detail::result_t<F, const std::vector<T>&>;
 };
 
-template <typename F, typename T>
+template <class F, class T>
 struct result_of_when_any_t;
 
-template <typename F>
+template <class F>
 struct result_of_when_any_t<F, void> {
     using result_type = detail::result_t<F, size_t>;
 };
 
-template <typename F, typename R>
+template <class F, class R>
 struct result_of_when_any_t {
     using result_type = detail::result_t<F, R, size_t>;
 };
 
-template <typename T>
+template <class T>
 auto unique_usage(const std::shared_ptr<T>& p) -> bool {
     return p.use_count() == 1;
 }
@@ -228,10 +228,10 @@ auto unique_usage(const std::shared_ptr<T>& p) -> bool {
 
 /**************************************************************************************************/
 
-template <typename...>
+template <class...>
 class packaged_task;
 
-template <typename, typename = void>
+template <class, class = void>
 class future;
 
 /**************************************************************************************************/
@@ -240,15 +240,15 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <typename>
+template <class>
 struct packaged_task_from_signature;
 
-template <typename R, typename... Args>
+template <class R, class... Args>
 struct packaged_task_from_signature<R(Args...)> {
     using type = packaged_task<Args...>;
 };
 
-template <typename T>
+template <class T>
 using packaged_task_from_signature_t = typename packaged_task_from_signature<T>::type;
 
 /**************************************************************************************************/
@@ -277,22 +277,22 @@ inline constexpr bool is_future_v = false;
 template <class T>
 inline constexpr bool is_future_v<future<T>> = true;
 
-template <typename T>
+template <class T>
 using reduced_t = std::conditional_t<is_future_v<T>, T, future<T>>;
 
-template <typename Sig>
+template <class Sig>
 using reduced_result_t = reduced_t<result_of_t_<Sig>>;
 
 /**************************************************************************************************/
 
-template <typename T, typename = void>
+template <class T, class = void>
 struct value_;
 
 } // namespace detail
 
 /**************************************************************************************************/
 
-template <typename Sig, typename E, typename F>
+template <class Sig, class E, class F>
 auto package(E, F&&)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
@@ -302,24 +302,24 @@ namespace detail {
 
 /**************************************************************************************************/
 
-template <class>
+template <class, class>
 struct shared;
 template <class, class = void>
 struct shared_base;
 
 /**************************************************************************************************/
 
-template <typename... Args>
+template <class... Args>
 struct shared_task {
     virtual ~shared_task() = default;
 
-    virtual void operator()(Args... args) = 0;
-    virtual void set_exception(const std::exception_ptr& error) = 0;
+    virtual void operator()(Args...) = 0;
+    virtual void set_exception(const std::exception_ptr&) noexcept = 0;
 };
 
 /**************************************************************************************************/
 
-template <typename T>
+template <class T>
 struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
     : std::enable_shared_from_this<shared_base<T>> {
     using then_t = std::vector<std::pair<executor_t, task<void() noexcept>>>;
@@ -335,12 +335,12 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    template <typename F>
+    template <class F>
     auto recover(future<T>&& p, F&& f) {
         return recover(std::move(p), _executor, std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto recover(future<T>&& p, E executor, F&& f) {
         using result_type = detail::result_t<F, future<T>>;
 
@@ -450,7 +450,7 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
 
 /**************************************************************************************************/
 
-template <typename T>
+template <class T>
 struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
     : std::enable_shared_from_this<shared_base<T>> {
     using then_t = std::pair<executor_t, task<void() noexcept>>;
@@ -464,7 +464,7 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
 
     explicit shared_base(executor_t s) : _executor(std::move(s)) {}
 
-    template <typename F>
+    template <class F>
     auto recover(future<T>&& p, F&& f) {
         return recover(std::move(p), _executor, std::forward<F>(f));
     }
@@ -474,7 +474,7 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
         cause _this_ to be deleted, and the executor passed in may be
         this->_executor
     */
-    template <typename E, typename F>
+    template <class E, class F>
     auto recover(future<T>&& p, E executor, F&& f) {
         using result_type = detail::result_t<F, future<T>>;
 
@@ -608,32 +608,29 @@ public:
 template <class R>
 promise(std::shared_ptr<shared_base<R>>) -> promise<R>;
 
-template <typename R, typename... Args>
-struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
-    using function_t = task<void(promise<R>&&, Args...) noexcept>;
+template <class F, class R, class... Args>
+struct shared<F, R(Args...)> final : shared_base<R>, shared_task<Args...> {
+    std::optional<F> _f;
 
-    function_t _f;
-
-    template <typename F>
-    shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::forward<F>(f)) {}
-
-    shared(executor_t s) : shared_base<R>(std::move(s)) {}
+    shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::move(f)) {}
 
     void operator()(Args... args) noexcept override {
-        if (!_f) return;
-
-        _f(promise{this->shared_from_this()}, std::move(args)...);
-
-        _f = function_t();
+        std::move (*_f)(promise{this->shared_from_this()}, std::move(args)...);
+        // After invoking `_f`, it is not destructed because it could be satisfying the promise
+        // asynchronously. `_f` is responsible for any cleanup prior to the future being released
+        // and must be aware that it may be destructed at any time after this point.
     }
 
-    void set_exception(const std::exception_ptr& error) override {
-        if (!_f) return;
-
-        this->_set_exception(error);
-        _f = function_t();
+    void set_exception(const std::exception_ptr& error) noexcept override {
+        shared_base<R>::_set_exception(error);
+        _f.reset(); // _f will not be invoked, release it and any resources it holds
     }
 };
+
+template <class Sig, class F>
+auto make_shared_state(executor_t s, F&& f) -> std::shared_ptr<shared<F, Sig>> {
+    return std::make_shared<shared<F, Sig>>(std::move(s), std::forward<F>(f));
+}
 
 /**************************************************************************************************/
 
@@ -641,14 +638,14 @@ struct shared<R(Args...)> final : shared_base<R>, shared_task<Args...> {
 
 /**************************************************************************************************/
 
-template <typename... Args>
+template <class... Args>
 class packaged_task {
     using ptr_t = std::weak_ptr<detail::shared_task<Args...>>;
     ptr_t _p;
 
     explicit packaged_task(ptr_t&& p) : _p(std::move(p)) {}
 
-    template <typename Sig, typename E, typename F>
+    template <class Sig, class E, class F>
     friend auto package(E, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
@@ -670,7 +667,7 @@ public:
     packaged_task(packaged_task&&) noexcept = default;
     auto operator=(packaged_task&& x) noexcept -> packaged_task& = default;
 
-    template <typename... A>
+    template <class... A>
     void operator()(A&&... args) noexcept {
         if (auto p = _p.lock()) {
             _p.reset();
@@ -690,7 +687,7 @@ public:
 
 /**************************************************************************************************/
 
-template <typename T>
+template <class T>
 class STLAB_NODISCARD() future<T, enable_if_copyable<void_to_monostate_t<T>>> {
     using type = void_to_monostate_t<T>;
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
@@ -698,7 +695,7 @@ class STLAB_NODISCARD() future<T, enable_if_copyable<void_to_monostate_t<T>>> {
 
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
-    template <typename Sig, typename E, typename F>
+    template <class Sig, class E, class F>
     friend auto package(E, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
@@ -707,7 +704,7 @@ class STLAB_NODISCARD() future<T, enable_if_copyable<void_to_monostate_t<T>>> {
 
     friend struct detail::shared_base<type>;
 
-    template <typename, typename>
+    template <class, class>
     friend struct detail::value_;
 
 public:
@@ -723,7 +720,7 @@ public:
 
     [[nodiscard]] auto valid() const -> bool { return static_cast<bool>(_p); }
 
-    template <typename F>
+    template <class F>
     auto then(F&& f) const& {
         return recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             return invoke_remove_monostate_arguments(
@@ -732,12 +729,12 @@ public:
         });
     }
 
-    template <typename F>
+    template <class F>
     auto operator|(F&& f) const& {
         return then(std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto then(E&& executor, F&& f) const& {
         return recover(
             std::forward<E>(executor), [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
@@ -747,12 +744,12 @@ public:
             });
     }
 
-    template <typename F>
+    template <class F>
     auto operator|(executor_task_pair<F> etp) const& {
         return then(std::move(etp)._executor, std::move(etp)._f);
     }
 
-    template <typename F>
+    template <class F>
     auto then(F&& f) && {
         return std::move(*this).recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             return invoke_remove_monostate_arguments(
@@ -761,12 +758,12 @@ public:
         });
     }
 
-    template <typename F>
+    template <class F>
     auto operator|(F&& f) && {
         return std::move(*this).then(std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto then(E&& executor, F&& f) && {
         return std::move(*this).recover(
             std::forward<E>(executor), [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
@@ -776,49 +773,49 @@ public:
             });
     }
 
-    template <typename F>
+    template <class F>
     auto operator|(executor_task_pair<F> etp) && {
         return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
     }
 
-    template <typename F>
+    template <class F>
     auto recover(F&& f) const& {
         return _p->recover(copy(*this), std::forward<F>(f));
     }
 
-    template <typename F>
+    template <class F>
     auto operator^(F&& f) const& {
         return recover(std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto recover(E&& executor, F&& f) const& {
         return _p->recover(copy(*this), std::forward<E>(executor), std::forward<F>(f));
     }
 
-    template <typename F>
+    template <class F>
     auto operator^(executor_task_pair<F> etp) const& {
         return recover(std::move(etp)._executor, std::move(etp)._f);
     }
 
-    template <typename F>
+    template <class F>
     auto recover(F&& f) && {
         auto& self = *_p.get();
         return self.recover(std::move(*this), std::forward<F>(f));
     }
 
-    template <typename F>
+    template <class F>
     auto operator^(F&& f) && {
         return std::move(*this).recover(std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto recover(E&& executor, F&& f) && {
         auto& self = *_p.get();
         return self.recover(std::move(*this), std::forward<E>(executor), std::forward<F>(f));
     }
 
-    template <typename F>
+    template <class F>
     auto operator^(executor_task_pair<F> etp) && {
         return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
@@ -857,7 +854,7 @@ public:
 
 /**************************************************************************************************/
 
-template <typename T>
+template <class T>
 class STLAB_NODISCARD() future<T, enable_if_not_copyable<void_to_monostate_t<T>>> {
     using ptr_t = std::shared_ptr<detail::shared_base<T>>;
     ptr_t _p;
@@ -865,7 +862,7 @@ class STLAB_NODISCARD() future<T, enable_if_not_copyable<void_to_monostate_t<T>>
     explicit future(ptr_t p) : _p(std::move(p)) {}
     future(const future&) = default;
 
-    template <typename Sig, typename E, typename F>
+    template <class Sig, class E, class F>
     friend auto package(E, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
@@ -874,7 +871,7 @@ class STLAB_NODISCARD() future<T, enable_if_not_copyable<void_to_monostate_t<T>>
 
     friend struct detail::shared_base<T>;
 
-    template <typename, typename>
+    template <class, class>
     friend struct detail::value_;
 
 public:
@@ -893,19 +890,19 @@ public:
 
     [[nodiscard]] auto valid() const -> bool { return static_cast<bool>(_p); }
 
-    template <typename F>
+    template <class F>
     auto then(F&& f) && {
         return std::move(*this).recover([_f = std::forward<F>(f)](future<result_type>&& p) mutable {
             return std::move(_f)(*std::move(p).get_try());
         });
     }
 
-    template <typename F>
+    template <class F>
     auto operator|(F&& f) && {
         return std::move(*this).then(std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto then(E&& executor, F&& f) && {
         return std::move(*this).recover(std::forward<E>(executor),
                                         [_f = std::forward<F>(f)](future<result_type>&& p) mutable {
@@ -913,29 +910,29 @@ public:
                                         });
     }
 
-    template <typename F>
+    template <class F>
     auto operator|(executor_task_pair<F> etp) && {
         return std::move(*this).then(std::move(etp)._executor, std::move(etp)._f);
     }
 
-    template <typename F>
+    template <class F>
     auto recover(F&& f) && {
         auto& self = *_p.get();
         return self.recover(std::move(*this), std::forward<F>(f));
     }
 
-    template <typename F>
+    template <class F>
     auto operator^(F&& f) && {
         return std::move(*this).recover(std::forward<F>(f));
     }
 
-    template <typename E, typename F>
+    template <class E, class F>
     auto recover(E&& executor, F&& f) && {
         auto& self = *_p.get();
         return self.recover(std::move(*this), std::forward<E>(executor), std::forward<F>(f));
     }
 
-    template <typename F>
+    template <class F>
     auto operator^(executor_task_pair<F> etp) && {
         return std::move(*this).recover(std::move(etp)._executor, std::move(etp)._f);
     }
@@ -972,7 +969,7 @@ public:
     }
 };
 
-template <typename Sig, typename E, typename F>
+template <class Sig, class E, class F>
 auto package(E executor, F&& f)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>> {
     if constexpr (std::is_same_v<E, executor_t>) {
@@ -982,55 +979,57 @@ auto package(E executor, F&& f)
     using result_t = detail::result_of_t_<Sig>;
 
     if constexpr (detail::is_future_v<result_t>) {
-        auto p =
-            std::make_shared<detail::shared<detail::reduced_signature_t<Sig>>>(std::move(executor));
-
-        p->_f = [_f = std::forward<F>(f)](auto&& promise, auto&&... args) mutable noexcept {
-            if (promise.canceled()) return;
-
-            try {
-                auto r = std::move(_f)(std::forward<decltype(args)>(args)...);
+        auto p = detail::make_shared_state<detail::reduced_signature_t<Sig>>(
+            std::move(executor),
+            [_f = std::make_optional(std::forward<F>(f)),
+             _hold = future<void>{}](auto&& promise, auto&&... args) mutable noexcept {
+                assert(_f && "packaged task invoked twice");
                 try {
-                    std::move(r).detach([_p = std::move(promise)](auto&& f) mutable noexcept {
-                        if (auto e = f.exception()) {
-                            std::move(_p).set_exception(e);
-                        } else {
-                            std::move(_p).set_value(invoke_void_to_monostate_result(
-                                [&] { return std::forward<decltype(f)>(f).get_ready(); }));
-                        }
-                    });
+                    auto r = std::move(*_f)(std::forward<decltype(args)>(args)...);
+                    try {
+                        _hold = std::move(r).recover(
+                            immediate_executor,
+                            [_p = std::move(promise)](auto&& f) mutable noexcept {
+                                if (auto e = f.exception()) {
+                                    std::move(_p).set_exception(std::move(e));
+                                } else {
+                                    std::move(_p).set_value(invoke_void_to_monostate_result(
+                                        [&] { return std::forward<decltype(f)>(f).get_ready(); }));
+                                }
+                            });
+                    } catch (...) {
+                        /* NOTE: an exception here is reported as a broken promise. Ideally recover
+                         * would be passed the initial promise (it flows through the chain), but the
+                         * API isn't there yet. */
+                    }
                 } catch (...) {
-                    /* NOTE: an exception here is reported as a broken promise. Ideally detach
-                     * would be passed the initial promise (it flows through the chain), but the
-                     * API isn't there yet. */
+                    std::move(promise).set_exception(std::current_exception());
                 }
-            } catch (...) {
-                std::move(promise).set_exception(std::current_exception());
-            }
-        };
+                _f.reset();
+            });
         return {detail::packaged_task_from_signature_t<Sig>{p}, result_t{p}};
     } else {
-        auto p = std::make_shared<detail::shared<Sig>>(std::move(executor));
-
-        p->_f = [_f = std::forward<F>(f)](auto&& promise, auto&&... args) mutable noexcept {
-            if (promise.canceled()) return;
-
-            try {
-                auto tmp = invoke_void_to_monostate_result(std::move(_f),
-                                                           std::forward<decltype(args)>(args)...);
-                std::move(promise).set_value(std::move(tmp)); // noexcept
-            } catch (...) {
-                std::move(promise).set_exception(std::current_exception());
-            }
-        };
+        auto p = detail::make_shared_state<Sig>(
+            std::move(executor), [_f = std::make_optional(std::forward<F>(f))](
+                                     auto&& promise, auto&&... args) mutable noexcept {
+                assert(_f && "packaged task invoked twice");
+                try {
+                    auto tmp = invoke_void_to_monostate_result(
+                        std::move(*_f), std::forward<decltype(args)>(args)...);
+                    std::move(promise).set_value(std::move(tmp)); // noexcept
+                } catch (...) {
+                    std::move(promise).set_exception(std::current_exception());
+                }
+                _f.reset();
+            });
         return {detail::packaged_task_from_signature_t<Sig>{p}, future<result_t>{p}};
     }
 }
 
 template <class T, class E>
 auto future_with_broken_promise(E executor) -> detail::reduced_t<T> {
-    auto p =
-        std::make_shared<detail::shared<detail::reduced_signature_t<T()>>>(std::move(executor));
+    auto p = std::make_shared<detail::shared_base<typename detail::reduced_t<T>::result_type>>(
+        std::move(executor));
     p->_exception = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
     p->_ready = true;
 
@@ -1041,9 +1040,9 @@ auto future_with_broken_promise(E executor) -> detail::reduced_t<T> {
 
 namespace detail {
 
-template <typename F>
+template <class F>
 struct assign_ready_future {
-    template <typename T>
+    template <class T>
     static void assign(T& x, F&& f) {
         x = std::move(*(std::move(f).get_try()));
     }
@@ -1051,13 +1050,13 @@ struct assign_ready_future {
 
 template <>
 struct assign_ready_future<future<void>> {
-    template <typename T>
+    template <class T>
     static void assign(T& x, const future<void>&) {
         x = std::move(typename T::value_type()); // to set the optional
     }
 };
 
-template <typename F, typename Args>
+template <class F, class Args>
 struct when_all_shared {
     // decay
     Args _args;
@@ -1068,7 +1067,7 @@ struct when_all_shared {
     packaged_task<> _f;
 
     // require f is sink.
-    template <std::size_t index, typename FF>
+    template <std::size_t index, class FF>
     auto done(FF&& f) -> std::enable_if_t<!std::is_lvalue_reference_v<FF>> {
         auto run{false};
         {
@@ -1096,7 +1095,7 @@ struct when_all_shared {
     }
 };
 
-template <size_t S, typename R>
+template <size_t S, class R>
 struct when_any_shared {
     using result_type = R;
     // decay
@@ -1120,7 +1119,7 @@ struct when_any_shared {
         if (run) _f();
     }
 
-    template <size_t index, typename FF>
+    template <size_t index, class FF>
     void done(FF&& f) {
         auto run{false};
         {
@@ -1134,7 +1133,7 @@ struct when_any_shared {
         if (run) _f();
     }
 
-    template <typename F>
+    template <class F>
     auto apply(F& f) {
         return f(std::move(*_arg), _index);
     }
@@ -1163,7 +1162,7 @@ struct when_any_shared<S, void> {
         if (run) _f();
     }
 
-    template <size_t index, typename FF>
+    template <size_t index, class FF>
     void done(FF&&) {
         auto run{false};
         {
@@ -1176,7 +1175,7 @@ struct when_any_shared<S, void> {
         if (run) _f();
     }
 
-    template <typename F>
+    template <class F>
     auto apply(F& f) {
         return f(_index);
     }
@@ -1186,7 +1185,7 @@ inline void rethrow_if_false(bool x, const std::exception_ptr& p) {
     if (!x) std::rethrow_exception(p);
 }
 
-template <typename F, typename Args, typename P, std::size_t... I>
+template <class F, class Args, class P, std::size_t... I>
 auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
     (void)std::initializer_list<int>{
         (rethrow_if_false(static_cast<bool>(std::get<I>(args)), p->_exception), 0)...};
@@ -1195,13 +1194,13 @@ auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
                                    remove_placeholder<Args>::template function>>(f, args);
 }
 
-template <typename F, typename P>
+template <class F, class P>
 auto apply_when_all_args(F& f, P& p) {
     return apply_when_all_args_(
         f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
 }
 
-template <typename F, typename P>
+template <class F, class P>
 auto apply_when_any_arg(F& f, P& p) {
     if (p->_exception) {
         std::rethrow_exception(p->_exception);
@@ -1210,7 +1209,7 @@ auto apply_when_any_arg(F& f, P& p) {
     return p->apply(f);
 }
 
-template <std::size_t i, typename E, typename P, typename T>
+template <std::size_t i, class E, class P, class T>
 void attach_when_arg_(E&& executor, std::shared_ptr<P>& shared, T a) {
     auto holds =
         std::move(a).recover(std::forward<E>(executor), [_w = std::weak_ptr<P>(shared)](auto&& x) {
@@ -1227,13 +1226,13 @@ void attach_when_arg_(E&& executor, std::shared_ptr<P>& shared, T a) {
     shared->_holds[i] = std::move(holds);
 }
 
-template <typename E, typename P, typename... Ts, std::size_t... I>
+template <class E, class P, class... Ts, std::size_t... I>
 void attach_when_args_(std::index_sequence<I...>, E&& executor, std::shared_ptr<P>& p, Ts... a) {
     (void)std::initializer_list<int>{
         (attach_when_arg_<I>(std::forward<E>(executor), p, std::move(a)), 0)...};
 }
 
-template <typename E, typename P, typename... Ts>
+template <class E, class P, class... Ts>
 void attach_when_args(E&& executor, std::shared_ptr<P>& p, Ts... a) {
     attach_when_args_(std::make_index_sequence<sizeof...(Ts)>(), std::forward<E>(executor), p,
                       std::move(a)...);
@@ -1243,7 +1242,7 @@ void attach_when_args(E&& executor, std::shared_ptr<P>& p, Ts... a) {
 
 /**************************************************************************************************/
 
-template <typename E, typename F, typename... Ts>
+template <class E, class F, class... Ts>
 auto when_all(const E& executor, F f, future<Ts>... args) {
     using vt_t = voidless_tuple<Ts...>;
     using opt_t = optional_placeholder_tuple<Ts...>;
@@ -1261,9 +1260,9 @@ auto when_all(const E& executor, F f, future<Ts>... args) {
 
 /**************************************************************************************************/
 
-template <typename T>
+template <class T>
 struct make_when_any {
-    template <typename E, typename F, typename... Ts>
+    template <class E, class F, class... Ts>
     static auto make(const E& executor, F f, future<T> arg, future<Ts>... args) {
         using result_t = detail::result_t<F, T, size_t>;
 
@@ -1283,7 +1282,7 @@ struct make_when_any {
 
 template <>
 struct make_when_any<void> {
-    template <typename E, typename F, typename... Ts>
+    template <class E, class F, class... Ts>
     static auto make(E&& executor, F&& f, future<Ts>... args) {
         using result_t = detail::result_t<F, size_t>;
 
@@ -1301,7 +1300,7 @@ struct make_when_any<void> {
 
 /**************************************************************************************************/
 
-template <typename E, typename F, typename T, typename... Ts>
+template <class E, class F, class T, class... Ts>
 auto when_any(E&& executor, F&& f, future<T>&& arg, future<Ts>&&... args) {
     return make_when_any<T>::make(std::forward<E>(executor), std::forward<F>(f), std::move(arg),
                                   std::move(args)...);
@@ -1310,29 +1309,29 @@ auto when_any(E&& executor, F&& f, future<T>&& arg, future<Ts>&&... args) {
 /**************************************************************************************************/
 
 namespace detail {
-template <typename T>
+template <class T>
 struct value_storer {
-    template <typename C, typename F>
+    template <class C, class F>
     static void store(C& context, F&& f, std::size_t index) {
         context._results = std::move(*std::forward<F>(f).get_try());
         context._index = index;
     }
 };
 
-template <typename T>
+template <class T>
 struct value_storer<std::vector<T>> {
-    template <typename C, typename F>
+    template <class C, class F>
     static void store(C& context, F&& f, std::size_t index) {
         context._results[index] = std::move(*std::forward<F>(f).get_try());
     }
 };
 
-template <bool Indexed, typename R>
+template <bool Indexed, class R>
 struct result_creator;
 
 template <>
 struct result_creator<true, void> {
-    template <typename C>
+    template <class C>
     static auto go(C& context) {
         return context._f(context._index);
     }
@@ -1340,29 +1339,29 @@ struct result_creator<true, void> {
 
 template <>
 struct result_creator<false, void> {
-    template <typename C>
+    template <class C>
     static auto go(C& context) {
         return context._f();
     }
 };
 
-template <typename R>
+template <class R>
 struct result_creator<true, R> {
-    template <typename C>
+    template <class C>
     static auto go(C& context) {
         return context._f(std::move(context._results), context._index);
     }
 };
 
-template <typename R>
+template <class R>
 struct result_creator<false, R> {
-    template <typename C>
+    template <class C>
     static auto go(C& context) {
         return context._f(std::move(context._results));
     }
 };
 
-template <typename F, bool Indexed, typename R>
+template <class F, bool Indexed, class R>
 struct context_result {
     using result_type = R;
 
@@ -1373,15 +1372,15 @@ struct context_result {
 
     context_result(F f, std::size_t s) : _f(std::move(f)) { init(_results, s); }
 
-    template <typename T>
+    template <class T>
     void init(std::vector<T>& v, std::size_t s) {
         v.resize(s);
     }
 
-    template <typename T>
+    template <class T>
     void init(T&, std::size_t) {}
 
-    template <typename FF>
+    template <class FF>
     void apply(FF&& f, std::size_t index) {
         value_storer<R>::store(*this, std::forward<FF>(f), index);
     }
@@ -1391,7 +1390,7 @@ struct context_result {
     auto operator()() { return result_creator<Indexed, R>::go(*this); }
 };
 
-template <typename F, bool Indexed>
+template <class F, bool Indexed>
 struct context_result<F, Indexed, void> {
     std::exception_ptr _exception;
     std::size_t _index{0};
@@ -1399,7 +1398,7 @@ struct context_result<F, Indexed, void> {
 
     context_result(F f, std::size_t) : _f(std::move(f)) {}
 
-    template <typename FF>
+    template <class FF>
     void apply(FF&&, std::size_t index) {
         _index = index;
     }
@@ -1418,7 +1417,7 @@ struct context_result<F, Indexed, void> {
  * anymore and so we cancel the all the others.
  */
 struct single_trigger {
-    template <typename C, typename F>
+    template <class C, class F>
     static auto go(C& context, F&& f, size_t index) -> bool {
         auto run{false};
         {
@@ -1443,7 +1442,7 @@ struct single_trigger {
  * were fulfilled, the continuation is started.
  */
 struct all_trigger {
-    template <typename C, typename F>
+    template <class C, class F>
     static auto go(C& context, F&& f, size_t index) -> bool {
         auto run{false};
         {
@@ -1454,7 +1453,7 @@ struct all_trigger {
         return run;
     }
 
-    template <typename C>
+    template <class C>
     static auto go(C& context, const std::exception_ptr& error, size_t index) -> bool {
         auto run{false};
         {
@@ -1468,7 +1467,7 @@ struct all_trigger {
     }
 };
 
-template <typename CR, typename F, typename ResultCollector, typename FailureCollector>
+template <class CR, class F, class ResultCollector, class FailureCollector>
 struct common_context : CR {
     std::mutex _guard;
     std::size_t _remaining;
@@ -1489,7 +1488,7 @@ struct common_context : CR {
         if (FailureCollector::go(*this, error, index)) _f();
     }
 
-    template <typename FF>
+    template <class FF>
     void done(FF&& f, size_t index) {
         if (ResultCollector::go(*this, std::forward<FF>(f), index)) _f();
     }
@@ -1497,7 +1496,7 @@ struct common_context : CR {
 
 /**************************************************************************************************/
 
-template <typename C, typename E, typename T>
+template <class C, class E, class T>
 void attach_tasks(size_t index, E&& executor, const std::shared_ptr<C>& context, T&& a) {
     auto&& hold = std::forward<T>(a).recover(
         std::forward<E>(executor), [_context = make_weak_ptr(context), _i = index](const auto& x) {
@@ -1514,12 +1513,12 @@ void attach_tasks(size_t index, E&& executor, const std::shared_ptr<C>& context,
     context->_holds[index] = std::move(hold);
 }
 
-template <typename R, typename T, typename C, typename Enabled = void>
+template <class R, class T, class C, class Enabled = void>
 struct create_range_of_futures;
 
-template <typename R, typename T, typename C>
+template <class R, class T, class C>
 struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
-    template <typename E, typename F, typename I>
+    template <class E, class F, class I>
     static auto do_it(const E& executor, F&& f, I first, I last) {
         assert(first != last);
 
@@ -1537,9 +1536,9 @@ struct create_range_of_futures<R, T, C, enable_if_copyable<T>> {
     }
 };
 
-template <typename R, typename T, typename C>
+template <class R, class T, class C>
 struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
-    template <typename E, typename F, typename I>
+    template <class E, class F, class I>
     static auto do_it(const E& executor, F&& f, I first, I last) {
         assert(first != last);
 
@@ -1563,10 +1562,10 @@ struct create_range_of_futures<R, T, C, enable_if_not_copyable<T>> {
 
 /**************************************************************************************************/
 
-template <typename E, // models task executor
-          typename F, // models functional object
-          typename I> // models ForwardIterator that reference to a range of futures of the same
-                      // type
+template <class E, // models task executor
+          class F, // models functional object
+          class I> // models ForwardIterator that reference to a range of futures of the same
+                   // type
 auto when_all(const E& executor, F f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_all_t<F, param_t>::result_type;
@@ -1588,10 +1587,10 @@ auto when_all(const E& executor, F f, std::pair<I, I> range) {
 
 /**************************************************************************************************/
 
-template <typename E, // models task executor
-          typename F, // models functional object
-          typename I> // models ForwardIterator that reference to a range of futures of the same
-                      // type
+template <class E, // models task executor
+          class F, // models functional object
+          class I> // models ForwardIterator that reference to a range of futures of the same
+                   // type
 auto when_any(const E& executor, F&& f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
     using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
@@ -1609,16 +1608,7 @@ auto when_any(const E& executor, F&& f, std::pair<I, I> range) {
 
 /**************************************************************************************************/
 
-#if 0
-        std::bind<result_type>(
-            [_f = std::forward<F>(f)](
-                unwrap_reference_t<std::decay_t<Args>>&... brgs) mutable -> result_type {
-                return std::move(_f)(move_if<!is_reference_wrapper_v<std::decay_t<Args>>>(brgs)...);
-            },
-            std::forward<Args>(args)...));
-#endif
-
-template <typename E, typename F, typename... Args>
+template <class E, class F, class... Args>
 auto async(const E& executor, F&& f, Args&&... args)
     -> detail::reduced_t<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>> {
     using result_type = detail::result_t<std::decay_t<F>, std::decay_t<Args>...>;
@@ -1660,7 +1650,7 @@ struct value_<T, enable_if_copyable<void_to_monostate_t<T>>> {
     }
 };
 
-template <typename T>
+template <class T>
 struct value_<T, enable_if_not_copyable<void_to_monostate_t<T>>> {
     template <class C>
     static void proceed(C& sb) {
@@ -1688,7 +1678,7 @@ void shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>::set_value(A&& a
     value_<T>::set(*this, std::forward<A>(a));
 }
 
-template <typename T>
+template <class T>
 template <class A>
 void shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>::set_value(A&& a) {
     value_<T>::set(*this, std::forward<A>(a));
@@ -1707,7 +1697,7 @@ void shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>::set_value(A
 
 #ifndef STLAB_NO_STD_COROUTINES
 
-template <typename T, typename... Args>
+template <class T, class... Args>
 struct std::coroutine_traits<stlab::future<T>, Args...> {
     struct promise_type {
         std::pair<stlab::packaged_task<T>, stlab::future<T>> _promise;
@@ -1722,7 +1712,7 @@ struct std::coroutine_traits<stlab::future<T>, Args...> {
 
         auto final_suspend() const noexcept { return std::suspend_never{}; }
 
-        template <typename U>
+        template <class U>
         void return_value(U&& val) {
             _promise.first(std::forward<U>(val));
         }
@@ -1731,7 +1721,7 @@ struct std::coroutine_traits<stlab::future<T>, Args...> {
     };
 };
 
-template <typename... Args>
+template <class... Args>
 struct std::coroutine_traits<stlab::future<void>, Args...> {
     struct promise_type {
         std::pair<stlab::packaged_task<>, stlab::future<void>> _promise;
@@ -1754,7 +1744,7 @@ struct std::coroutine_traits<stlab::future<void>, Args...> {
     };
 };
 
-template <typename R>
+template <class R>
 auto operator co_await(stlab::future<R> f) {
     struct Awaiter {
         stlab::future<R> _input;

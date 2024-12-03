@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <thread>
 #include <utility>
@@ -659,6 +660,24 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_with_execution) {
 
     BOOST_REQUIRE_EQUAL(counter._dtor, counter._move_ctor + 1);
     BOOST_REQUIRE_EQUAL(42, result);
+}
+
+BOOST_AUTO_TEST_CASE(future_reduction_cancellation) {
+    BOOST_TEST_MESSAGE("future reduction cancellation");
+
+    optional<packaged_task<>> _hold;
+
+    auto f = async(immediate_executor, [] { return 42; }) | [&](int x) {
+        auto [promise_, future_] = package<int()>(immediate_executor, [x] { return x + 1; });
+        _hold = std::move(promise_);
+        return std::move(future_);
+    };
+
+    BOOST_REQUIRE(_hold && !_hold->canceled());
+
+    f.reset(); // cancel the future
+
+    BOOST_REQUIRE(_hold && _hold->canceled());
 }
 
 BOOST_AUTO_TEST_CASE(future_reduction_with_mutable_task) {
