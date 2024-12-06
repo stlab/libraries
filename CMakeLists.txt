@@ -1,45 +1,25 @@
-cmake_minimum_required( VERSION 3.23 )
+cmake_minimum_required(VERSION 3.23)
 
-project( stlab VERSION 1.7.1 LANGUAGES CXX )
+project(stlab VERSION 1.7.1 LANGUAGES CXX)
 
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" )
-include( CTest )
-include( CMakeDependentOption )
-include( StlabUtil )
-include( cmake/CPM.cmake )
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(CMakeDependentOption)
+include(StlabUtil)
 
-if(BUILD_TESTING)
-  set( BUILD_SHARED_LIBS OFF )
-  set( Boost_USE_STATIC_LIBS ON )
-
-  CPMAddPackage(
-    NAME Boost
-    VERSION 1.86.0
-    URL https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-cmake.tar.xz
-    URL_HASH SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
-    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES test\\\;multiprecision" # Note the escapes!  container\\\;asio
-  )
-
-  foreach(_lib IN LISTS Boost_LIBRARIES)
-    target_compile_options(${_lib} PRIVATE -Wno-error)
-  endforeach()
-endif()
-
-# find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
-find_package( libdispatch )
-find_package( Qt5 QUIET COMPONENTS Core )
-find_package( Qt6 QUIET COMPONENTS Core )
-find_package( Threads )
+find_package(libdispatch)
+find_package(Qt5 QUIET COMPONENTS Core)
+find_package(Qt6 QUIET COMPONENTS Core)
+find_package(Threads)
 
 
-cmake_dependent_option( stlab.coverage
+cmake_dependent_option(stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
-  OFF PROJECT_IS_TOP_LEVEL OFF )
+  OFF PROJECT_IS_TOP_LEVEL OFF)
 
 stlab_check_disfunctional_coroutines(STLAB_DEFAULT_NO_STD_COROUTINES)
-option( STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES} )
+option(STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES})
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
-set( STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
+set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
 stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
@@ -47,28 +27,24 @@ set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
 
-# if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
-#   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
-# endif()
-
-if( (NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND )
-  message( SEND_ERROR "STLAB_THREAD_SYSTEM is not \"none\", but a thread system was not found." )
+if((NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND)
+  message(SEND_ERROR "STLAB_THREAD_SYSTEM is not \"none\", but a thread system was not found.")
 endif()
 
-if( (STLAB_TASK_SYSTEM STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
-  message( SEND_ERROR "STLAB_TASK_SYSTEM is set to \"libdispatch\", but a libdispatch installation was not found." )
+if((STLAB_TASK_SYSTEM STREQUAL "libdispatch") AND NOT libdispatch_FOUND)
+  message(SEND_ERROR "STLAB_TASK_SYSTEM is set to \"libdispatch\", but a libdispatch installation was not found.")
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND )
-  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found." )
+if((STLAB_MAIN_EXECUTOR STREQUAL "libdispatch") AND NOT libdispatch_FOUND)
+  message(SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"libdispatch\", but a libdispatch installation was not found.")
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "qt5") AND NOT Qt5Core_FOUND )
-  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt5\", but a Qt5 installation was not found." )
+if((STLAB_MAIN_EXECUTOR STREQUAL "qt5") AND NOT Qt5Core_FOUND)
+  message(SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt5\", but a Qt5 installation was not found.")
 endif()
 
-if( (STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT Qt6Core_FOUND )
-  message( SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt6\", but a Qt6 installation was not found." )
+if((STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT Qt6Core_FOUND)
+  message(SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt6\", but a Qt6 installation was not found.")
 endif()
 
 #
@@ -77,18 +53,18 @@ endif()
 # transitively to linking targets. In our case, this ammounts to an include
 # directory, compile flags, linking flags, and links to system libraries.
 #
-add_library( stlab INTERFACE )
-add_library( stlab::stlab ALIAS stlab )
+add_library(stlab INTERFACE)
+add_library(stlab::stlab ALIAS stlab)
 
 #
 # The include directory for stlab can be expected to vary between build
 # and installaion. Here we use a CMake generator expression to dispatch
 # on how the configuration under which this library is being consumed.
 #
-target_include_directories( stlab INTERFACE
+target_include_directories(stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>/include
-  $<INSTALL_INTERFACE:include> )
+  $<INSTALL_INTERFACE:include>)
 
 #
 # Several definitions are specified for the microsoft compiler. These have
@@ -97,24 +73,24 @@ target_include_directories( stlab INTERFACE
 # + NOMINMAX
 #    disable the `min` and `max` macros defined in the windows.h header
 #
-target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
+target_compile_definitions(stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>)
 
-add_subdirectory( include/stlab )
+add_subdirectory(include/stlab)
 
-if ( NOT STLAB_THREAD_SYSTEM STREQUAL "none"  )
-  target_link_libraries( stlab INTERFACE Threads::Threads )
+if(NOT STLAB_THREAD_SYSTEM STREQUAL "none")
+  target_link_libraries(stlab INTERFACE Threads::Threads)
 endif()
 
-if (STLAB_TASK_SYSTEM STREQUAL "libdispatch")
+if(STLAB_TASK_SYSTEM STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
 endif()
 
-if (STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
+if(STLAB_MAIN_EXECUTOR STREQUAL "libdispatch")
   target_link_libraries(stlab INTERFACE libdispatch::libdispatch)
-elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt5")
-  target_link_libraries( stlab INTERFACE Qt5::Core )
-elseif (STLAB_MAIN_EXECUTOR STREQUAL "qt6")
-  target_link_libraries( stlab INTERFACE Qt6::Core )
+elseif(STLAB_MAIN_EXECUTOR STREQUAL "qt5")
+  target_link_libraries(stlab INTERFACE Qt5::Core)
+elseif(STLAB_MAIN_EXECUTOR STREQUAL "qt6")
+  target_link_libraries(stlab INTERFACE Qt6::Core)
 endif()
 
 message(STATUS "stlab: Disable Coroutines: ${STLAB_DEFAULT_NO_STD_COROUTINES}")
@@ -122,51 +98,17 @@ message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
-if ( BUILD_TESTING )
-  include( stlab/development )
-
-  #
-  # Establish a convenience target to encapsulate the properties common to the
-  # stlab tests and establish an alias for uniformity.
-  #
-  add_library( testing INTERFACE )
-  add_library( stlab::testing ALIAS testing )
-
-  #
-  # CMake targets linking to the stlab::testing target will (transitively)
-  # link to the Boost::unit_test_framework and to stlab::stlab target.
-  #
-  target_link_libraries( testing INTERFACE
-    Boost::unit_test_framework
-    Boost::multiprecision
-    stlab::development
-    stlab::stlab )
-
-  #
-  # Linking to the Boost unit test framework requires an additional
-  # preprocessor definition when the unit test compiled resources are
-  # provided by a shared library rather than a static library.
-  #
-
-  if (NOT Boost_USE_STATIC_LIBS)
-    target_compile_definitions( testing INTERFACE BOOST_TEST_DYN_LINK=1)
-  endif()
-
-  add_subdirectory( test )
+if(BUILD_TESTING)
+  # CTest must be included at the top level for tests to be found.
+  include(CTest)
+  add_subdirectory(test)
 endif()
 
-include( CMakePackageConfigHelpers ) # provides `write_basic_package_version_file`
-
-#
-# We generate a CMake version file for later installation to be consumed by
-# CMake's `find_package` intrinsic. Here we specify a semantic version
-# convention, i.e., backwards compatability can be assumed within a Major
-# version.
-#
+include(CMakePackageConfigHelpers) # provides `write_basic_package_version_file`
 write_basic_package_version_file(
   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
   VERSION ${stlab_VERSION}
-  COMPATIBILITY SameMajorVersion )
+  COMPATIBILITY SameMajorVersion)
 
 #
 # As a header-only library, there are no target components to be installed
@@ -189,10 +131,10 @@ install(
 # This file is included by (and installed with) the cmake/CMakeConfig.cmake file
 # under version control.
 #
-install( EXPORT stlabTargets
+install(EXPORT stlabTargets
   FILE stlabTargets.cmake
   NAMESPACE stlab::
-  DESTINATION share/cmake/stlab )
+  DESTINATION share/cmake/stlab)
 
 #
 # Install the CMake configuration files to the `share/cmake/stlab` subdirectory
@@ -204,11 +146,11 @@ install( EXPORT stlabTargets
 configure_file(
   "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake.in"
   "${stlab_BINARY_DIR}/stlabConfig.cmake"
-  @ONLY )
-install( FILES
+  @ONLY)
+install(FILES
   "${stlab_BINARY_DIR}/stlabConfig.cmake"
   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
-  DESTINATION share/cmake/stlab )
+  DESTINATION share/cmake/stlab)
 
 #
 # Rudimentary CPack support.
@@ -235,8 +177,8 @@ install( FILES
 #
 # See `cpack --help` or the CPack documentation for more information.
 #
-include( InstallRequiredSystemLibraries )
-set( CPACK_PACKAGE_VENDOR "Adobe Software Technology Lab" )
-set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" )
-set( CMAKE_PROJECT_HOMEPAGE_URL "https://stlab.cc/libraries/" )
-include( CPack )
+include(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_VENDOR "Adobe Software Technology Lab")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CMAKE_PROJECT_HOMEPAGE_URL "https://stlab.cc/libraries/")
+include(CPack)
