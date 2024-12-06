@@ -579,7 +579,7 @@ BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(0, counter.remaining());
+    BOOST_REQUIRE_EQUAL(size_t{0}, counter.remaining());
     BOOST_REQUIRE(check);
 }
 
