@@ -19,6 +19,10 @@ if(BUILD_TESTING)
     URL_HASH SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES test\\\;multiprecision" # Note the escapes!  container\\\;asio
   )
+
+  foreach(_lib IN LISTS Boost_LIBRARIES)
+    target_compile_options(${_lib} PRIVATE -Wno-error)
+  endforeach()
 endif()
 
 # find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
