@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(future_continuation_async_move_only_container) {
         check_valid_future(sut);
         auto result = stlab::await(std::move(sut));
 
-        BOOST_REQUIRE_EQUAL(3, result.size());
+        BOOST_REQUIRE_EQUAL(std::size_t{3}, result.size());
         BOOST_REQUIRE_EQUAL(10, result[0].member());
         BOOST_REQUIRE_EQUAL(42, result[1].member());
         BOOST_REQUIRE_EQUAL(50, result[2].member());
