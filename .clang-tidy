@@ -13,7 +13,6 @@ CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
     value: >
       boost/test/.*;
-      __chrono/.*;
-      boost/multiprecision/.*
+      __chrono/.*
 HeaderFilterRegex: "^.*\/stlab\/.*$"
 # WarningsAsErrors: "*"
