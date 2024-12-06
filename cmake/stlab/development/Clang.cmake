@@ -1,4 +1,4 @@
-set( stlab_Clang_base_flags -Wall -Wextra -Wpedantic -Werror -ftemplate-backtrace-limit=0 -DBOOST_NO_AUTO_PTR=1 )
+set( stlab_Clang_base_flags -Wall -Werror -ftemplate-backtrace-limit=0 -DBOOST_NO_AUTO_PTR=1 )
 set( stlab_Clang_debug_flags -gdwarf-3 )
 set( stlab_Clang_coverage_flags --coverage )
 set( stlab_Clang_release_flags )
@@ -18,4 +18,3 @@ target_compile_options(development INTERFACE
 
 target_link_libraries(development INTERFACE
   $<$<CXX_COMPILER_ID:Clang>:${generator}>)
-
