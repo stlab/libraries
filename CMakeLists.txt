@@ -5,6 +5,8 @@ project(stlab VERSION 1.7.1 LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CMakeDependentOption)
 include(StlabUtil)
+# CTest must be included at the top level for tests to be found.
+include(CTest)
 
 find_package(libdispatch)
 find_package(Qt5 QUIET COMPONENTS Core)
@@ -99,8 +101,6 @@ message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
 if(BUILD_TESTING)
-  # CTest must be included at the top level for tests to be found.
-  include(CTest)
   add_subdirectory(test)
 endif()
 

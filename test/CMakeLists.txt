@@ -1,8 +1,6 @@
 include(../cmake/CPM.cmake)
 include(stlab/development)
 
-enable_testing()
-
 # test dependencies
 ## Boost
 
