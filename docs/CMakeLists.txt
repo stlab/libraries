@@ -10,7 +10,6 @@ find_package( Boost 1.60.0 REQUIRED )
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-enable_testing()
 foreach( path IN LISTS examples )
     if (NOT (path MATCHES "operator_co_await_example\.cpp" OR path MATCHES "scope_example_return\.cpp") )
         string( FIND "${path}" "." target REVERSE )

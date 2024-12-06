@@ -625,7 +625,7 @@ BOOST_AUTO_TEST_CASE(
     wait_until_future_fails<test_exception>(copy(sut));
 
     check_failure<test_exception>(sut, "failure");
-    BOOST_REQUIRE_EQUAL(0, r);
+    BOOST_REQUIRE_EQUAL(0u, r);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
