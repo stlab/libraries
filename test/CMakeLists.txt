@@ -15,13 +15,6 @@ CPMAddPackage(
   OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES test\\\;multiprecision" # Note the escapes!  container\\\;asio
 )
 
-# Create a separate target for the Boost libraries
-add_library(boost_libraries INTERFACE)
-target_link_libraries(boost_libraries INTERFACE
-  Boost::unit_test_framework
-  Boost::multiprecision
-)
-
 add_executable(stlab.test.channel
   channel_functor_tests.cpp
   channel_merge_round_robin_tests.cpp
@@ -36,7 +29,7 @@ add_executable(stlab.test.channel
 
 target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.channel PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.channel PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.channel
@@ -58,6 +51,8 @@ add_library(stlab::testing ALIAS testing)
 #
 
 target_link_libraries(testing INTERFACE
+  Boost::unit_test_framework
+  Boost::multiprecision
   stlab::development
   stlab::stlab)
 
@@ -67,7 +62,7 @@ add_executable(stlab.test.executor
 
 target_compile_definitions(stlab.test.executor PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.executor PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.executor PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.executor
@@ -96,7 +91,7 @@ endif()
 
 target_compile_definitions(stlab.test.future PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.future PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.future PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.future
@@ -112,7 +107,7 @@ add_executable(stlab.test.serial_queue
 
 target_compile_definitions(stlab.test.serial_queue PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.serial_queue PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.serial_queue PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.serial_queue
@@ -133,7 +128,7 @@ endif()
 
 target_compile_definitions(stlab.test.cow PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.cow PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.cow PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.cow
@@ -149,7 +144,7 @@ add_executable(stlab.test.task
 
 target_compile_definitions(stlab.test.task PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.task PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.task PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.task
@@ -164,7 +159,7 @@ add_executable(stlab.test.tuple
 
 target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.tuple PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.tuple PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.tuple
@@ -179,7 +174,7 @@ add_executable(stlab.test.traits
 
 target_compile_definitions(stlab.test.channel PRIVATE STLAB_UNIT_TEST)
 
-target_link_libraries(stlab.test.traits PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.traits PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.traits
@@ -192,7 +187,7 @@ add_executable(stlab.test.forest
   forest_test.cpp
   main.cpp)
 
-target_link_libraries(stlab.test.forest PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.forest PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.forest
@@ -205,7 +200,7 @@ add_executable(stlab.test.utility
   utility_test.cpp
   main.cpp)
 
-target_link_libraries(stlab.test.utility PUBLIC stlab::testing boost_libraries)
+target_link_libraries(stlab.test.utility PUBLIC stlab::testing)
 
 add_test(
   NAME stlab.test.utility
