@@ -6,8 +6,22 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 include( CTest )
 include( CMakeDependentOption )
 include( StlabUtil )
+include( cmake/CPM.cmake )
 
-find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
+if(BUILD_TESTING)
+  set( BUILD_SHARED_LIBS OFF )
+  set( Boost_USE_STATIC_LIBS ON )
+
+  CPMAddPackage(
+    NAME Boost
+    VERSION 1.84.0
+    URL https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.xz
+    URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
+    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES test\\\;multiprecision" # Note the escapes!  container\\\;asio
+  )
+endif()
+
+# find_package( Boost 1.74.0 OPTIONAL_COMPONENTS unit_test_framework )
 find_package( libdispatch )
 find_package( Qt5 QUIET COMPONENTS Core )
 find_package( Qt6 QUIET COMPONENTS Core )
@@ -29,9 +43,9 @@ set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
 
-if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
-  message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
-endif()
+# if( BUILD_TESTING AND NOT Boost_unit_test_framework_FOUND )
+#   message( SEND_ERROR "BUILD_TESTING is enabled, but an installation of Boost.Test was not found." )
+# endif()
 
 if( (NOT STLAB_THREAD_SYSTEM STREQUAL "none") AND NOT Threads_FOUND )
   message( SEND_ERROR "STLAB_THREAD_SYSTEM is not \"none\", but a thread system was not found." )
@@ -68,8 +82,8 @@ add_library( stlab::stlab ALIAS stlab )
 # on how the configuration under which this library is being consumed.
 #
 target_include_directories( stlab INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>/include
   $<INSTALL_INTERFACE:include> )
 
 #
@@ -81,7 +95,7 @@ target_include_directories( stlab INTERFACE
 #
 target_compile_definitions( stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX> )
 
-add_subdirectory( stlab )
+add_subdirectory( include/stlab )
 
 if ( NOT STLAB_THREAD_SYSTEM STREQUAL "none"  )
   target_link_libraries( stlab INTERFACE Threads::Threads )
@@ -120,6 +134,7 @@ if ( BUILD_TESTING )
   #
   target_link_libraries( testing INTERFACE
     Boost::unit_test_framework
+    Boost::multiprecision
     stlab::development
     stlab::stlab )
 

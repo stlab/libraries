@@ -181,8 +181,8 @@ function( stlab_generate_config_file )
   endif()
 
   configure_file(
-    "${PROJECT_SOURCE_DIR}/stlab/config.hpp.in"
-    "${PROJECT_BINARY_DIR}/stlab/config.hpp"
+    "${PROJECT_SOURCE_DIR}/include/stlab/config.hpp.in"
+    "${PROJECT_BINARY_DIR}/include/stlab/config.hpp"
     @ONLY
   )
 endfunction()
