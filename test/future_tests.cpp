@@ -555,10 +555,12 @@ BOOST_AUTO_TEST_CASE(future_wait_moveonly_value_and_timeout) {
     BOOST_REQUIRE_EQUAL(42, r.get_try()->member());
 }
 
+bool always_true{true}; // used to avoid unused variable warning
+
 BOOST_AUTO_TEST_CASE(future_wait_moveonly_value_error_case_and_timeout) {
     BOOST_TEST_MESSAGE("future wait with moveonly value and timeout set");
     auto answer = [] {
-        throw test_exception("failure");
+        if (always_true) throw test_exception("failure");
         return stlab::move_only(42);
     };
 

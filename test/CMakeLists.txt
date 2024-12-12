@@ -7,6 +7,17 @@ include(stlab/development)
 set(BUILD_SHARED_LIBS OFF)
 set(Boost_USE_STATIC_LIBS ON)
 
+# Set global sanitizer flags before any targets are created
+if(STLAB_SANITIZER STREQUAL "address")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/fsanitize=address)
+    add_link_options(/fsanitize=address)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+  endif()
+endif()
+
 CPMAddPackage(
   NAME Boost
   VERSION 1.86.0
@@ -14,6 +25,12 @@ CPMAddPackage(
   URL_HASH SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
   OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES test" # Note the escapes!  container\\\;asio
 )
+
+# Mark the boost header files as external for MSVC
+if (MSVC)
+  get_target_property(Boost_INCLUDE_DIR Boost::unit_test_framework INTERFACE_INCLUDE_DIRECTORIES)
+  add_compile_options(/external:I${Boost_INCLUDE_DIR} /external:W0)
+endif()
 
 add_executable(stlab.test.channel
   channel_functor_tests.cpp
@@ -59,8 +76,9 @@ add_executable(stlab.test.executor
   executor_test.cpp
   main.cpp)
 
-target_compile_definitions(stlab.test.executor PRIVATE STLAB_UNIT_TEST)
 
+
+target_compile_definitions(stlab.test.executor PRIVATE STLAB_UNIT_TEST)
 target_link_libraries(stlab.test.executor PUBLIC stlab::testing)
 
 add_test(

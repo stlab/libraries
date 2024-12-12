@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.23)
 
 project(stlab VERSION 1.7.1 LANGUAGES CXX)
 
+# Set the default C++ language version
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard to use")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set the default build type to Release
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" FORCE)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CMakeDependentOption)
 include(StlabUtil)
@@ -12,7 +22,6 @@ find_package(libdispatch)
 find_package(Qt5 QUIET COMPONENTS Core)
 find_package(Qt6 QUIET COMPONENTS Core)
 find_package(Threads)
-
 
 cmake_dependent_option(stlab.coverage
   "Enable binary instrumentation to collect test coverage information in the DEBUG configuration"
