@@ -333,6 +333,8 @@ struct process_with_set_error {
 };
 } // namespace
 
+bool always_true{true}; // used to avoid unused variable warning
+
 BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) {
     BOOST_TEST_MESSAGE("int channel process set_error is called on upstream error");
 
@@ -344,7 +346,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) 
 
     auto result = receive |
                   [](auto v) {
-                      throw std::runtime_error{""};
+                      if (always_true) throw std::runtime_error{""};
                       return v;
                   } |
                   process_with_set_error{check} | [](int) {};
@@ -386,7 +388,7 @@ BOOST_AUTO_TEST_CASE(int_channel_process_close_is_called_on_upstream_error) {
 
     auto result = receive |
                   [](auto v) {
-                      throw std::runtime_error{""};
+                      if (always_true) throw std::runtime_error{""};
                       return v;
                   } |
                   process_with_close{check} | [](int) {};

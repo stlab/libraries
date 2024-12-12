@@ -110,13 +110,13 @@ BOOST_AUTO_TEST_CASE(future_when_all_args_int_with_two_ready_element) {
 
 BOOST_AUTO_TEST_CASE(future_when_all_args) {
     auto main_thread_id = std::this_thread::get_id();
-    auto sut = when_all(
+    auto r = when_all(
         make_executor<1>(), [] { return std::this_thread::get_id(); },
         make_ready_future(stlab::immediate_executor));
 
-    wait_until_future_completed(copy(sut));
+    wait_until_future_completed(copy(r));
 
-    BOOST_REQUIRE(main_thread_id != *sut.get_try());
+    BOOST_REQUIRE(main_thread_id != *r.get_try());
     BOOST_REQUIRE_LE(1, custom_scheduler<1>::usage_counter());
 }
 
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_Arguments_with_mutable_task) {
     mutable_int func1;
     mutable_int func2;
 
-    auto sut = when_all(
+    auto r = when_all(
         stlab::default_executor, [](auto f1, auto f2) { return f1() + f2(); },
         async(stlab::default_executor,
               [func = func1]() mutable {
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_Arguments_with_mutable_task) {
             return func;
         }));
 
-    BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(sut)));
+    BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(r)));
 }
 BOOST_AUTO_TEST_CASE(future_when_all_arguments_with_mutable_move_onlytask) {
     BOOST_TEST_MESSAGE("future when all arguments with mutable move only task");
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_arguments_with_mutable_move_onlytask) {
     mutable_move_only func1;
     mutable_move_only func2;
 
-    auto sut = when_all(
+    auto r = when_all(
         stlab::default_executor, [](auto f1, auto f2) { return f1().member() + f2().member(); },
         async(stlab::default_executor,
               [func = std::move(func1)]() mutable {
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(future_when_all_arguments_with_mutable_move_onlytask) {
             return std::move(func);
         }));
 
-    BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(sut)));
+    BOOST_REQUIRE_EQUAL(4, stlab::await(std::move(r)));
 }
 BOOST_AUTO_TEST_SUITE_END()
 

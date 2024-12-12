@@ -110,8 +110,8 @@ struct void_i_impl<L, L> {
  */
 template <typename T, typename Op>
 auto tuple_find(const T& t, Op op) -> std::size_t {
-    if (std::tuple_size<T>::value == 0) return 1;
-    return detail::tuple_find_impl<0, std::tuple_size<T>::value, T, Op>::find(t, op);
+    if constexpr (std::tuple_size<T>::value == 0) return 1;
+    else return detail::tuple_find_impl<0, std::tuple_size<T>::value, T, Op>::find(t, op);
 }
 
 /*
