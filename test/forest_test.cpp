@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(assignment) {
     }
 
     /* self-move assignment */ {
-        auto f{big_test_forest()};
+        f = big_test_forest();
         auto* pf{&f}; // We use a pointer here to get around a clang error when moving to self.
         auto f_size{f.size()};
         f = std::move(*pf);

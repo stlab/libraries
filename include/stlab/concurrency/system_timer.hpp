@@ -127,7 +127,10 @@ public:
 
         auto file_time = duration_to_FILETIME(duration);
 
+#pragma warning(push)
+#pragma warning(disable : 6553) // bad annotation on SetThreadpoolTimer
         SetThreadpoolTimer(timer, &file_time, 0, 0);
+#pragma warning(pop)
     }
 
 private:

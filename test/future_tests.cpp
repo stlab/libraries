@@ -555,10 +555,12 @@ BOOST_AUTO_TEST_CASE(future_wait_moveonly_value_and_timeout) {
     BOOST_REQUIRE_EQUAL(42, r.get_try()->member());
 }
 
+bool always_true{true}; // used to avoid unused variable warning
+
 BOOST_AUTO_TEST_CASE(future_wait_moveonly_value_error_case_and_timeout) {
     BOOST_TEST_MESSAGE("future wait with moveonly value and timeout set");
     auto answer = [] {
-        throw test_exception("failure");
+        if (always_true) throw test_exception("failure");
         return stlab::move_only(42);
     };
 
@@ -579,7 +581,7 @@ BOOST_AUTO_TEST_CASE(future_int_detach_without_execution) {
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(0, counter.remaining());
+    BOOST_REQUIRE_EQUAL(0u, counter.remaining());
     BOOST_REQUIRE(check);
 }
 
@@ -595,7 +597,7 @@ BOOST_AUTO_TEST_CASE(future_move_only_detach_without_execution) {
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(0, counter.remaining());
+    BOOST_REQUIRE_EQUAL(0u, counter.remaining());
     BOOST_REQUIRE(check);
 }
 
@@ -609,7 +611,7 @@ BOOST_AUTO_TEST_CASE(future_void_detach_without_execution) {
     }
     std::cout << counter;
 
-    BOOST_REQUIRE_EQUAL(0, counter.remaining());
+    BOOST_REQUIRE_EQUAL(0u, counter.remaining());
     BOOST_REQUIRE(check);
 }
 
@@ -772,12 +774,12 @@ BOOST_AUTO_TEST_CASE(future_reduction_executor) {
     auto f = make_ready_future(5, outer_executor) |
              [&](int x) { return make_ready_future(x, inner_executor); };
 
-    BOOST_REQUIRE_EQUAL(1, outer_count);
-    BOOST_REQUIRE_EQUAL(0, inner_count);
+    BOOST_REQUIRE_EQUAL(1u, outer_count);
+    BOOST_REQUIRE_EQUAL(0u, inner_count);
 
     auto f1 = f | [](int x) { return x; };
 
-    BOOST_REQUIRE_EQUAL(2, outer_count);
-    BOOST_REQUIRE_EQUAL(0, inner_count);
+    BOOST_REQUIRE_EQUAL(2u, outer_count);
+    BOOST_REQUIRE_EQUAL(0u, inner_count);
     BOOST_REQUIRE_EQUAL(5, *f1.get_try());
 }
