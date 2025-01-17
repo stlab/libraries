@@ -10,11 +10,11 @@ hyde:
     brief: _multiple descriptions_
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename E, typename F, typename I>\nauto when_any(E, F &&, std::pair<I, I>)":
+    "template <class E, class F, class I>\nauto when_any(const E &, F &&, std::pair<I, I>)":
       arguments:
         - description: Executor which is used to schedule the resulting task
           name: executor
-          type: E
+          type: const E &
         - description: Callable object that implements the continuing task
           name: f
           type: F &&
@@ -26,27 +26,27 @@ hyde:
         description:
           - "***********************************************************************************************"
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F, typename I>\nauto when_any(E executor, F && f, std::pair<I, I> range)"
-    "template <typename E, typename F, typename T, typename... Ts>\nauto when_any(E, F &&, future<T>, future<Ts>...)":
+      signature_with_names: "template <class E, class F, class I>\nauto when_any(const E & executor, F && f, std::pair<I, I> range)"
+    "template <class E, class F, class T, class... Ts>\nauto when_any(E &&, F &&, future<T> &&, future<Ts> &&...)":
       arguments:
         - description: Executor which is used to schedule the resulting task
           name: executor
-          type: E
+          type: E &&
         - description: Callable object that implements the continuing task
           name: f
           type: F &&
         - description: __OPTIONAL__
           name: arg
-          type: future<T>
+          type: future<T> &&
         - description: __OPTIONAL__
           name: args
-          type: future<Ts>...
+          type: future<Ts> &&...
       description: __INLINED__
       inline:
         description:
           - "***********************************************************************************************"
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F, typename T, typename... Ts>\nauto when_any(E executor, F && f, future<T> arg, future<Ts>... args)"
+      signature_with_names: "template <class E, class F, class T, class... Ts>\nauto when_any(E && executor, F && f, future<T> && arg, future<Ts> &&... args)"
   namespace:
     - stlab
     - v3

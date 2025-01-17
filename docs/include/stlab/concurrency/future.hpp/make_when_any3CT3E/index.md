@@ -10,7 +10,7 @@ hyde:
     description:
       - "***********************************************************************************************"
   defined_in_file: stlab/concurrency/future.hpp
-  declaration: "template <typename T>\nstruct stlab::make_when_any;"
+  declaration: "template <class T>\nstruct stlab::make_when_any;"
   ctor: unspecified
   dtor: unspecified
   namespace:

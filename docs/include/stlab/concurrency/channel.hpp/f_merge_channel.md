@@ -11,7 +11,7 @@ hyde:
       - "***********************************************************************************************"
   defined_in_file: stlab/concurrency/channel.hpp
   overloads:
-    "template <typename M, typename S, typename F, typename... R>\nauto merge_channel(S, F, R...)":
+    "template <typename M, typename S, typename F, typename... R>\nauto merge_channel(S, F, R &&...)":
       arguments:
         - description: Executor which is used to schedule the resulting task
           name: s
@@ -27,7 +27,7 @@ hyde:
         description:
           - "***********************************************************************************************"
       return: a receiver that merges all passed arguments
-      signature_with_names: "template <typename M, typename S, typename F, typename... R>\nauto merge_channel(S s, F f, R... upstream_receiver)"
+      signature_with_names: "template <typename M, typename S, typename F, typename... R>\nauto merge_channel(S s, F f, R &&... upstream_receiver)"
   namespace:
     - stlab
     - v3

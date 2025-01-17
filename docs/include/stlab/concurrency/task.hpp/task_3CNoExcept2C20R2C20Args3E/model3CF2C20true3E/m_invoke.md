@@ -8,7 +8,7 @@ hyde:
     - method
   inline:
     brief:
-      - "NOTE (sean-parent): `Args` are _not_ universal references. This is a `concrete` interface for the model. Do not add ` & & `, that would make it an rvalue reference. The `forward <Args >` here is correct. We are forwarding from the client defined signature to the actual captured model."
+      - NOLINTNEXTLINE(performance-unnecessary-value-param)
   defined_in_file: stlab/concurrency/task.hpp
   overloads:
     static auto invoke(void *, Args...) -> R:
@@ -22,7 +22,7 @@ hyde:
       description: __INLINED__
       inline:
         description:
-          - "NOTE (sean-parent): `Args` are _not_ universal references. This is a `concrete` interface for the model. Do not add ` & & `, that would make it an rvalue reference. The `forward <Args >` here is correct. We are forwarding from the client defined signature to the actual captured model."
+          - NOLINTNEXTLINE(performance-unnecessary-value-param)
       return: __OPTIONAL__
       signature_with_names: static auto invoke(void * self, Args... args) -> R
 ---

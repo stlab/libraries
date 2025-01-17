@@ -10,11 +10,11 @@ hyde:
     brief: _multiple descriptions_
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename E, typename F, typename I>\nauto when_all(E, F, std::pair<I, I>)":
+    "template <class E, class F, class I>\nauto when_all(const E &, F, std::pair<I, I>)":
       arguments:
         - description: Executor which is used to schedule the resulting task
           name: executor
-          type: E
+          type: const E &
         - description: Callable object that implements the continuing task
           name: f
           type: F
@@ -26,12 +26,12 @@ hyde:
         description:
           - "***********************************************************************************************"
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F, typename I>\nauto when_all(E executor, F f, std::pair<I, I> range)"
-    "template <typename E, typename F, typename... Ts>\nauto when_all(E, F, future<Ts>...)":
+      signature_with_names: "template <class E, class F, class I>\nauto when_all(const E & executor, F f, std::pair<I, I> range)"
+    "template <class E, class F, class... Ts>\nauto when_all(const E &, F, future<Ts>...)":
       arguments:
         - description: Executor which is used to schedule the resulting task
           name: executor
-          type: E
+          type: const E &
         - description: Callable object that implements the continuing task
           name: f
           type: F
@@ -43,7 +43,7 @@ hyde:
         description:
           - "***********************************************************************************************"
       return: The continuation on the group of passed futures.
-      signature_with_names: "template <typename E, typename F, typename... Ts>\nauto when_all(E executor, F f, future<Ts>... args)"
+      signature_with_names: "template <class E, class F, class... Ts>\nauto when_all(const E & executor, F f, future<Ts>... args)"
   namespace:
     - stlab
     - v3

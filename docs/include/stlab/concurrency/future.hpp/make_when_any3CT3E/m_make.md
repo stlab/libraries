@@ -8,11 +8,11 @@ hyde:
     - method
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename E, typename F, typename... Ts>\nstatic auto make(E, F, future<T>, future<Ts>...)":
+    "template <class E, class F, class... Ts>\nstatic auto make(const E &, F, future<T>, future<Ts>...)":
       arguments:
         - description: __OPTIONAL__
           name: executor
-          type: E
+          type: const E &
         - description: __OPTIONAL__
           name: f
           type: F
@@ -24,5 +24,5 @@ hyde:
           type: future<Ts>...
       description: __OPTIONAL__
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F, typename... Ts>\nstatic auto make(E executor, F f, future<T> arg, future<Ts>... args)"
+      signature_with_names: "template <class E, class F, class... Ts>\nstatic auto make(const E & executor, F f, future<T> arg, future<Ts>... args)"
 ---

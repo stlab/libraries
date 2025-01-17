@@ -14,13 +14,13 @@ hyde:
         - defaulted
       description: Default ctor
       signature_with_names: child_iterator<I>()
-    explicit child_iterator<I>(I):
+    explicit child_iterator<I>(const I &):
       arguments:
         - description: __OPTIONAL__
           name: x
-          type: I
+          type: const I &
       description: Iterator ctor
-      signature_with_names: explicit child_iterator<I>(I x)
+      signature_with_names: explicit child_iterator<I>(const I & x)
     "template <class U>\nchild_iterator<I>(const child_iterator<U> &)":
       arguments:
         - description: __OPTIONAL__

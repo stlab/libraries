@@ -8,7 +8,7 @@ hyde:
     - method
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename E, typename F>\nauto then(E &&, F &&) &&":
+    "template <class E, class F>\nauto then(E &&, F &&) &&":
       arguments:
         - description: __OPTIONAL__
           name: executor
@@ -18,8 +18,8 @@ hyde:
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F>\nauto then(E && executor, F && f) &&"
-    "template <typename E, typename F>\nauto then(E &&, F &&) const &":
+      signature_with_names: "template <class E, class F>\nauto then(E && executor, F && f) &&"
+    "template <class E, class F>\nauto then(E &&, F &&) const &":
       arguments:
         - description: __OPTIONAL__
           name: executor
@@ -29,21 +29,21 @@ hyde:
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F>\nauto then(E && executor, F && f) const &"
-    "template <typename F>\nauto then(F &&) &&":
+      signature_with_names: "template <class E, class F>\nauto then(E && executor, F && f) const &"
+    "template <class F>\nauto then(F &&) &&":
       arguments:
         - description: __OPTIONAL__
           name: f
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto then(F && f) &&"
-    "template <typename F>\nauto then(F &&) const &":
+      signature_with_names: "template <class F>\nauto then(F && f) &&"
+    "template <class F>\nauto then(F &&) const &":
       arguments:
         - description: __OPTIONAL__
           name: f
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto then(F && f) const &"
+      signature_with_names: "template <class F>\nauto then(F && f) const &"
 ---

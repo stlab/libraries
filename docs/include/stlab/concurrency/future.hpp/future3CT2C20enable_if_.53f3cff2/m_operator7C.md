@@ -8,36 +8,36 @@ hyde:
     - method
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename F>\nauto operator|(F &&) &&":
+    "template <class F>\nauto operator|(F &&) &&":
       arguments:
         - description: __OPTIONAL__
           name: f
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto operator|(F && f) &&"
-    "template <typename F>\nauto operator|(F &&) const &":
+      signature_with_names: "template <class F>\nauto operator|(F && f) &&"
+    "template <class F>\nauto operator|(F &&) const &":
       arguments:
         - description: __OPTIONAL__
           name: f
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto operator|(F && f) const &"
-    "template <typename F>\nauto operator|(executor_task_pair<F>) &&":
+      signature_with_names: "template <class F>\nauto operator|(F && f) const &"
+    "template <class F>\nauto operator|(executor_task_pair<F>) &&":
       arguments:
         - description: __OPTIONAL__
           name: etp
           type: executor_task_pair<F>
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto operator|(executor_task_pair<F> etp) &&"
-    "template <typename F>\nauto operator|(executor_task_pair<F>) const &":
+      signature_with_names: "template <class F>\nauto operator|(executor_task_pair<F> etp) &&"
+    "template <class F>\nauto operator|(executor_task_pair<F>) const &":
       arguments:
         - description: __OPTIONAL__
           name: etp
           type: executor_task_pair<F>
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto operator|(executor_task_pair<F> etp) const &"
+      signature_with_names: "template <class F>\nauto operator|(executor_task_pair<F> etp) const &"
 ---

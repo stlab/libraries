@@ -10,7 +10,7 @@ hyde:
     brief: _multiple descriptions_
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename Sig, typename E, typename F>\nauto package(E, F &&) -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>":
+    "template <class Sig, class E, class F>\nauto package(E, F &&) -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>":
       arguments:
         - description: __OPTIONAL__
           name: executor
@@ -25,7 +25,7 @@ hyde:
         description:
           - "***********************************************************************************************"
       return: __OPTIONAL__
-      signature_with_names: "template <typename Sig, typename E, typename F>\nauto package(E executor, F && f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>"
+      signature_with_names: "template <class Sig, class E, class F>\nauto package(E executor, F && f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>"
   namespace:
     - stlab
     - v3

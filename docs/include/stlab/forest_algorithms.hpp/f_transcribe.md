@@ -11,14 +11,14 @@ hyde:
       - "***********************************************************************************************"
   defined_in_file: stlab/forest_algorithms.hpp
   overloads:
-    "template <class I, class O, class P, class UP>\nauto transcribe(I, I, O, P, UP)":
+    "template <class I, class O, class P, class UP>\nauto transcribe(I, const I &, O, P, UP)":
       arguments:
         - description: __OPTIONAL__
           name: first
           type: I
         - description: __OPTIONAL__
           name: last
-          type: I
+          type: const I &
         - description: __OPTIONAL__
           name: out
           type: O
@@ -33,15 +33,15 @@ hyde:
         description:
           - "***********************************************************************************************"
       return: __OPTIONAL__
-      signature_with_names: "template <class I, class O, class P, class UP>\nauto transcribe(I first, I last, O out, P proj, UP pred)"
-    "template <class I, class O, class P>\nauto transcribe(I, I, O, P)":
+      signature_with_names: "template <class I, class O, class P, class UP>\nauto transcribe(I first, const I & last, O out, P proj, UP pred)"
+    "template <class I, class O, class P>\nauto transcribe(const I &, const I &, O, P)":
       arguments:
         - description: __OPTIONAL__
           name: first
-          type: I
+          type: const I &
         - description: __OPTIONAL__
           name: last
-          type: I
+          type: const I &
         - description: __OPTIONAL__
           name: out
           type: O
@@ -50,7 +50,7 @@ hyde:
           type: P
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <class I, class O, class P>\nauto transcribe(I first, I last, O out, P proj)"
+      signature_with_names: "template <class I, class O, class P>\nauto transcribe(const I & first, const I & last, O out, P proj)"
     "template <class R, class O, class P, class UP>\nauto transcribe(const R &, O, P, UP)":
       arguments:
         - description: __OPTIONAL__

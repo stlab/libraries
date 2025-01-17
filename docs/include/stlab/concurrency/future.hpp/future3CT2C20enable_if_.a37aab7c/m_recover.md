@@ -8,7 +8,7 @@ hyde:
     - method
   defined_in_file: stlab/concurrency/future.hpp
   overloads:
-    "template <typename E, typename F>\nauto recover(E &&, F &&) &&":
+    "template <class E, class F>\nauto recover(E &&, F &&) &&":
       arguments:
         - description: __OPTIONAL__
           name: executor
@@ -18,13 +18,13 @@ hyde:
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename E, typename F>\nauto recover(E && executor, F && f) &&"
-    "template <typename F>\nauto recover(F &&) &&":
+      signature_with_names: "template <class E, class F>\nauto recover(E && executor, F && f) &&"
+    "template <class F>\nauto recover(F &&) &&":
       arguments:
         - description: __OPTIONAL__
           name: f
           type: F &&
       description: __MISSING__
       return: __OPTIONAL__
-      signature_with_names: "template <typename F>\nauto recover(F && f) &&"
+      signature_with_names: "template <class F>\nauto recover(F && f) &&"
 ---

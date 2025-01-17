@@ -10,7 +10,7 @@ hyde:
     description:
       - "***********************************************************************************************"
   defined_in_file: stlab/concurrency/future.hpp
-  declaration: "template <typename... Args>\nclass stlab::packaged_task;"
+  declaration: "template <class... Args>\nclass stlab::packaged_task;"
   namespace:
     - stlab
     - v3

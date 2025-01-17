@@ -14,13 +14,13 @@ hyde:
         - defaulted
       description: Default ctor
       signature_with_names: edge_iterator<I, Edge>()
-    explicit edge_iterator<I, Edge>(I):
+    explicit edge_iterator<I, Edge>(const I &):
       arguments:
         - description: __OPTIONAL__
           name: x
-          type: I
-      description: Iterator ctor
-      signature_with_names: explicit edge_iterator<I, Edge>(I x)
+          type: const I &
+      description: __MISSING__
+      signature_with_names: explicit edge_iterator<I, Edge>(const I & x)
     "template <class U>\nedge_iterator<I, Edge>(const edge_iterator<U, Edge> &)":
       arguments:
         - description: __OPTIONAL__
