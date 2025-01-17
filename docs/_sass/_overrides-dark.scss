@@ -2,7 +2,11 @@
 // definitions. See `main-dark.scss` in the theme for a complete list of variables you can override
 // with this file.
 
+//@forward "overrides-dark" show $hyde-primary;
 // @debug "Old link-color: #{$link-color}";
+
+@use "overrides" as *;
+
 $hyde-primary: $stlab-purple;
 // $link-color: $stlab-purple;
 // @debug "New link-color: #{$link-color}";

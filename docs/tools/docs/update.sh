@@ -22,11 +22,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 cd ./docs
 
 rm ./Gemfile.lock
-
-if [[ $LOCK = YES ]]; then
-    bundle lock --update
-else
-    bundle update
-fi
+bundle lock --update
+bundle install
 
 # git submodule update --recursive --remote

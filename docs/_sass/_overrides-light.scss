@@ -3,6 +3,12 @@
 // with this file.
 
 // @debug "Old hyde-primary: #{$link-color}";
+
+
+//@forward "overrides-light" show $hyde-primary, $link-color;
+
+@use "overrides" as *;
+
 $hyde-primary: $stlab-purple;
 $link-color: $stlab-purple;
 // @debug "New link-color: #{$link-color}";
