@@ -21,7 +21,7 @@ hyde:
           type: F
         - description: The upstream receiver.
           name: upstream_receiver
-          type: R...
+          type: R &&...
       description: Creates a receiver with an attached process that executes the by `M`specified merge strategy whenever an upstream process provides a value. `M` can be of type `round_robin_t`, `unordered_t`, or `zip_with`.
       inline:
         description:
