@@ -37,7 +37,7 @@ exclude:
 adobe_hyde:
   header_image: stlab-logo-long.svg
   hyde_yaml_dir: /include
-  source_root: https://github.com/stlab/libraries/blob/main
+  source_root: https://github.com/stlab/libraries/blob/main/include
 excerpt_separator: <!--more-->
 markdown: kramdown
 utterances:

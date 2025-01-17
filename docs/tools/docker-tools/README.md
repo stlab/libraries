@@ -36,38 +36,11 @@ echo $VERSION > ./docs/tools/docker-tools/VERSION
 echo $RUBY_VERSION > ./docs/.ruby-version
 ```
 
-Build the base image, no-cache is used so the latest tools are installed
+Build the image, no-cache is used so the latest tools are installed
 
 ```bash
-
 docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile --tag $VOLUME . --no-cache
-
-
-#docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile --target base --tag $VOLUME . --no-cache
 ```
-
-Update the docs environment (see below for using local theme)
-
-<!-- old>
-```bash
-docker run --mount type=bind,source="$(pwd)",target=/mnt/host --tty --interactive $VOLUME bash
-```
-
-At the docker prompt, execute the following:
-
-```
-cd /mnt/host
-git config --global --add safe.directory /mnt/host
-./docs/tools/docs/update.sh --lock
-exit
-```
-
-Build the final image
-
-```bash
-docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./docs/tools/docker-tools/Dockerfile --target full --tag $VOLUME .
-```
-<!-- old -->
 
 ## Running the Docker image with remote theme
 
@@ -138,35 +111,10 @@ docker ps
 docker exec -it <container id> bash
 ```
 
-## To use a local copy of the Jekyll theme
-
-Edit Gemfile and _config.yml to use a local copy of the theme. See `[local-them]` in the files for details.
-
-```bash
-code ./docs/Gemfile
-code ./docs/_config.yml
-```
-
-```
-docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
-    --mount type=bind,source=`readlink -f ../../adobe/hyde-theme`,target=/mnt/themes \
-    --tty --interactive --publish 3000-3001:3000-3001 \
-    $VOLUME bash
-```
-
 ### Release Notes
 
 - 1.0.0 - Initial release for Jekyll
 - 1.0.1 - Updating tool set
 - 1.0.2 - Updating in for Hyde 2.0
 - 1.0.3 - Updating Jekyll to 4.2.0 for new Hyde and moving to GitHub Actions.
-- 1.0.4 - Updating docs for new header directory structure.
-
-
-
-   $(rbenv init -)"
-    rbenv install `cat .ruby-version`
-    gem install bundler
-    rbenv rehash
-    bundle config set frozen true
-    bundle install
+- 1.0.4 - Updating docs for new header directory structure. The gem installs are no longer baked into the image, this was causing too many issues.
