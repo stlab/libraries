@@ -1,5 +1,5 @@
 {
-    "hyde-src-root": "stlab",
+    "hyde-src-root": "stlab/include",
     "hyde-yaml-dir": "docs/libraries",
     "clang_flags": [
         "-std=c++20",

@@ -23,6 +23,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4JD64o",
@@ -65,6 +66,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4IvnBT",
@@ -107,6 +109,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4IsvEh",
@@ -148,6 +151,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4IoCT_",
@@ -189,6 +193,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4Iime6",
@@ -230,6 +235,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4IXusD",
@@ -272,6 +278,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4HjTpe",
@@ -314,6 +321,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4EpuxP",
@@ -355,6 +363,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "RE_kwDOAiB0YM4Ejf1k",
@@ -408,6 +417,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTQwNDM2NjY5",
@@ -449,6 +459,7 @@
       "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
       "received_events_url": "https://api.github.com/users/sean-parent/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTM5Njc3MDE2",
@@ -490,6 +501,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTM3ODI4Mzk5",
@@ -531,6 +543,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTM3MTk4MjEw",
@@ -572,6 +585,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTM3MTI1NDU3",
@@ -613,6 +627,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTMyMzExMDI4",
@@ -654,6 +669,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTMxNDIyOTQw",
@@ -695,6 +711,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTIzNDI2NTk2",
@@ -736,6 +753,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTIxMDY2Nzk1",
@@ -777,6 +795,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTE5MzYwMTY0",
@@ -818,6 +837,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTE1NDM1Nzgx",
@@ -859,6 +879,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTE0NDk1NzI5",
@@ -900,6 +921,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTEzNjYyODk4",
@@ -941,6 +963,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTEyMTUwMDY5",
@@ -982,6 +1005,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTEyMDM5MTEw",
@@ -1023,6 +1047,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTExOTM1Nzcy",
@@ -1064,6 +1089,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTExNTA3ODUx",
@@ -1105,6 +1131,7 @@
       "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
       "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTg4OTUzMjE=",
@@ -1146,6 +1173,7 @@
       "events_url": "https://api.github.com/users/fosterbrereton/events{/privacy}",
       "received_events_url": "https://api.github.com/users/fosterbrereton/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTg2OTE2Mjg=",
@@ -1187,6 +1215,7 @@
       "events_url": "https://api.github.com/users/fosterbrereton/events{/privacy}",
       "received_events_url": "https://api.github.com/users/fosterbrereton/received_events",
       "type": "User",
+      "user_view_type": "public",
       "site_admin": false
     },
     "node_id": "MDc6UmVsZWFzZTY2NzI1NTE=",

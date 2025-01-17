@@ -55,12 +55,21 @@ Configure the build as follows:
 cmake --preset=hyde-build-docs
 ```
 
-- Build the docker image per the instructions in the hyde repo, [current using the clang13 branch](https://github.com/adobe/hyde/tree/fosterbrereton/llvm13-updates).
+Login to [GitHub Packages registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic)
 
+```bash
+echo $CR_PAT | docker login ghcr.io --password-stdin -u USERNAME 
 ```
+
+Fetch the latest image and run it:
+
+```bash
+HYDE_VERSION=2.0.1
+docker pull ghcr.io/adobe/hyde:$HYDE_VERSION
+
 docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host \
     --tty --interactive \
-    hyde bash
+    ghcr.io/adobe/hyde:$HYDE_VERSION bash
 ```
 
 From the docker prompt
