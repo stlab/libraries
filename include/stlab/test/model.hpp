@@ -18,6 +18,8 @@
 #include <iostream>
 #include <mutex>
 
+#include <stlab/concurrency/await.hpp>
+
 /**************************************************************************************************/
 
 namespace stlab {
@@ -42,8 +44,7 @@ struct annotate_counters {
 
     void wait(std::size_t count) {
         std::unique_lock<std::mutex> lock(_mutex);
-        while (count != remaining())
-            _condition.wait(lock);
+        stlab::invoke_waiting([&] { _condition.wait(lock, [&] { return count == remaining(); }); });
     }
 
     friend inline auto operator<<(std::ostream& out, const annotate_counters& x) -> std::ostream& {
