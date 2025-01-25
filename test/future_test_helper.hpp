@@ -202,7 +202,7 @@ public:
         lock_t lock(*_context->_mutex);
 
         while (!_context->_go || !_context->_may_proceed) {
-            invoke_waiting([&]{ _context->_thread_block.wait(lock); });
+            stlab::invoke_waiting([&]{ _context->_thread_block.wait(lock); });
         }
     }
 };
