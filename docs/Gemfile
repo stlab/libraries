@@ -11,4 +11,4 @@ gem 'logger'
 
 # don't submit this line to the upstream repo
 ## [local-theme] Enable this line for local theme development
-gem 'jekyll-theme-adobe-hyde', path: '../../themes'
+# gem 'jekyll-theme-adobe-hyde', path: '../../themes'

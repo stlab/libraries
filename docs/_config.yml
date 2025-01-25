@@ -17,8 +17,8 @@ twitter_username: SeanParent
 github_username: stlab
 
 ## [local-theme] To build locally, toggle these two lines
-# remote_theme: adobe/hyde-theme@v2.0.2
-theme: jekyll-theme-adobe-hyde
+remote_theme: adobe/hyde-theme@v3.0.0
+#theme: jekyll-theme-adobe-hyde
 
 exclude:
   - _source
