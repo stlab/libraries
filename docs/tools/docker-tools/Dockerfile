@@ -5,17 +5,17 @@ FROM ubuntu:latest
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-    apt-utils \
-    fswatch \
-    g++ \
-    git \
-    libreadline-dev \
-    make \
-    nodejs \
-    npm \
-    rbenv \
-    wget \
-    zlib1g-dev
+  apt-utils \
+  fswatch \
+  g++ \
+  git \
+  libreadline-dev \
+  make \
+  nodejs \
+  npm \
+  rbenv \
+  wget \
+  zlib1g-dev
 
 RUN apt-get install -y libyaml-dev
 
@@ -25,9 +25,6 @@ RUN export N_USE_XZ=0; n latest
 
 RUN npm install -g npm@latest
 RUN npm install -g browser-sync
-
-###### Temporary #####
-RUN npm install -g sass-migrator
 
 # Create a user "app" so everything is not running at root
 RUN useradd -ms /bin/bash app
@@ -47,12 +44,12 @@ RUN git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ru
 #  Install ruby
 ARG RUBY_VERSION
 RUN if [ -z ${RUBY_VERSION+x} ]; then \
-      rbenv install $(rbenv install -l | grep -v - | tail -1); \
-      rbenv global  $(rbenv install -l | grep -v - | tail -1); \
-    else \
-      rbenv install $RUBY_VERSION; \
-      rbenv global $RUBY_VERSION; \
-    fi
+  rbenv install $(rbenv install -l | grep -v - | tail -1); \
+  rbenv global  $(rbenv install -l | grep -v - | tail -1); \
+  else \
+  rbenv install $RUBY_VERSION; \
+  rbenv global $RUBY_VERSION; \
+  fi
 
 #  Install bundler in global ruby
 RUN (eval "$(rbenv init -)"; gem install bundler)
@@ -61,18 +58,6 @@ RUN (eval "$(rbenv init -)"; gem install bundler)
 # FROM base AS full
 USER app
 WORKDIR /home/app
-
-# RUN mkdir ./install
-# WORKDIR ./install
-# COPY ./docs/Gemfile .
-# COPY ./docs/Gemfile.lock .
-# COPY ./docs/.ruby-version .
-
-# RUN (eval "$(rbenv init -)"; \
-#     bundle config set frozen true; \
-#     bundle install)
-
-# WORKDIR /home/app
 
 EXPOSE 3000 3001
 

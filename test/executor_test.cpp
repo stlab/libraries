@@ -5,6 +5,7 @@
 */
 /**************************************************************************************************/
 
+#include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 
@@ -106,7 +107,7 @@ BOOST_AUTO_TEST_CASE(all_high_prio_tasks_get_executed) {
 BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     BOOST_TEST_MESSAGE("The task system restarts after it went to pending");
 
-    atomic_bool done{false};
+    bool done{false};
     mutex m;
     condition_variable cv;
 
@@ -120,10 +121,10 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     });
 
     {
-        unique_lock<mutex> block{m};
-        while (!done) {
-            cv.wait(block);
-        }
+        invoke_waiting([&] {
+            unique_lock<mutex> block{m};
+            cv.wait(block, [&] { return done; });
+        });
     }
 
     default_executor([&]() noexcept {
@@ -136,10 +137,10 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     });
 
     {
-        unique_lock<mutex> block{m};
-        while (done) {
-            cv.wait(block);
-        }
+        invoke_waiting([&] {
+            unique_lock<mutex> block{m};
+            cv.wait(block, [&] { return !done; });
+        });
     }
 
     BOOST_REQUIRE(!done);
@@ -286,9 +287,8 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
         }
     });
 
-    unique_lock<mutex> lock{block};
-    while (!done)
-        ready.wait(lock);
+    invoke_waiting(
+    unique_lock<mutex> lock{block}; [&]{ ready.wait(lock, [&]{ return done; }); });
 
     while (counter < 3 * iterations) {
         rest();
