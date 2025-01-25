@@ -4,6 +4,11 @@ gem 'jekyll-redirect-from', group: [:jekyll_plugins]
 gem 'jekyll-compose', group: [:jekyll_plugins]
 gem "jekyll-remote-theme", group: [:jekyll_plugins]
 
+# missing jekyll dependencies
+gem 'csv'
+gem 'base64'
+gem 'logger'
+
 # don't submit this line to the upstream repo
-## Enable this line for local theme development
+## [local-theme] Enable this line for local theme development
 # gem 'jekyll-theme-adobe-hyde', path: '../../themes'

@@ -1,5 +1,5 @@
 # Build from the latest ubuntu release
-FROM ubuntu:latest AS base
+FROM ubuntu:latest
 
 # Install items requiring root access
 
@@ -55,22 +55,8 @@ RUN if [ -z ${RUBY_VERSION+x} ]; then \
 RUN (eval "$(rbenv init -)"; gem install bundler)
 
 # build the final files
-FROM base AS full
+# FROM base AS full
 USER app
-WORKDIR /home/app
-
-RUN mkdir ./install
-WORKDIR ./install
-COPY ./docs/Gemfile .
-COPY ./docs/Gemfile.lock .
-COPY ./docs/.ruby-version .
-
-RUN (eval "$(rbenv init -)"; \
-  rbenv install `cat .ruby-version`; \
-  gem install bundler; \
-  rbenv rehash; \
-  bundle install --frozen)
-
 WORKDIR /home/app
 
 EXPOSE 3000 3001

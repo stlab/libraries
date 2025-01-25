@@ -9,9 +9,11 @@
 #include <stlab/utility.hpp>
 
 #include <type_traits>
+#include <utility>
 
 // boost
 #include <boost/test/unit_test.hpp>
+
 #include <stlab/test/model.hpp>
 
 /**************************************************************************************************/

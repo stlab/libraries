@@ -16,9 +16,9 @@ url: "http://www.stlab.cc" # the base hostname & protocol for your site
 twitter_username: SeanParent
 github_username: stlab
 
-## To build locally, toggle these two.
-remote_theme: adobe/hyde-theme@v2.0.2
-# theme: jekyll-theme-adobe-hyde
+## [local-theme] To build locally, toggle these two lines
+remote_theme: adobe/hyde-theme@v3.0.0
+#theme: jekyll-theme-adobe-hyde
 
 exclude:
   - _source
@@ -36,8 +36,8 @@ exclude:
   - Gemfile.lock
 adobe_hyde:
   header_image: stlab-logo-long.svg
-  hyde_yaml_dir: /includes
-  source_root: https://github.com/stlab/libraries/blob/main
+  hyde_yaml_dir: /include
+  source_root: https://github.com/stlab/libraries/blob/main/include
 excerpt_separator: <!--more-->
 markdown: kramdown
 utterances:

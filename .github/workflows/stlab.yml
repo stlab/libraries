@@ -46,7 +46,6 @@ jobs:
           rm '/usr/local/bin/python3.12'
           rm '/usr/local/bin/python3-config'
           rm '/usr/local/bin/python3.12-config'
-          brew install boost
           brew install ninja
         shell: bash
 
@@ -55,18 +54,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build
-          sudo apt-get install -y libboost-all-dev
         shell: bash
 
-      - name: Install dependencies // Windows
-        if: ${{ startsWith(matrix.config.os, 'windows') }}
-        run: |
-          choco install --yes ninja
-          vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows
+      # - name: Install dependencies // Windows
+        # if: ${{ startsWith(matrix.config.os, 'windows') }}
+        # run: |
+        #  choco install --yes ninja
+        #  vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows
         # vcpkg install boost:x64-windows
         # dotnet add package boost --version 1.85.0
         # choco install --yes boost-msvc-14.3
-        shell: cmd
+        # shell: cmd
 
       - name: Install dependencies // Linux Emscripten
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
@@ -74,7 +72,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build
-          git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
+          # git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
 
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           pushd $HOME/emsdk
@@ -102,18 +100,18 @@ jobs:
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
 
-      - name: Compile Boost // Emscripten
-        if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-        shell: bash -l {0}
-        run: |
-          mkdir -p ../build-boost
-          cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-            -DCMAKE_CXX_FLAGS="-Wno-deprecated-builtins" \
-            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake \
-            -DBOOST_INCLUDE_LIBRARIES="multiprecision;test"
+      # - name: Compile Boost // Emscripten
+      #   if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
+      #   shell: bash -l {0}
+      #   run: |
+      #     mkdir -p ../build-boost
+      #     cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
+      #       -DCMAKE_CXX_FLAGS="-Wno-deprecated-builtins" \
+      #       -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake \
+      #       -DBOOST_INCLUDE_LIBRARIES="multiprecision;test"
 
-          cmake --build ../build-boost
-          cmake --install ../build-boost
+      #     cmake --build ../build-boost
+      #     cmake --install ../build-boost
 
       - name: Configure // Unix !Emscripten
         if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && !startsWith(matrix.config.compiler, 'emscripten') }}
@@ -136,7 +134,7 @@ jobs:
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           mkdir ..\build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20 -DBoost_USE_STATIC_LIBS=TRUE -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20
 
       - name: Build // Unix
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}

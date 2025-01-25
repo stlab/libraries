@@ -1,8 +1,8 @@
 /**************************************************************************************************/
 
 // stdc++
-#include <cstddef>
 #include <cassert>
+#include <cstddef>
 #include <iostream>
 #include <iterator>
 #include <optional>
@@ -158,7 +158,7 @@ auto to_string(const R& r) {
 }
 
 template <typename I>
-auto to_string(I first, I last) {
+auto to_string(I first, const I& last) {
     std::string result;
     while (first != last) {
         result += *first++;
@@ -169,14 +169,16 @@ auto to_string(I first, I last) {
 /**************************************************************************************************/
 
 template <typename Iterator>
-void test_fullorder_traversal(Iterator first, Iterator last, const std::string& expected) {
+void test_fullorder_traversal(const Iterator& first,
+                              const Iterator& last,
+                              const std::string& expected) {
     BOOST_CHECK(to_string(first, last) == expected);
 }
 
 /**************************************************************************************************/
 
 template <typename Iterator, forest_edge Edge, typename Forest>
-auto test_edge_traversal(Forest& f, Iterator fi, Iterator li) {
+auto test_edge_traversal(Forest& f, const Iterator& fi, const Iterator& li) {
     std::string expected;
 
     {
@@ -405,7 +407,7 @@ BOOST_AUTO_TEST_CASE(assignment) {
     }
 
     /* self-move assignment */ {
-        auto f{big_test_forest()};
+        f = big_test_forest();
         auto* pf{&f}; // We use a pointer here to get around a clang error when moving to self.
         auto f_size{f.size()};
         f = std::move(*pf);
