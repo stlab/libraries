@@ -121,8 +121,10 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     });
 
     {
-        unique_lock<mutex> block{m};
-        invoke_waiting([&] { cv.wait(block, [&] { return done; }); });
+        invoke_waiting([&] {
+            unique_lock<mutex> block{m};
+            cv.wait(block, [&] { return done; });
+        });
     }
 
     default_executor([&]() noexcept {
@@ -135,8 +137,10 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     });
 
     {
-        unique_lock<mutex> block{m};
-        invoke_waiting([&] { cv.wait(block, [&] { return !done; }); });
+        invoke_waiting([&] {
+            unique_lock<mutex> block{m};
+            cv.wait(block, [&] { return !done; });
+        });
     }
 
     BOOST_REQUIRE(!done);
@@ -283,8 +287,8 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
         }
     });
 
-    unique_lock<mutex> lock{block};
-    invoke_waiting([&]{ ready.wait(lock, [&]{ return done; }); });
+    invoke_waiting(
+    unique_lock<mutex> lock{block}; [&]{ ready.wait(lock, [&]{ return done; }); });
 
     while (counter < 3 * iterations) {
         rest();

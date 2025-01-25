@@ -199,11 +199,11 @@ public:
     void set_context(thread_block_context* context) { _context = context; }
 
     void action() const {
-        lock_t lock(*_context->_mutex);
-
-        while (!_context->_go || !_context->_may_proceed) {
-            stlab::invoke_waiting([&]{ _context->_thread_block.wait(lock); });
-        }
+        stlab::invoke_waiting([&] {
+            lock_t lock(*_context->_mutex);
+            _context->_thread_block.wait(lock,
+                                         [&] { return _context->_go && _context->_may_proceed; });
+        });
     }
 };
 

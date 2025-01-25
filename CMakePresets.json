@@ -58,6 +58,18 @@
             }
         },
         {
+            "name": "xcode-cpp20-debug-portable",
+            "description": "",
+            "hidden": false,
+            "generator": "Xcode",
+            "binaryDir": "${sourceDir}/build/xcode-cpp20-debug-portable",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_BUILD_TYPE": "DEBUG",
+                "STLAB_TASK_SYSTEM": "portable"
+            }
+        },
+        {
             "name": "ninja-cpp17-debug",
             "description": "Ninja Debug Build",
             "hidden": false,

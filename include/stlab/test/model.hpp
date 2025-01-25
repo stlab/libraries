@@ -43,8 +43,10 @@ struct annotate_counters {
     auto remaining() const -> std::size_t { return _copy_ctor + _move_ctor - _dtor + 1; }
 
     void wait(std::size_t count) {
-        std::unique_lock<std::mutex> lock(_mutex);
-        stlab::invoke_waiting([&] { _condition.wait(lock, [&] { return count == remaining(); }); });
+        stlab::invoke_waiting([&] {
+            std::unique_lock<std::mutex> lock(_mutex);
+            _condition.wait(lock, [&] { return count == remaining(); });
+        });
     }
 
     friend inline auto operator<<(std::ostream& out, const annotate_counters& x) -> std::ostream& {
