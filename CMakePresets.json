@@ -30,8 +30,7 @@
             "cacheVariables": {
                 "CMAKE_CXX_STANDARD": "20",
                 "CMAKE_BUILD_TYPE": "DEBUG",
-                "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined",
-                "CMAKE_LINKER_FLAGS": "-fsanitize=thread -fsanitize=undefined"
+                "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined"
             }
         },
         {

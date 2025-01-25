@@ -45,7 +45,7 @@ auto invoke_waiting(F&& f) {
     if (!detail::pts().wake()) detail::pts().add_thread();
 #endif
 
-    std::forward<F>(f)();
+    return std::forward<F>(f)();
 }
 
 /**************************************************************************************************/
@@ -113,7 +113,7 @@ struct blocking_get_guarded {
     auto wait_for(const std::chrono::nanoseconds& timeout) -> future<T> {
         std::unique_lock<std::mutex> lock{_mutex};
         _timed_out = !invoke_waiting(
-            [&] { _condition.wait_for(lock, timeout, [&] { return _result.valid(); }); });
+            [&] { return _condition.wait_for(lock, timeout, [&] { return _result.valid(); }); });
         return _timed_out ? future<T>{} : std::move(_result);
     }
 };
