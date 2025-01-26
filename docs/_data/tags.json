@@ -1,5 +1,15 @@
 [
   {
+    "name": "v2.0.0a8",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v2.0.0a8",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v2.0.0a8",
+    "commit": {
+      "sha": "d1016a8ef3cd4363ac568fa68e48c267d34d2b8c",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/d1016a8ef3cd4363ac568fa68e48c267d34d2b8c"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YyLjAuMGE4"
+  },
+  {
     "name": "v2.0.0a7",
     "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v2.0.0a7",
     "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v2.0.0a7",
@@ -288,15 +298,5 @@
       "url": "https://api.github.com/repos/stlab/libraries/commits/1b106fe89318c855fef3dc56d81f98e0c26c2cff"
     },
     "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjA="
-  },
-  {
-    "name": "1.5.0",
-    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/1.5.0",
-    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/1.5.0",
-    "commit": {
-      "sha": "41446a20a734299caf9a20210c3b6bbb4250e35d",
-      "url": "https://api.github.com/repos/stlab/libraries/commits/41446a20a734299caf9a20210c3b6bbb4250e35d"
-    },
-    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzLzEuNS4w"
   }
 ]

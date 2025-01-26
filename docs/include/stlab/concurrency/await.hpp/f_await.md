@@ -7,8 +7,7 @@ hyde:
   tags:
     - function
   inline:
-    brief:
-      - "***********************************************************************************************"
+    brief: _multiple descriptions_
   defined_in_file: stlab/concurrency/await.hpp
   overloads:
     "template <class T>\nauto await(const future<T> &) -> T":
@@ -18,7 +17,10 @@ hyde:
         - description: __OPTIONAL__
           name: x
           type: const future<T> &
-      description: __MISSING__
+      description: __INLINED__
+      inline:
+        description:
+          - Equivalent to `await(copy(x))`.
       return: __OPTIONAL__
       signature_with_names: "template <class T>\nauto await(const future<T> & x) -> T"
     "template <class T>\nauto await(future<T> &&) -> T":
@@ -29,7 +31,7 @@ hyde:
       description: __INLINED__
       inline:
         description:
-          - "***********************************************************************************************"
+          - Synchronously wait for the result `x`. If `x` resolves as an exception, the exception is rethrown. When using the portable task system, an additional thread is added to the pool if no threads are available and the maximum number of threads has not been reached.
       return: __OPTIONAL__
       signature_with_names: "template <class T>\nauto await(future<T> && x) -> T"
   namespace:

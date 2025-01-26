@@ -6,6 +6,9 @@ hyde:
   brief: "Wait for the specified duration for the future to be ready and either returns a ready future or a new future which can be waited on.\n"
   tags:
     - function
+  inline:
+    brief:
+      - Equivalent to `await_for(copy(x), timeout)`.
   defined_in_file: stlab/concurrency/await.hpp
   overloads:
     "template <class T>\nauto await_for(const future<T> &, const std::chrono::nanoseconds &) -> future<T>":
@@ -18,7 +21,10 @@ hyde:
         - description: __OPTIONAL__
           name: timeout
           type: const std::chrono::nanoseconds &
-      description: __MISSING__
+      description: __INLINED__
+      inline:
+        description:
+          - Equivalent to `await_for(copy(x), timeout)`.
       return: __OPTIONAL__
       signature_with_names: "template <class T>\nauto await_for(const future<T> & x, const std::chrono::nanoseconds & timeout) -> future<T>"
     "template <class T>\nauto await_for(future<T> &&, const std::chrono::nanoseconds &) -> future<T>":

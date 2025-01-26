@@ -1,5 +1,48 @@
 [
   {
+    "url": "https://api.github.com/repos/stlab/libraries/releases/196795395",
+    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/196795395/assets",
+    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/196795395/assets{?name,label}",
+    "html_url": "https://github.com/stlab/libraries/releases/tag/v2.0.0a8",
+    "id": 196795395,
+    "author": {
+      "login": "sean-parent",
+      "id": 2279724,
+      "node_id": "MDQ6VXNlcjIyNzk3MjQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2279724?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sean-parent",
+      "html_url": "https://github.com/sean-parent",
+      "followers_url": "https://api.github.com/users/sean-parent/followers",
+      "following_url": "https://api.github.com/users/sean-parent/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sean-parent/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sean-parent/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sean-parent/subscriptions",
+      "organizations_url": "https://api.github.com/users/sean-parent/orgs",
+      "repos_url": "https://api.github.com/users/sean-parent/repos",
+      "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sean-parent/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "node_id": "RE_kwDOAiB0YM4LutwD",
+    "tag_name": "v2.0.0a8",
+    "target_commitish": "main",
+    "name": "v2.0.0.a8",
+    "draft": false,
+    "prerelease": true,
+    "created_at": "2025-01-25T23:47:32Z",
+    "published_at": "2025-01-26T00:28:14Z",
+    "assets": [
+
+    ],
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v2.0.0a8",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v2.0.0a8",
+    "body": "## What's Changed\r\n* Static Analysis by @sean-parent in https://github.com/stlab/libraries/pull/546\r\n* Nix an unused matrix element by @dabrahams in https://github.com/stlab/libraries/pull/548\r\n* Update code base to pass clang-tidy by @sean-parent in https://github.com/stlab/libraries/pull/552\r\n* Reworked future reduction by @sean-parent in https://github.com/stlab/libraries/pull/551\r\n* Restructured CMake to simplify Windows build (and all builds) by @sean-parent in https://github.com/stlab/libraries/pull/553\r\n* Minor fixes to await and await docs. by @sean-parent in https://github.com/stlab/libraries/pull/555\r\n\r\n\r\n**Full Changelog**: https://github.com/stlab/libraries/compare/v2.0.0a7...v2.0.0a8",
+    "mentions_count": 2
+  },
+  {
     "url": "https://api.github.com/repos/stlab/libraries/releases/152022568",
     "assets_url": "https://api.github.com/repos/stlab/libraries/releases/152022568/assets",
     "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/152022568/assets{?name,label}",
