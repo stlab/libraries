@@ -21,7 +21,7 @@ hyde:
       definition: typename std::iterator_traits<I>::value_type::result_type
       description: __MISSING__
     result_t:
-      definition: typename detail::result_of_when_any_t<F, param_t>::result_type
+      definition: std::decay_t<typename detail::result_of_when_any_t<F, param_t>::result_type>
       description: __MISSING__
     result_type:
       definition: detail::result_t<std::decay_t<F>, std::decay_t<Args>...>

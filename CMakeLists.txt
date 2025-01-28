@@ -29,10 +29,21 @@ cmake_dependent_option(stlab.coverage
 
 stlab_check_disfunctional_coroutines(STLAB_DEFAULT_NO_STD_COROUTINES)
 option(STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES})
+if (STLAB_NO_STD_COROUTINES)
+  set(STLAB_STD_COROUTINES 0)
+else()
+  set(STLAB_STD_COROUTINES 1)
+endif()
+
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
-stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
+option(STLAB_MINIMAL_TASK_POOL "Use the minimal task pool size (ON|OFF), implies `STLAB_TASK_SYSTEM=portable`" OFF)
+if(STLAB_MINIMAL_TASK_POOL)
+  set(STLAB_TASK_SYSTEM "portable" CACHE STRING "Task system to use (portable|libdispatch|windows)." FORCE)
+else()
+  stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
+endif()
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)

@@ -25,7 +25,7 @@
 #include <variant> // for std::monostate
 #include <vector>
 
-#ifndef STLAB_NO_STD_COROUTINES
+#if STLAB_STD_COROUTINES()
 #include <coroutine>
 #endif
 
@@ -1593,13 +1593,13 @@ template <class E, // models task executor
                    // type
 auto when_any(const E& executor, F&& f, std::pair<I, I> range) {
     using param_t = typename std::iterator_traits<I>::value_type::result_type;
-    using result_t = typename detail::result_of_when_any_t<F, param_t>::result_type;
+    using result_t = std::decay_t<typename detail::result_of_when_any_t<F, param_t>::result_type>;
     using context_result_t = std::conditional_t<std::is_same_v<void, param_t>, void, param_t>;
     using context_t = detail::common_context<detail::context_result<F, true, context_result_t>, F,
                                              detail::single_trigger, detail::all_trigger>;
 
     if (range.first == range.second) {
-        return future_with_broken_promise<result_t>(executor);
+        return future_with_broken_promise<std::decay_t<result_t>>(executor);
     }
 
     return detail::create_range_of_futures<result_t, param_t, context_t>::do_it(
@@ -1695,7 +1695,7 @@ void shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>::set_value(A
 
 /**************************************************************************************************/
 
-#ifndef STLAB_NO_STD_COROUTINES
+#if STLAB_STD_COROUTINES()
 
 template <class T, class... Args>
 struct std::coroutine_traits<stlab::future<T>, Args...> {
@@ -1763,6 +1763,6 @@ auto operator co_await(stlab::future<R> f) {
     return Awaiter{std::move(f)};
 }
 
-#endif // STLAB_NO_STD_COROUTINES
+#endif // STLAB_STD_COROUTINES()
 
 #endif

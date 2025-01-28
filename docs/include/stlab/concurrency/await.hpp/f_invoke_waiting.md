@@ -8,7 +8,7 @@ hyde:
     - function
   inline:
     brief:
-      - Assumes `f` _will wait_ and wakes or adds a thread to the thread pool (to the limit) before invoking `f`. If using a condition variable, wrap the duration of the mutex lock in `f` to avoid deadlocks.
+      - Assumes `f` _will wait_ and wakes or adds a thread to the thread pool (to the limit) before invoking `f`.
   defined_in_file: stlab/concurrency/await.hpp
   overloads:
     "template <class F>\nauto invoke_waiting(F &&)":
@@ -19,7 +19,7 @@ hyde:
       description: __INLINED__
       inline:
         description:
-          - Assumes `f` _will wait_ and wakes or adds a thread to the thread pool (to the limit) before invoking `f`. If using a condition variable, wrap the duration of the mutex lock in `f` to avoid deadlocks.
+          - Assumes `f` _will wait_ and wakes or adds a thread to the thread pool (to the limit) before invoking `f`.
       return: __OPTIONAL__
       signature_with_names: "template <class F>\nauto invoke_waiting(F && f)"
   namespace:

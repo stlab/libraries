@@ -123,7 +123,19 @@
                 "CMAKE_CXX_STANDARD": "20",
                 "CMAKE_BUILD_TYPE": "DEBUG"
             }
+        },
+        {
+            "name": "include-what-you-use",
+            "hidden": false,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_BUILD_TYPE": "DEBUG",
+                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use"
+            }
         }
+
     ],
     "buildPresets": [
         {
@@ -134,6 +146,11 @@
         {
             "name": "clang-tidy-nofix",
             "configurePreset": "clang-tidy-nofix"
+        },
+        {
+            "name": "include-what-you-use",
+            "configurePreset": "include-what-you-use",
+            "jobs": 1
         }
     ],
     "testPresets": [

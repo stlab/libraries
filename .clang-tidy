@@ -7,12 +7,9 @@ Checks: >
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-magic-numbers
 CheckOptions:
-  # example of setting a check option
-  - key: readability-identifier-length.MinLength
-    value: 3
   - key: misc-include-cleaner.IgnoreHeaders
     value: >
       boost/test/.*;
       __chrono/.*
-HeaderFilterRegex: "^.*\/stlab\/.*$"
+HeaderFilterRegex: '^.*/include/stlab/.*$'
 # WarningsAsErrors: "*"

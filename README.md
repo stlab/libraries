@@ -61,7 +61,14 @@ but there are other options you may need to append in order to be successful. Am
 - `-DCMAKE_BUILD_TYPE=`[**`Release`**|`Debug`] to build the given configuration (required unless you're using Visual Studio or another multi-config generator).
 - `-DCMAKE_CXX_STANDARD=`[`17`|**`20`**|`23`] to build with compliance to the given C++ standard.
 - `-DBUILD_TESTING=`[`ON`, `OFF`] turn off if you intend to build, but not test, this library.
-- `-DSTLAB_TASK_SYSTEM=`[`portable`, `libdispatch`, `emscripten`, `windows`] to select the task system to use. Default is platform dependent.
+
+STlab specific configuration options:
+
+- `-DSTLAB_MAIN_EXECUTOR=`[`qt5`, `qt6`, `libdispatch`, `emscripten`, `none`] to select the main executor to use. Default is platform dependent.
+- `-DSTLAB_MINIMAL_TASK_POOL=`[`ON`, **`OFF`**] to use the minimal task pool size, implies `STLAB_TASK_SYSTEM=portable`.
+- `-DSTLAB_NO_STD_COROUTINES=`[`ON`, **`OFF`**] to suppress usage of standard coroutines. Useful for non-conforming compilers.
+- `-DSTLAB_THREAD_SYSTEM=`[`win32`, `pthread`, `pthread-emscripten`, `pthread-apple`, `none`] to select the thread system to use. Default is platform dependent.
+- `-DSTLAB_TASK_SYSTEM=`[`portable`, `libdispatch`, `windows`] to select the task system to use. Default is platform dependent.
 
 We also suggest the installation of [Ninja](https://ninja-build.org/) and its use by adding
 `-GNinja` to your cmake command line… but ninja is not required.

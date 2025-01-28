@@ -9,15 +9,11 @@
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
 
-#include <array>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <cstdint>
-#include <iostream>
 #include <mutex>
 #include <thread>
-#include <type_traits>
 #include <vector>
 
 #include <boost/test/unit_test.hpp>
@@ -121,10 +117,8 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     });
 
     {
-        invoke_waiting([&] {
-            unique_lock<mutex> block{m};
-            cv.wait(block, [&] { return done; });
-        });
+        unique_lock<mutex> block{m};
+        invoke_waiting([&] { cv.wait(block, [&] { return done; }); });
     }
 
     default_executor([&]() noexcept {
@@ -137,10 +131,8 @@ BOOST_AUTO_TEST_CASE(task_system_restarts_after_it_went_pending) {
     });
 
     {
-        invoke_waiting([&] {
-            unique_lock<mutex> block{m};
-            cv.wait(block, [&] { return !done; });
-        });
+        unique_lock<mutex> block{m};
+        invoke_waiting([&] { cv.wait(block, [&] { return !done; }); });
     }
 
     BOOST_REQUIRE(!done);
@@ -287,8 +279,10 @@ BOOST_AUTO_TEST_CASE(MeasureTiming) {
         }
     });
 
-    invoke_waiting(
-    unique_lock<mutex> lock{block}; [&]{ ready.wait(lock, [&]{ return done; }); });
+    invoke_waiting([&] {
+        unique_lock<mutex> lock{block};
+        ready.wait(lock, [&]{ ready.wait(lock, [&]{ return done; }); });
+    });
 
     while (counter < 3 * iterations) {
         rest();

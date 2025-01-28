@@ -25,6 +25,16 @@ using lock_t = std::unique_lock<std::mutex>;
 
 namespace future_test_helper {
 
+struct when_any_result_helper {
+    template <typename T>
+    auto operator()(T&& value, size_t index) const {
+        return std::pair{std::forward<T>(value), index};
+    }
+    auto operator()(size_t index) const { return index; }
+};
+
+constexpr auto when_any_result = when_any_result_helper{};
+
 template <std::size_t no>
 struct custom_scheduler {
     using result_type = void;
@@ -199,8 +209,8 @@ public:
     void set_context(thread_block_context* context) { _context = context; }
 
     void action() const {
+        lock_t lock(*_context->_mutex);
         stlab::invoke_waiting([&] {
-            lock_t lock(*_context->_mutex);
             _context->_thread_block.wait(lock,
                                          [&] { return _context->_go && _context->_may_proceed; });
         });

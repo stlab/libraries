@@ -12,7 +12,7 @@
 
 // Configuration generated from CMake
 
-#cmakedefine STLAB_NO_STD_COROUTINES
+#cmakedefine01 STLAB_STD_COROUTINES()
 
 #define STLAB_THREADS(X) (STLAB_THREADS_##X())
 #cmakedefine01 STLAB_THREADS_WIN32()
@@ -33,6 +33,8 @@
 #cmakedefine01 STLAB_MAIN_EXECUTOR_QT5()
 #cmakedefine01 STLAB_MAIN_EXECUTOR_QT6()
 #cmakedefine01 STLAB_MAIN_EXECUTOR_NONE()
+
+#cmakedefine01 STLAB_MINIMAL_TASK_POOL()
 
 // Various functionality macros
 

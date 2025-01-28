@@ -37,8 +37,7 @@ inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**
     Assumes `f` _will wait_ and wakes or adds a thread to the thread pool (to the limit) before
-    invoking `f`. If using a condition variable, wrap the duration of the mutex lock in `f` to avoid
-    deadlocks.
+    invoking `f`.
 */
 template <class F>
 auto invoke_waiting(F&& f) {
@@ -70,10 +69,8 @@ auto await(future<T>&& x) -> T {
             condition.notify_one(); // must notify under lock
         }
     });
-    invoke_waiting([&] {
-        std::unique_lock<std::mutex> lock{m};
-        condition.wait(lock, [&] { return result.is_ready(); });
-    });
+    std::unique_lock<std::mutex> lock{m};
+    invoke_waiting([&] { condition.wait(lock, [&] { return result.is_ready(); }); });
     return std::move(result).get_ready();
 }
 
@@ -113,10 +110,9 @@ struct blocking_get_guarded {
     }
 
     auto wait_for(const std::chrono::nanoseconds& timeout) -> future<T> {
-        _timed_out = !invoke_waiting([&] {
-            std::unique_lock<std::mutex> lock{_mutex};
-            return _condition.wait_for(lock, timeout, [&] { return _result.valid(); });
-        });
+        std::unique_lock<std::mutex> lock{_mutex};
+        _timed_out = !invoke_waiting(
+            [&] { return _condition.wait_for(lock, timeout, [&] { return _result.valid(); }); });
         return _timed_out ? future<T>{} : std::move(_result);
     }
 };

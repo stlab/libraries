@@ -168,6 +168,11 @@ public:
 
     auto member() -> int { return _member; }
     [[nodiscard]] auto member() const -> int { return _member; }
+
+    friend auto operator==(const move_only& a, const move_only& b) -> bool {
+        return a._member == b._member;
+    }
+    friend auto operator!=(const move_only& a, const move_only& b) -> bool { return !(a == b); }
 };
 
 /**************************************************************************************************/

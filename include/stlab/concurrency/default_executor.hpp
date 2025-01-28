@@ -327,14 +327,22 @@ public:
 /// A portable, scalable, priority task system.
 
 class priority_task_system {
+    // Returns the number of hardware threads, or 1 if not available.
+    static unsigned hardware_concurrency() {
+#if STLAB_MINIMAL_TASK_POOL()
+        return 1;
+#else
+        return std::max(1u, std::thread::hardware_concurrency());
+#endif
+    }
     // _count is the number of threads in the thread pool
     // it is at least 1 but usually number of cores - 1 reserved for the main thread
-    const unsigned _count{std::max(2u, std::thread::hardware_concurrency()) - 1};
+    const unsigned _count{std::max(1u, hardware_concurrency() - 1)};
     // thread limit is the total number of threads, including expansion threads for waiting calls
     // It is odd number because a usual pattern is to fan out based on the number of cores, we want
     // one additional thread so if we fan out the limit number of times we have one additional
     // thread
-    const unsigned _thread_limit{std::max(9U, std::thread::hardware_concurrency() * 4 + 1)};
+    const unsigned _thread_limit{std::max(9U, hardware_concurrency() * 4 + 1)};
 
     std::vector<notification_queue> _q{_count};
     std::atomic<unsigned> _index{0};
