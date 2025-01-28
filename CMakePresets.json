@@ -132,10 +132,9 @@
             "cacheVariables": {
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_BUILD_TYPE": "DEBUG",
-                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use"
+                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use;-Xiwyu;--mapping_file=/usr/local/Cellar/include-what-you-use/0.23/libexec/share/include-what-you-use/boost-all.imp"
             }
         }
-
     ],
     "buildPresets": [
         {

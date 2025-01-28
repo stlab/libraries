@@ -10,11 +10,14 @@
 #ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 #define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
-#include <stlab/config.hpp>
+#include <stlab/config.hpp>  // for STLAB_VERSION_NAMESPACE
 
 // stdc++
-#include <optional>
-#include <tuple>
+#include <cstddef>           // for size_t
+#include <optional>          // for optional
+#include <tuple>             // for get, tuple, tuple_size, tuple_cat, tuple...
+#include <type_traits>       // for is_same_v, conditional_t, conditional
+#include <utility>           // for forward, index_sequence, declval, move
 
 /**************************************************************************************************/
 
