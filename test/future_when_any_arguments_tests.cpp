@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_with_one_argument) {
 
     BOOST_REQUIRE(!result.is_ready());
     default_executor(std::move(p0));
-    BOOST_REQUIRE((std::pair{0, 0} == await(std::move(result))));
+    BOOST_REQUIRE((std::pair{0, std::size_t{0}} == await(std::move(result))));
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_multiple_arguments_first_succeeds) {
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_multiple_arguments_first_succeeds) {
 
     BOOST_REQUIRE(!result.is_ready());
     default_executor(std::move(p0));
-    BOOST_REQUIRE((std::pair{0, 0} == await(std::move(result))));
+    BOOST_REQUIRE((std::pair{0, std::size_t{0}} == await(std::move(result))));
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_multiple_arguments_third_succeeds) {
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_multiple_arguments_third_succeeds) {
 
     BOOST_REQUIRE(!result.is_ready());
     default_executor(std::move(p2));
-    BOOST_REQUIRE((std::pair{2, 2} == await(std::move(result))));
+    BOOST_REQUIRE((std::pair{2, std::size_t{2}} == await(std::move(result))));
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_one_succeeds_all_others_fail) {
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_one_succeeds_all_others_fail) {
     p3.set_exception(std::make_exception_ptr(test_exception("failure")));
     BOOST_REQUIRE(!result.is_ready());
     default_executor(std::move(p2));
-    BOOST_REQUIRE((std::pair{2, 2} == await(std::move(result))));
+    BOOST_REQUIRE((std::pair{2, std::size_t{2}} == await(std::move(result))));
 }
 
 BOOST_AUTO_TEST_CASE(future_when_any_all_fail) {
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_int_arguments_with_diamond_formation_argume
 
     BOOST_REQUIRE(!result.is_ready());
     default_executor(std::move(initial_promise));
-    BOOST_REQUIRE((std::pair{43, 0} == await(std::move(result))));
+    BOOST_REQUIRE((std::pair{43, std::size_t{0}} == await(std::move(result))));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(future_when_any_move_only_arguments) {
 
     BOOST_REQUIRE(!result.is_ready());
     default_executor(std::move(p0));
-    BOOST_REQUIRE((std::pair{move_only(0), 0} == await(std::move(result))));
+    BOOST_REQUIRE((std::pair{move_only(0), std::size_t{0}} == await(std::move(result))));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
