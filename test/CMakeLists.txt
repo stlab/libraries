@@ -40,7 +40,6 @@ add_executable(stlab.test.channel
   channel_process_tests.cpp
   channel_test_helper.cpp
   channel_tests.cpp
-  tuple_algorithm_test.cpp
   main.cpp
   channel_test_helper.hpp)
 
@@ -97,7 +96,6 @@ add_executable(stlab.test.future
   future_when_all_range_tests.cpp
   future_when_any_arguments_tests.cpp
   future_when_any_range_tests.cpp
-  tuple_algorithm_test.cpp
   main.cpp
   future_test_helper.hpp
   future_reduction_tests.cpp)
@@ -129,6 +127,20 @@ target_link_libraries(stlab.test.serial_queue PUBLIC stlab::testing)
 add_test(
   NAME stlab.test.serial_queue
   COMMAND stlab.test.serial_queue
+)
+################################################################################
+
+add_executable(stlab.test.tuple_algorithm
+  tuple_algorithm_test.cpp
+  main.cpp)
+
+target_compile_definitions(stlab.test.tuple_algorithm PRIVATE STLAB_UNIT_TEST)
+
+target_link_libraries(stlab.test.tuple_algorithm PUBLIC stlab::testing)
+
+add_test(
+  NAME stlab.test.tuple_algorithm
+  COMMAND stlab.test.tuple_algorithm
 )
 
 ################################################################################
