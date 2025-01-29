@@ -19,6 +19,17 @@ hyde:
       description: Compares two `annotate` objects for equality.
       return: __OPTIONAL__
       signature_with_names: auto operator==(const stlab::annotate & x, const stlab::annotate & y) -> bool
+    auto operator==(const stlab::move_only &, const stlab::move_only &) -> bool:
+      arguments:
+        - description: __OPTIONAL__
+          name: a
+          type: const stlab::move_only &
+        - description: __OPTIONAL__
+          name: b
+          type: const stlab::move_only &
+      description: Compares two `move_only` objects for equality.
+      return: __OPTIONAL__
+      signature_with_names: auto operator==(const stlab::move_only & a, const stlab::move_only & b) -> bool
     auto operator==(const stlab::regular &, const stlab::regular &) -> bool:
       arguments:
         - description: __OPTIONAL__
@@ -30,17 +41,6 @@ hyde:
       description: Compares two `regular` objects for equality.
       return: __OPTIONAL__
       signature_with_names: auto operator==(const stlab::regular & lhs, const stlab::regular & rhs) -> bool
-    bool operator==(const stlab::move_only &, const stlab::move_only &):
-      arguments:
-        - description: __OPTIONAL__
-          name: a
-          type: const stlab::move_only &
-        - description: __OPTIONAL__
-          name: b
-          type: const stlab::move_only &
-      description: Compares two `move_only` objects for equality.
-      return: __OPTIONAL__
-      signature_with_names: bool operator==(const stlab::move_only & a, const stlab::move_only & b)
   namespace:
     - stlab
     - v3
