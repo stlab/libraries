@@ -10,6 +10,8 @@
 
 /**************************************************************************************************/
 
+#include <stlab/config.hpp>
+
 #include <cassert>
 #include <mutex>
 #include <vector>
@@ -68,10 +70,14 @@ struct _pre_exit_stack_t {
 };
 
 /// Returns a reference to the pre-exit stack singleton.
+#if STLAB_BUILD_LIBRARY()
+_pre_exit_stack_t& _pre_exit_stack();
+#else
 inline auto _pre_exit_stack() -> auto& {
     static _pre_exit_stack_t _q;
     return _q;
 }
+#endif
 
 } // namespace detail
 

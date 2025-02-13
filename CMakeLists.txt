@@ -46,6 +46,8 @@ else()
 endif()
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
 
+option(STLAB_BUILD_LIBRARY "Generates a library contaning functions with local static variables. May be used to ensure single instance across shared libraries." OFF)
+
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
 
@@ -69,13 +71,17 @@ if((STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT Qt6Core_FOUND)
   message(SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt6\", but a Qt6 installation was not found.")
 endif()
 
-#
-# stlab has no compiled components. As such, we declare it as an `INTERFACE`
-# library, which denotes a collection of target propeties to be applied
-# transitively to linking targets. In our case, this ammounts to an include
-# directory, compile flags, linking flags, and links to system libraries.
-#
-add_library(stlab INTERFACE)
+if(STLAB_BUILD_LIBRARY)
+  add_library(stlab)
+else()
+  #
+  # stlab has no compiled components. As such, we declare it as an `INTERFACE`
+  # library, which denotes a collection of target propeties to be applied
+  # transitively to linking targets. In our case, this ammounts to an include
+  # directory, compile flags, linking flags, and links to system libraries.
+  #
+  add_library(stlab INTERFACE)
+endif()
 add_library(stlab::stlab ALIAS stlab)
 
 #
@@ -84,8 +90,8 @@ add_library(stlab::stlab ALIAS stlab)
 # on how the configuration under which this library is being consumed.
 #
 target_include_directories(stlab INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
 #
@@ -98,6 +104,9 @@ target_include_directories(stlab INTERFACE
 target_compile_definitions(stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>)
 
 add_subdirectory(include/stlab)
+if(STLAB_BUILD_LIBRARY)
+  add_subdirectory(src)
+endif()
 
 if(NOT STLAB_THREAD_SYSTEM STREQUAL "none")
   target_link_libraries(stlab INTERFACE Threads::Threads)
