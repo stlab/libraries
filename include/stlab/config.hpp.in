@@ -36,6 +36,8 @@
 
 #cmakedefine01 STLAB_MINIMAL_TASK_POOL()
 
+#cmakedefine01 STLAB_BUILD_LIBRARY()
+
 // Various functionality macros
 
 #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 0
