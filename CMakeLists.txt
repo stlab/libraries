@@ -69,13 +69,7 @@ if((STLAB_MAIN_EXECUTOR STREQUAL "qt6") AND NOT Qt6Core_FOUND)
   message(SEND_ERROR "STLAB_MAIN_EXECUTOR is set to \"qt6\", but a Qt6 installation was not found.")
 endif()
 
-#
-# stlab has no compiled components. As such, we declare it as an `INTERFACE`
-# library, which denotes a collection of target propeties to be applied
-# transitively to linking targets. In our case, this ammounts to an include
-# directory, compile flags, linking flags, and links to system libraries.
-#
-add_library(stlab INTERFACE)
+add_library(stlab)
 add_library(stlab::stlab ALIAS stlab)
 
 #
@@ -84,8 +78,8 @@ add_library(stlab::stlab ALIAS stlab)
 # on how the configuration under which this library is being consumed.
 #
 target_include_directories(stlab INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
 #
@@ -98,6 +92,7 @@ target_include_directories(stlab INTERFACE
 target_compile_definitions(stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>)
 
 add_subdirectory(include/stlab)
+add_subdirectory(src)
 
 if(NOT STLAB_THREAD_SYSTEM STREQUAL "none")
   target_link_libraries(stlab INTERFACE Threads::Threads)
@@ -129,16 +124,6 @@ write_basic_package_version_file(
   "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
   VERSION ${stlab_VERSION}
   COMPATIBILITY SameMajorVersion)
-
-#
-# As a header-only library, there are no target components to be installed
-# directly (the PUBLIC_HEADER property is not white listed for INTERFACE
-# targets for some reason).
-#
-# However, it is worthwhile export our target description in order to later
-# generate a CMake configuration file for consumption by CMake's `find_package`
-# intrinsic
-#
 
 install(
   TARGETS stlab
