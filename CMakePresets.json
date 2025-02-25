@@ -22,6 +22,18 @@
             }
         },
         {
+            "name": "compilation-database",
+            "hidden": false,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_BUILD_TYPE": "DEBUG",
+                "STLAB_TASK_SYSTEM": "portable",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
             "name": "debug-cpp20-tsan-ubsan-portable",
             "description": "Ninja Debug Build",
             "hidden": false,
