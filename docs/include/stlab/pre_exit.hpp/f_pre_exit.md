@@ -20,5 +20,5 @@ hyde:
       signature_with_names: void pre_exit()
   namespace:
     - stlab
-    - v1
+    - v2
 ---

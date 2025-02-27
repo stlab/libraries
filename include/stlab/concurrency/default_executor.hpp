@@ -11,25 +11,22 @@
 
 #include <stlab/config.hpp>
 
-#include <stlab/pre_exit.hpp>
-
-#include <stlab/concurrency/set_current_thread_name.hpp>
-#include <stlab/concurrency/task.hpp>
-
 #include <cassert>
-#include <chrono>
 #include <cstdint>
-#include <functional>
-#include <memory>
 #include <type_traits>
 #include <utility>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
+#include <stlab/pre_exit.hpp>
+
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
+#include <stlab/concurrency/set_current_thread_name.hpp>
+#include <stlab/concurrency/task.hpp>
+
 #include <algorithm>
 #include <atomic>
 #include <climits>
@@ -79,17 +76,7 @@ struct group_t {
     }
 };
 
-inline auto group() -> group_t& {
-    // Use an immediately executed lambda to atomically register pre-exit handler
-    // and create the dispatch group.
-    static group_t g{[] {
-        at_pre_exit([]() noexcept { // <br>
-            dispatch_group_wait(g._group, DISPATCH_TIME_FOREVER);
-        });
-        return group_t{};
-    }()};
-    return g;
-}
+group_t& group();
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
@@ -452,15 +439,7 @@ public:
 /// Returns an instance of the task system singleton. An immediately executed lambda is used
 /// to register the the task system for tear down pre-exit in a thread safe manner.
 
-inline priority_task_system& pts() {
-    // Uses the `nullptr` constructor with an immediate executed lambda to register the task
-    // system in a thread safe manner.
-    static priority_task_system only_task_system{[] {
-        at_pre_exit([]() noexcept { only_task_system.join(); });
-        return nullptr;
-    }()};
-    return only_task_system;
-}
+priority_task_system& pts();
 
 #endif
 

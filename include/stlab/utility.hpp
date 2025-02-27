@@ -14,7 +14,10 @@
 #include <stlab/config.hpp>
 
 #include <array>
-#include <type_traits>
+#include <cstddef>          // for size_t
+#include <initializer_list> // for initializer_list
+#include <type_traits>      // for remove_reference, is_same, is_const
+#include <utility>          // for index_sequence, forward
 
 /**************************************************************************************************/
 
@@ -76,8 +79,7 @@ template <class Seq, template <std::size_t> class F, std::size_t Index, std::siz
 struct index_sequence_transform;
 
 template <class Seq,
-          template <std::size_t>
-          class F,
+          template <std::size_t> class F,
           std::size_t Index = 0,
           std::size_t Count = Seq::size()>
 using index_sequence_transform_t = typename index_sequence_transform<Seq, F, Index, Count>::type;
