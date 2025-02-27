@@ -15,7 +15,7 @@
 // The namespace for pre_exit cannot be changed without an ABI break. If making an ABI breaking
 // change in this file it needs to be done in a way supporting this version as well.
 namespace stlab {
-inline namespace STLAB_VERSION_NAMESPACE() {
+inline namespace v2 {
 
 /**************************************************************************************************/
 
@@ -26,18 +26,25 @@ using pre_exit_handler = void (*)() noexcept;
 using pre_exit_handler = void (*)();
 #endif
 
+/// An `extern "C"` vector for `pre-exit()` to make it simpler to
+/// export the function from a shared library.
+extern "C" void stlab_pre_exit();
+/// An `extern "C"` vector for `at_pre-exit()` to make it simpler to
+/// export the function from a shared library.
+extern "C" void stlab_at_pre_exit(pre_exit_handler f);
+
 /// Invoke all registered pre-exit handlers in the reverse order they are registered. It is safe
 /// to register additional handlers during this operation. Must be invoked exactly once prior to
 /// program exit.
-extern "C" void pre_exit();
+void pre_exit() { stlab_pre_exit(); }
 
-/// Register a pre-exit handler. The pre-exit-handler may not throw. With C++17 or later it
+/// Register a pre-exit handler. The `pre-exit-handler` may not throw. With C++17 or later it
 /// is required to be `noexcept`.
-extern "C" void at_pre_exit(pre_exit_handler f);
+void at_pre_exit(pre_exit_handler f) { stlab_at_pre_exit(f); }
 
 /**************************************************************************************************/
 
-} // namespace v2
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

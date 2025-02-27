@@ -14,7 +14,7 @@
 #include <stlab/config.hpp>
 
 namespace stlab {
-inline namespace STLAB_VERSION_NAMESPACE() {
+inline namespace v2 {
 
 namespace {
 
@@ -59,14 +59,14 @@ auto pre_exit_stack() -> auto& {
 
 } // namespace
 
-extern "C" void pre_exit() {
+extern "C" void stlab_pre_exit() {
     auto& _s = pre_exit_stack();
     while (auto f = _s.pop()) {
         f();
     };
 }
 
-extern "C" void at_pre_exit(pre_exit_handler f) { pre_exit_stack().push(f); }
+extern "C" void stlab_at_pre_exit(pre_exit_handler f) { pre_exit_stack().push(f); }
 
 } // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab

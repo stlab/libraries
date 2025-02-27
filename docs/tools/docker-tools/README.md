@@ -75,7 +75,7 @@ This should leave you at a bash prompt that looks like this:
 app@fc7590a63ba3:~$
 ```
 
-The hex number is the docker image container ID and may be different. Going foreward I refer to this as the _docker_ prompt to distinguish it from the _local_ prompt.
+The hex number is the docker image container ID and may be different. Going foreword I refer to this as the _docker_ prompt to distinguish it from the _local_ prompt.
 
 ```
 cd /mnt/host
