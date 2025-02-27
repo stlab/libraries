@@ -68,5 +68,5 @@ extern "C" void stlab_pre_exit() {
 
 extern "C" void stlab_at_pre_exit(pre_exit_handler f) { pre_exit_stack().push(f); }
 
-} // namespace STLAB_VERSION_NAMESPACE()
+} // namespace v2
 } // namespace stlab
