@@ -8,6 +8,10 @@
 
 #include <stlab/concurrency/default_executor.hpp>
 
+#include "stlab/config.hpp" // for STLAB_TASK_SYSTEM, STLAB_TASK_SYSTEM_L...
+
+#include "stlab/pre_exit.hpp" // for at_pre_exit
+
 namespace stlab {
 inline namespace STLAB_VERSION_NAMESPACE() {
 namespace detail {

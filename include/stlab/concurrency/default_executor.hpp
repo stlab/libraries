@@ -11,25 +11,22 @@
 
 #include <stlab/config.hpp>
 
-#include <stlab/pre_exit.hpp>
-
-#include <stlab/concurrency/set_current_thread_name.hpp>
-#include <stlab/concurrency/task.hpp>
-
 #include <cassert>
-#include <chrono>
 #include <cstdint>
-#include <functional>
-#include <memory>
 #include <type_traits>
 #include <utility>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
+#include <stlab/pre_exit.hpp>
+
 #include <Windows.h>
 #include <memory>
 #elif STLAB_TASK_SYSTEM(PORTABLE)
+#include <stlab/concurrency/set_current_thread_name.hpp>
+#include <stlab/concurrency/task.hpp>
+
 #include <algorithm>
 #include <atomic>
 #include <climits>

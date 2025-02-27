@@ -11,8 +11,6 @@
 #include <mutex>
 #include <vector>
 
-#include <stlab/config.hpp>
-
 namespace stlab {
 inline namespace v2 {
 

@@ -8,8 +8,6 @@
 #ifndef STLAB_PRE_EXIT_HPP
 #define STLAB_PRE_EXIT_HPP
 
-#include <stlab/config.hpp>
-
 /**************************************************************************************************/
 
 // The namespace for pre_exit cannot be changed without an ABI break. If making an ABI breaking
@@ -36,11 +34,11 @@ extern "C" void stlab_at_pre_exit(pre_exit_handler f);
 /// Invoke all registered pre-exit handlers in the reverse order they are registered. It is safe
 /// to register additional handlers during this operation. Must be invoked exactly once prior to
 /// program exit.
-void pre_exit() { stlab_pre_exit(); }
+inline void pre_exit() { stlab_pre_exit(); }
 
 /// Register a pre-exit handler. The `pre-exit-handler` may not throw. With C++17 or later it
 /// is required to be `noexcept`.
-void at_pre_exit(pre_exit_handler f) { stlab_at_pre_exit(f); }
+inline void at_pre_exit(pre_exit_handler f) { stlab_at_pre_exit(f); }
 
 /**************************************************************************************************/
 
