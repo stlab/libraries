@@ -331,9 +331,10 @@ struct process_with_set_error {
 
     [[nodiscard]] static auto state() { return stlab::await_forever; }
 };
-} // namespace
 
 bool always_true{true}; // used to avoid unused variable warning
+
+} // namespace
 
 BOOST_AUTO_TEST_CASE(int_channel_process_set_error_is_called_on_upstream_error) {
     BOOST_TEST_MESSAGE("int channel process set_error is called on upstream error");
