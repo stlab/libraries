@@ -59,7 +59,7 @@ public:
         _self = default_model();
 
         // coverity[useless_call]
-        ++_self->_count;
+        _self->_count.fetch_add(1, std::memory_order_relaxed);
     }
 
     template <class U>
@@ -73,15 +73,16 @@ public:
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");
 
         // coverity[useless_call]
-        ++_self->_count;
+        _self->_count.fetch_add(1, std::memory_order_relaxed);
     }
     copy_on_write(copy_on_write&& x) noexcept : _self{std::exchange(x._self, nullptr)} {
         assert(_self && "WARNING (sparent) : using a moved copy_on_write object");
     }
 
     ~copy_on_write() {
-        assert(!_self || (_self->_count > 0) && "FATAL (sparent) : double delete");
-        if (_self && (--_self->_count == 0)) {
+        assert(!_self || ((_self->_count > 0) && "FATAL (sparent) : double delete"));
+        if (_self && (_self->_count.fetch_sub(1, std::memory_order::release) == 1)) {
+            std::atomic_thread_fence(std::memory_order::acquire);
             if constexpr (std::is_default_constructible_v<element_type>) {
                 assert(_self != default_model());
             }
@@ -132,7 +133,7 @@ public:
     [[nodiscard]] auto unique() const noexcept -> bool {
         assert(_self && "FATAL (sparent) : using a moved copy_on_write object");
 
-        return _self->_count == 1;
+        return _self->_count.load(std::memory_order_acquire) == 1;
     }
     [[deprecated]] [[nodiscard]] auto unique_instance() const noexcept -> bool { return unique(); }
 
