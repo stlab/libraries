@@ -1,4 +1,3 @@
-include(../cmake/CPM.cmake)
 include(stlab/development)
 
 # test dependencies

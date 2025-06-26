@@ -7,9 +7,91 @@
     },
     "configurePresets": [
         {
-            "name": "hyde-build-docs",
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "base-cpp20",
+            "hidden": true,
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        },
+        {
+            "name": "base-cpp17",
+            "hidden": true,
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "17"
+            }
+        },
+        {
+            "name": "base-sanitizer",
+            "hidden": true,
+            "inherits": "base-cpp20",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined"
+            }
+        },
+        {
+            "name": "debug-cpp20",
+            "description": "Debug build with C++20",
+            "inherits": "base-cpp20"
+        },
+        {
+            "name": "debug-cpp17",
+            "description": "Debug build with C++17",
+            "inherits": "base-cpp17"
+        },
+        {
+            "name": "debug-sanitizer",
+            "description": "Debug build with thread and undefined behavior sanitizers",
+            "inherits": "base-sanitizer"
+        },
+        {
+            "name": "debug-portable",
+            "description": "Debug build with portable task system",
+            "inherits": "base-cpp20",
+            "cacheVariables": {
+                "STLAB_TASK_SYSTEM": "portable"
+            }
+        },
+        {
+            "name": "debug-asan",
+            "description": "Debug build with address sanitizer",
+            "inherits": "base-cpp20",
+            "cacheVariables": {
+                "STLAB_SANITIZER": "address"
+            }
+        },
+        {
+            "name": "xcode-debug",
+            "description": "Debug build using Xcode",
+            "generator": "Xcode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "xcode-debug-portable",
+            "description": "Debug build using Xcode with portable task system",
+            "inherits": "xcode-debug",
+            "cacheVariables": {
+                "STLAB_TASK_SYSTEM": "portable"
+            }
+        },
+        {
+            "name": "docs",
             "description": "Build documentation",
-            "hidden": false,
             "binaryDir": "${sourceDir}/build/hyde",
             "cacheVariables": {
                 "CMAKE_CXX_STANDARD": "20",
@@ -22,130 +104,27 @@
             }
         },
         {
-            "name": "compilation-database",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
+            "name": "clang-tidy",
+            "description": "Run clang-tidy without fixes",
+            "inherits": "base-cpp17",
             "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "STLAB_TASK_SYSTEM": "portable",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-            }
-        },
-        {
-            "name": "debug-cpp20-tsan-ubsan-portable",
-            "description": "Ninja Debug Build",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/ninja-cpp20-debug-thread-undefined",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "STLAB_TASK_SYSTEM": "portable",
-                "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined"
-            }
-        },
-        {
-            "name": "ninja-cpp20-debug-thread-undefined",
-            "description": "Ninja Debug Build",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/ninja-cpp20-debug-thread-undefined",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined"
-            }
-        },
-        {
-            "name": "xcode-cpp20-debug",
-            "description": "",
-            "hidden": false,
-            "generator": "Xcode",
-            "binaryDir": "${sourceDir}/build/xcode-cpp20-debug",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "DEBUG"
-            }
-        },
-        {
-            "name": "xcode-cpp20-debug-portable",
-            "description": "",
-            "hidden": false,
-            "generator": "Xcode",
-            "binaryDir": "${sourceDir}/build/xcode-cpp20-debug-portable",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "STLAB_TASK_SYSTEM": "portable"
-            }
-        },
-        {
-            "name": "ninja-cpp17-debug",
-            "description": "Ninja Debug Build",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/ninja-cpp17-debug",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_BUILD_TYPE": "DEBUG"
-            }
-        },
-        {
-            "name": "debug",
-            "description": "Debug build",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/debug",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "STLAB_SANITIZER": "address"
-            }
-        },
-        {
-            "name": "clang-tidy-fix",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/clang-tidy-fix",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix"
-            }
-        },
-        {
-            "name": "clang-tidy-nofix",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/clang-tidy-nofix",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_BUILD_TYPE": "DEBUG",
                 "CMAKE_CXX_CLANG_TIDY": "clang-tidy"
             }
         },
         {
-            "name": "win-ninja-cpp20-debug-thread-undefined",
-            "description": "Ninja Debug Build",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/win-ninja-cpp20-debug-thread-undefined",
+            "name": "clang-tidy-fix",
+            "description": "Run clang-tidy with auto-fix",
+            "inherits": "clang-tidy",
             "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "DEBUG"
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix"
             }
         },
         {
             "name": "include-what-you-use",
-            "hidden": false,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
+            "description": "Run include-what-you-use analysis",
+            "inherits": "base-cpp17",
             "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_BUILD_TYPE": "DEBUG",
-                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE":
-                    "include-what-you-use;-Xiwyu;--mapping_file=/usr/local/Cellar/include-what-you-use/0.23/libexec/share/include-what-you-use/boost-all.imp"
+                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use;-Xiwyu;--mapping_file=/usr/local/Cellar/include-what-you-use/0.23/libexec/share/include-what-you-use/boost-all.imp"
             }
         }
     ],
@@ -156,8 +135,8 @@
             "jobs": 1
         },
         {
-            "name": "clang-tidy-nofix",
-            "configurePreset": "clang-tidy-nofix"
+            "name": "clang-tidy",
+            "configurePreset": "clang-tidy"
         },
         {
             "name": "include-what-you-use",
@@ -167,10 +146,9 @@
     ],
     "testPresets": [
         {
-            "name": "c++20-debug-tsan-ubsan-verbose",
-            "description": "",
-            "displayName": "",
-            "configurePreset": "ninja-cpp20-debug-thread-undefined",
+            "name": "debug-sanitizer-verbose",
+            "description": "Run tests with sanitizers and verbose output",
+            "configurePreset": "debug-sanitizer",
             "output": {
                 "verbosity": "verbose"
             }

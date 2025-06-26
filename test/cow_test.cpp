@@ -7,6 +7,7 @@
 
 // #include <adobe/config.hpp>
 
+#include <exception>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -50,7 +51,9 @@ void test_copy_on_write() {
         &make_value<typename CowType::value_type, long>;
 
     // Test default constructor
-    { CowType value_0; }
+    {
+        CowType value_0;
+    }
 
     // Test basic concept requirements
     {

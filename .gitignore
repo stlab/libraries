@@ -46,3 +46,6 @@ clion_*
 # jupyter backups
 .ipynb_checkpoints/
 stlab/config.hpp
+/.cpm-cache
+/.cache
+compile_commands.json
