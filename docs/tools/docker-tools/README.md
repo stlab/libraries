@@ -15,17 +15,17 @@ Specify the ruby version to match the latest stable - https://www.ruby-lang.org/
 macOS and Linux:
 
 ```bash
-VERSION="1.0.4"
+VERSION="1.0.5"
 VOLUME="stlab.libraries"
-RUBY_VERSION="3.4.1"
+RUBY_VERSION="3.4.4"
 ```
 
 Windows:
 
 ```powershell
-$VERSION="1.0.4"
+$VERSION="1.0.5"
 $VOLUME="stlab.libraries"
-$RUBY_VERSION="3.4.1"
+$RUBY_VERSION="3.4.4"
 
 $PSDefaultParameterValues = @{'Out-File:Encoding' = 'Ascii'}
 ```
@@ -119,3 +119,4 @@ docker exec -it <container id> bash
 - 1.0.2 - Updating in for Hyde 2.0
 - 1.0.3 - Updating Jekyll to 4.2.0 for new Hyde and moving to GitHub Actions.
 - 1.0.4 - Updating docs for new header directory structure. The gem installs are no longer baked into the image, this was causing too many issues.
+- 1.0.5 - Updating to Ruby 3.4.4 and Jekyll 5.1.0.
