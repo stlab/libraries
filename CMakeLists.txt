@@ -22,12 +22,8 @@ include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cpm-cache CACHE PATH "Directory to cache CPM packages" FORCE)
 
 # Add stlab-copy-on-write as a dependency
-CPMAddPackage(
-    NAME stlab-copy-on-write
-    GITHUB_REPOSITORY stlab/copy-on-write
-    GIT_TAG main # or specify a version tag
-    OPTIONS "BUILD_TESTING OFF"
-)
+
+CPMAddPackage("gh:stlab/copy-on-write@1.0.3")
 target_link_libraries(stlab PUBLIC stlab::copy-on-write)
 
 ########################################################

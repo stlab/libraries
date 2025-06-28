@@ -96,7 +96,7 @@ set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sPROXY_TO_PTHREAD" )
 #
 set( STLAB_WASM_NODE_JS_MIN_VERSION "16.16.0" )
 
-set( NODE_JS_FLAGS "--experimental-wasm-threads;--experimental-wasm-eh" )
+# set( NODE_JS_FLAGS "--experimental-wasm-threads;--experimental-wasm-eh" )
 
 #
 # Check if NODE_JS_EXECUTABLE (found by find_program() in Emscripten.cmake) is recent enough for STLab.

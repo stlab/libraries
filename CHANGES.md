@@ -1,8 +1,11 @@
-## v.1.7.1 - 2022 - September 24
+## v2.0.0 - 2025 - June 27
+  - See [the release notes](https://github.com/stlab/libraries/releases/tag/v2.0.0) for details.
+
+## v1.7.1 - 2022 - September 24
   - [#496] Add missing files to CMakeLists.txt
 
 
-## v.1.7.0 - 2022 - September 2
+## v1.7.0 - 2022 - September 2
   - Breaking Changes
     - The build setup now requires executing CMake to generate a config.hpp file for the build. This was done to avoid ODR/API/ABI breakage from having the library self-configure differently when used by multiple sub-projects. See the [build instructions](https://github.com/stlab/libraries/runs/7903922028?check_suite_focus=true).
     - To avoid having canceled or detached tasks execute concurrently with exit, leading to undefined behavior, a [`pre_exit()`](https://stlab.cc/libraries/pre_exit.hpp) call was added which must be invoked if using the [`default_executor`](https://stlab.cc/libraries/concurrency/default_executor.hpp/) prior to returning from `main()` or invoking `exit()`. If `quick_exit()` is used, `pre_exit()` is not necessary.
@@ -15,7 +18,7 @@
     - [#405](https://github.com/stlab/libraries/issues/405) Added official WASM support and WASM builds are now part of our CI.
     - A number of bugs were fixed with `future<>::recover()` when used with move-only types.
 
-## v.1.6.2 - 2021 - March 25
+## v1.6.2 - 2021 - March 25
  - Fixed issues
    - [#371]:(https://github.com/stlab/libraries/issues/371)Missing include in concurrency/utility.hpp
    - The _hold for detach was being done on the executor instead of the continuation. The result was a (silenced) broken exception getting thrown if detach() is called on a ready exception.
@@ -34,7 +37,7 @@
    - min() duration on a clock apparently is not a minimum length duration as documented, but is a negative duration... instead we us a single tick.
    - Update utility.hpp
 
-## v.1.6.1 - 2021 - February 10
+## v1.6.1 - 2021 - February 10
  - Fixed issues
    - [#363]:(https://github.com/stlab/libraries/issues/363) Wrong version in the 1.6.0 release
 
