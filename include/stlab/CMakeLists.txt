@@ -27,7 +27,6 @@ target_sources( stlab INTERFACE
 
     test/model.hpp
 
-    copy_on_write.hpp
     enum_ops.hpp
     forest.hpp
     forest_algorithms.hpp
