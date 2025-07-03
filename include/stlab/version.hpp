@@ -1,5 +1,5 @@
 /*
-    Copyright 2015 Adobe
+    Copyright 2015-2021 Adobe
     Distributed under the Boost Software License, Version 1.0.
     (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 */
@@ -9,23 +9,36 @@
 #ifndef STLAB_VERSION_HPP
 #define STLAB_VERSION_HPP
 
-//
-//  Caution: this is the only stlab header that is guaranteed
-//  to change with every stlab release. Including this header
-//  will cause a recompile every time a new stlab version is
-//  used.
-//
+#include <stlab/config.hpp>
+
+
+
 //  STLAB_VERSION % 100 is the patch level
 //  STLAB_VERSION / 100 % 1000 is the minor version
 //  STLAB_VERSION / 100000 is the major version
-
-#define STLAB_VERSION 100701
-
 //
-//  STLAB_LIB_VERSION must be defined to be the same as STLAB_VERSION
-//  but as a *string* in the form "x_y[_z]" where x is the major version
+//  STLAB_LIB_VERSION is a string in the form "x_y[_z]" where x is the major version
 //  number, y is the minor version number, and z is the patch level if not 0.
+//
+//  These version numbers are automatically generated from the CMake project version.
+//
 
-#define STLAB_LIB_VERSION "1_7_1"
+/*!
+    `STLAB_VERSION % 100` is the patch level
+    `STLAB_VERSION / 100 % 1000` is the minor version
+    `STLAB_VERSION / 100000` is the major version
+*/
+#define STLAB_VERSION STLAB_VERSION_MAJOR() * 100000 + STLAB_VERSION_MINOR() * 100 + STLAB_VERSION_PATCH()
+
+/*!
+    `STLAB_LIB_VERSION` is a string in the form "x_y[_z]" where x is the major version
+    number, y is the minor version number, and z is the patch level if not 0.
+*/
+
+#if STLAB_VERSION_PATCH() == 0
+#define STLAB_LIB_VERSION STLAB_STRINGIZE(STLAB_VERSION_MAJOR()) "_" STLAB_STRINGIZE(STLAB_VERSION_MINOR())
+#else
+#define STLAB_LIB_VERSION STLAB_STRINGIZE(STLAB_VERSION_MAJOR()) "_" STLAB_STRINGIZE(STLAB_VERSION_MINOR()) "_" STLAB_STRINGIZE(STLAB_VERSION_PATCH())
+#endif
 
 #endif
