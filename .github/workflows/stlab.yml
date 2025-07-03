@@ -169,6 +169,16 @@ jobs:
 
       - name: Build and Install
         run: |
+          # Build and install copy-on-write first
+          git clone --depth 1 --branch v1.0.3 https://github.com/stlab/copy-on-write.git
+          cd copy-on-write
+          mkdir build && cd build
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build .
+          sudo cmake --install .
+          cd ../..
+
+          # Build and install stlab
           mkdir build && cd build
           cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 -DCMAKE_INSTALL_PREFIX=/usr/local
           cmake --build .

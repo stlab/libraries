@@ -23,7 +23,7 @@ set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cpm-cache CACHE PATH "Directory to cac
 
 # Add stlab-copy-on-write as a dependency
 CPMAddPackage("gh:stlab/copy-on-write@1.0.3")
-target_link_libraries(stlab PUBLIC stlab::copy-on-write)
+target_link_libraries(stlab INTERFACE stlab::copy-on-write)
 
 ########################################################
 # clangd
@@ -160,7 +160,7 @@ write_basic_package_version_file(
   COMPATIBILITY SameMajorVersion)
 
 install(
-  TARGETS stlab stlab-copy-on-write
+  TARGETS stlab
   EXPORT stlabTargets
   FILE_SET stlab
 )
