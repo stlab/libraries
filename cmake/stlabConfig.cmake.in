@@ -1,5 +1,8 @@
 include( CMakeFindDependencyMacro )
 
+# Find the copy-on-write dependency
+find_dependency( stlab-copy-on-write )
+
 if ( @STLAB_TASK_SYSTEM@ STREQUAL "libdispatch" )
   find_dependency( libdispatch )
 endif()
