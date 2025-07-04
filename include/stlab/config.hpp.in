@@ -10,6 +10,15 @@
 // Release version macro - used for inline namespace increment on each release
 #define STLAB_VERSION_NAMESPACE() v3
 
+// Version information generated from CMake project version
+#define STLAB_VERSION_MAJOR() @PROJECT_VERSION_MAJOR@
+#define STLAB_VERSION_MINOR() @PROJECT_VERSION_MINOR@
+#define STLAB_VERSION_PATCH() @PROJECT_VERSION_PATCH@
+
+// Helper macro for string construction
+#define STLAB_STRINGIZE(x) STLAB_STRINGIZE2(x)
+#define STLAB_STRINGIZE2(x) #x
+
 // Configuration generated from CMake
 
 #cmakedefine01 STLAB_STD_COROUTINES()

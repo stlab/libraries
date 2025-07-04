@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(stlab VERSION 1.7.1 LANGUAGES CXX)
+project(stlab VERSION 2.0.1 LANGUAGES CXX)
 
 # Create the main library target first
 add_library(stlab)
@@ -22,9 +22,8 @@ include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cpm-cache CACHE PATH "Directory to cache CPM packages" FORCE)
 
 # Add stlab-copy-on-write as a dependency
-
 CPMAddPackage("gh:stlab/copy-on-write@1.0.3")
-target_link_libraries(stlab PUBLIC stlab::copy-on-write)
+target_link_libraries(stlab INTERFACE stlab::copy-on-write)
 
 ########################################################
 # clangd
