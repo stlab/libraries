@@ -144,12 +144,12 @@ inline auto Future_error_map(future_error_codes code) noexcept -> const
 /**************************************************************************************************/
 
 // This could be lifted into a common header if needed in other places
-#if __cplusplus < 201703L
-template <class F, class... Args>
-using result_t = std::result_of_t<F(Args...)>;
-#else
+#if STLAB_CPP_VERSION_AT_LEAST(17)
 template <class F, class... Args>
 using result_t = std::invoke_result_t<F, Args...>;
+#else
+template <class F, class... Args>
+using result_t = std::result_of_t<F(Args...)>;
 #endif
 
 /**************************************************************************************************/
