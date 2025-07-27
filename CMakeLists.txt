@@ -108,7 +108,7 @@ endif()
 
 #
 # The include directory for stlab can be expected to vary between build
-# and installaion. Here we use a CMake generator expression to dispatch
+# and installation. Here we use a CMake generator expression to dispatch
 # on how the configuration under which this library is being consumed.
 #
 target_include_directories(stlab INTERFACE
