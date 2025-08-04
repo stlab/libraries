@@ -1,3 +1,6 @@
+## v2.0.2 - 2025 - June 27
+  - See [the release notes](https://github.com/stlab/libraries/releases/tag/v2.0.2) for details.
+
 ## v2.0.0 - 2025 - June 27
   - See [the release notes](https://github.com/stlab/libraries/releases/tag/v2.0.0) for details.
 
