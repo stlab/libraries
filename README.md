@@ -65,8 +65,8 @@ but there are other options you may need to append in order to be successful. Am
 STlab specific configuration options:
 
 - `-DSTLAB_MAIN_EXECUTOR=`[`qt5`, `qt6`, `libdispatch`, `emscripten`, `none`] to select the main executor to use. Default is platform dependent.
-- `-DSTLAB_CUSTOM_TASK_POOL_SIZE=`[`ON`, **`OFF`**] to use a task pool size specified by `STLAB_TASK_POOL_SIZE`. Implies `STLAB_TASK_SYSTEM=portable`.
-- `-DSTLAB_TASK_POOL_SIZE=`[`integer`] Task pool size if `STLAB_CUSTOM_TASK_POOL_SIZE`=`ON`.
+- `-DSTLAB_TASK_POOL_CUSTOM_SIZE=`[`ON`, **`OFF`**] to use a task pool size specified by `STLAB_TASK_POOL_SIZE`. Implies `STLAB_TASK_SYSTEM=portable`.
+- `-DSTLAB_TASK_POOL_SIZE=`[`integer`] Task pool size if `STLAB_TASK_POOL_CUSTOM_SIZE`=`ON`.
 - `-DSTLAB_NO_STD_COROUTINES=`[`ON`, **`OFF`**] to suppress usage of standard coroutines. Useful for non-conforming compilers.
 - `-DSTLAB_THREAD_SYSTEM=`[`win32`, `pthread`, `pthread-emscripten`, `pthread-apple`, `none`] to select the thread system to use. Default is platform dependent.
 - `-DSTLAB_TASK_SYSTEM=`[`portable`, `libdispatch`, `windows`] to select the task system to use. Default is platform dependent.

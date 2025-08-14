@@ -68,15 +68,15 @@ endif()
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
-option(STLAB_CUSTOM_TASK_POOL_SIZE "Use a custom task pool size (ON|OFF) specified by STLAB_TASK_POOL_SIZE. Implies STLAB_TASK_SYSTEM=portable" OFF)
-if(STLAB_CUSTOM_TASK_POOL_SIZE)
+option(STLAB_TASK_POOL_CUSTOM_SIZE "Use a custom task pool size (ON|OFF) specified by STLAB_TASK_POOL_SIZE. Implies STLAB_TASK_SYSTEM=portable" OFF)
+if(STLAB_TASK_POOL_CUSTOM_SIZE)
   set(STLAB_TASK_SYSTEM "portable" CACHE STRING "Task system to use (portable|libdispatch|windows)." FORCE)
 else()
   stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
 endif()
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows)")
 
-set(STLAB_TASK_POOL_SIZE 1 CACHE STRING "If STLAB_CUSTOM_TASK_POOL_SIZE is set, this is the size of the task pool")
+set(STLAB_TASK_POOL_SIZE 1 CACHE STRING "If STLAB_TASK_POOL_CUSTOM_SIZE is set, this is the size of the task pool")
 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
