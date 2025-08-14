@@ -76,6 +76,8 @@ else()
 endif()
 set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
 
+set(STLAB_TASK_POOL_SIZE 1 CACHE STRING "If STLAB_MINIMAL_TASK_POOL is set, this is the size of the task pool.")
+
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
 
