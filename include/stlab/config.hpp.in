@@ -43,7 +43,7 @@
 #cmakedefine01 STLAB_MAIN_EXECUTOR_QT6()
 #cmakedefine01 STLAB_MAIN_EXECUTOR_NONE()
 
-#cmakedefine01 STLAB_MINIMAL_TASK_POOL()
+#cmakedefine01 STLAB_CUSTOM_TASK_POOL_SIZE()
 #define STLAB_TASK_POOL_SIZE() @STLAB_TASK_POOL_SIZE@
 
 // Various functionality macros

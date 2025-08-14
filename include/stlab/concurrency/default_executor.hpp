@@ -316,7 +316,7 @@ public:
 class priority_task_system {
     // Returns the number of hardware threads, or 1 if not available.
     static unsigned hardware_concurrency() {
-#if STLAB_MINIMAL_TASK_POOL()
+#if STLAB_CUSTOM_TASK_POOL_SIZE()
         return STLAB_TASK_POOL_SIZE();
 #else
         return std::max(1u, std::thread::hardware_concurrency());
