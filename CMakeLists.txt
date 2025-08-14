@@ -75,7 +75,7 @@ set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread syst
 option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_SIZE=1." OFF)
 if (STLAB_MINIMAL_TASK_POOL)
   message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_SIZE=1, instead.")
-  set(STLAB_TASK_POOL_SIZE 1 CACHE STRING "Define a custom task pool size. Default size of 0 implies a pool size of std::thread::hardware_concurrency." FORCE)
+  set(STLAB_TASK_POOL_SIZE 1)
 else()
   set(STLAB_TASK_POOL_SIZE 0 CACHE STRING "Define a custom task pool size. Default of 0 implies a pool size of std::thread::hardware_concurrency.")
 endif()
