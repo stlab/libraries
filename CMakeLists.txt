@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(stlab VERSION 2.0.2 LANGUAGES CXX)
+project(stlab VERSION 2.1.0 LANGUAGES CXX)
 
 # Create the main library target first
 add_library(stlab)
