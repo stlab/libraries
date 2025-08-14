@@ -72,21 +72,20 @@ set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread syst
 # TODO (bmedina): When STLab v3.0 is released, remove the deprecated STLAB_MINIMAL_TASK_POOL option
 # and simplify the code below.
 #
-option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_SIZE=1" OFF)
+option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_SIZE=1." OFF)
 if (STLAB_MINIMAL_TASK_POOL)
-  message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_SIZE=1 instead.")
+  message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_SIZE=1, instead.")
   set(STLAB_TASK_POOL_SIZE 1 CACHE STRING "Define a custom task pool size. Default size of 0 implies a pool size of std::thread::hardware_concurrency." FORCE)
 else()
   set(STLAB_TASK_POOL_SIZE 0 CACHE STRING "Define a custom task pool size. Default of 0 implies a pool size of std::thread::hardware_concurrency.")
 endif()
 
 if(STLAB_TASK_POOL_SIZE GREATER 0)
-message("***")
   set(STLAB_TASK_SYSTEM "portable" CACHE STRING "Task system to use (portable|libdispatch|windows)." FORCE)
 else()
   stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
 endif()
-set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows)")
+set(STLAB_TASK_SYSTEM ${STLAB_DEFAULT_TASK_SYSTEM} CACHE STRING "Task system to use (portable|libdispatch|windows).")
 
 stlab_detect_main_executor(STLAB_DEFAULT_MAIN_EXECUTOR)
 set(STLAB_MAIN_EXECUTOR ${STLAB_DEFAULT_MAIN_EXECUTOR} CACHE STRING "Main executor to use (qt5|qt6|libdispatch|emscripten|none).")
