@@ -77,7 +77,7 @@ if (STLAB_MINIMAL_TASK_POOL)
   message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_SIZE=1, instead.")
   set(STLAB_TASK_POOL_SIZE 1)
 else()
-  set(STLAB_TASK_POOL_SIZE 0 CACHE STRING "Define a custom task pool size. Default of 0 implies a pool size of std::thread::hardware_concurrency. Non-default implies STLAB_TASK_SYSTEM=portable.")
+  set(STLAB_TASK_POOL_SIZE 0 CACHE STRING "Define a custom task pool size. Default of zero implies a pool size of std::thread::hardware_concurrency. Non-zero implies STLAB_TASK_SYSTEM=portable.")
 endif()
 
 if(STLAB_TASK_POOL_SIZE GREATER 0)
