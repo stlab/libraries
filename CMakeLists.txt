@@ -80,6 +80,11 @@ else()
   set(STLAB_TASK_POOL_SIZE 0 CACHE STRING "Define a custom task pool size. Default of zero implies a pool size of std::thread::hardware_concurrency. Non-zero implies STLAB_TASK_SYSTEM=portable.")
 endif()
 
+# Ensure STLAB_TASK_POOL_SIZE is a non-negative number
+if(NOT STLAB_TASK_POOL_SIZE MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "STLAB_TASK_POOL_SIZE must be a non-negative, decimal integer.")
+endif()
+
 if(STLAB_TASK_POOL_SIZE GREATER 0)
   set(STLAB_TASK_SYSTEM "portable" CACHE STRING "Task system to use (portable|libdispatch|windows)." FORCE)
 else()
