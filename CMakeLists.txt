@@ -72,20 +72,20 @@ set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread syst
 # TODO (bmedina): When STLab v3.0 is released, remove the deprecated STLAB_MINIMAL_TASK_POOL option
 # and simplify the code below.
 #
-option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_SIZE=1." OFF)
+option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_MAXIMUM=1." OFF)
 if (STLAB_MINIMAL_TASK_POOL)
-  message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_SIZE=1, instead.")
-  set(STLAB_TASK_POOL_SIZE 1)
+  message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_MAXIMUM=1, instead.")
+  set(STLAB_TASK_POOL_MAXIMUM 1)
 else()
-  set(STLAB_TASK_POOL_SIZE 0 CACHE STRING "Define a custom task pool size. Default of zero implies a pool size of std::thread::hardware_concurrency. Non-zero implies STLAB_TASK_SYSTEM=portable.")
+  set(STLAB_TASK_POOL_MAXIMUM 0 CACHE STRING "Define the maximum number threads in the task pool. Default of zero implies a pool size of std::thread::hardware_concurrency. Non-zero implies STLAB_TASK_SYSTEM=portable.")
 endif()
 
-# Ensure STLAB_TASK_POOL_SIZE is a non-negative number
-if(NOT STLAB_TASK_POOL_SIZE MATCHES "^[0-9]+$")
-  message(FATAL_ERROR "STLAB_TASK_POOL_SIZE must be a non-negative, decimal integer.")
+# Ensure STLAB_TASK_POOL_MAXIMUM is a non-negative number
+if(NOT STLAB_TASK_POOL_MAXIMUM MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "STLAB_TASK_POOL_MAXIMUM must be a non-negative, decimal integer.")
 endif()
 
-if(STLAB_TASK_POOL_SIZE GREATER 0)
+if(STLAB_TASK_POOL_MAXIMUM GREATER 0)
   set(STLAB_TASK_SYSTEM "portable" CACHE STRING "Task system to use (portable|libdispatch|windows)." FORCE)
 else()
   stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
