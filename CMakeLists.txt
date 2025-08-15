@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(stlab VERSION 2.0.2 LANGUAGES CXX)
+project(stlab VERSION 2.1.0 LANGUAGES CXX)
 
 # Create the main library target first
 add_library(stlab)
@@ -68,8 +68,33 @@ endif()
 stlab_detect_thread_system(STLAB_DEFAULT_THREAD_SYSTEM)
 set(STLAB_THREAD_SYSTEM ${STLAB_DEFAULT_THREAD_SYSTEM} CACHE STRING "Thread system to use (win32|pthread|pthread-emscripten|pthread-apple|none)")
 
-option(STLAB_MINIMAL_TASK_POOL "Use the minimal task pool size (ON|OFF), implies `STLAB_TASK_SYSTEM=portable`" OFF)
-if(STLAB_MINIMAL_TASK_POOL)
+set(STLAB_TASK_POOL_MAXIMUM 0 CACHE STRING "Define the maximum number threads in the task pool. Default of zero implies a pool size of std::thread::hardware_concurrency. Non-zero implies STLAB_TASK_SYSTEM=portable.")
+
+# Ensure STLAB_TASK_POOL_MAXIMUM is a non-negative number
+if(NOT STLAB_TASK_POOL_MAXIMUM MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "STLAB_TASK_POOL_MAXIMUM must be a non-negative, decimal integer.")
+endif()
+
+#
+# TODO (bmedina): When STLab v3.0 is released, remove the deprecated STLAB_MINIMAL_TASK_POOL option
+# and eliminate the code below.
+#
+option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_MAXIMUM=1." OFF)
+if (STLAB_MINIMAL_TASK_POOL)
+  message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_MAXIMUM=1, instead.")
+
+  # The deprecated STLAB_MINIMAL_TASK_POOL implied a pool size of 1.
+  # If STLAB_TASK_POOL_MAXIMUM is at its default of zero, make it 1.
+  # Otherwise, if it's been customized to something other than 1, that's logically invalid.
+  # Fail and direct them to the new option.
+  if (STLAB_TASK_POOL_MAXIMUM EQUAL 0)
+    set(STLAB_TASK_POOL_MAXIMUM 1)
+  elseif (STLAB_TASK_POOL_MAXIMUM GREATER 1)
+    message(FATAL_ERROR "STLAB_MINIMAL_TASK_POOL is deprecated and incompatible with STLAB_TASK_POOL_MAXIMUM>1. Use STLAB_TASK_POOL_MAXIMUM to set the desired pool size.")
+  endif()
+endif()
+
+if(STLAB_TASK_POOL_MAXIMUM GREATER 0)
   set(STLAB_TASK_SYSTEM "portable" CACHE STRING "Task system to use (portable|libdispatch|windows)." FORCE)
 else()
   stlab_detect_task_system(STLAB_DEFAULT_TASK_SYSTEM)
