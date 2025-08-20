@@ -71,8 +71,8 @@ struct group_t {
     group_t() = default;
     group_t(const group_t&) = delete;
     group_t(group_t&& a) noexcept : _group(std::exchange(a._group, nullptr)) {}
-    group_t& operator=(const group_t&) = delete;
-    group_t& operator=(group_t&& a) noexcept {
+    auto operator=(const group_t&) -> group_t& = delete;
+    auto operator=(group_t&& a) noexcept -> group_t& {
         _group = std::exchange(a._group, nullptr);
         return *this;
     }
