@@ -38,7 +38,7 @@ struct immediate_executor_type {
 
 /**************************************************************************************************/
 
-constexpr auto immediate_executor = detail::immediate_executor_type{};
+inline constexpr auto immediate_executor = detail::immediate_executor_type{};
 
 /**************************************************************************************************/
 

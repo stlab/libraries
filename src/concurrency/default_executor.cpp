@@ -17,7 +17,7 @@ inline namespace STLAB_VERSION_NAMESPACE() {
 namespace detail {
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
-group_t& group() {
+auto group() -> const group_t& {
     // Use an immediately executed lambda to atomically register pre-exit handler
     // and create the dispatch group.
     static group_t g{[] {
@@ -28,6 +28,16 @@ group_t& group() {
     }()};
     return g;
 }
+
+group_t::~group_t() {
+    if (_group) {
+        dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
+#if !STLAB_FEATURE(OBJC_ARC)
+        dispatch_release(_group);
+#endif
+    }
+}
+
 #elif STLAB_TASK_SYSTEM(PORTABLE)
 priority_task_system& pts() {
     // Uses the `nullptr` constructor with an immediate executed lambda to register the task

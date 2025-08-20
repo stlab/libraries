@@ -68,15 +68,19 @@ constexpr auto platform_priority(executor_priority p) {
 
 struct group_t {
     dispatch_group_t _group = dispatch_group_create();
-    ~group_t() {
-        dispatch_group_wait(_group, DISPATCH_TIME_FOREVER);
-#if !STLAB_FEATURE(OBJC_ARC)
-        dispatch_release(_group);
-#endif
+    group_t() = default;
+    group_t(const group_t&) = delete;
+    group_t(group_t&& a) noexcept : _group(std::exchange(a._group, nullptr)) {}
+    group_t& operator=(const group_t&) = delete;
+    group_t& operator=(group_t&& a) noexcept {
+        _group = std::exchange(a._group, nullptr);
+        return *this;
     }
+
+    ~group_t();
 };
 
-group_t& group();
+auto group() -> const group_t&;
 
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
@@ -481,9 +485,9 @@ struct executor_type {
 
 /**************************************************************************************************/
 
-constexpr auto low_executor = detail::executor_type<detail::executor_priority::low>{};
-constexpr auto default_executor = detail::executor_type<detail::executor_priority::medium>{};
-constexpr auto high_executor = detail::executor_type<detail::executor_priority::high>{};
+inline constexpr auto low_executor = detail::executor_type<detail::executor_priority::low>{};
+inline constexpr auto default_executor = detail::executor_type<detail::executor_priority::medium>{};
+inline constexpr auto high_executor = detail::executor_type<detail::executor_priority::high>{};
 
 /**************************************************************************************************/
 
