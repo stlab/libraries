@@ -18,6 +18,9 @@ include(cmake/CPM.cmake)
 CPMAddPackage("gh:stlab/copy-on-write@1.0.3")
 target_link_libraries(stlab INTERFACE stlab::copy-on-write)
 
+CPMAddPackage("gh:stlab/enum-ops@1.0.0")
+target_link_libraries(stlab INTERFACE stlab::enum-ops)
+
 ########################################################
 # clangd
 
