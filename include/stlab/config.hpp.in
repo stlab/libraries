@@ -44,7 +44,7 @@
 #cmakedefine01 STLAB_MAIN_EXECUTOR_QT6()
 #cmakedefine01 STLAB_MAIN_EXECUTOR_NONE()
 
-#define STLAB_TASK_POOL_MAXIMUM() @STLAB_TASK_POOL_MAXIMUM @u
+#define STLAB_TASK_POOL_MAXIMUM() @STLAB_TASK_POOL_MAXIMUM@u
 
 // Various functionality macros
 
