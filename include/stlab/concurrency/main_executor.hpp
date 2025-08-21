@@ -165,7 +165,7 @@ struct main_executor_type {
 
 } // namespace detail
 
-constexpr auto main_executor = detail::main_executor_type{};
+inline constexpr auto main_executor = detail::main_executor_type{};
 
 /**************************************************************************************************/
 

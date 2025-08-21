@@ -11,5 +11,7 @@ CheckOptions:
     value: >
       boost/test/.*;
       __chrono/.*
-HeaderFilterRegex: '^.*/include/stlab/.*$'
+  - key: modernize-*.MinimumCppVersion
+    value: "C++17"
+HeaderFilterRegex: "^.*/include/stlab/.*$"
 # WarningsAsErrors: "*"
