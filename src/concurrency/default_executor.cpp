@@ -8,7 +8,9 @@
 
 #include <stlab/concurrency/default_executor.hpp>
 
+#if STLAB_TASK_SYSTEM(LIBDISPATCH)
 #include <dispatch/dispatch.h>
+#endif
 
 #include "stlab/config.hpp"   // for STLAB_TASK_SYSTEM, STLAB_TASK_SYSTEM_L...
 #include "stlab/pre_exit.hpp" // for at_pre_exit
