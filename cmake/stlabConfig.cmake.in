@@ -1,10 +1,10 @@
 include(CMakeFindDependencyMacro)
 
 # Find the copy-on-write dependency
-find_dependency(copy-on-write 1 REQUIRED)
+find_dependency(stlab-copy-on-write 1 REQUIRED)
 
 # Find the enum-ops dependency
-find_dependency(enum-ops 1 REQUIRED)
+find_dependency(stlab-enum-ops 1 REQUIRED)
 
 if(@STLAB_TASK_SYSTEM STREQUAL "libdispatch")
   find_dependency(libdispatch)
