@@ -14,7 +14,7 @@
 
 // Release version macro - used for inline namespace incremented on each release
 #define STLAB_VERSION_NAMESPACE() \
-    v##@PROJECT_VERSION_MAJOR@##@PROJECT_VERSION_MINOR@##@PROJECT_VERSION_PATCH@
+    v@PROJECT_VERSION_MAJOR@_@PROJECT_VERSION_MINOR@_@PROJECT_VERSION_PATCH@
 
 // Helper macro for string construction
 #define STLAB_STRINGIZE(x) STLAB_STRINGIZE2(x)

@@ -134,8 +134,7 @@ endif()
 #
 target_include_directories(stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 
 #
 # Several definitions are specified for the microsoft compiler. These have
@@ -173,41 +172,3 @@ message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
-
-include(CMakePackageConfigHelpers) # provides `write_basic_package_version_file`
-write_basic_package_version_file(
-  "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
-  VERSION ${stlab_VERSION}
-  COMPATIBILITY SameMajorVersion)
-
-install(
-  TARGETS stlab
-  EXPORT stlabTargets
-  FILE_SET stlab
-)
-
-#
-# A CMake configuration file is generated describing the stlab exported targets.
-# This file is included by (and installed with) the cmake/CMakeConfig.cmake file
-# under version control.
-#
-install(EXPORT stlabTargets
-  FILE stlabTargets.cmake
-  NAMESPACE stlab::
-  DESTINATION share/cmake/stlab)
-
-#
-# Install the CMake configuration files to the `share/cmake/stlab` subdirectory
-# of `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}`. This path will be searched by
-# default by the `find_package` intrinsic, provided
-# `$INSTALL_DIR/${CMAKE_INSTALL_PREFIX}` is an element of the
-# `CMAKE_PREFIX_PATH` environment variable.
-#
-configure_file(
-  "${stlab_SOURCE_DIR}/cmake/stlabConfig.cmake.in"
-  "${stlab_BINARY_DIR}/stlabConfig.cmake"
-  @ONLY)
-install(FILES
-  "${stlab_BINARY_DIR}/stlabConfig.cmake"
-  "${stlab_BINARY_DIR}/stlabConfigVersion.cmake"
-  DESTINATION share/cmake/stlab)
