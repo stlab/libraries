@@ -10,5 +10,5 @@ hyde:
   declaration: "\nstruct stlab::nonesuch;"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

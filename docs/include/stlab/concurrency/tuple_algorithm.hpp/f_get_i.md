@@ -33,5 +33,5 @@ hyde:
       signature_with_names: "template <typename T, typename F, typename D>\nauto get_i(T & t, std::size_t index, F f, D && default_v)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

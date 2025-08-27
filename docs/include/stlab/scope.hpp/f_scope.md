@@ -37,5 +37,5 @@ hyde:
       signature_with_names: "template <typename T, typename... Args>\nauto scope(Args &&... args)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

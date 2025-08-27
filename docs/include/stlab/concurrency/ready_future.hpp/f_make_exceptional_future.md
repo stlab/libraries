@@ -21,7 +21,7 @@ hyde:
       signature_with_names: "template <typename T, typename E>\nauto make_exceptional_future(const std::exception_ptr & error, E executor) -> future<T>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 Creates a future that is fulfilled as failed

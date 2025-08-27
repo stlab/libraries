@@ -19,5 +19,5 @@ hyde:
       type: F
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

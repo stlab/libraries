@@ -36,5 +36,5 @@ hyde:
       signature_with_names: "template <class T>\nauto await(future<T> && x) -> T"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

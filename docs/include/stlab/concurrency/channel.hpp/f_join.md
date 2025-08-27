@@ -32,5 +32,5 @@ hyde:
       signature_with_names: "template <typename S, typename F, typename... R>\nauto join(S s, F f, R... upstream_receiver)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -29,5 +29,5 @@ hyde:
       signature_with_names: "template <class Seq, class F, class Tuple>\nconstexpr auto apply_indexed(F && f, Tuple && t) -> decltype(auto)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -14,7 +14,7 @@ hyde:
       type: stlab::annotate_counters *
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 `annotate` will increase a passed operation counter when one of these operations happen to an instance:

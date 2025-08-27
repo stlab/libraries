@@ -29,5 +29,5 @@ hyde:
       signature_with_names: "template <class F, class Tuple>\nconstexpr auto apply_ignore_placeholders(F && f, Tuple && t) -> decltype(auto)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

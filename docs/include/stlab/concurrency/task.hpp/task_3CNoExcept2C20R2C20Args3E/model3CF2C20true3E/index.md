@@ -21,5 +21,5 @@ hyde:
       type: const stlab::task_::concept_t
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

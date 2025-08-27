@@ -28,5 +28,5 @@ hyde:
       signature_with_names: "template <class U, class E>\nauto future_with_broken_promise(E) -> detail::reduced_t<U>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

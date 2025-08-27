@@ -13,5 +13,5 @@ hyde:
   declaration: "\nclass stlab::sender;"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -13,5 +13,5 @@ hyde:
   declaration: "template <class... Args>\nclass stlab::packaged_task;"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

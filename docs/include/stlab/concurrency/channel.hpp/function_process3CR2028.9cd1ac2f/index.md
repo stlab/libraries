@@ -25,5 +25,5 @@ hyde:
       type: std::function<R (Args...)>
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

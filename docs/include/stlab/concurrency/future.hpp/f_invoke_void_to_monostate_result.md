@@ -27,5 +27,5 @@ hyde:
       signature_with_names: "template <class F, class... Args>\nauto invoke_void_to_monostate_result(F && f, Args &&... args)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

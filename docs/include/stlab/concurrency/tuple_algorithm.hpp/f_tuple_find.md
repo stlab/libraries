@@ -29,5 +29,5 @@ hyde:
       signature_with_names: "template <typename T, typename Op>\nauto tuple_find(const T & t, Op op) -> std::size_t"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

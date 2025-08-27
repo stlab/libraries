@@ -9,16 +9,14 @@ add_library(stlab::stlab ALIAS stlab)
 ########################################################
 # Dependencies
 # Enable CPM caching to avoid re-downloading dependencies
-set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cpm-cache CACHE PATH "Directory to cache CPM packages" FORCE)
-
+set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages" FORCE)
 include(cmake/CPM.cmake)
 
-
 # Add stlab-copy-on-write as a dependency
-CPMAddPackage("gh:stlab/copy-on-write@1.0.3")
+CPMAddPackage("gh:stlab/copy-on-write@1.0.4")
 target_link_libraries(stlab INTERFACE stlab::copy-on-write)
 
-CPMAddPackage("gh:stlab/enum-ops@1.0.0")
+CPMAddPackage("gh:stlab/enum-ops@1.0.3")
 target_link_libraries(stlab INTERFACE stlab::enum-ops)
 
 ########################################################

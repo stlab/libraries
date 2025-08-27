@@ -23,5 +23,5 @@ hyde:
       signature_with_names: "template <class T>\nauto blocking_get_for(future<T> x, const std::chrono::nanoseconds & timeout) -> future<T>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

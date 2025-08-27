@@ -24,5 +24,5 @@ hyde:
       signature_with_names: "template <typename T, typename E>\nauto channel(E executor)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

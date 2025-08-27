@@ -21,5 +21,5 @@ hyde:
       signature_with_names: auto operator<<(std::ostream & out, const stlab::annotate_counters & x) -> std::ostream &
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

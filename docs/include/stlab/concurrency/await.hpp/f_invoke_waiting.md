@@ -24,5 +24,5 @@ hyde:
       signature_with_names: "template <class F>\nauto invoke_waiting(F && f)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -24,5 +24,5 @@ hyde:
       signature_with_names: "template <class T>\nconstexpr auto move(T && t) -> std::remove_reference_t<T> &&"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

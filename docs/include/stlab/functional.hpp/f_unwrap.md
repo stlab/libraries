@@ -48,5 +48,5 @@ hyde:
       signature_with_names: "template <typename T>\nauto unwrap(std::reference_wrapper<T> & val) -> T &"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

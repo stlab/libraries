@@ -49,7 +49,7 @@ hyde:
       signature_with_names: "template <class E, class F, class T, class... Ts>\nauto when_any(E && executor, F && f, future<T> && arg, future<Ts> &&... args)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 Creates a future that continues on the first success of any futures passed. The results of all passed futures must be convertible to the first parameter of the continuing function. The function must accept the a second parameter of std::size_t. It will receive the index of the future that succeeded first.

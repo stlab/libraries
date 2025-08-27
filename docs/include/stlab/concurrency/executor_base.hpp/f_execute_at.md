@@ -53,5 +53,5 @@ hyde:
       signature_with_names: "template <typename Rep, typename Per>\nauto execute_at(std::chrono::duration<Rep, Per> duration, stlab::executor_t executor) -> stlab::executor_t"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

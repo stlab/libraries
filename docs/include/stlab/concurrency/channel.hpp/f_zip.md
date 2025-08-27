@@ -27,5 +27,5 @@ hyde:
       signature_with_names: "template <typename S, typename... R>\nauto zip(S s, const R &... r)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

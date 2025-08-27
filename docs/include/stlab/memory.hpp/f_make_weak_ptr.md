@@ -24,5 +24,5 @@ hyde:
       signature_with_names: "template <typename T>\nauto make_weak_ptr(const std::shared_ptr<T> & x)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

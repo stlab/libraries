@@ -43,5 +43,5 @@ hyde:
       signature_with_names: void swap(stlab::future<void> & x, stlab::future<void> & y)
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

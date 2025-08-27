@@ -28,5 +28,5 @@ hyde:
       signature_with_names: "template <class Sig, class E, class F>\nauto package(E executor, F && f) -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
