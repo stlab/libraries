@@ -30,5 +30,5 @@ hyde:
       signature_with_names: "template <class E, class F, class... Args>\nauto async(const E & executor, F && f, Args &&... args) -> detail::reduced_t<detail::result_t<std::decay_t<F>, std::decay_t<Args>...>>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

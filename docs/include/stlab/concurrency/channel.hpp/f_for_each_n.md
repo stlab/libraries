@@ -30,5 +30,5 @@ hyde:
       signature_with_names: "template <typename I, typename N, typename F>\nauto for_each_n(I p, N n, F f) -> I"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

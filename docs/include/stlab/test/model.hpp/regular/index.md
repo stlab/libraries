@@ -17,7 +17,7 @@ hyde:
       type: int
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 `regular` will write to `std::cout` when the following events happen to an instance:

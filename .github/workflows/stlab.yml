@@ -56,23 +56,12 @@ jobs:
           sudo apt-get install -y ninja-build
         shell: bash
 
-      # - name: Install dependencies // Windows
-        # if: ${{ startsWith(matrix.config.os, 'windows') }}
-        # run: |
-        #  choco install --yes ninja
-        #  vcpkg install boost-test:x64-windows boost-multiprecision:x64-windows
-        # vcpkg install boost:x64-windows
-        # dotnet add package boost --version 1.85.0
-        # choco install --yes boost-msvc-14.3
-        # shell: cmd
-
       - name: Install dependencies // Linux Emscripten
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build
-          # git clone --depth 1 --recurse-submodules --shallow-submodules --jobs=8 https://github.com/boostorg/boost.git $HOME/boost
 
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           pushd $HOME/emsdk
@@ -99,19 +88,6 @@ jobs:
         run: |
           echo "CC=clang-${{matrix.config.version}}" >> $GITHUB_ENV
           echo "CXX=clang++-${{matrix.config.version}}" >> $GITHUB_ENV
-
-      # - name: Compile Boost // Emscripten
-      #   if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
-      #   shell: bash -l {0}
-      #   run: |
-      #     mkdir -p ../build-boost
-      #     cmake -S $HOME/boost -B ../build-boost -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23 \
-      #       -DCMAKE_CXX_FLAGS="-Wno-deprecated-builtins" \
-      #       -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/Platform/Emscripten-STLab.cmake \
-      #       -DBOOST_INCLUDE_LIBRARIES="multiprecision;test"
-
-      #     cmake --build ../build-boost
-      #     cmake --install ../build-boost
 
       - name: Configure // Unix !Emscripten
         if: ${{ (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')) && !startsWith(matrix.config.compiler, 'emscripten') }}
@@ -154,63 +130,3 @@ jobs:
         run: |
           cd ../build/
           ctest --output-on-failure
-
-  test-install:
-    name: Test CMake Installation
-    needs: builds
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.1.6
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build
-
-      - name: Build and Install
-        run: |
-          # Build and install copy-on-write first
-          git clone --depth 1 --branch v1.0.3 https://github.com/stlab/copy-on-write.git
-          cd copy-on-write
-          mkdir build && cd build
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 -DCMAKE_INSTALL_PREFIX=/usr/local
-          cmake --build .
-          sudo cmake --install .
-          cd ../..
-
-          # Build and install stlab
-          mkdir build && cd build
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 -DCMAKE_INSTALL_PREFIX=/usr/local
-          cmake --build .
-          sudo cmake --install .
-
-      - name: Create Test Project
-        run: |
-          mkdir test-install && cd test-install
-          cat > CMakeLists.txt << 'EOL'
-          cmake_minimum_required(VERSION 3.23)
-          project(test_stlab_install)
-          
-          find_package(stlab REQUIRED)
-          
-          add_executable(test_stlab main.cpp)
-          target_link_libraries(test_stlab PRIVATE stlab::stlab)
-          EOL
-          
-          cat > main.cpp << 'EOL'
-          #include <stlab/version.hpp>
-          #include <iostream>
-          
-          int main() {
-              std::cout << "STLab version: " << STLAB_VERSION << std::endl;
-              return 0;
-          }
-          EOL
-
-      - name: Build Test Project
-        run: |
-          cd test-install
-          mkdir build && cd build
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
-          cmake --build .
-          ./test_stlab

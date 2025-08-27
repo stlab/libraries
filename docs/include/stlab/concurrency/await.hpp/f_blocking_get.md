@@ -39,7 +39,7 @@ hyde:
       signature_with_names: "template <class T>\nauto blocking_get(future<T> x, const std::chrono::nanoseconds & timeout) -> decltype(x.get_try())"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 Waits until the passed future is ready. Using this function causes that one thread resource is consumed which increases contention and possibly causing a deadlock. As well any subsequent non-dependent calculations on the task are also blocked. It is strongly recommended to avoid using this function, but use continuations.

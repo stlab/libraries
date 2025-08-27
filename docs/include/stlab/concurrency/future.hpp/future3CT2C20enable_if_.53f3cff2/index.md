@@ -18,5 +18,5 @@ hyde:
       description: __MISSING__
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

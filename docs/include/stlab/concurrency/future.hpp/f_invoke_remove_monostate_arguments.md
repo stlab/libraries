@@ -21,5 +21,5 @@ hyde:
       signature_with_names: "template <class F, class... Args>\nauto invoke_remove_monostate_arguments(F && f, Args &&... args)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

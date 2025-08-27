@@ -1,5 +1,95 @@
 [
   {
+    "url": "https://api.github.com/repos/stlab/libraries/releases/237492342",
+    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/237492342/assets",
+    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/237492342/assets{?name,label}",
+    "html_url": "https://github.com/stlab/libraries/releases/tag/v2.0.2",
+    "id": 237492342,
+    "author": {
+      "login": "sean-parent",
+      "id": 2279724,
+      "node_id": "MDQ6VXNlcjIyNzk3MjQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2279724?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sean-parent",
+      "html_url": "https://github.com/sean-parent",
+      "followers_url": "https://api.github.com/users/sean-parent/followers",
+      "following_url": "https://api.github.com/users/sean-parent/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sean-parent/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sean-parent/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sean-parent/subscriptions",
+      "organizations_url": "https://api.github.com/users/sean-parent/orgs",
+      "repos_url": "https://api.github.com/users/sean-parent/repos",
+      "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sean-parent/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "node_id": "RE_kwDOAiB0YM4OJ9h2",
+    "tag_name": "v2.0.2",
+    "target_commitish": "main",
+    "name": "v2.0.2",
+    "draft": false,
+    "immutable": false,
+    "prerelease": false,
+    "created_at": "2025-08-04T21:23:08Z",
+    "updated_at": "2025-08-04T21:26:28Z",
+    "published_at": "2025-08-04T21:26:28Z",
+    "assets": [
+
+    ],
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v2.0.2",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v2.0.2",
+    "body": "## What's Changed\r\n* Fix STLAB_CPP_VERSION and use in future.hpp. by @venik in https://github.com/stlab/libraries/pull/567\r\n* Fixing include paths for dependencies. by @sean-parent in https://github.com/stlab/libraries/pull/569\r\n* Updating CPM and version for 2.0.2 release by @sean-parent in https://github.com/stlab/libraries/pull/570\r\n\r\n## New Contributors\r\n* @venik made their first contribution in https://github.com/stlab/libraries/pull/567\r\n\r\n**Full Changelog**: https://github.com/stlab/libraries/compare/v2.0.1...v2.0.2",
+    "mentions_count": 2
+  },
+  {
+    "url": "https://api.github.com/repos/stlab/libraries/releases/229925378",
+    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/229925378/assets",
+    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/229925378/assets{?name,label}",
+    "html_url": "https://github.com/stlab/libraries/releases/tag/v2.0.1",
+    "id": 229925378,
+    "author": {
+      "login": "sean-parent",
+      "id": 2279724,
+      "node_id": "MDQ6VXNlcjIyNzk3MjQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2279724?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sean-parent",
+      "html_url": "https://github.com/sean-parent",
+      "followers_url": "https://api.github.com/users/sean-parent/followers",
+      "following_url": "https://api.github.com/users/sean-parent/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sean-parent/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sean-parent/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sean-parent/subscriptions",
+      "organizations_url": "https://api.github.com/users/sean-parent/orgs",
+      "repos_url": "https://api.github.com/users/sean-parent/repos",
+      "events_url": "https://api.github.com/users/sean-parent/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sean-parent/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "node_id": "RE_kwDOAiB0YM4NtGIC",
+    "tag_name": "v2.0.1",
+    "target_commitish": "main",
+    "name": "v2.0.1",
+    "draft": false,
+    "immutable": false,
+    "prerelease": false,
+    "created_at": "2025-07-04T03:56:32Z",
+    "updated_at": "2025-07-04T03:58:27Z",
+    "published_at": "2025-07-04T03:58:27Z",
+    "assets": [
+
+    ],
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v2.0.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v2.0.1",
+    "body": "## What's Changed\r\n* Adding test for CMake install. by @sean-parent in https://github.com/stlab/libraries/pull/566\r\n* Fixed CMake install\r\n* Fixed library version number in CMake and version.hpp\r\n\r\n**Full Changelog**: https://github.com/stlab/libraries/compare/v2.0.0...v2.0.1",
+    "mentions_count": 1
+  },
+  {
     "url": "https://api.github.com/repos/stlab/libraries/releases/228499861",
     "assets_url": "https://api.github.com/repos/stlab/libraries/releases/228499861/assets",
     "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/228499861/assets{?name,label}",
@@ -31,8 +121,10 @@
     "target_commitish": "main",
     "name": "v2.0.0",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2025-06-28T00:14:52Z",
+    "updated_at": "2025-06-28T01:05:56Z",
     "published_at": "2025-06-28T01:05:56Z",
     "assets": [
 
@@ -75,8 +167,10 @@
     "target_commitish": "main",
     "name": "Moving away from header only-only library for better dynamic libary support",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2025-02-27T19:54:28Z",
+    "updated_at": "2025-02-27T20:03:52Z",
     "published_at": "2025-02-27T20:03:52Z",
     "assets": [
 
@@ -118,8 +212,10 @@
     "target_commitish": "main",
     "name": "v2.0.0a9",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2025-01-28T23:50:20Z",
+    "updated_at": "2025-01-28T23:56:08Z",
     "published_at": "2025-01-28T23:56:08Z",
     "assets": [
 
@@ -160,8 +256,10 @@
     "target_commitish": "main",
     "name": "v2.0.0.a8",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2025-01-25T23:47:32Z",
+    "updated_at": "2025-01-26T00:28:14Z",
     "published_at": "2025-01-26T00:28:14Z",
     "assets": [
 
@@ -215,8 +313,10 @@
     "target_commitish": "main",
     "name": "v2.0.0a7",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2024-04-20T00:14:39Z",
+    "updated_at": "2024-04-20T00:16:03Z",
     "published_at": "2024-04-20T00:16:03Z",
     "assets": [
 
@@ -258,8 +358,10 @@
     "target_commitish": "main",
     "name": "v2.0.0a6",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2024-03-15T00:12:55Z",
+    "updated_at": "2024-03-15T00:16:28Z",
     "published_at": "2024-03-15T00:16:28Z",
     "assets": [
 
@@ -301,8 +403,10 @@
     "target_commitish": "main",
     "name": "Fix use after move in future reduction",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2024-03-11T23:34:25Z",
+    "updated_at": "2024-03-11T23:47:37Z",
     "published_at": "2024-03-11T23:47:37Z",
     "assets": [
 
@@ -343,8 +447,10 @@
     "target_commitish": "main",
     "name": "v2.0.0a4",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2024-03-04T19:44:29Z",
+    "updated_at": "2024-03-04T19:49:15Z",
     "published_at": "2024-03-04T19:49:15Z",
     "assets": [
 
@@ -385,8 +491,10 @@
     "target_commitish": "main",
     "name": "Additional bug fixes",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2024-02-23T02:02:01Z",
+    "updated_at": "2024-03-15T18:35:04Z",
     "published_at": "2024-02-23T02:03:42Z",
     "assets": [
 
@@ -427,8 +535,10 @@
     "target_commitish": "main",
     "name": "2.0.0a2",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2024-01-11T16:22:58Z",
+    "updated_at": "2024-02-08T01:06:22Z",
     "published_at": "2024-02-08T01:06:22Z",
     "assets": [
 
@@ -470,8 +580,10 @@
     "target_commitish": "main",
     "name": "v2.0.0a1",
     "draft": false,
+    "immutable": false,
     "prerelease": true,
     "created_at": "2023-10-25T04:38:18Z",
+    "updated_at": "2023-10-26T00:53:44Z",
     "published_at": "2023-10-26T00:53:44Z",
     "assets": [
 
@@ -513,8 +625,10 @@
     "target_commitish": "main",
     "name": "v1.7.1",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2022-09-24T14:06:37Z",
+    "updated_at": "2022-09-24T14:12:22Z",
     "published_at": "2022-09-24T14:12:22Z",
     "assets": [
 
@@ -555,8 +669,10 @@
     "target_commitish": "main",
     "name": "1.7.0",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2022-09-06T22:25:30Z",
+    "updated_at": "2022-09-06T22:29:27Z",
     "published_at": "2022-09-06T22:29:27Z",
     "assets": [
 
@@ -609,8 +725,10 @@
     "target_commitish": "main",
     "name": "Patch release 1.6.2",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2021-03-25T18:24:22Z",
+    "updated_at": "2021-03-25T19:05:22Z",
     "published_at": "2021-03-25T19:05:22Z",
     "assets": [
 
@@ -651,8 +769,10 @@
     "target_commitish": "main",
     "name": "1.6.1",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2021-03-11T20:11:33Z",
+    "updated_at": "2021-03-11T20:12:13Z",
     "published_at": "2021-03-11T20:12:13Z",
     "assets": [
 
@@ -693,8 +813,10 @@
     "target_commitish": "master",
     "name": "Minor feature release 1.6.0",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2021-02-09T22:08:30Z",
+    "updated_at": "2021-02-09T22:10:28Z",
     "published_at": "2021-02-09T22:10:28Z",
     "assets": [
 
@@ -735,8 +857,10 @@
     "target_commitish": "master",
     "name": "Patch release 1.5.6",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2021-02-01T20:03:13Z",
+    "updated_at": "2021-02-01T20:05:37Z",
     "published_at": "2021-02-01T20:05:37Z",
     "assets": [
 
@@ -777,8 +901,10 @@
     "target_commitish": "develop",
     "name": "Patch release 1.5.5",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2021-01-29T21:45:07Z",
+    "updated_at": "2021-01-30T17:38:31Z",
     "published_at": "2021-01-30T17:38:31Z",
     "assets": [
 
@@ -819,8 +945,10 @@
     "target_commitish": "master",
     "name": "Patch Release 1.5.4",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2020-10-08T09:22:35Z",
+    "updated_at": "2020-12-01T22:38:25Z",
     "published_at": "2020-10-08T09:23:54Z",
     "assets": [
 
@@ -861,8 +989,10 @@
     "target_commitish": "master",
     "name": "Patch release 1.5.3",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2020-09-16T19:37:36Z",
+    "updated_at": "2020-12-01T22:38:52Z",
     "published_at": "2020-09-16T19:42:59Z",
     "assets": [
 
@@ -903,8 +1033,10 @@
     "target_commitish": "master",
     "name": "Patch release 1.5.2",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2020-02-05T22:07:43Z",
+    "updated_at": "2020-12-01T22:39:04Z",
     "published_at": "2020-02-05T22:09:02Z",
     "assets": [
 
@@ -945,8 +1077,10 @@
     "target_commitish": "master",
     "name": "Patch release 1.5.1",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2019-10-29T20:05:11Z",
+    "updated_at": "2020-12-01T22:39:16Z",
     "published_at": "2019-10-29T20:06:37Z",
     "assets": [
 
@@ -987,8 +1121,10 @@
     "target_commitish": "develop",
     "name": "1.5.0",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2019-08-17T21:28:36Z",
+    "updated_at": "2020-12-01T22:39:29Z",
     "published_at": "2019-08-18T08:38:44Z",
     "assets": [
 
@@ -1029,8 +1165,10 @@
     "target_commitish": "master",
     "name": "1.4.1",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2019-02-07T22:14:39Z",
+    "updated_at": "2019-02-07T22:15:48Z",
     "published_at": "2019-02-07T22:15:48Z",
     "assets": [
 
@@ -1071,8 +1209,10 @@
     "target_commitish": "master",
     "name": "1.4.0",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2018-12-12T16:29:32Z",
+    "updated_at": "2018-12-12T16:32:01Z",
     "published_at": "2018-12-12T16:31:25Z",
     "assets": [
 
@@ -1113,8 +1253,10 @@
     "target_commitish": "develop",
     "name": "1.3.3",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2018-10-25T15:34:05Z",
+    "updated_at": "2018-10-25T19:04:47Z",
     "published_at": "2018-10-25T19:04:00Z",
     "assets": [
 
@@ -1155,8 +1297,10 @@
     "target_commitish": "master",
     "name": "1.3.2",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2018-07-28T20:41:16Z",
+    "updated_at": "2018-07-28T20:42:34Z",
     "published_at": "2018-07-28T20:42:34Z",
     "assets": [
 
@@ -1197,8 +1341,10 @@
     "target_commitish": "master",
     "name": "1.3.1",
     "draft": false,
+    "immutable": false,
     "prerelease": false,
     "created_at": "2018-07-21T13:44:46Z",
+    "updated_at": "2018-07-21T13:45:39Z",
     "published_at": "2018-07-21T13:45:39Z",
     "assets": [
 
@@ -1206,89 +1352,5 @@
     "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.3.1",
     "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.3.1",
     "body": "Pure bugfix release"
-  },
-  {
-    "url": "https://api.github.com/repos/stlab/libraries/releases/11935772",
-    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/11935772/assets",
-    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/11935772/assets{?name,label}",
-    "html_url": "https://github.com/stlab/libraries/releases/tag/v1.3.0",
-    "id": 11935772,
-    "author": {
-      "login": "FelixPetriconi",
-      "id": 612377,
-      "node_id": "MDQ6VXNlcjYxMjM3Nw==",
-      "avatar_url": "https://avatars.githubusercontent.com/u/612377?v=4",
-      "gravatar_id": "",
-      "url": "https://api.github.com/users/FelixPetriconi",
-      "html_url": "https://github.com/FelixPetriconi",
-      "followers_url": "https://api.github.com/users/FelixPetriconi/followers",
-      "following_url": "https://api.github.com/users/FelixPetriconi/following{/other_user}",
-      "gists_url": "https://api.github.com/users/FelixPetriconi/gists{/gist_id}",
-      "starred_url": "https://api.github.com/users/FelixPetriconi/starred{/owner}{/repo}",
-      "subscriptions_url": "https://api.github.com/users/FelixPetriconi/subscriptions",
-      "organizations_url": "https://api.github.com/users/FelixPetriconi/orgs",
-      "repos_url": "https://api.github.com/users/FelixPetriconi/repos",
-      "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
-      "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
-      "type": "User",
-      "user_view_type": "public",
-      "site_admin": false
-    },
-    "node_id": "MDc6UmVsZWFzZTExOTM1Nzcy",
-    "tag_name": "v1.3.0",
-    "target_commitish": "master",
-    "name": "1.3.0",
-    "draft": false,
-    "prerelease": false,
-    "created_at": "2018-07-15T17:05:11Z",
-    "published_at": "2018-07-15T17:07:29Z",
-    "assets": [
-
-    ],
-    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.3.0",
-    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.3.0",
-    "body": "Some bug fixes and new small enhancements. See CHANGES.md for further datails. "
-  },
-  {
-    "url": "https://api.github.com/repos/stlab/libraries/releases/11507851",
-    "assets_url": "https://api.github.com/repos/stlab/libraries/releases/11507851/assets",
-    "upload_url": "https://uploads.github.com/repos/stlab/libraries/releases/11507851/assets{?name,label}",
-    "html_url": "https://github.com/stlab/libraries/releases/tag/v1.2.0",
-    "id": 11507851,
-    "author": {
-      "login": "FelixPetriconi",
-      "id": 612377,
-      "node_id": "MDQ6VXNlcjYxMjM3Nw==",
-      "avatar_url": "https://avatars.githubusercontent.com/u/612377?v=4",
-      "gravatar_id": "",
-      "url": "https://api.github.com/users/FelixPetriconi",
-      "html_url": "https://github.com/FelixPetriconi",
-      "followers_url": "https://api.github.com/users/FelixPetriconi/followers",
-      "following_url": "https://api.github.com/users/FelixPetriconi/following{/other_user}",
-      "gists_url": "https://api.github.com/users/FelixPetriconi/gists{/gist_id}",
-      "starred_url": "https://api.github.com/users/FelixPetriconi/starred{/owner}{/repo}",
-      "subscriptions_url": "https://api.github.com/users/FelixPetriconi/subscriptions",
-      "organizations_url": "https://api.github.com/users/FelixPetriconi/orgs",
-      "repos_url": "https://api.github.com/users/FelixPetriconi/repos",
-      "events_url": "https://api.github.com/users/FelixPetriconi/events{/privacy}",
-      "received_events_url": "https://api.github.com/users/FelixPetriconi/received_events",
-      "type": "User",
-      "user_view_type": "public",
-      "site_admin": false
-    },
-    "node_id": "MDc6UmVsZWFzZTExNTA3ODUx",
-    "tag_name": "v1.2.0",
-    "target_commitish": "master",
-    "name": "1.2.0",
-    "draft": false,
-    "prerelease": false,
-    "created_at": "2018-06-15T20:20:28Z",
-    "published_at": "2018-06-15T20:24:15Z",
-    "assets": [
-
-    ],
-    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/v1.2.0",
-    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/v1.2.0",
-    "body": "Somebug fixes and new small enhancements. See CHANGES.md for further datails."
   }
 ]

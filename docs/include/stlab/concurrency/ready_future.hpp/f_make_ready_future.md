@@ -35,7 +35,7 @@ hyde:
       signature_with_names: "template <typename T, typename E>\nauto make_ready_future(T && x, E executor) -> future<std::decay_t<T>>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 Creates a future that is already fulfilled

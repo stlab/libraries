@@ -30,5 +30,5 @@ hyde:
       signature_with_names: "template <typename T, typename F>\nauto void_i(T & t, std::size_t index, F && f)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

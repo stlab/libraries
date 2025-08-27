@@ -142,5 +142,5 @@ hyde:
       signature_with_names: "template <typename F>\nauto operator&(stlab::buffer_size bs, executor_task_pair<F> && etp) -> detail::annotated_process<F>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

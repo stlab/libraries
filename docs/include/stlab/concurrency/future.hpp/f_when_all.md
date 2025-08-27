@@ -46,5 +46,5 @@ hyde:
       signature_with_names: "template <class E, class F, class... Ts>\nauto when_all(const E & executor, F f, future<Ts>... args)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

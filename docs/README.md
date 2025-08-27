@@ -10,11 +10,12 @@ To run a local Jekyll server, see the instructions in the docker-tools [README](
 
 ## Running Hyde in Docker
 
+<!-- 
 Configure the build as follows:
 
 ```
 cmake --preset=hyde-build-docs
-```
+``` -->
 
 Login to [GitHub Packages registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic)
 
@@ -41,7 +42,7 @@ cd /mnt/host/libraries/docs
 ./about.sh
 ```
 
-\[ this is from the old docs - need to update the docs and script.
+<!-- \[ this is from the old docs - need to update the docs and script.
 
 > (or, simply `-u`) to generate the boilerplate for it. Then, fill in any fields marked as `__MISSING__`. Fields marked as `__OPTIONAL__` may be omitted.
-> \]
+> \] -->

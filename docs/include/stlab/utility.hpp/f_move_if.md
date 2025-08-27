@@ -24,5 +24,5 @@ hyde:
       signature_with_names: "template <bool P, class T>\nconstexpr auto move_if(T && t) -> detail::move_if_helper_t<P, T>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

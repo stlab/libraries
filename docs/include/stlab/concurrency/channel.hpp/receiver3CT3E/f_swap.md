@@ -43,5 +43,5 @@ hyde:
       signature_with_names: void swap(sender<T, typename enable_if<smart_is_copy_constructible_v<T>, void>::type> & x, sender<T, typename enable_if<smart_is_copy_constructible_v<T>, void>::type> & y)
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

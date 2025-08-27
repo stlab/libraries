@@ -43,5 +43,5 @@ hyde:
       signature_with_names: auto operator!=(const stlab::future<void> & x, const stlab::future<void> & y) -> bool
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

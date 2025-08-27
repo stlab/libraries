@@ -18,5 +18,5 @@ hyde:
       signature_with_names: "template <class T>\nauto monostate_to_void(T && a)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

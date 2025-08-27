@@ -18,5 +18,5 @@ hyde:
       signature_with_names: "template <class T>\nauto optional_monostate_to_bool(std::optional<T> && o)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -49,5 +49,5 @@ hyde:
       type: std::atomic_size_t
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

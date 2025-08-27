@@ -27,5 +27,5 @@ hyde:
       signature_with_names: "template <class F, class... Args>\nvoid for_each_argument(F && f, Args &&... args)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -43,5 +43,5 @@ hyde:
       signature_with_names: auto operator==(const sender<T, typename enable_if<smart_is_copy_constructible_v<T>, void>::type> & x, const sender<T, typename enable_if<smart_is_copy_constructible_v<T>, void>::type> & y) -> bool
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

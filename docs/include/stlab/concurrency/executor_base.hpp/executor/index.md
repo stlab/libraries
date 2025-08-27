@@ -16,5 +16,5 @@ hyde:
       type: stlab::executor_t
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

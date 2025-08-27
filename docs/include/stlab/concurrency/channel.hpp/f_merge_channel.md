@@ -30,5 +30,5 @@ hyde:
       signature_with_names: "template <typename M, typename S, typename F, typename... R>\nauto merge_channel(S s, F f, R &&... upstream_receiver)"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

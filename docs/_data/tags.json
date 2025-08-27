@@ -1,5 +1,25 @@
 [
   {
+    "name": "v2.0.2",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v2.0.2",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v2.0.2",
+    "commit": {
+      "sha": "fb838a1611757ea653123fcb8566732093150102",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/fb838a1611757ea653123fcb8566732093150102"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YyLjAuMg=="
+  },
+  {
+    "name": "v2.0.1",
+    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v2.0.1",
+    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v2.0.1",
+    "commit": {
+      "sha": "3dacc6f4288504527b58006d47192900226565d2",
+      "url": "https://api.github.com/repos/stlab/libraries/commits/3dacc6f4288504527b58006d47192900226565d2"
+    },
+    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YyLjAuMQ=="
+  },
+  {
     "name": "v2.0.0",
     "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v2.0.0",
     "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v2.0.0",
@@ -278,25 +298,5 @@
       "url": "https://api.github.com/repos/stlab/libraries/commits/fdb3ab411777a68305b1dd0c77417d12ef5ba9b3"
     },
     "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjMuMQ=="
-  },
-  {
-    "name": "v1.3.0",
-    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v1.3.0",
-    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v1.3.0",
-    "commit": {
-      "sha": "128cc41d441e6f4b695ab00fc2592f11aa896d58",
-      "url": "https://api.github.com/repos/stlab/libraries/commits/128cc41d441e6f4b695ab00fc2592f11aa896d58"
-    },
-    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjMuMA=="
-  },
-  {
-    "name": "v1.2.0",
-    "zipball_url": "https://api.github.com/repos/stlab/libraries/zipball/refs/tags/v1.2.0",
-    "tarball_url": "https://api.github.com/repos/stlab/libraries/tarball/refs/tags/v1.2.0",
-    "commit": {
-      "sha": "b17593c5732bf8ad49c0180e33a75a5cdb4c2481",
-      "url": "https://api.github.com/repos/stlab/libraries/commits/b17593c5732bf8ad49c0180e33a75a5cdb4c2481"
-    },
-    "node_id": "MDM6UmVmMzU2ODEzNzY6cmVmcy90YWdzL3YxLjIuMA=="
   }
 ]

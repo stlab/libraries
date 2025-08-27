@@ -24,7 +24,7 @@ hyde:
       signature_with_names: "template <typename T>\nconstexpr auto copy(T && value) -> std::decay_t<T>"
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 Useful for functions that only take an rvalue reference or that have an explicit copy constructor.

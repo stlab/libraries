@@ -21,5 +21,5 @@ hyde:
       signature_with_names: void swap(task_<NoExcept, R, Args...> & x, task_<NoExcept, R, Args...> & y)
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---

@@ -7,13 +7,14 @@
 #ifndef STLAB_CONFIG_HPP
 #define STLAB_CONFIG_HPP
 
-// Release version macro - used for inline namespace increment on each release
-#define STLAB_VERSION_NAMESPACE() v3
-
 // Version information generated from CMake project version
 #define STLAB_VERSION_MAJOR() @PROJECT_VERSION_MAJOR@
 #define STLAB_VERSION_MINOR() @PROJECT_VERSION_MINOR@
 #define STLAB_VERSION_PATCH() @PROJECT_VERSION_PATCH@
+
+// Release version macro - used for inline namespace incremented on each release
+#define STLAB_VERSION_NAMESPACE() \
+    v@PROJECT_VERSION_MAJOR@_@PROJECT_VERSION_MINOR@_@PROJECT_VERSION_PATCH@
 
 // Helper macro for string construction
 #define STLAB_STRINGIZE(x) STLAB_STRINGIZE2(x)
@@ -59,9 +60,9 @@
 #if __has_feature(objc_arc)
 #undef STLAB_FEATURE_PRIVATE_OBJC_ARC
 #define STLAB_FEATURE_PRIVATE_OBJC_ARC() 1
-#endif  // _has_feature(objc_arc)
-#endif  // __has_feature
-#endif  // __APPLE__
+#endif // _has_feature(objc_arc)
+#endif // __has_feature
+#endif // __APPLE__
 
 // Check C++ language standard, e.g. C++17 vs. C++20/23.
 //
@@ -72,18 +73,23 @@
 // For MSVS for now there is no c++23 only /std:c++latest which is
 // "It's set to a higher, unspecified value when the /std:c++latest option is specified."
 // Newer compiler has /std:c++23preview, but we are not using it yet.
-#if (defined(__cplusplus) && __cplusplus >= 202302L) || (defined(_MSVC_LANG) && _MSVC_LANG > 202002L)
+#if (defined(__cplusplus) && __cplusplus >= 202302L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 202002L)
 #define STLAB_CPP_VERSION_PRIVATE() 23
-#elif (defined(__cplusplus) && __cplusplus >= 202002L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
+#elif (defined(__cplusplus) && __cplusplus >= 202002L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
 #define STLAB_CPP_VERSION_PRIVATE() 20
-#elif (defined(__cplusplus) && __cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#elif (defined(__cplusplus) && __cplusplus >= 201703L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #define STLAB_CPP_VERSION_PRIVATE() 17
-#elif (defined(__cplusplus) && __cplusplus >= 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
+#elif (defined(__cplusplus) && __cplusplus >= 201402L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
 #define STLAB_CPP_VERSION_PRIVATE() 14
 #else
 // #warning Unknown version of C++, assuming C++23.
 #define STLAB_CPP_VERSION_PRIVATE() 23
-#endif  // (defined(__cplusplus) && __cplusplus >= 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
+#endif // (defined(__cplusplus) && __cplusplus >= 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >=
+       // 201402L)
 
 // STLAB_NODISCARD macro
 

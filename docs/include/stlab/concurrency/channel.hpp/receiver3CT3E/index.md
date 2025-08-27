@@ -17,7 +17,7 @@ hyde:
       description: __MISSING__
   namespace:
     - stlab
-    - v3
+    - v2_1_0
 ---
 
 Each receiver has an attached process that gets executed when a value is send through the sender into the channel. This attached process must either be an n-ary function object - n depends on the number of attached upstream receiver - or it must be of a type that implements an `await()` and `yield()` method.
