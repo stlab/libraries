@@ -11,10 +11,12 @@
 
 /**************************************************************************************************/
 
+#include <atomic>
+#include <cassert>
 #include <stlab/config.hpp>
+#include <stlab/pre_exit.hpp>
 
 #include <chrono>
-#include <functional>
 #include <type_traits>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
@@ -45,26 +47,33 @@ namespace detail {
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 
-struct system_timer_type {
-    using result_type = void;
+struct system_timer {
+    inline static std::atomic<bool> _closed{false};
 
-    template <typename F>
-    [[deprecated("Use chrono::duration as parameter instead")]] void operator()(
-        std::chrono::steady_clock::time_point when, F f) const {
-        using namespace std::chrono;
-        operator()(when - steady_clock::now(), std::move(f));
+    system_timer() {
+        // ensure the group is created and registered with pre_exit first
+        (void)detail::group();
+        at_pre_exit([]() noexcept { _closed.store(true); });
     }
+
+    ~system_timer() { assert(_closed && "system_timer is not closed, pre_exit() was not called"); }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
     auto operator()(std::chrono::duration<Rep, Per> duration, F f) const
         -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
+        assert(!_closed && "scheduling a task after pre_exit() was called");
+
         using namespace std::chrono;
 
-        dispatch_group_enter(detail::group()._group);
-
-        auto grouped = [_group = detail::group()._group, f = std::move(f)]() mutable {
-            f();
-            dispatch_group_leave(_group);
+        auto grouped = [f = std::move(f)]() mutable {
+            // pre_exit tasks are executed in the reverse order of registration.
+            // By entering the group before we check if the timer is closed we ensure that the task
+            // is waited on if it starts.
+            dispatch_group_enter(detail::group()._group);
+            if (!_closed) {
+                std::move(f)();
+            }
+            dispatch_group_leave(detail::group()._group);
         };
 
         using f_t = decltype(grouped);
@@ -249,12 +258,10 @@ public:
 
 /**************************************************************************************************/
 
-#if STLAB_TASK_SYSTEM(WINDOWS) || STLAB_TASK_SYSTEM(PORTABLE)
-
 struct system_timer_type {
     using result_type = void;
 
-    static system_timer& get_system_timer() {
+    static auto get_system_timer() -> system_timer& {
         static system_timer only_system_timer;
         return only_system_timer;
     }
@@ -269,8 +276,6 @@ struct system_timer_type {
         get_system_timer()(duration, std::move(f));
     }
 };
-
-#endif
 
 /**************************************************************************************************/
 
