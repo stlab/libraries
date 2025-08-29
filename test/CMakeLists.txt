@@ -129,6 +129,20 @@ add_test(
 )
 ################################################################################
 
+add_executable(stlab.test.system_timer
+  system_timer_test.cpp
+  main.cpp)
+
+target_compile_definitions(stlab.test.system_timer PRIVATE STLAB_UNIT_TEST)
+
+target_link_libraries(stlab.test.system_timer PUBLIC stlab::testing)
+
+add_test(
+  NAME stlab.test.system_timer
+  COMMAND stlab.test.system_timer
+)
+################################################################################
+
 add_executable(stlab.test.tuple_algorithm
   tuple_algorithm_test.cpp
   main.cpp)
