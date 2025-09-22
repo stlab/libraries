@@ -711,6 +711,10 @@ public:
     using result_type = T;
 
     future() = default;
+    future(const future&) = default;
+    future(future&&) noexcept = default;
+    auto operator=(const future&) -> future& = default;
+    auto operator=(future&&) noexcept -> future& = default;
 
     void swap(future& x) noexcept { std::swap(_p, x._p); }
 
@@ -860,7 +864,6 @@ class STLAB_NODISCARD() future<T, enable_if_not_copyable<void_to_monostate_t<T>>
     ptr_t _p;
 
     explicit future(ptr_t p) : _p(std::move(p)) {}
-    future(const future&) = default;
 
     template <class Sig, class E, class F>
     friend auto package(E, F&&)
@@ -878,6 +881,7 @@ public:
     using result_type = T;
 
     future() = default;
+    future(const future&) = delete;
     future(future&&) noexcept = default;
     auto operator=(const future&) -> future& = delete;
     auto operator=(future&&) noexcept -> future& = default;
