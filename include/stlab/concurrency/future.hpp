@@ -828,7 +828,7 @@ public:
         self._detach(std::move(*this), std::forward<F>(f));
     }
 
-    void reset() { _p.reset(); }
+    void reset() noexcept { _p.reset(); }
 
     [[nodiscard]] auto is_ready() const& -> bool { return _p && _p->is_ready(); }
 
@@ -945,7 +945,7 @@ public:
         self._detach(std::move(*this), std::forward<F>(f));
     }
 
-    void reset() { _p.reset(); }
+    void reset() noexcept { _p.reset(); }
 
     [[nodiscard]] auto is_ready() const& -> bool { return _p && _p->is_ready(); }
 
