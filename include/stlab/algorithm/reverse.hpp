@@ -11,12 +11,14 @@
 #include <algorithm>
 #include <utility>
 
+#include <stlab/config.hpp>
 #include <stlab/iterator/concepts.hpp>
 #include <stlab/iterator/set_next.hpp>
 
 /**************************************************************************************************/
 
 namespace stlab {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -111,6 +113,7 @@ auto reverse_until(I f, I m, I l) -> std::pair<I, I> {
 
 /**************************************************************************************************/
 
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

@@ -9,9 +9,6 @@
 #ifndef STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 #define STLAB_CONCURRENCY_MAIN_EXECUTOR_HPP
 
-#include <type_traits>
-#include <utility>
-
 #include <stlab/config.hpp>
 
 #if STLAB_MAIN_EXECUTOR(QT5) || STLAB_MAIN_EXECUTOR(QT6)
@@ -121,17 +118,17 @@ struct main_executor_type {
 
         /*
           `emscripten_async_run_in_main_runtime_thread()` schedules a function to run on the main
-           JS thread, however, the code can be executed at any POSIX thread cancelation point if
+           JS thread, however, the code can be executed at any POSIX thread cancellation point if
            wasm code is executing on the JS main thread.
-           Executing the code from a POSIX thread cancelation point can cause problems, including
+           Executing the code from a POSIX thread cancellation point can cause problems, including
            deadlocks and data corruption. Consider:
            ```
                mutex.lock();   // <-- If reentered, would deadlock here
-               new T;          // <-- POSIX cancelation point, could reenter
+               new T;          // <-- POSIX cancellation point, could reenter
            ```
            The call to `emscripten_async_call()` bounces the call to execute as part of the main
            run-loop on the current (main) thread. This avoids nasty reentrancy issues if executed
-           from a POSIX thread cancelation point.
+           from a POSIX thread cancellation point.
        */
 
         emscripten_async_run_in_main_runtime_thread(

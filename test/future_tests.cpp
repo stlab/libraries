@@ -517,7 +517,7 @@ BOOST_AUTO_TEST_CASE(future_wait_void_error_case) {
 }
 
 BOOST_AUTO_TEST_CASE(future_wait_void_error_case_with_timeout) {
-    BOOST_TEST_MESSAGE("future wait with void error case with timout");
+    BOOST_TEST_MESSAGE("future wait with void error case with timeout");
 
     auto answer = [] { throw test_exception("failure"); };
 
@@ -784,4 +784,12 @@ BOOST_AUTO_TEST_CASE(future_reduction_executor) {
     BOOST_REQUIRE_EQUAL(2u, outer_count);
     BOOST_REQUIRE_EQUAL(0u, inner_count);
     BOOST_REQUIRE_EQUAL(5, *f1.get_try());
+}
+
+BOOST_AUTO_TEST_CASE(future_await_regression) {
+    future<unique_ptr<int>> f = async(default_executor, [] { return std::make_unique<int>(42); });
+    f = std::move(f).then([](unique_ptr<int> p) {
+        if (p) ++(*p);
+        return make_ready_future(std::move(p), default_executor);
+    });
 }

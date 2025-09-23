@@ -9,11 +9,14 @@
 #define STLAB_ITERATOR_SET_NEXT_HPP
 
 #include <iterator>
-#include <utility>
+
+#include <stlab/config.hpp>
 
 /**************************************************************************************************/
 
-namespace stlab::unsafe {
+namespace stlab {
+inline namespace STLAB_VERSION_NAMESPACE() {
+namespace unsafe {
 
 /**************************************************************************************************/
 
@@ -48,7 +51,9 @@ inline void skip_node(I location) {
 
 /**************************************************************************************************/
 
-} // namespace stlab::unsafe
+} // namespace unsafe
+} // namespace STLAB_VERSION_NAMESPACE()
+} // namespace stlab
 
 /**************************************************************************************************/
 

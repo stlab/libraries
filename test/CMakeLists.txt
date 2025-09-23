@@ -26,7 +26,7 @@ CPMAddPackage(
 )
 
 # Mark the boost header files as external for MSVC
-if (MSVC)
+if(MSVC)
   get_target_property(Boost_INCLUDE_DIR Boost::unit_test_framework INTERFACE_INCLUDE_DIRECTORIES)
   add_compile_options(/external:I${Boost_INCLUDE_DIR} /external:W0)
 endif()

@@ -1,5 +1,5 @@
 ExtraArgs:
-  - "std=c++17"
+  - "-std=c++17"
 Checks: >
   cert-*,
   performance-*,
@@ -14,4 +14,5 @@ CheckOptions:
       boost/test/.*;
       __chrono/.*
 HeaderFilterRegex: "^.*/include/stlab/.*$"
+ExcludeHeaderRegex: "^.*/boost/.*$|^.*Program Files.*$"
 # WarningsAsErrors: "*"
