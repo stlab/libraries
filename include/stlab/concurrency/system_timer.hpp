@@ -11,7 +11,6 @@
 
 /**************************************************************************************************/
 
-#include <atomic>
 #include <cassert>
 #include <stlab/config.hpp>
 #include <stlab/pre_exit.hpp>
@@ -20,6 +19,7 @@
 #include <type_traits>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
+#include <atomic>
 #include <dispatch/dispatch.h>
 #include <stlab/concurrency/default_executor.hpp>
 #elif STLAB_TASK_SYSTEM(WINDOWS)

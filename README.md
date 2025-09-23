@@ -2,6 +2,16 @@
 
 ASL libraries will be migrated here in the `stlab` namespace, new libraries will be created here.
 
+# Using the STLab Libraries
+
+The recommended approach to using the libraries is to use [CPM](https://github.com/cpm-cmake/CPM.cmake) and add the following to your `CMakeLists.txt`:
+
+```cmake
+CPMAddPackage("gh:stlab/libraries@2.1.2")
+```
+
+(replace `2.1.2` with the [desired version](https://github.com/stlab/libraries/releases)).
+
 ## Branch states
 
 - **`main`:** [![Build and Tests](https://github.com/stlab/libraries/actions/workflows/stlab.yml/badge.svg)](https://github.com/stlab/libraries/actions/workflows/stlab.yml)
@@ -53,7 +63,9 @@ Run CMake in the root directory of this project, setting `./build` as your build
 basis of your command will be
 
 ```
+
 cmake -S . -B ../BUILD -DCMAKE_BUILD_TYPE=# SEE BELOW
+
 ```
 
 but there are other options you may need to append in order to be successful. Among them:
@@ -76,14 +88,18 @@ We also suggest the installation of [Ninja](https://ninja-build.org/) and its us
 A typical invocation might look like this:
 
 ```
+
 cmake -S . -B ../BUILD -GNinja -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+
 ```
 
 If you organize the build directory into subdirectories you can support multiple configurations.
 
 ```
+
 rm -rf ../builds/portable
 cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON -DSTLAB_TASK_SYSTEM=portable -DCMAKE_OSX_DEPLOYMENT_TARGET=macosx14.4
+
 ```
 
 ### Build
@@ -91,7 +107,9 @@ cmake -S . -B ../builds/portable -GXcode -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING
 If your configuration command was successful, go to your build directory (`cd ../BUILD`) and invoke:
 
 ```
+
 cmake --build .
+
 ```
 
 ## Testing
@@ -99,13 +117,17 @@ cmake --build .
 Running the tests in the `BUILD` directory is as simple as invoking
 
 ```
+
 ctest -C Debug
+
 ```
 
 or
 
 ```
+
 ctest -C Release
+
 ```
 
 depending on which configuration (`CMAKE_BUILD_TYPE) you choose to build.
@@ -113,3 +135,7 @@ depending on which configuration (`CMAKE_BUILD_TYPE) you choose to build.
 ## Generating Documentation
 
 For generating the documentation, see the [README.md](docs/README.md) in the `docs` directory.
+
+```
+
+```

@@ -15,16 +15,17 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <iterator>
+#include <utility>
 
 #include <stlab/algorithm/reverse.hpp>
+#include <stlab/config.hpp>
 #include <stlab/iterator/set_next.hpp>
-#include <utility>
 
 /**************************************************************************************************/
 
 namespace stlab {
+inline namespace STLAB_VERSION_NAMESPACE() {
 
 /**************************************************************************************************/
 
@@ -989,7 +990,7 @@ template <class T>
 auto forest<T>::erase(const iterator& position) -> iterator {
     /*
         NOTE (sparent) : After the first call to set_next() the invariants of the forest are
-        violated and we can't determing leading/trailing if we navigate from the affected node.
+        violated and we can't determine leading/trailing if we navigate from the affected node.
         So we gather all the iterators up front then do the set_next calls.
     */
 
@@ -1246,6 +1247,7 @@ auto preorder_range(const R& x) {
 
 /**************************************************************************************************/
 
+} // namespace STLAB_VERSION_NAMESPACE()
 } // namespace stlab
 
 /**************************************************************************************************/

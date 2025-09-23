@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(stlab VERSION 2.1.1 LANGUAGES CXX)
+project(stlab VERSION 2.1.2 LANGUAGES CXX)
 
 # Create the main library target first
 add_library(stlab)
@@ -24,10 +24,10 @@ target_link_libraries(stlab INTERFACE stlab::enum-ops)
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS AND PROJECT_IS_TOP_LEVEL)
   add_custom_target(clangd_compile_commands ALL
-      COMMAND ${CMAKE_COMMAND} -E create_symlink
-          ${CMAKE_BINARY_DIR}/compile_commands.json
-          ${CMAKE_SOURCE_DIR}/compile_commands.json
-      COMMENT "Creating symlink to compile_commands.json for clangd"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+    ${CMAKE_BINARY_DIR}/compile_commands.json
+    ${CMAKE_SOURCE_DIR}/compile_commands.json
+    COMMENT "Creating symlink to compile_commands.json for clangd"
   )
 endif()
 
@@ -60,7 +60,7 @@ cmake_dependent_option(stlab.coverage
 
 stlab_check_disfunctional_coroutines(STLAB_DEFAULT_NO_STD_COROUTINES)
 option(STLAB_NO_STD_COROUTINES "Suppress usage of standard coroutines. Useful for non-conforming compilers." ${STLAB_DEFAULT_NO_STD_COROUTINES})
-if (STLAB_NO_STD_COROUTINES)
+if(STLAB_NO_STD_COROUTINES)
   set(STLAB_STD_COROUTINES 0)
 else()
   set(STLAB_STD_COROUTINES 1)
@@ -81,16 +81,16 @@ endif()
 # and eliminate the code below.
 #
 option(STLAB_MINIMAL_TASK_POOL "Deprecated: Use STLAB_TASK_POOL_MAXIMUM=1." OFF)
-if (STLAB_MINIMAL_TASK_POOL)
+if(STLAB_MINIMAL_TASK_POOL)
   message(WARNING "STLAB_MINIMAL_TASK_POOL is deprecated. Use STLAB_TASK_POOL_MAXIMUM=1, instead.")
 
   # The deprecated STLAB_MINIMAL_TASK_POOL implied a pool size of 1.
   # If STLAB_TASK_POOL_MAXIMUM is at its default of zero, make it 1.
   # Otherwise, if it's been customized to something other than 1, that's logically invalid.
   # Fail and direct them to the new option.
-  if (STLAB_TASK_POOL_MAXIMUM EQUAL 0)
+  if(STLAB_TASK_POOL_MAXIMUM EQUAL 0)
     set(STLAB_TASK_POOL_MAXIMUM 1)
-  elseif (STLAB_TASK_POOL_MAXIMUM GREATER 1)
+  elseif(STLAB_TASK_POOL_MAXIMUM GREATER 1)
     message(FATAL_ERROR "STLAB_MINIMAL_TASK_POOL is deprecated and incompatible with STLAB_TASK_POOL_MAXIMUM>1. Use STLAB_TASK_POOL_MAXIMUM to set the desired pool size.")
   endif()
 endif()

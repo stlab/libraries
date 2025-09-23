@@ -993,12 +993,12 @@ auto package(E executor, F&& f)
                     try {
                         _hold = std::move(r).recover(
                             immediate_executor,
-                            [_p = std::move(promise)](auto&& f) mutable noexcept {
+                            [_p = std::move(promise)](result_t&& f) mutable noexcept {
                                 if (auto e = f.exception()) {
                                     std::move(_p).set_exception(std::move(e));
                                 } else {
                                     std::move(_p).set_value(invoke_void_to_monostate_result(
-                                        [&] { return std::forward<decltype(f)>(f).get_ready(); }));
+                                        [&] { return std::move(f).get_ready(); }));
                                 }
                             });
                     } catch (...) {

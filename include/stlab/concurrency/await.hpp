@@ -15,8 +15,6 @@
 #include <condition_variable>
 #include <exception>
 #include <mutex>
-#include <optional>
-#include <type_traits>
 #include <utility>
 
 #include <stlab/concurrency/future.hpp>
