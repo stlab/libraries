@@ -10,7 +10,6 @@
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
-#include <memory>
 #include <string>
 
 // boost
@@ -30,8 +29,12 @@
 #include <stlab/concurrency/tuple_algorithm.hpp>
 #include <stlab/utility.hpp>
 
-#if defined(__clang__)
+#if __has_include(<cxxabi.h>)
 #include <cxxabi.h>
+#include <memory>
+#define PRIVATE_HAS_DEMANGLE() 1
+#else
+#define PRIVATE_HAS_DEMANGLE() 0
 #endif
 
 /**************************************************************************************************/
@@ -42,7 +45,7 @@ namespace {
 
 template <typename T>
 auto demangle() -> std::string {
-#if defined(__clang__)
+#if PRIVATE_HAS_DEMANGLE()
     struct freer_t {
         void operator()(void* x) const { std::free(x); }
     };
@@ -50,7 +53,7 @@ auto demangle() -> std::string {
         abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr));
     return c_str.get();
 #else
-    return std::string();
+    return {};
 #endif
 }
 

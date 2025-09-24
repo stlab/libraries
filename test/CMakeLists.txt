@@ -17,6 +17,12 @@ if(STLAB_SANITIZER STREQUAL "address")
   endif()
 endif()
 
+# Disable clang-tidy for Boost dependency
+if(CMAKE_CXX_CLANG_TIDY)
+  set(CMAKE_CXX_CLANG_TIDY_BACKUP ${CMAKE_CXX_CLANG_TIDY})
+  set(CMAKE_CXX_CLANG_TIDY "")
+endif()
+
 CPMAddPackage(
   NAME Boost
   VERSION 1.87.0
@@ -26,9 +32,15 @@ CPMAddPackage(
 )
 
 # Mark the boost header files as external for MSVC
-if (MSVC)
+if(MSVC)
   get_target_property(Boost_INCLUDE_DIR Boost::unit_test_framework INTERFACE_INCLUDE_DIRECTORIES)
   add_compile_options(/external:I${Boost_INCLUDE_DIR} /external:W0)
+endif()
+
+# Re-enable clang-tidy after Boost setup
+if(CMAKE_CXX_CLANG_TIDY_BACKUP)
+  set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY_BACKUP})
+  unset(CMAKE_CXX_CLANG_TIDY_BACKUP)
 endif()
 
 add_executable(stlab.test.channel

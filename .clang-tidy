@@ -1,17 +1,21 @@
-ExtraArgs:
-  - "std=c++17"
 Checks: >
   cert-*,
   performance-*,
   modernize-*,
   misc-include-cleaner,
-  -readability-identifier-length,
-  -readability-magic-numbers,
-  -cppcoreguidelines-avoid-magic-numbers
+  -readability-identifier-length, # Shorter is better
+  -readability-magic-numbers, # 0 and 1 are not magic
+  -cppcoreguidelines-avoid-magic-numbers, # 0 and 1 are not magic
+  -modernize-use-nullptr, # Crashes clang-tidy 19.1.5 on Windows.
+  -cert-err58-cpp # Triggered by Boost Test
 CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
     value: >
       boost/test/.*;
       __chrono/.*
+  - key: misc-include-cleaner.DeduceHeaders
+    value: true
+  - key: misc-include-cleaner.StrictMode
+    value: false
 HeaderFilterRegex: "^.*/include/stlab/.*$"
-# WarningsAsErrors: "*"
+ExcludeHeaderFilterRegex: ".*boost.*|.*Program Files.*"

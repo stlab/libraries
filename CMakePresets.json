@@ -1,157 +1,158 @@
 {
-    "version": 10,
-    "cmakeMinimumRequired": {
-        "major": 3,
-        "minor": 28,
-        "patch": 0
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 28,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
     },
-    "configurePresets": [
-        {
-            "name": "base",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-            }
-        },
-        {
-            "name": "base-cpp20",
-            "hidden": true,
-            "inherits": "base",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20"
-            }
-        },
-        {
-            "name": "base-cpp17",
-            "hidden": true,
-            "inherits": "base",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17"
-            }
-        },
-        {
-            "name": "base-sanitizer",
-            "hidden": true,
-            "inherits": "base-cpp20",
-            "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined"
-            }
-        },
-        {
-            "name": "debug-cpp20",
-            "description": "Debug build with C++20",
-            "inherits": "base-cpp20"
-        },
-        {
-            "name": "debug-cpp17",
-            "description": "Debug build with C++17",
-            "inherits": "base-cpp17"
-        },
-        {
-            "name": "debug-sanitizer",
-            "description": "Debug build with thread and undefined behavior sanitizers",
-            "inherits": "base-sanitizer"
-        },
-        {
-            "name": "debug-portable",
-            "description": "Debug build with portable task system",
-            "inherits": "base-cpp20",
-            "cacheVariables": {
-                "STLAB_TASK_SYSTEM": "portable"
-            }
-        },
-        {
-            "name": "debug-asan",
-            "description": "Debug build with address sanitizer",
-            "inherits": "base-cpp20",
-            "cacheVariables": {
-                "STLAB_SANITIZER": "address"
-            }
-        },
-        {
-            "name": "xcode-debug",
-            "description": "Debug build using Xcode",
-            "generator": "Xcode",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "xcode-debug-portable",
-            "description": "Debug build using Xcode with portable task system",
-            "inherits": "xcode-debug",
-            "cacheVariables": {
-                "STLAB_TASK_SYSTEM": "portable"
-            }
-        },
-        {
-            "name": "docs",
-            "description": "Build documentation",
-            "binaryDir": "${sourceDir}/build/hyde",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "20",
-                "BUILD_TESTING": "OFF",
-                "STLAB_MAIN_EXECUTOR": "none",
-                "STLAB_NO_STD_COROUTINES": "ON",
-                "STLAB_TASK_SYSTEM": "portable",
-                "STLAB_THREAD_SYSTEM": "pthread",
-                "stlab.coverage": "OFF"
-            }
-        },
-        {
-            "name": "clang-tidy",
-            "description": "Run clang-tidy without fixes",
-            "inherits": "base-cpp17",
-            "cacheVariables": {
-                "CMAKE_CXX_CLANG_TIDY": "clang-tidy"
-            }
-        },
-        {
-            "name": "clang-tidy-fix",
-            "description": "Run clang-tidy with auto-fix",
-            "inherits": "clang-tidy",
-            "cacheVariables": {
-                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix"
-            }
-        },
-        {
-            "name": "include-what-you-use",
-            "description": "Run include-what-you-use analysis",
-            "inherits": "base-cpp17",
-            "cacheVariables": {
-                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use;-Xiwyu;--mapping_file=/usr/local/Cellar/include-what-you-use/0.23/libexec/share/include-what-you-use/boost-all.imp"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "clang-tidy-fix",
-            "configurePreset": "clang-tidy-fix",
-            "jobs": 1
-        },
-        {
-            "name": "clang-tidy",
-            "configurePreset": "clang-tidy"
-        },
-        {
-            "name": "include-what-you-use",
-            "configurePreset": "include-what-you-use",
-            "jobs": 1
-        }
-    ],
-    "testPresets": [
-        {
-            "name": "debug-sanitizer-verbose",
-            "description": "Run tests with sanitizers and verbose output",
-            "configurePreset": "debug-sanitizer",
-            "output": {
-                "verbosity": "verbose"
-            }
-        }
-    ]
+    {
+      "name": "base-cpp20",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
+      "name": "base-cpp17",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17"
+      }
+    },
+    {
+      "name": "base-sanitizer",
+      "hidden": true,
+      "inherits": "base-cpp20",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-fsanitize=thread -fsanitize=undefined"
+      }
+    },
+    {
+      "name": "debug-cpp20",
+      "description": "Debug build with C++20",
+      "inherits": "base-cpp20"
+    },
+    {
+      "name": "debug-cpp17",
+      "description": "Debug build with C++17",
+      "inherits": "base-cpp17"
+    },
+    {
+      "name": "debug-sanitizer",
+      "description": "Debug build with thread and undefined behavior sanitizers",
+      "inherits": "base-sanitizer"
+    },
+    {
+      "name": "debug-portable",
+      "description": "Debug build with portable task system",
+      "inherits": "base-cpp20",
+      "cacheVariables": {
+        "STLAB_TASK_SYSTEM": "portable"
+      }
+    },
+    {
+      "name": "debug-asan",
+      "description": "Debug build with address sanitizer",
+      "inherits": "base-cpp20",
+      "cacheVariables": {
+        "STLAB_SANITIZER": "address"
+      }
+    },
+    {
+      "name": "xcode-debug",
+      "description": "Debug build using Xcode",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "xcode-debug-portable",
+      "description": "Debug build using Xcode with portable task system",
+      "inherits": "xcode-debug",
+      "cacheVariables": {
+        "STLAB_TASK_SYSTEM": "portable"
+      }
+    },
+    {
+      "name": "docs",
+      "description": "Build documentation",
+      "binaryDir": "${sourceDir}/build/hyde",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "BUILD_TESTING": "OFF",
+        "STLAB_MAIN_EXECUTOR": "none",
+        "STLAB_NO_STD_COROUTINES": "ON",
+        "STLAB_TASK_SYSTEM": "portable",
+        "STLAB_THREAD_SYSTEM": "pthread",
+        "stlab.coverage": "OFF"
+      }
+    },
+    {
+      "name": "clang-tidy",
+      "description": "Run clang-tidy without fixes",
+      "inherits": "base-cpp17",
+      "cacheVariables": {
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--extra-arg=/EHsc",
+        "CPM_SOURCE_CACHE": "${sourceDir}/.cache/cpm"
+      }
+    },
+    {
+      "name": "clang-tidy-fix",
+      "description": "Run clang-tidy with auto-fix",
+      "inherits": "clang-tidy",
+      "cacheVariables": {
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--fix"
+      }
+    },
+    {
+      "name": "include-what-you-use",
+      "description": "Run include-what-you-use analysis",
+      "inherits": "base-cpp17",
+      "cacheVariables": {
+        "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use;-Xiwyu;--mapping_file=/usr/local/Cellar/include-what-you-use/0.23/libexec/share/include-what-you-use/boost-all.imp"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "clang-tidy-fix",
+      "configurePreset": "clang-tidy-fix",
+      "jobs": 1
+    },
+    {
+      "name": "clang-tidy",
+      "configurePreset": "clang-tidy"
+    },
+    {
+      "name": "include-what-you-use",
+      "configurePreset": "include-what-you-use",
+      "jobs": 1
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "debug-sanitizer-verbose",
+      "description": "Run tests with sanitizers and verbose output",
+      "configurePreset": "debug-sanitizer",
+      "output": {
+        "verbosity": "verbose"
+      }
+    }
+  ]
 }

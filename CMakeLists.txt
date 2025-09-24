@@ -10,7 +10,20 @@ add_library(stlab::stlab ALIAS stlab)
 # Dependencies
 # Enable CPM caching to avoid re-downloading dependencies
 set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages" FORCE)
+
+# Disable clang-tidy for all CPM dependencies
+if(CMAKE_CXX_CLANG_TIDY)
+  set(CMAKE_CXX_CLANG_TIDY_BACKUP ${CMAKE_CXX_CLANG_TIDY})
+  set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
+endif()
+
 include(cmake/CPM.cmake)
+
+# Re-enable clang-tidy after CPM setup
+if(CMAKE_CXX_CLANG_TIDY_BACKUP)
+  set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY_BACKUP} CACHE STRING "" FORCE)
+  unset(CMAKE_CXX_CLANG_TIDY_BACKUP)
+endif()
 
 # Add stlab-copy-on-write as a dependency
 CPMAddPackage("gh:stlab/copy-on-write@1.0.4")
@@ -41,6 +54,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Set the default build type to Release
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" FORCE)
+endif()
+
+# Ensure exceptions are enabled globally for MSVC
+if(MSVC)
+  add_compile_options(/EHsc)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -142,6 +160,7 @@ target_include_directories(stlab INTERFACE
 #    disable the `min` and `max` macros defined in the windows.h header
 #
 target_compile_definitions(stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>)
+target_compile_options(stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/EHsc>)
 
 add_subdirectory(include/stlab)
 add_subdirectory(src)
