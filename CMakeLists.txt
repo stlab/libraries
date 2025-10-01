@@ -12,11 +12,12 @@ add_library(stlab::stlab ALIAS stlab)
 set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages" FORCE)
 include(cmake/CPM.cmake)
 
-# Add stlab-copy-on-write as a dependency
-CPMAddPackage("gh:stlab/copy-on-write@1.0.4")
+# https://github.com/stlab/copy-on-write
+CPMAddPackage("gh:stlab/copy-on-write@1.0.6")
 target_link_libraries(stlab INTERFACE stlab::copy-on-write)
 
-CPMAddPackage("gh:stlab/enum-ops@1.0.3")
+# https://github.com/stlab/enum-ops
+CPMAddPackage("gh:stlab/enum-ops@1.1.0")
 target_link_libraries(stlab INTERFACE stlab::enum-ops)
 
 ########################################################
@@ -167,6 +168,6 @@ message(STATUS "stlab: Thread System: ${STLAB_THREAD_SYSTEM}")
 message(STATUS "stlab: Task System: ${STLAB_TASK_SYSTEM}")
 message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
-if(BUILD_TESTING)
+if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   add_subdirectory(test)
 endif()
