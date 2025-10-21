@@ -451,17 +451,16 @@ priority_task_system& pts();
 
 #if STLAB_TASK_SYSTEM(WINDOWS)
 
+template <executor_priority P>
+extern task_system<P>& single_task_system();
+
 template <executor_priority P = executor_priority::medium>
 struct executor_type {
     using result_type = void;
 
     template <class F>
     auto operator()(F&& f) const -> std::enable_if_t<std::is_nothrow_invocable_v<std::decay_t<F>>> {
-        static task_system<P> only_task_system{[] {
-            at_pre_exit([]() noexcept { only_task_system.join(); });
-            return task_system<P>{};
-        }()};
-        only_task_system(std::forward<F>(f));
+        single_task_system<P>()(std::forward<F>(f));
     }
 };
 

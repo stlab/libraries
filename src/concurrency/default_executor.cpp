@@ -51,6 +51,24 @@ priority_task_system& pts() {
     }()};
     return only_task_system;
 }
+
+#elif STLAB_TASK_SYSTEM(WINDOWS)
+
+/// Returns the singleton instance of the task system for the given priority.
+template <executor_priority P>
+task_system<P>& single_task_system() {
+    static task_system<P> _task_system{[] {
+        at_pre_exit([]() noexcept { single_task_system<P>().join(); });
+        return task_system<P>{};
+    }()};
+    return _task_system;
+}
+
+/// Instantiations of single_task_system for each priority level.
+template task_system<executor_priority::high>& single_task_system<executor_priority::high>();
+template task_system<executor_priority::medium>& single_task_system<executor_priority::medium>();
+template task_system<executor_priority::low>& single_task_system<executor_priority::low>();
+
 #endif
 
 } // namespace detail
