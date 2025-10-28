@@ -8,17 +8,17 @@ add_library(stlab::stlab ALIAS stlab)
 
 ########################################################
 # Dependencies
-# Enable CPM caching to avoid re-downloading dependencies
-set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages" FORCE)
-include(cmake/CPM.cmake)
 
-# https://github.com/stlab/copy-on-write
-CPMAddPackage("gh:stlab/copy-on-write@1.0.6")
-target_link_libraries(stlab INTERFACE stlab::copy-on-write)
+option(STLAB_DISABLE_CPM "Disable CPM and require external packages" OFF)
 
-# https://github.com/stlab/enum-ops
-CPMAddPackage("gh:stlab/enum-ops@1.1.0")
-target_link_libraries(stlab INTERFACE stlab::enum-ops)
+# Add cmake directory to module path for Find modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+# Find dependencies (will use CPM as fallback if not disabled)
+find_package(copy-on-write REQUIRED)
+find_package(enum-ops REQUIRED)
+
+target_link_libraries(stlab INTERFACE stlab::copy-on-write stlab::enum-ops)
 
 ########################################################
 # clangd
@@ -44,12 +44,10 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" FORCE)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CMakeDependentOption)
 include(StlabUtil)
 # CTest must be included at the top level for tests to be found.
 include(CTest)
-
 find_package(libdispatch)
 find_package(Qt5 QUIET COMPONENTS Core)
 find_package(Qt6 QUIET COMPONENTS Core)
@@ -171,3 +169,43 @@ message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   add_subdirectory(test)
 endif()
+
+########################################################
+# Installation
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+install(TARGETS stlab
+  EXPORT stlab-targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  FILE_SET stlab DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+set(CONFIG_INSTALL_DIR cmake)
+
+install(EXPORT stlab-targets
+  FILE stlab-targets.cmake
+  NAMESPACE stlab::
+  DESTINATION ${CONFIG_INSTALL_DIR}
+)
+
+configure_package_config_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/stlab-config.tmpl.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/stlab-config.cmake"
+  INSTALL_DESTINATION ${CONFIG_INSTALL_DIR}
+)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/stlab-config-version.cmake"
+  VERSION ${stlab_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/stlab-config.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/stlab-config-version.cmake"
+  DESTINATION ${CONFIG_INSTALL_DIR}
+)
