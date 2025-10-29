@@ -8,8 +8,14 @@ add_library(stlab::stlab ALIAS stlab)
 
 ########################################################
 # Dependencies
-# Enable CPM caching to avoid re-downloading dependencies
-set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages" FORCE)
+
+# Option to install stlab and its dependencies
+option(STLAB_INSTALL "Enable installation of stlab and its dependencies" OFF)
+
+# Enable CPM caching to avoid re-downloading dependencies (only when top level)
+if(PROJECT_IS_TOP_LEVEL)
+  set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages")
+endif()
 include(cmake/CPM.cmake)
 
 # https://github.com/stlab/copy-on-write
@@ -170,4 +176,70 @@ message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
 if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   add_subdirectory(test)
+endif()
+
+########################################################
+# Installation
+
+if(STLAB_INSTALL)
+  include(GNUInstallDirs)
+  include(CMakePackageConfigHelpers)
+
+  # Install copy-on-write if it was added by CPM
+  # Should be moved to copy-on-write or cpp_library
+  if(copy-on-write_ADDED)
+    set_target_properties(stlab-copy-on-write PROPERTIES
+      EXPORT_NAME copy-on-write
+    )
+    install(TARGETS stlab-copy-on-write
+      EXPORT stlab-targets
+      FILE_SET headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endif()
+
+  # Install enum-ops if it was added by CPM
+  # Should be moved to copy-on-write or cpp_library
+  if(enum-ops_ADDED)
+    set_target_properties(stlab-enum-ops PROPERTIES
+      EXPORT_NAME enum-ops
+    )
+    install(TARGETS stlab-enum-ops
+      EXPORT stlab-targets
+      FILE_SET headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endif()
+
+  install(TARGETS stlab
+    EXPORT stlab-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    FILE_SET stlab DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+  set(CONFIG_INSTALL_DIR cmake)
+
+  install(EXPORT stlab-targets
+    FILE stlab-targets.cmake
+    NAMESPACE stlab::
+    DESTINATION ${CONFIG_INSTALL_DIR}
+  )
+
+  configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/stlab-config.tmpl.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/stlab-config.cmake"
+    INSTALL_DESTINATION ${CONFIG_INSTALL_DIR}
+  )
+
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/stlab-config-version.cmake"
+    VERSION ${stlab_VERSION}
+    COMPATIBILITY SameMajorVersion
+  )
+
+  install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/stlab-config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/stlab-config-version.cmake"
+    DESTINATION ${CONFIG_INSTALL_DIR}
+  )
 endif()
