@@ -13,10 +13,10 @@
       "os": "ubuntu-22.04"
     },
     {
-      "name": "macOS apple-clang 15.1.0",
+      "name": "macOS apple-clang latest",
       "compiler": "apple-clang",
-      "version": "15.1.0",
-      "os": "macos-13"
+      "version": "latest",
+      "os": "macos-latest"
     },
     {
       "name": "Windows VS2022",
