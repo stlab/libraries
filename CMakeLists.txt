@@ -9,7 +9,7 @@ include(cmake/CPM.cmake)
 #     NAME cpp-library
 #     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cpp-library"
 # )
-CPMAddPackage("gh:stlab/cpp-library@5.1.0")
+CPMAddPackage("gh:stlab/cpp-library@5.1.1")
 include(${cpp-library_SOURCE_DIR}/cpp-library.cmake)
 
 # Enable dependency tracking BEFORE project()
@@ -21,18 +21,6 @@ project(stlab VERSION 2.1.4 LANGUAGES CXX)
 # Create the main library target first
 add_library(stlab)
 add_library(stlab::stlab ALIAS stlab)
-
-########################################################
-# clangd
-
-if(CMAKE_EXPORT_COMPILE_COMMANDS AND PROJECT_IS_TOP_LEVEL)
-  add_custom_target(clangd_compile_commands ALL
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-    ${CMAKE_BINARY_DIR}/compile_commands.json
-    ${CMAKE_SOURCE_DIR}/compile_commands.json
-    COMMENT "Creating symlink to compile_commands.json for clangd"
-  )
-endif()
 
 ########################################################
 
