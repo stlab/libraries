@@ -617,4 +617,4 @@ Containers should make a developer's life easier, not harder. When a container t
 
 # The Sources
 
-"Enough already," you cry, "show me the sources!" `stlab::forest<T>` is maintained as part of the Stlab Library, and is available <a href='https://github.com/stlab/libraries/blob/develop/stlab/forest.hpp'>on GitHub</a>. We also have <a href='http://stlab.cc/libraries/forest.hpp/'>documentation</a> for the class, as well as utility data structures and forest algorithms.
+"Enough already," you cry, "show me the sources!" `stlab::forest<T>` is maintained as part of the Stlab Library, and is available <a href='https://github.com/stlab/stlab/blob/develop/stlab/forest.hpp'>on GitHub</a>. We also have <a href='http://stlab.cc/libraries/forest.hpp/'>documentation</a> for the class, as well as utility data structures and forest algorithms.

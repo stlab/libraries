@@ -22,7 +22,7 @@ fi
 if [ ! -d stlab ]; then
     echo "Cloning stlab/$TRAVIS_BRANCH..."
 
-    git clone --branch $TRAVIS_BRANCH https://github.com/stlab/libraries.git stlab
+    git clone --branch $TRAVIS_BRANCH https://github.com/stlab/stlab.git stlab
     if [ $? -ne 0 ]; then exit 1; fi
 else
     echo "Found stlab. Pulling $TRAVIS_BRANCH..."

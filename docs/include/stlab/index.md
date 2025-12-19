@@ -9,7 +9,7 @@ hyde:
 
 ### Source Code
 
-The source code is hosted on [github](https://github.com/stlab/libraries).
+The source code is hosted on [github](https://github.com/stlab/stlab).
 
 ### License
 

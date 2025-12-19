@@ -170,7 +170,7 @@ The `task` never casts to either a `concept` or a `model` pointer, instead a poi
 
 Using this technique generates less code, largely because without virtual functions there are no tables for RTTI generated. But even looking beyond that the code appears to be slightly more optimal (if anyone wants to construct a good benchmark, post a link in the comments). Here is the [original code](https://godbolt.org/g/ki2TSJ), with undefined behavior, presented at my talk and here is the [code without inheritance or language virtual functions](https://godbolt.org/g/oxBz9T).
 
-I'm in the process of updating the [stlab library implementation of tasks](https://github.com/stlab/libraries/pull/118). It hasn't been decided if we roll this into a 1.1.2 bug fix release or hold it for a 1.2 release. I'm also looking at fixing `adobe::any_regular_t` in ASL.
+I'm in the process of updating the [stlab library implementation of tasks](https://github.com/stlab/stlab/pull/118). It hasn't been decided if we roll this into a 1.1.2 bug fix release or hold it for a 1.2 release. I'm also looking at fixing `adobe::any_regular_t` in ASL.
 
 I'll update my lighting talk if I get asked to present it again. This solution is a little more complicated but it still demonstrates the power of using concept based polymorphism to shift the allocation strategy to the use of the objects.
 

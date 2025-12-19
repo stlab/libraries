@@ -31,10 +31,10 @@ layout: default
 
 Released: {{release.published_at | date: "%b %-d, %Y" }}
 <br/>
-Sources: <a href='https://github.com/stlab/libraries/compare/{{prev_release.tag_name}}...{{release.tag_name}}'>changes</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href='{{release.zipball_url}}'>zipball</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href='{{release.tarball_url}}'>tarball</a>
+Sources: <a href='https://github.com/stlab/stlab/compare/{{prev_release.tag_name}}...{{release.tag_name}}'>changes</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href='{{release.zipball_url}}'>zipball</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href='{{release.tarball_url}}'>tarball</a>
 <br/>
 Changes: {{release.body | markdownify}}
-For older releases, the full list is available <a href='https://github.com/stlab/libraries/releases'>on GitHub</a>.
+For older releases, the full list is available <a href='https://github.com/stlab/stlab/releases'>on GitHub</a>.
 
   <h1>Posts</h1>
 
