@@ -15,7 +15,7 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <exception>
+#include <stdexcept>
 #include <string>
 #include <thread>
 
@@ -64,24 +64,16 @@ auto make_executor() -> stlab::executor_t {
     };
 }
 
-class test_exception : public std::exception {
-    std::string _error;
-
+class test_exception : public std::runtime_error {
 public:
-    test_exception() = default;
-
-    explicit test_exception(std::string error);
-
-    explicit test_exception(const char* error);
-
-    auto operator=(const test_exception&) -> test_exception& = default;
+    using std::runtime_error::runtime_error;
+    
+    test_exception(const char* message) : std::runtime_error(message) {}
+    ~test_exception() = default;
     test_exception(const test_exception&) = default;
-    auto operator=(test_exception&&) -> test_exception& = default;
-    test_exception(test_exception&&) = default;
-
-    ~test_exception() override = default;
-
-    [[nodiscard]] auto what() const noexcept -> const char* override;
+    auto operator=(const test_exception&) -> test_exception& = default;
+    test_exception(test_exception&&) noexcept = default;
+    auto operator=(test_exception&&) noexcept-> test_exception& = default;
 };
 
 struct test_setup {
