@@ -1,3 +1,5 @@
+See [the release notes](https://github.com/stlab/stlab/releases/) for recent releases.
+
 ## v2.1.0 - 2025 - August 27
   - See [the release notes](https://github.com/stlab/stlab/releases/tag/v2.1.0) for details.
 
