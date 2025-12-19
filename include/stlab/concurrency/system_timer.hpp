@@ -19,7 +19,6 @@
 #include <type_traits>
 
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
-#include <atomic>
 #include <dispatch/dispatch.h>
 #include <stlab/concurrency/default_executor.hpp>
 #elif STLAB_TASK_SYSTEM(WINDOWS)
@@ -48,31 +47,58 @@ namespace detail {
 #if STLAB_TASK_SYSTEM(LIBDISPATCH)
 
 struct system_timer {
-    inline static std::atomic<bool> _closed{false};
+    inline static bool _closed{false};
+
+    static inline auto mutex() -> std::mutex& {
+        alignas(std::mutex) static std::array<unsigned char, sizeof(std::mutex)> _storage = {0};
+        static std::mutex* _mutex = [&] { return new (&_storage[0]) std::mutex{}; }();
+        return *_mutex;
+    }
+
+    static bool enter_group_if_open() {
+        std::scoped_lock<std::mutex> lock(mutex());
+        if (_closed) {
+            return false;
+        }
+        dispatch_group_enter(detail::group()._group);
+        return true;
+    }
+
+    static void set_closed() {
+        std::scoped_lock<std::mutex> lock(mutex());
+        _closed = true;
+    }
+
+    static bool is_closed() {
+        std::scoped_lock<std::mutex> lock(mutex());
+        return _closed;
+    }
 
     system_timer() {
         // ensure the group is created and registered with pre_exit first
         (void)detail::group();
-        at_pre_exit([]() noexcept { _closed.store(true); });
+        at_pre_exit([]() noexcept { set_closed(); });
     }
 
-    ~system_timer() { assert(_closed && "system_timer is not closed, pre_exit() was not called"); }
+    ~system_timer() {
+        assert(is_closed() && "system_timer is not closed, pre_exit() was not called");
+    }
 
     template <typename F, typename Rep, typename Per = std::ratio<1>>
     auto operator()(std::chrono::duration<Rep, Per> duration, F f) const
         -> std::enable_if_t<std::is_nothrow_invocable_v<F>> {
-        assert(!_closed && "scheduling a task after pre_exit() was called");
+        assert(!is_closed() && "scheduling a task after pre_exit() was called");
 
         using namespace std::chrono;
 
         auto grouped = [f = std::move(f)]() mutable {
             // pre_exit tasks are executed in the reverse order of registration.
-            // By entering the group before we check if the timer is closed we ensure that the task
-            // is waited on if it starts.
-            dispatch_group_enter(detail::group()._group);
-            if (!_closed) {
-                std::move(f)();
+            // By entering the group before we check if the timer is closed we ensure that the
+            // task is waited on if it starts.
+            if (!enter_group_if_open()) {
+                return;
             }
+            std::move(f)();
             dispatch_group_leave(detail::group()._group);
         };
 

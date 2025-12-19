@@ -10,14 +10,14 @@
 #ifndef STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 #define STLAB_CONCURRENCY_TUPLE_ALGORITHM_HPP
 
-#include <stlab/config.hpp>  // for STLAB_VERSION_NAMESPACE
+#include <stlab/config.hpp> // for STLAB_VERSION_NAMESPACE
 
 // stdc++
-#include <cstddef>           // for size_t
-#include <optional>          // for optional
-#include <tuple>             // for get, tuple, tuple_size, tuple_cat, tuple...
-#include <type_traits>       // for is_same_v, conditional_t, conditional
-#include <utility>           // for forward, index_sequence, declval, move
+#include <cstddef>     // for size_t
+#include <optional>    // for optional
+#include <tuple>       // for get, tuple, tuple_size, tuple_cat, tuple...
+#include <type_traits> // for is_same_v, conditional_t, conditional
+#include <utility>     // for forward, index_sequence, declval, move
 
 /**************************************************************************************************/
 
@@ -113,8 +113,10 @@ struct void_i_impl<L, L> {
  */
 template <typename T, typename Op>
 auto tuple_find(const T& t, Op op) -> std::size_t {
-    if constexpr (std::tuple_size<T>::value == 0) return 1;
-    else return detail::tuple_find_impl<0, std::tuple_size<T>::value, T, Op>::find(t, op);
+    if constexpr (std::tuple_size_v<T> == 0)
+        return 1;
+    else
+        return detail::tuple_find_impl<0, std::tuple_size_v<T>, T, Op>::find(t, op);
 }
 
 /*
@@ -122,7 +124,7 @@ auto tuple_find(const T& t, Op op) -> std::size_t {
  */
 template <typename T, typename Op>
 void tuple_for_each(T& t, Op op) {
-    detail::tuple_for_each_impl<0, std::tuple_size<T>::value, T, Op>::for_each(t, op);
+    detail::tuple_for_each_impl<0, std::tuple_size_v<T>, T, Op>::for_each(t, op);
 }
 
 /*
@@ -131,8 +133,8 @@ void tuple_for_each(T& t, Op op) {
  */
 template <typename T, typename F, typename D>
 auto get_i(T& t, std::size_t index, F f, D&& default_v) {
-    return detail::get_i_impl<0, std::tuple_size<T>::value>::go(t, index, std::move(f),
-                                                                std::forward<D>(default_v));
+    return detail::get_i_impl<0, std::tuple_size_v<T>>::go(t, index, std::move(f),
+                                                           std::forward<D>(default_v));
 }
 
 /*
@@ -140,7 +142,7 @@ auto get_i(T& t, std::size_t index, F f, D&& default_v) {
  */
 template <typename T, typename F>
 auto void_i(T& t, std::size_t index, F&& f) {
-    return detail::void_i_impl<0, std::tuple_size<T>::value>::go(t, index, std::forward<F>(f));
+    return detail::void_i_impl<0, std::tuple_size_v<T>>::go(t, index, std::forward<F>(f));
 }
 
 /**************************************************************************************************/
@@ -155,7 +157,8 @@ constexpr auto apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>) -> declty
 }
 
 template <class F, class Tuple, std::size_t... I>
-constexpr auto apply_optional_indexed_impl(F&& f, Tuple&& t, std::index_sequence<I...>) -> decltype(auto) {
+constexpr auto apply_optional_indexed_impl(F&& f, Tuple&& t, std::index_sequence<I...>)
+    -> decltype(auto) {
     return std::forward<F>(f)(std::move(*std::get<I>(std::forward<Tuple>(t)))...);
 }
 
@@ -196,9 +199,8 @@ using tuple_cat_t = decltype(std::tuple_cat(std::declval<Ts>()...));
 // type-function that takes a parameter pack and returns a std::tuple<Ts...>
 // where all T[i] == void have been removed.
 template <typename... Ts>
-using voidless_tuple = tuple_cat_t<std::conditional_t<std::is_same_v<void, Ts>,
-                                                             std::tuple<>,
-                                                             std::tuple<Ts>>...>;
+using voidless_tuple =
+    tuple_cat_t<std::conditional_t<std::is_same_v<void, Ts>, std::tuple<>, std::tuple<Ts>>...>;
 
 /**************************************************************************************************/
 // type-function that takes a parameter pack and returns a std::tuple<Ts...>
@@ -211,15 +213,15 @@ using placeholder_tuple =
 // type-function that takes a parameter pack and returns a std::tuple<std::optional<Ts>...>
 // where all T[i] == void have been replaced with stlab::placeholder.
 template <typename... Ts>
-using optional_placeholder_tuple = std::tuple<std::optional<
-    std::conditional_t<std::is_same_v<void, Ts>, placeholder, Ts>>...>;
+using optional_placeholder_tuple =
+    std::tuple<std::optional<std::conditional_t<std::is_same_v<void, Ts>, placeholder, Ts>>...>;
 
 /**************************************************************************************************/
 // apply the tuple `t`as arguments to the function `f`. Placeholders are ignored.
 template <class F, class Tuple>
 constexpr auto apply_ignore_placeholders(F&& f, Tuple&& t) -> decltype(auto) {
     return detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t),
-                              std::make_index_sequence<std::tuple_size<Tuple>::value>());
+                              std::make_index_sequence<std::tuple_size_v<Tuple>>());
 }
 
 /**************************************************************************************************/

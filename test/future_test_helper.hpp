@@ -15,7 +15,7 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <exception>
+#include <stdexcept>
 #include <string>
 #include <thread>
 
@@ -64,24 +64,16 @@ auto make_executor() -> stlab::executor_t {
     };
 }
 
-class test_exception : public std::exception {
-    std::string _error;
-
+class test_exception : public std::runtime_error {
 public:
-    test_exception() = default;
-
-    explicit test_exception(std::string error);
-
-    explicit test_exception(const char* error);
-
-    auto operator=(const test_exception&) -> test_exception& = default;
+    using std::runtime_error::runtime_error;
+    
+    test_exception(const char* message) : std::runtime_error(message) {}
+    ~test_exception() = default;
     test_exception(const test_exception&) = default;
-    auto operator=(test_exception&&) -> test_exception& = default;
-    test_exception(test_exception&&) = default;
-
-    ~test_exception() override = default;
-
-    [[nodiscard]] auto what() const noexcept -> const char* override;
+    auto operator=(const test_exception&) -> test_exception& = default;
+    test_exception(test_exception&&) noexcept = default;
+    auto operator=(test_exception&&) noexcept-> test_exception& = default;
 };
 
 struct test_setup {
@@ -119,9 +111,28 @@ struct test_fixture {
 
     template <typename E, typename F>
     static void check_failure(F& f, const char* message) {
+        try {
+            (void)f.get_try();
+            std::cerr << "ERROR: Expected exception but got value\n";
+            BOOST_FAIL("Expected exception was not thrown");
+        } catch (const E& e) {
+            std::cerr << "Caught expected exception: " << e.what() << " (expected: " << message
+                      << ")\n";
+            if (std::string(message) != std::string(e.what())) {
+                BOOST_FAIL("Exception message mismatch!\n");
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Caught unexpected exception type: " << e.what() << "\n";
+            BOOST_FAIL("Unexpected exception thrown in check_failure");
+        } catch (...) {
+            std::cerr << "Caught unknown exception\n";
+            BOOST_FAIL("Unexpected exception thrown in check_failure");
+        }
+#if 0
         BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
                                     return std::string(_m) == std::string(e.what());
                                 }));
+#endif
     }
 
     template <typename E, typename... F>
@@ -150,6 +161,8 @@ private:
         try {
             (void)stlab::await(std::forward<F>(f));
         } catch (const E&) {
+        } catch (...) {
+            BOOST_FAIL("Unexpected exception thrown in wait_until_this_future_fails");
         }
     }
 };
@@ -184,10 +197,12 @@ public:
     test_functor_base(test_functor_base&& a) noexcept :
         P{std::move(a)}, _f{std::move(a._f)},
         _task_counter{std::exchange(a._task_counter, nullptr)} {}
+
     auto operator=(test_functor_base&& a) noexcept -> test_functor_base& {
-        static_cast<P*>(*this) = std::move(a); // move base
+        P::operator=(std::move(a)); // move base
         _f = std::move(a._f);
         _task_counter = std::exchange(a._task_counter, nullptr);
+        return *this;
     }
 
     template <typename... Args>
@@ -217,11 +232,6 @@ public:
     }
 };
 
-class failing_policy {
-public:
-    void action() const { throw test_exception("failure"); }
-};
-
 template <typename F>
 auto make_non_blocking_functor(F&& f, std::atomic_int& task_counter) {
     return test_functor_base<F, null_policy>(std::forward<F>(f), task_counter);
@@ -234,10 +244,6 @@ auto make_blocking_functor(F&& f, std::atomic_int& task_counter, thread_block_co
     return result;
 }
 
-template <typename F>
-auto make_failing_functor(F&& f, std::atomic_int& task_counter) {
-    return test_functor_base<F, failing_policy>(std::forward<F>(f), task_counter);
-}
 } // namespace future_test_helper
 
 #endif
