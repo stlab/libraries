@@ -2,7 +2,7 @@
 
 This site is available at [stlab.cc](https://stlab.cc).
 
-Pull requests for typos, examples, and other improvements are welcome. To file an issue, please use the [libraries repository](https://github.com/stlab/libraries).
+Pull requests for typos, examples, and other improvements are welcome. To file an issue, please use the [libraries repository](https://github.com/stlab/stlab).
 
 ## Building the Documentation
 

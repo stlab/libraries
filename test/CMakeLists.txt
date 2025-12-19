@@ -164,7 +164,7 @@ add_executable(stlab.test.cow
   main.cpp)
 
 # Disable warning on GCC 11 and above for cow_test.cpp. See
-# github.com/stlab/libraries/issues/438 for details.
+# github.com/stlab/stlab/issues/438 for details.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
   set_source_files_properties(cow_test.cpp PROPERTIES COMPILE_FLAGS -Wno-free-nonheap-object)
 endif()

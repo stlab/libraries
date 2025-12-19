@@ -7,14 +7,14 @@ ASL libraries will be migrated here in the `stlab` namespace, new libraries will
 The recommended approach to using the libraries is to use [CPM](https://github.com/cpm-cmake/CPM.cmake) and add the following to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:stlab/libraries@2.1.2")
+CPMAddPackage("gh:stlab/stlab@2.1.2")
 ```
 
-(replace `2.1.2` with the [desired version](https://github.com/stlab/libraries/releases)).
+(replace `2.1.2` with the [desired version](https://github.com/stlab/stlab/releases)).
 
 ## Branch states
 
-- **`main`:** [![Build and Tests](https://github.com/stlab/libraries/actions/workflows/stlab.yml/badge.svg)](https://github.com/stlab/libraries/actions/workflows/stlab.yml)
+- **`main`:** [![Build and Tests](https://github.com/stlab/stlab/actions/workflows/stlab.yml/badge.svg)](https://github.com/stlab/stlab/actions/workflows/stlab.yml)
 
 ## Content
 
