@@ -25,6 +25,13 @@ using lock_t = std::unique_lock<std::mutex>;
 
 namespace future_test_helper {
 
+template <typename E, typename F>
+void check_failure(F& f, const char* message) {
+    BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
+                                return std::string(_m) == std::string(e.what());
+                            }));
+}
+
 struct when_any_result_helper {
     template <typename T>
     auto operator()(T&& value, size_t index) const {
@@ -107,32 +114,6 @@ struct test_fixture {
     void check_valid_future(const F& f, const FS&... fs) {
         BOOST_REQUIRE(f.valid() == true);
         check_valid_future(fs...);
-    }
-
-    template <typename E, typename F>
-    static void check_failure(F& f, const char* message) {
-        try {
-            (void)f.get_try();
-            std::cerr << "ERROR: Expected exception but got value\n";
-            BOOST_FAIL("Expected exception was not thrown");
-        } catch (const E& e) {
-            std::cerr << "Caught expected exception: " << e.what() << " (expected: " << message
-                      << ")\n";
-            if (std::string(message) != std::string(e.what())) {
-                BOOST_FAIL("Exception message mismatch!\n");
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Caught unexpected exception type: " << e.what() << "\n";
-            BOOST_FAIL("Unexpected exception thrown in check_failure");
-        } catch (...) {
-            std::cerr << "Caught unknown exception\n";
-            BOOST_FAIL("Unexpected exception thrown in check_failure");
-        }
-#if 0
-        BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
-                                    return std::string(_m) == std::string(e.what());
-                                }));
-#endif
     }
 
     template <typename E, typename... F>
