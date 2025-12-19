@@ -5,11 +5,11 @@ cmake_minimum_required(VERSION 3.24)
 include(cmake/CPM.cmake)
 
 # Add cpp-library for dependency auto-discovery (using local development version)
-CPMAddPackage(
-    NAME cpp-library
-    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cpp-library"
-)
-# CPMAddPackage("gh:stlab/cpp-library@5.1.1")
+# CPMAddPackage(
+#     NAME cpp-library
+#     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cpp-library"
+# )
+CPMAddPackage("gh:stlab/cpp-library@5.2.0")
 include(${cpp-library_SOURCE_DIR}/cpp-library.cmake)
 
 # Enable dependency tracking BEFORE project()
