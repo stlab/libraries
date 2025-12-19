@@ -50,7 +50,7 @@ class receiver;
  * close on a process is called when a process is in an await state to signal that no more data is
  * coming. In response to a close, a process can switch to a yield state to yield values, otherwise
  * it is destructed. await_try is await if a value is available, otherwise yield (allowing for an
- * interruptible task).
+ * interruptable task).
  */
 enum class process_state : std::uint8_t { await, yield };
 
@@ -387,7 +387,7 @@ auto find_argument_error(T& argument) -> std::optional<std::exception_ptr> {
         return static_cast<message_t>(c.index()) == message_t::error;
     });
 
-    if (error_index != std::tuple_size<T>::value) {
+    if (error_index != std::tuple_size_v<T>) {
         result = get_i(
             argument, error_index, [](auto& elem) { return std::get<std::exception_ptr>(elem); },
             std::exception_ptr{});

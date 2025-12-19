@@ -46,7 +46,7 @@ namespace detail {
 class serial_instance_t : public std::enable_shared_from_this<serial_instance_t> {
     using executor_t = std::function<void(task<void() noexcept>&&)>;
     using queue_t = std::deque<task<void() noexcept>>;
-    using lock_t = std::lock_guard<std::mutex>;
+    using lock_t = std::scoped_lock<std::mutex>;
 
     std::mutex _m;
     bool _running{false}; // mutex protects this

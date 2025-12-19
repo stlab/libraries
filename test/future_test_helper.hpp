@@ -217,11 +217,6 @@ public:
     }
 };
 
-class failing_policy {
-public:
-    void action() const { throw test_exception("failure"); }
-};
-
 template <typename F>
 auto make_non_blocking_functor(F&& f, std::atomic_int& task_counter) {
     return test_functor_base<F, null_policy>(std::forward<F>(f), task_counter);
@@ -234,10 +229,6 @@ auto make_blocking_functor(F&& f, std::atomic_int& task_counter, thread_block_co
     return result;
 }
 
-template <typename F>
-auto make_failing_functor(F&& f, std::atomic_int& task_counter) {
-    return test_functor_base<F, failing_policy>(std::forward<F>(f), task_counter);
-}
 } // namespace future_test_helper
 
 #endif

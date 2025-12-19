@@ -32,7 +32,7 @@ auto scope_call(Tuple&& t, std::index_sequence<S...>) {
     (void)scoped;
 
     // call the function
-    constexpr size_t last_index = std::tuple_size<Tuple>::value - 1;
+    constexpr size_t last_index = std::tuple_size_v<Tuple> - 1;
     return std::forward<std::tuple_element_t<last_index, Tuple>>(std::get<last_index>(t))();
 }
 
