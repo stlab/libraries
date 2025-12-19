@@ -1,36 +1,26 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.24)
 
+########################################################
+# Setup cpp-library for dependency tracking and install support
+include(cmake/CPM.cmake)
+
+# Add cpp-library for dependency auto-discovery (local for now, will migrate to URI later)
+# CPMAddPackage(
+#     NAME cpp-library
+#     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cpp-library"
+# )
+CPMAddPackage("gh:stlab/cpp-library@5.1.1")
+include(${cpp-library_SOURCE_DIR}/cpp-library.cmake)
+
+# Enable dependency tracking BEFORE project()
+cpp_library_enable_dependency_tracking()
+
+########################################################
 project(stlab VERSION 2.1.4 LANGUAGES CXX)
 
 # Create the main library target first
 add_library(stlab)
 add_library(stlab::stlab ALIAS stlab)
-
-########################################################
-# Dependencies
-# Enable CPM caching to avoid re-downloading dependencies
-set(CPM_SOURCE_CACHE ${CMAKE_SOURCE_DIR}/.cache/cpm CACHE PATH "Directory to cache CPM packages" FORCE)
-include(cmake/CPM.cmake)
-
-# https://github.com/stlab/copy-on-write
-CPMAddPackage("gh:stlab/copy-on-write@1.0.6")
-target_link_libraries(stlab INTERFACE stlab::copy-on-write)
-
-# https://github.com/stlab/enum-ops
-CPMAddPackage("gh:stlab/enum-ops@1.1.0")
-target_link_libraries(stlab INTERFACE stlab::enum-ops)
-
-########################################################
-# clangd
-
-if(CMAKE_EXPORT_COMPILE_COMMANDS AND PROJECT_IS_TOP_LEVEL)
-  add_custom_target(clangd_compile_commands ALL
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-    ${CMAKE_BINARY_DIR}/compile_commands.json
-    ${CMAKE_SOURCE_DIR}/compile_commands.json
-    COMMENT "Creating symlink to compile_commands.json for clangd"
-  )
-endif()
 
 ########################################################
 
@@ -45,6 +35,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(GNUInstallDirs)
 include(CMakeDependentOption)
 include(StlabUtil)
 # CTest must be included at the top level for tests to be found.
@@ -133,7 +124,8 @@ endif()
 #
 target_include_directories(stlab INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 #
 # Several definitions are specified for the microsoft compiler. These have
@@ -147,6 +139,18 @@ target_compile_definitions(stlab INTERFACE $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>)
 add_subdirectory(include/stlab)
 add_subdirectory(src)
 
+########################################################
+# Dependencies (added after project() for dependency tracking)
+
+# https://github.com/stlab/stlab-copy-on-write
+CPMAddPackage("gh:stlab/stlab-copy-on-write@1.1.0")
+target_link_libraries(stlab INTERFACE $<BUILD_INTERFACE:stlab::copy-on-write>)
+
+# https://github.com/stlab/stlab-enum-ops
+CPMAddPackage("gh:stlab/stlab-enum-ops@1.2.0")
+target_link_libraries(stlab INTERFACE $<BUILD_INTERFACE:stlab::enum-ops>)
+
+# System dependencies
 if(NOT STLAB_THREAD_SYSTEM STREQUAL "none")
   target_link_libraries(stlab INTERFACE Threads::Threads)
 endif()
@@ -170,4 +174,22 @@ message(STATUS "stlab: Main Executor: ${STLAB_MAIN_EXECUTOR}")
 
 if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   add_subdirectory(test)
+endif()
+
+########################################################
+# Installation Support (using cpp-library dependency auto-discovery)
+if(PROJECT_IS_TOP_LEVEL)
+  include("${cpp-library_SOURCE_DIR}/cmake/cpp-library-install.cmake")
+  
+  # Use cpp-library's install function for automatic dependency discovery
+  # No manual dependency mappings needed - cpp-library auto-discovers via dependency provider
+  _cpp_library_setup_install(
+    NAME "stlab"
+    PACKAGE_NAME "stlab"
+    VERSION "${PROJECT_VERSION}"
+    NAMESPACE "stlab"
+    HEADERS TRUE  # Indicates the target has a FILE_SET named "headers"
+  )
+  
+  message(STATUS "stlab: Installation support enabled with dependency auto-discovery")
 endif()

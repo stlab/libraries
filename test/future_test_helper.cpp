@@ -8,10 +8,13 @@
 
 #include "future_test_helper.hpp"
 
+#if 0
 #include <utility>
 #include <string>
 
 namespace future_test_helper {
+
+test_exception::~test_exception() = default;
 
 test_exception::test_exception(std::string  error) : _error(std::move(error)) {}
 
@@ -20,3 +23,4 @@ test_exception::test_exception(const char* error) : _error(error) {}
 auto test_exception::what() const noexcept -> const char* { return _error.c_str(); }
 
 } // namespace future_test_helper
+#endif

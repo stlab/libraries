@@ -1066,7 +1066,7 @@ struct when_all_shared {
     Args _args;
     std::mutex _guard;
     std::array<future<void>, std::tuple_size_v<Args>> _holds;
-    std::size_t _remaining{std::tuple_size<Args>::value};
+    std::size_t _remaining{std::tuple_size_v<Args>};
     std::exception_ptr _exception;
     packaged_task<> _f;
 
@@ -1194,14 +1194,14 @@ auto apply_when_all_args_(F& f, Args& args, P& p, std::index_sequence<I...>) {
     (void)std::initializer_list<int>{
         (rethrow_if_false(static_cast<bool>(std::get<I>(args)), p->_exception), 0)...};
     return apply_optional_indexed<
-        index_sequence_transform_t<std::make_index_sequence<std::tuple_size<Args>::value>,
+        index_sequence_transform_t<std::make_index_sequence<std::tuple_size_v<Args>>,
                                    remove_placeholder<Args>::template function>>(f, args);
 }
 
 template <class F, class P>
 auto apply_when_all_args(F& f, P& p) {
-    return apply_when_all_args_(
-        f, p->_args, p, std::make_index_sequence<std::tuple_size<decltype(p->_args)>::value>());
+    return apply_when_all_args_(f, p->_args, p,
+                                std::make_index_sequence<std::tuple_size_v<decltype(p->_args)>>());
 }
 
 template <class F, class P>

@@ -7,12 +7,14 @@ Checks: >
   misc-include-cleaner,
   -readability-identifier-length,
   -readability-magic-numbers,
-  -cppcoreguidelines-avoid-magic-numbers
+  -cppcoreguidelines-avoid-magic-numbers,
+  -modernize-use-trailing-return-type,
+  -cert-err58-cpp
 CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
     value: >
       boost/test/.*;
       __chrono/.*
 HeaderFilterRegex: "^.*/include/stlab/.*$"
-ExcludeHeaderRegex: "^.*/boost/.*$|^.*Program Files.*$"
+# ExcludeHeaderRegex: "^.*/boost/.*$|^.*Program Files.*$"
 # WarningsAsErrors: "*"

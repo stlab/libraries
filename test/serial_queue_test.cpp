@@ -40,7 +40,7 @@ void test0(stlab::schedule_mode mode) {
     auto dq(d.executor());
 
     auto strout([&](std::string str) {
-        std::lock_guard<std::mutex> const l(m);
+        std::scoped_lock<std::mutex> const l(m);
         output.emplace_back(std::move(str));
     });
 
@@ -74,7 +74,7 @@ void test0(stlab::schedule_mode mode) {
 
     while (true) {
         {
-            std::lock_guard<std::mutex> const l(m);
+            std::scoped_lock<std::mutex> const l(m);
 
             if (output.size() == 13) {
                 break;
@@ -118,7 +118,7 @@ class test_hash_t {
         }
 
         static std::mutex m;
-        std::lock_guard<std::mutex> const l(m);
+        std::scoped_lock<std::mutex> const l(m);
 
         std::cout << std::hex << _name << " need: " << "0x" << expected << " have: " << "0x" << _h
                   << "\n"

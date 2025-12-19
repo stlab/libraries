@@ -15,7 +15,7 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <exception>
+#include <stdexcept>
 #include <string>
 #include <thread>
 
@@ -24,6 +24,25 @@
 using lock_t = std::unique_lock<std::mutex>;
 
 namespace future_test_helper {
+
+template <typename E, typename F>
+void check_failure(F& f, const char* message) {
+#if 1
+    try {
+        (void)f.get_try();
+        BOOST_FAIL("Expected exception was not thrown");
+
+    } catch (const std::exception& e) {
+        BOOST_REQUIRE(typeid(E) == typeid(e));
+        BOOST_REQUIRE_EQUAL(std::string(message), std::string(e.what()));
+    }
+#else
+    // This version fails in CI with the XCode 16.4 runner. It appears to be a compiler bug.
+    BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
+                                return std::string(_m) == std::string(e.what());
+                            }));
+#endif
+}
 
 struct when_any_result_helper {
     template <typename T>
@@ -64,24 +83,16 @@ auto make_executor() -> stlab::executor_t {
     };
 }
 
-class test_exception : public std::exception {
-    std::string _error;
-
+class test_exception : public std::runtime_error {
 public:
-    test_exception() = default;
+    using std::runtime_error::runtime_error;
 
-    explicit test_exception(std::string error);
-
-    explicit test_exception(const char* error);
-
-    auto operator=(const test_exception&) -> test_exception& = default;
+    test_exception(const char* message) : std::runtime_error(message) {}
+    ~test_exception() = default;
     test_exception(const test_exception&) = default;
-    auto operator=(test_exception&&) -> test_exception& = default;
-    test_exception(test_exception&&) = default;
-
-    ~test_exception() override = default;
-
-    [[nodiscard]] auto what() const noexcept -> const char* override;
+    auto operator=(const test_exception&) -> test_exception& = default;
+    test_exception(test_exception&&) noexcept = default;
+    auto operator=(test_exception&&) noexcept -> test_exception& = default;
 };
 
 struct test_setup {
@@ -117,13 +128,6 @@ struct test_fixture {
         check_valid_future(fs...);
     }
 
-    template <typename E, typename F>
-    static void check_failure(F& f, const char* message) {
-        BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
-                                    return std::string(_m) == std::string(e.what());
-                                }));
-    }
-
     template <typename E, typename... F>
     void wait_until_future_fails(F&&... f) {
         (void)std::initializer_list<int>{
@@ -150,6 +154,8 @@ private:
         try {
             (void)stlab::await(std::forward<F>(f));
         } catch (const E&) {
+        } catch (...) {
+            BOOST_FAIL("Unexpected exception thrown in wait_until_this_future_fails");
         }
     }
 };
@@ -184,10 +190,12 @@ public:
     test_functor_base(test_functor_base&& a) noexcept :
         P{std::move(a)}, _f{std::move(a._f)},
         _task_counter{std::exchange(a._task_counter, nullptr)} {}
+
     auto operator=(test_functor_base&& a) noexcept -> test_functor_base& {
-        static_cast<P*>(*this) = std::move(a); // move base
+        P::operator=(std::move(a)); // move base
         _f = std::move(a._f);
         _task_counter = std::exchange(a._task_counter, nullptr);
+        return *this;
     }
 
     template <typename... Args>
@@ -217,11 +225,6 @@ public:
     }
 };
 
-class failing_policy {
-public:
-    void action() const { throw test_exception("failure"); }
-};
-
 template <typename F>
 auto make_non_blocking_functor(F&& f, std::atomic_int& task_counter) {
     return test_functor_base<F, null_policy>(std::forward<F>(f), task_counter);
@@ -234,10 +237,6 @@ auto make_blocking_functor(F&& f, std::atomic_int& task_counter, thread_block_co
     return result;
 }
 
-template <typename F>
-auto make_failing_functor(F&& f, std::atomic_int& task_counter) {
-    return test_functor_base<F, failing_policy>(std::forward<F>(f), task_counter);
-}
 } // namespace future_test_helper
 
 #endif

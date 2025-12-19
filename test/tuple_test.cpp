@@ -68,7 +68,7 @@ using namespace stlab;
 BOOST_AUTO_TEST_CASE(remove_placeholder_test) {
     auto x = std::make_tuple(10, placeholder(), 25.0, placeholder());
 
-    apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
+    apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size_v<decltype(x)>>,
                                              remove_placeholder<decltype(x)>::function>>(
         [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, x);
 }
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(add_placeholder_test) {
 
     auto x = interim_t(10, placeholder(), 25, placeholder());
 
-    apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size<decltype(x)>::value>,
+    apply_indexed<index_sequence_transform_t<make_index_sequence<tuple_size_v<decltype(x)>>,
                                              remove_placeholder<decltype(x)>::function>>(
         [](auto... args) { for_each_argument([](auto x) { cout << x << endl; }, args...); }, x);
 }

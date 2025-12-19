@@ -1,5 +1,5 @@
 target_sources( stlab INTERFACE
-  FILE_SET stlab
+  FILE_SET headers
   TYPE HEADERS
   BASE_DIRS ../
   FILES
@@ -40,7 +40,7 @@ target_sources( stlab INTERFACE
 stlab_generate_config_file()
 
 target_sources( stlab INTERFACE
-  FILE_SET stlab
+  FILE_SET headers
   TYPE HEADERS
   BASE_DIRS ${PROJECT_BINARY_DIR}/include
   FILES

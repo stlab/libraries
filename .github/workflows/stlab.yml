@@ -32,23 +32,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.6
 
-      - name: Install dependencies // macOS
-        if: ${{ startsWith(matrix.config.os, 'macos') }}
-        run: |
-          brew update
-          rm '/usr/local/bin/2to3'
-          rm '/usr/local/bin/2to3-3.12'
-          rm '/usr/local/bin/idle3'
-          rm '/usr/local/bin/idle3.12'
-          rm '/usr/local/bin/pydoc3'
-          rm '/usr/local/bin/pydoc3.12'
-          rm '/usr/local/bin/python3'
-          rm '/usr/local/bin/python3.12'
-          rm '/usr/local/bin/python3-config'
-          rm '/usr/local/bin/python3.12-config'
-          brew install ninja
-        shell: bash
-
       - name: Install dependencies // Linux (GCC|Clang)
         if: ${{ startsWith(matrix.config.os, 'ubuntu') && !startsWith(matrix.config.compiler, 'emscripten') }}
         run: |
@@ -129,4 +112,4 @@ jobs:
         shell: bash
         run: |
           cd ../build/
-          ctest --output-on-failure
+          ctest --output-on-failure --verbose
