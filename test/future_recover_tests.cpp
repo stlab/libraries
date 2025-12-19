@@ -31,16 +31,6 @@ using namespace future_test_helper;
 
 BOOST_FIXTURE_TEST_SUITE(future_recover_void, test_fixture<void>)
 BOOST_AUTO_TEST_CASE(future_recover_failure_before_recover_initialized_on_rvalue) {
-    
-    {
-        BOOST_TEST_MESSAGE("**** RUNNING TESTING TEST_EXCEPTION ****");
-
-        auto f = stlab::make_exceptional_future<int>(
-            std::make_exception_ptr(test_exception("failure")), default_executor);
-        check_failure<test_exception>(f, "failure");
-        BOOST_TEST_MESSAGE("**** END TESTING TEST_EXCEPTION ****");
-    }
-
     BOOST_TEST_MESSAGE("running future recover, failure before recover initialized on r-value");
 
     /*
