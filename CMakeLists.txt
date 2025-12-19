@@ -35,6 +35,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(GNUInstallDirs)
 include(CMakeDependentOption)
 include(StlabUtil)
 # CTest must be included at the top level for tests to be found.
