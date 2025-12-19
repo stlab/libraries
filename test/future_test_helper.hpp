@@ -119,9 +119,28 @@ struct test_fixture {
 
     template <typename E, typename F>
     static void check_failure(F& f, const char* message) {
+        try {
+            (void)f.get_try();
+            std::cerr << "ERROR: Expected exception but got value\n";
+            BOOST_FAIL("Expected exception was not thrown");
+        } catch (const E& e) {
+            std::cerr << "Caught expected exception: " << e.what() << " (expected: " << message
+                      << ")\n";
+            if (std::string(message) != std::string(e.what())) {
+                BOOST_FAIL("Exception message mismatch!\n");
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Caught unexpected exception type: " << e.what() << "\n";
+            BOOST_FAIL("Unexpected exception thrown in check_failure");
+        } catch (...) {
+            std::cerr << "Caught unknown exception\n";
+            BOOST_FAIL("Unexpected exception thrown in check_failure");
+        }
+#if 0
         BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
                                     return std::string(_m) == std::string(e.what());
                                 }));
+#endif
     }
 
     template <typename E, typename... F>
@@ -150,6 +169,8 @@ private:
         try {
             (void)stlab::await(std::forward<F>(f));
         } catch (const E&) {
+        } catch (...) {
+            BOOST_FAIL("Unexpected exception thrown in wait_until_this_future_fails");
         }
     }
 };
@@ -184,10 +205,12 @@ public:
     test_functor_base(test_functor_base&& a) noexcept :
         P{std::move(a)}, _f{std::move(a._f)},
         _task_counter{std::exchange(a._task_counter, nullptr)} {}
+
     auto operator=(test_functor_base&& a) noexcept -> test_functor_base& {
-        static_cast<P*>(*this) = std::move(a); // move base
+        P::operator=(std::move(a)); // move base
         _f = std::move(a._f);
         _task_counter = std::exchange(a._task_counter, nullptr);
+        return *this;
     }
 
     template <typename... Args>
