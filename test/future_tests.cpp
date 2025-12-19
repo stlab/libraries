@@ -41,6 +41,17 @@ inline auto promise_future() {
     return package<T(T)>(immediate_executor,
                          [](auto&& x) -> decltype(x) { return std::forward<decltype(x)>(x); });
 }
+BOOST_FIXTURE_TEST_SUITE(testing_test_exception, test_fixture<void>)
+
+BOOST_AUTO_TEST_CASE(TESTING_TEST_EXCEPTION) {
+    BOOST_TEST_MESSAGE("**** RUNNING TESTING TEST_EXCEPTION ****");
+
+    auto f = stlab::make_exceptional_future<int>(std::make_exception_ptr(test_exception("failure")), default_executor);
+    check_failure<test_exception>(f, "failure");
+    BOOST_TEST_MESSAGE("**** END TESTING TEST_EXCEPTION ****");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(rvalue_through_continuation) {
     BOOST_TEST_MESSAGE("running passing rvalue to continuation");
