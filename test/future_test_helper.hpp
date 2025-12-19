@@ -27,9 +27,21 @@ namespace future_test_helper {
 
 template <typename E, typename F>
 void check_failure(F& f, const char* message) {
+#if 1
+    try {
+        (void)f.get_try();
+        BOOST_FAIL("Expected exception was not thrown");
+
+    } catch (const std::exception& e) {
+        BOOST_REQUIRE(typeid(E) == typeid(e));
+        BOOST_REQUIRE_EQUAL(std::string(message), std::string(e.what()));
+    }
+#else
+    // This version fails in CI with the XCode 16.4 runner. It appears to be a compiler bug.
     BOOST_REQUIRE_EXCEPTION((void)f.get_try(), E, ([_m = message](const auto& e) {
                                 return std::string(_m) == std::string(e.what());
                             }));
+#endif
 }
 
 struct when_any_result_helper {
@@ -74,13 +86,13 @@ auto make_executor() -> stlab::executor_t {
 class test_exception : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
-    
+
     test_exception(const char* message) : std::runtime_error(message) {}
     ~test_exception() = default;
     test_exception(const test_exception&) = default;
     auto operator=(const test_exception&) -> test_exception& = default;
     test_exception(test_exception&&) noexcept = default;
-    auto operator=(test_exception&&) noexcept-> test_exception& = default;
+    auto operator=(test_exception&&) noexcept -> test_exception& = default;
 };
 
 struct test_setup {
