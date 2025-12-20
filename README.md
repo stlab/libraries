@@ -18,7 +18,7 @@ CPMAddPackage("gh:stlab/stlab@2.1.2")
 
 ## Content
 
-### [Concurrency](https://www.stlab.cc/libraries/concurrency/)
+### [Concurrency](https://stlab.cc/include/stlab/concurrency/)
 
 This library provides futures and channels, high-level abstractions for implementing algorithms that ease the use of multiple CPU cores while minimizing contention. This library solves several problems of the C++11 and C++17 TS futures.
 
@@ -111,6 +111,22 @@ If your configuration command was successful, go to your build directory (`cd ..
 cmake --build .
 
 ```
+
+#### Installation (optional)
+
+Installation is optional and typically not required when using CPM. If you need to install the library (e.g., for system-wide deployment or use with a package manager):
+
+```bash
+# Build and install to default system location
+cmake --preset=install
+cmake --build --preset=install
+cmake --install build/install
+
+# Install to custom prefix
+cmake --install build/install --prefix /opt/mylib
+```
+
+The `install` preset enables `CPM_USE_LOCAL_PACKAGES`, which verifies your generated Config.cmake works correctly. See the [CPM.cmake documentation](https://github.com/cpm-cmake/CPM.cmake#cpm_use_local_packages) for more about using installed packages.
 
 ## Testing
 
