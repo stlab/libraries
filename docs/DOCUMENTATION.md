@@ -9,11 +9,11 @@
 
 STLab documents its retained futures, channels, await helpers, serial queues,
 and general utilities only. Execution contracts and canonical API groups belong
-to the separate, currently unpublished `stlab-execution` checkout. Build its
+to the separate `stlab-execution` package. Build its
 `docs` preset for a standalone local reference; there is no published execution
 documentation endpoint yet. Do not add execution headers or implementation
-sources to STLab's Doxygen INPUT to restore old links. During local development,
-both docs builds require the typed CPM source overrides described in the root README.
+sources to STLab's Doxygen INPUT to restore old links. To build against local dependency
+checkouts, use the typed CPM source overrides described in the root README.
 
 Relaxed Doxygen warnings are on by default (`STLAB_DOXYGEN_RELAXED_WARNINGS=ON`) until undocumented symbols are cleaned up; set `-DSTLAB_DOXYGEN_RELAXED_WARNINGS=OFF` for cpp-library-strict `WARN_AS_ERROR` builds.
 

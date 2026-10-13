@@ -5,7 +5,8 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME cpp-library
   GITHUB_REPOSITORY stlab/cpp-library
-  GIT_TAG v5.5.0)
+  VERSION 5.6.0
+  GIT_TAG v5.6.0)
 include("${cpp-library_SOURCE_DIR}/cpp-library.cmake")
 cpp_library_enable_dependency_tracking()
 
@@ -25,20 +26,19 @@ include(GNUInstallDirs)
 include(CMakeDependentOption)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-# A development SHA makes CPM infer version 0, which rejects independently
-# installed major versions. There is deliberately no execution version floor yet.
+# Keep installed execution targets visible to parent source consumers.
 if(CPM_USE_LOCAL_PACKAGES AND NOT CPM_stlab-execution_SOURCE)
-  find_package(stlab-execution QUIET CONFIG GLOBAL)
+  find_package(stlab-execution 1.0.1 QUIET CONFIG GLOBAL)
   if(stlab-execution_FOUND)
     CPMRegisterPackage(stlab-execution "${stlab-execution_VERSION}")
   endif()
 endif()
-# Local development pin; release constraints are assigned when execution is published.
-# [DEPENDENCY] https://github.com/stlab/stlab-execution/releases (no release yet; retain development SHA)
+# [DEPENDENCY] https://github.com/stlab/stlab-execution/releases
 CPMAddPackage(
   NAME stlab-execution
   GITHUB_REPOSITORY stlab/stlab-execution
-  GIT_TAG b71e7fc85e4bd8312e66095cb79cdde2aba2f0ad)
+  VERSION 1.0.1
+  GIT_TAG v1.0.1)
 # Backend selection belongs to execution. These resolved values are needed only by private tests.
 get_target_property(stlab_execution_imported stlab::execution IMPORTED)
 get_target_property(stlab_execution_type stlab::execution TYPE)
@@ -139,7 +139,7 @@ if(PROJECT_IS_TOP_LEVEL AND BUILD_DOCS)
 endif()
 
 include("${cpp-library_SOURCE_DIR}/cmake/cpp-library-install.cmake")
-cpp_library_map_dependency("stlab::execution" "stlab-execution")
+cpp_library_map_dependency("stlab::execution" "stlab-execution 1.0.1")
 # These existing release dependencies can be supplied by CPM's source cache without
 # a tracked find_package call; retain their actual package constraints for installation.
 cpp_library_map_dependency("stlab::copy-on-write" "stlab-copy-on-write 1.1.1")

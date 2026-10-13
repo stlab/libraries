@@ -66,15 +66,11 @@ not the C++ ABI of previously built clients.
 
 `stlab/config.hpp` includes `stlab/execution/config.hpp`. STLab owns only its release
 version/namespace and coroutine configuration; execution owns backend selection, export,
-and common feature macros. The execution SHA pin is a development dependency available
-on a public review branch, not a release version; cpp-library uses release 5.5.0. Local CPM source
+and common feature macros. STLab uses stlab-execution 1.0.1 and cpp-library 5.6.0. Local CPM source
 overrides must use `:PATH` cache types on Windows.
 
-**Release blocker:** approved release pins and the matching installed dependency
-requirement still need toolkit → execution → STLab publication. The development
-commits are remotely available for review and CI. The historical release example above
-does not represent a published extraction release. No execution minimum version
-is guessed. Current local validation uses generic developer overrides:
+Installed consumers require stlab-execution 1.0.1 or later. To develop against local
+dependency checkouts, use generic developer overrides:
 
 ```powershell
 cmake --preset=debug-cpp20 -DCPM_cpp-library_SOURCE:PATH=<toolkit-checkout> -DCPM_stlab-execution_SOURCE:PATH=<execution-checkout>
