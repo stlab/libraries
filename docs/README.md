@@ -20,6 +20,17 @@ Options:
 - `--skip-jekyll` — rebuild API docs and copy into `_site/doxygen/` after editing headers
 - `--refresh-releases` — update `docs/_data/releases.json` from GitHub before building
 
+Release data refreshes also update contributors and tags. Set `GITHUB_TOKEN` to authenticate
+GitHub API requests and avoid the lower unauthenticated rate limit; CI uses its repository
+token with `contents: read` permission. Failed requests stop the build and leave the existing
+data files unchanged.
+
+Run the refresh regression checks with Bash and Python 3:
+
+```bash
+python3 docs/tools/docs/test-about.py
+```
+
 Serve the built tree:
 
 ```bash

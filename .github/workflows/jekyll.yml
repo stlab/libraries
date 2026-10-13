@@ -46,9 +46,12 @@ jobs:
       - name: Install Doxygen
         # [DEPENDENCY] https://github.com/ssciwr/doxygen-install/releases (v2.0.3)
         uses: ssciwr/doxygen-install@fa3e94d34131d3990b6b8ba939ab982964aa3758
+      - name: Test documentation data refresh
+        run: python3 ./docs/tools/docs/test-about.py
       - name: Build full documentation site
         run: bash ./docs/tools/docs/build-site.sh --refresh-releases
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           JEKYLL_BASEURL: ${{ steps.pages.outputs.base_path }}
           JEKYLL_ENV: production
       - name: Upload artifact
