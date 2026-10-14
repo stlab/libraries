@@ -48,12 +48,11 @@ TEST_CASE_TEMPLATE("future_recover_retains_rvalue_executor_until_scheduling", T,
     SUBCASE("not yet ready") {}
 
     auto result = std::move(input).recover(std::move(executor), [](future<T> value) {
-        auto extracted = std::move(value).get_try();
-        REQUIRE(extracted.has_value());
+        auto extracted = std::move(value).get_ready();
         if constexpr (std::is_same_v<T, int>) {
-            return *extracted;
+            return extracted;
         } else {
-            return extracted->member();
+            return extracted.member();
         }
     });
 
@@ -1155,7 +1154,7 @@ TEST_CASE_FIXTURE(test_fixture<move_only>, "future_recover_move_only_with_broken
         sut = [&check]() {
             auto p{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
-            return std::move(p.second).recover([&check](const auto& f) {
+            return std::move(p.second).recover([&check](auto f) {
                 check = true;
                 try {
                     return *std::move(f.get_try());
@@ -1173,7 +1172,7 @@ TEST_CASE_FIXTURE(test_fixture<move_only>, "future_recover_move_only_with_broken
         sut = [&check]() {
             auto p{
                 package<move_only(move_only)>(immediate_executor, [](move_only x) { return x; })};
-            return std::move(p.second) ^ [&check](const auto& f) {
+            return std::move(p.second) ^ [&check](auto f) {
                 check = true;
                 try {
                     return *std::move(f.get_try());

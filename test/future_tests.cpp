@@ -13,7 +13,9 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
 #include <thread>
+#include <type_traits>
 #include <utility>
 
 #include <doctest/doctest.h>
@@ -33,6 +35,130 @@ using namespace stlab;
 using namespace future_test_helper;
 
 /**************************************************************************************************/
+
+TEST_CASE("future_void_get_ready_returns_void") {
+    using future_t = future<void>;
+
+    static_assert(std::is_void_v<decltype(std::declval<future_t&>().get_ready())>);
+    static_assert(std::is_void_v<decltype(std::declval<const future_t&>().get_ready())>);
+    static_assert(std::is_void_v<decltype(std::declval<future_t&&>().get_ready())>);
+
+    auto [producer, input] = package<void()>(immediate_executor, [] {});
+    producer();
+    REQUIRE(input.is_ready());
+
+    input.get_ready();
+    std::as_const(input).get_ready();
+    std::move(input).get_ready();
+}
+
+TEST_CASE("future_move_only_extraction_overloads") {
+    using value_t = std::unique_ptr<int>;
+    using future_t = future<value_t>;
+
+    static_assert(
+        std::is_same_v<decltype(&future_t::get_try), std::optional<value_t> (future_t::*)() &>);
+    static_assert(std::is_same_v<decltype(&future_t::get_ready), value_t (future_t::*)() &&>);
+}
+
+TEST_CASE("future_move_only_get_try_preserves_pending_value") {
+    auto [promise, input] = package<std::unique_ptr<int>()>(
+        immediate_executor, [] { return std::make_unique<int>(42); });
+
+    REQUIRE_FALSE(input.get_try().has_value());
+    REQUIRE_FALSE(input.get_try().has_value());
+    REQUIRE(input.valid());
+    REQUIRE_FALSE(input.is_ready());
+
+    promise();
+
+    auto value = input.get_try();
+    REQUIRE(value.has_value());
+    REQUIRE(*value);
+    REQUIRE(**value == 42);
+}
+
+TEST_CASE("future_move_only_get_ready_extracts_value") {
+    auto [promise, input] = package<std::unique_ptr<int>()>(
+        immediate_executor, [] { return std::make_unique<int>(42); });
+    promise();
+    REQUIRE(input.is_ready());
+
+    auto value = std::move(input).get_ready();
+    REQUIRE(value);
+    REQUIRE(*value == 42);
+}
+
+TEST_CASE("future_move_only_extraction_rethrows_stored_exception") {
+    auto [promise, input] = package<std::unique_ptr<int>()>(
+        immediate_executor, []() -> std::unique_ptr<int> { throw test_exception("failure"); });
+    promise();
+    REQUIRE(input.is_ready());
+
+    SUBCASE("polling") { REQUIRE_THROWS_AS((void)input.get_try(), test_exception); }
+    SUBCASE("ready extraction") {
+        REQUIRE_THROWS_AS((void)std::move(input).get_ready(), test_exception);
+    }
+}
+
+TEST_CASE("future_copyable_extraction_preserves_shared_value") {
+    auto input = make_ready_future<std::string>("value", immediate_executor);
+    const auto shared = input;
+
+    REQUIRE(shared.get_try() == std::optional<std::string>{"value"});
+    REQUIRE(shared.get_ready() == "value");
+    REQUIRE(std::move(input).get_try() == std::optional<std::string>{"value"});
+    REQUIRE(std::move(input).get_ready() == "value");
+    REQUIRE(shared.get_ready() == "value");
+}
+
+TEST_CASE("future_packaged_task_move_assignment_abandons_previous_result") {
+    auto [producer, abandoned] = package<int()>(immediate_executor, [] { return 1; });
+    auto [replacement_producer, replacement] = package<int()>(immediate_executor, [] { return 2; });
+
+    producer = std::move(replacement_producer);
+
+    REQUIRE(abandoned.is_ready());
+    try {
+        (void)abandoned.get_ready();
+        FAIL("Expected broken_promise");
+    } catch (const future_error& error) {
+        REQUIRE(error.code() == future_error_codes::broken_promise);
+    }
+    REQUIRE(replacement_producer.canceled());
+    REQUIRE_FALSE(replacement.is_ready());
+
+    producer();
+    REQUIRE(replacement.get_ready() == 2);
+}
+
+TEST_CASE("future_packaged_task_empty_assignment_abandons_previous_result") {
+    auto [producer, abandoned] = package<int()>(immediate_executor, [] { return 1; });
+
+    producer = packaged_task<>{};
+
+    REQUIRE(producer.canceled());
+    REQUIRE(abandoned.is_ready());
+    try {
+        (void)abandoned.get_ready();
+        FAIL("Expected broken_promise");
+    } catch (const future_error& error) {
+        REQUIRE(error.code() == future_error_codes::broken_promise);
+    }
+}
+
+TEST_CASE("future_packaged_task_self_move_preserves_result") {
+    auto [producer, result] = package<int()>(immediate_executor, [] { return 42; });
+    auto& alias = producer;
+
+    producer = std::move(alias);
+
+    REQUIRE_FALSE(producer.canceled());
+    REQUIRE_FALSE(result.is_ready());
+
+    producer();
+    REQUIRE(result.get_ready() == 42);
+}
 
 template <class T>
 inline auto promise_future() {
@@ -541,8 +667,8 @@ TEST_CASE("future_wait_moveonly_value_error_case_and_timeout") {
 
     stlab::future<stlab::move_only> f = stlab::async(stlab::default_executor, answer);
 
-    REQUIRE_THROWS_AS(stlab::await_for(std::move(f), std::chrono::seconds(500)).get_try(),
-                      test_exception);
+    auto r = stlab::await_for(std::move(f), std::chrono::seconds(500));
+    REQUIRE_THROWS_AS((void)r.get_try(), test_exception);
 }
 
 TEST_CASE("future_int_detach_without_execution") {
@@ -567,7 +693,7 @@ TEST_CASE("future_move_only_detach_without_execution") {
         auto p = package<move_only()>(immediate_executor, [] { return move_only{42}; });
         auto r = std::move(p.second).then(
             [a = annotate(counter), &_check = check](auto&&) { _check = false; });
-        r.detach();
+        std::move(r).detach();
     }
     std::cout << counter;
 
@@ -629,7 +755,7 @@ TEST_CASE("future_move_only_detach_with_execution") {
         auto p = package<move_only()>(stlab::immediate_executor, [] { return move_only{42}; });
         auto r = std::move(p.second).then(
             [a = stlab::annotate(counter), &_result = result](auto&& x) { _result = x.member(); });
-        r.detach();
+        std::move(r).detach();
         p.first();
     }
     std::cout << counter;

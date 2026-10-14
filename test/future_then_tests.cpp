@@ -45,7 +45,7 @@ TEST_CASE_FIXTURE(test_fixture<void>, "future_void_single_task_detached") {
     atomic_int p{0};
     {
         auto detached = async(make_executor<0>(), [&_p = p] { _p = 42; });
-        detached.detach();
+        std::move(detached).detach();
     }
     while (p.load() != 42) {
     }
@@ -800,7 +800,7 @@ TEST_CASE_FIXTURE(test_fixture<void>, "future_int_single_task_detached") {
             _check = true;
             return 42;
         });
-        detached.detach();
+        std::move(detached).detach();
     }
     while (!check) {
         invoke_waiting([] { this_thread::sleep_for(chrono::milliseconds(1)); });
