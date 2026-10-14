@@ -10,7 +10,7 @@
 #define STLAB_CONCURRENCY_AWAIT_HPP
 
 /*! @file await.hpp
- *  @brief Blocking wait helpers for futures (`await`, `await_for`, deprecated `blocking_get`, …).
+ *  @brief Blocking wait helpers for futures (`await`, `await_for`, …).
  *
  *  @details
  *  Prefer **continuations** on futures; blocking waits can increase contention, grow the thread
@@ -43,7 +43,7 @@ STLAB_VERSION_NAMESPACE_BEGIN()
 
 /** @defgroup stlab_concurrency_await await
  *  @ingroup stlab_concurrency
- *  @brief Blocking wait helpers for futures (`await`, `blocking_get`, etc.).
+ *  @brief Blocking wait helpers for futures (`await`, etc.).
  *  @{
  */
 
@@ -158,34 +158,6 @@ template <class T>
              " `await_for(stlab::copy(f), t)` instead.")]]
 auto await_for(const future<T>& x, const std::chrono::nanoseconds& timeout) -> future<T> {
     return await_for(future<T>{x}, timeout);
-}
-
-/**************************************************************************************************/
-
-/// @deprecated Use `await()` instead.
-///
-/// @details
-/// Waits until `x` is ready. Consumes a thread while blocked, increasing contention and risking
-/// deadlock; subsequent work on the waiting thread is stalled. Prefer continuations (`then`,
-/// `recover`, `when_all`, etc.).
-template <class T>
-[[deprecated("Use await instead.")]]
-auto blocking_get(future<T> x) -> T {
-    return await(std::move(x));
-}
-
-/// @deprecated Use `await_for()` instead.
-template <class T>
-[[deprecated("Use await_for instead.")]]
-auto blocking_get_for(future<T> x, const std::chrono::nanoseconds& timeout) -> future<T> {
-    return await_for(std::move(x), timeout);
-}
-
-/// @deprecated Use `await_for()` instead.
-template <class T>
-[[deprecated("Use await_for instead.")]]
-auto blocking_get(future<T> x, const std::chrono::nanoseconds& timeout) -> decltype(x.get_try()) {
-    return blocking_get_for(std::move(x), timeout).get_try();
 }
 
 /**************************************************************************************************/

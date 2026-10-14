@@ -8,13 +8,11 @@
 #include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/serial_queue.hpp>
-#include <stlab/concurrency/task.hpp>
-#include <stlab/config.hpp>
+#include <stlab/execution/config.hpp>
 
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <cstddef>
 #include <mutex>
 #include <thread>
 #include <vector>

@@ -232,11 +232,15 @@ ctest -C Release
 
 depending on which configuration (`CMAKE_BUILD_TYPE) you choose to build.
 
-The focused native source-build configuration regression runs with:
+The focused native source-build configuration regression is enabled in CI and disabled
+by default for local development. To opt in locally:
 
 ```powershell
+cmake --preset=debug-cpp20 -DSTLAB_CONFIG_TESTS=ON
 ctest --preset=debug-cpp20 -R "^stlab.config.execution_coexistence$" --output-on-failure
 ```
+
+Configure again with `-DSTLAB_CONFIG_TESTS=OFF` to disable it.
 
 It independently builds execution in C++17/20 and STLab in C++17/20 with
 `STLAB_NO_STD_COROUTINES=ON/OFF`, then compiles both configuration include orders

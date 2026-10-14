@@ -38,6 +38,30 @@ TEST_CASE("future_coroutine_int") {
     REQUIRE(42 == await(std::move(w)));
 }
 
+TEST_CASE("future_coroutine_exception_ptr_value") {
+    auto expected = std::make_exception_ptr(test_exception("value"));
+    SUBCASE("null exception pointer") { expected = nullptr; }
+    SUBCASE("non-null exception pointer") {}
+
+    auto coro = [](std::exception_ptr value) -> future<std::exception_ptr> { co_return value; };
+    auto result = coro(expected);
+
+    REQUIRE(result.is_ready());
+    REQUIRE_FALSE(result.exception());
+    REQUIRE(await(std::move(result)) == expected);
+}
+
+TEST_CASE("future_coroutine_exception_ptr_failure") {
+    auto coro = []() -> future<std::exception_ptr> {
+        co_return []() -> std::exception_ptr { throw test_exception("failure"); }();
+    };
+    auto result = coro();
+
+    REQUIRE(result.is_ready());
+    REQUIRE(result.exception());
+    REQUIRE_THROWS_WITH_AS(await(std::move(result)), "failure", test_exception);
+}
+
 auto get_move_only_answer() -> stlab::future<move_only> { co_return move_only{42}; }
 
 TEST_CASE("future_coroutine_move_only") {

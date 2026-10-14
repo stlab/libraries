@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           mkdir ../build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.config.standard || '20' }} ${{ matrix.config.cmake_options }}
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.config.standard || '20' }} -DSTLAB_CONFIG_TESTS=ON ${{ matrix.config.cmake_options }}
 
       - name: Configure // Linux Emscripten
         if: ${{ startsWith(matrix.config.compiler, 'emscripten') }}
@@ -95,7 +95,7 @@ jobs:
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: |
           mkdir ..\build
-          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20 ${{ matrix.config.cmake_options }}
+          cmake -S. -B../build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20 -DSTLAB_CONFIG_TESTS=ON ${{ matrix.config.cmake_options }}
 
       - name: Build // Unix
         if: ${{ startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos') }}
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
 
       - name: Configure
-        run: cmake --preset debug-sanitizer
+        run: cmake --preset debug-sanitizer -DSTLAB_CONFIG_TESTS=ON
 
       - name: Build
         run: cmake --build build/debug-sanitizer
@@ -166,7 +166,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
 
       - name: Configure
-        run: cmake --preset debug-portable-sanitizer
+        run: cmake --preset debug-portable-sanitizer -DSTLAB_CONFIG_TESTS=ON
 
       - name: Build
         run: cmake --build build/debug-portable-sanitizer

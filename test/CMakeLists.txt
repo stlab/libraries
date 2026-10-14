@@ -68,7 +68,8 @@ if(STLAB_PACKAGE_TESTS AND NOT CMAKE_CROSSCOMPILING AND NOT stlab_execution_impo
 endif()
 
 # Independently generated configurations must compose without sharing coroutine policy.
-if(NOT CMAKE_CROSSCOMPILING AND NOT stlab_execution_imported)
+option(STLAB_CONFIG_TESTS "Verify native execution/STLab source-build configuration coexistence" OFF)
+if(STLAB_CONFIG_TESTS AND NOT CMAKE_CROSSCOMPILING AND NOT stlab_execution_imported)
   add_test(NAME stlab.config.execution_coexistence
     COMMAND ${CMAKE_COMMAND}
       "-DSTLAB_SOURCE:PATH=${PROJECT_SOURCE_DIR}"
