@@ -9,8 +9,11 @@
 #include <array>
 #include <cstddef>
 #include <exception>
+#include <iterator>
+#include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include <doctest/doctest.h>
@@ -32,6 +35,58 @@ using lock_t = std::unique_lock<std::mutex>;
 template <class T>
 auto range_pair(T& r) {
     return std::pair{r.begin(), r.end()};
+}
+
+TEST_CASE("future_when_any_range_consumed_ready_copyable_values_are_not_copied") {
+    annotate_counters counters;
+    using value_t = std::optional<annotate>;
+    auto [p0, f0] =
+        package<value_t()>(immediate_executor, [&] { return value_t{std::in_place, counters}; });
+    std::array futures{std::move(f0)};
+    p0();
+
+    auto result = when_any(immediate_executor, when_any_result,
+                           std::pair{std::make_move_iterator(futures.begin()),
+                                     std::make_move_iterator(futures.end())});
+    REQUIRE(!futures[0].valid());
+    REQUIRE(result.is_ready());
+
+    auto [value, index] = await(std::move(result));
+    REQUIRE(value.has_value());
+    REQUIRE(index == 0);
+    REQUIRE(counters._copy_ctor.load() == 0);
+    REQUIRE(counters._copy_assign_rhs.load() == 0);
+}
+
+TEST_CASE("future_when_any_range_preserves_shared_copyable_values") {
+    std::array futures{make_ready_future<std::string>("first", immediate_executor),
+                       make_ready_future<std::string>("second", immediate_executor)};
+
+    auto result = when_any(immediate_executor, when_any_result, range_pair(futures));
+
+    REQUIRE((await(std::move(result)) == std::pair{std::string{"first"}, std::size_t{0}}));
+    REQUIRE(futures[0].get_ready() == "first");
+    REQUIRE(futures[1].get_ready() == "second");
+}
+
+TEST_CASE("future_when_any_range_transfers_move_only_value_with_winning_index") {
+    auto [p0, f0] = package<std::unique_ptr<int>()>(immediate_executor,
+                                                    [] { return std::make_unique<int>(42); });
+    auto [p1, f1] = package<std::unique_ptr<int>()>(immediate_executor,
+                                                    [] { return std::make_unique<int>(7); });
+    std::array futures{std::move(f0), std::move(f1)};
+
+    auto result = when_any(immediate_executor, when_any_result, range_pair(futures));
+
+    REQUIRE(!futures[0].valid());
+    REQUIRE(!futures[1].valid());
+    REQUIRE(!result.is_ready());
+    p1();
+
+    auto [value, index] = await(std::move(result));
+    REQUIRE(value);
+    REQUIRE(*value == 7);
+    REQUIRE(index == 1);
 }
 
 TEST_CASE("future_when_any_void_void_empty_range") {

@@ -170,10 +170,12 @@ auto monostate_to_empty_tuple(T&& a) {
 template <class F, class... Args>
 auto invoke_remove_monostate_arguments(F&& f, Args&&... args) {
     return std::apply(
-        [&](auto&&... args) { return std::forward<F>(f)(std::forward<decltype(args)>(args)...); },
+        [&](auto&&... bargs) {
+            return std::forward<F>(f)(std::forward<decltype(bargs)>(bargs)...);
+        },
         std::apply(
-            [&](auto&&... args) {
-                return std::tuple_cat(monostate_to_empty_tuple(std::forward<Args>(args))...);
+            [&](auto&&... bargs) {
+                return std::tuple_cat(monostate_to_empty_tuple(std::forward<Args>(bargs))...);
             },
             std::forward_as_tuple(std::forward<Args>(args)...)));
 }
@@ -360,7 +362,7 @@ struct value_;
 /// Creates a packaged task and its future for the callable `f`, run on `executor`.
 /// @return A pair (packaged_task, future); invoke the task to run `f` and complete the future.
 template <class Sig, class E, class F>
-auto package(E, F&&)
+auto package(E&&, F&&)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
 /**************************************************************************************************/
@@ -450,7 +452,8 @@ struct shared_base<T, enable_if_copyable<void_to_monostate_t<T>>>
         if (ready) std::move(pro)(); // cannot reference this after here
     }
 
-    void _detach() {
+    void _detach() noexcept {
+        assert(!this->weak_from_this().expired());
         std::unique_lock<std::mutex> lock(_mutex);
         if (!_ready)
             _then.emplace_back([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
@@ -612,7 +615,8 @@ struct shared_base<T, enable_if_not_copyable<void_to_monostate_t<T>>>
         if (ready) std::move(pro)(); // cannot reference this after here
     }
 
-    void _detach() {
+    void _detach() noexcept {
+        assert(!this->weak_from_this().expired());
         std::unique_lock<std::mutex> lock(_mutex);
         if (!_ready) _then = then_t([](auto&&) {}, [_p = this->shared_from_this()]() noexcept {});
     }
@@ -699,7 +703,7 @@ class promise {
     std::weak_ptr<shared_base<R>> _p;
 
 public:
-    explicit promise(const std::shared_ptr<shared_base<R>>& p) : _p{p} {}
+    explicit promise(const std::shared_ptr<shared_base<R>>& p) noexcept : _p{p} {}
 
     ~promise() {
         if (auto p = _p.lock()) {
@@ -749,6 +753,9 @@ struct shared<F, R(Args...)> final : shared_base<R>, shared_task<Args...> {
     shared(executor_t s, F&& f) : shared_base<R>(std::move(s)), _f(std::move(f)) {}
 
     void operator()(Args... args) noexcept override {
+        static_assert(
+            std::is_nothrow_invocable_v<F, decltype(promise{this->shared_from_this()}), Args...>);
+        assert(!this->weak_from_this().expired());
         std::move (*_f)(promise{this->shared_from_this()}, std::move(args)...);
         // After invoking `_f`, it is not destructed because it could be satisfying the promise
         // asynchronously. `_f` is responsible for any cleanup prior to the future being released
@@ -786,11 +793,11 @@ class packaged_task {
     explicit packaged_task(ptr_t&& p) : _p(std::move(p)) {}
 
     template <class Sig, class E, class F>
-    friend auto package(E, F&&)
+    friend auto package(E&&, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
     template <class T, class E>
-    friend auto future_with_broken_promise(E) -> detail::reduced_t<T>;
+    friend auto future_with_broken_promise(E&&) -> detail::reduced_t<T>;
 
     template <class... Brgs>
     friend auto detail::weak_state(const packaged_task<Brgs...>& p)
@@ -864,11 +871,11 @@ class STLAB_NODISCARD() future<T, enable_if_copyable<void_to_monostate_t<T>>> {
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <class Sig, class E, class F>
-    friend auto package(E, F&&)
+    friend auto package(E&&, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
     template <class U, class E>
-    friend auto future_with_broken_promise(E) -> detail::reduced_t<U>;
+    friend auto future_with_broken_promise(E&&) -> detail::reduced_t<U>;
 
     /** @cond stlab_future_detail_friends */
     friend struct detail::shared_base<type>;
@@ -1103,11 +1110,11 @@ class STLAB_NODISCARD() future<T, enable_if_not_copyable<void_to_monostate_t<T>>
     explicit future(ptr_t p) : _p(std::move(p)) {}
 
     template <class Sig, class E, class F>
-    friend auto package(E, F&&)
+    friend auto package(E&&, F&&)
         -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>>;
 
     template <class U, class E>
-    friend auto future_with_broken_promise(E) -> detail::reduced_t<U>;
+    friend auto future_with_broken_promise(E&&) -> detail::reduced_t<U>;
 
     /** @cond stlab_future_detail_friends */
     friend struct detail::shared_base<T>;
@@ -1266,9 +1273,9 @@ public:
 /// Creates a `packaged_task` and its `future` for signature `Sig`, using `executor` to run `f` when
 /// the task is invoked.
 template <class Sig, class E, class F>
-auto package(E executor, F&& f)
+auto package(E&& executor, F&& f)
     -> std::pair<detail::packaged_task_from_signature_t<Sig>, detail::reduced_result_t<Sig>> {
-    if constexpr (std::is_same_v<E, executor_t>) {
+    if constexpr (std::is_same_v<std::decay_t<E>, executor_t>) {
         assert(executor && "FATAL (sean.parent) : executor is null!");
     }
 
@@ -1276,7 +1283,7 @@ auto package(E executor, F&& f)
 
     if constexpr (detail::is_future_v<result_t>) {
         auto p = detail::make_shared_state<detail::reduced_signature_t<Sig>>(
-            std::move(executor),
+            std::forward<E>(executor),
             [_f = std::make_optional(std::forward<F>(f)),
              _hold = future<void>{}](auto&& promise, auto&&... args) mutable noexcept {
                 assert(_f && "packaged task invoked twice");
@@ -1306,8 +1313,8 @@ auto package(E executor, F&& f)
         return {detail::packaged_task_from_signature_t<Sig>{p}, result_t{p}};
     } else {
         auto p = detail::make_shared_state<Sig>(
-            std::move(executor), [_f = std::make_optional(std::forward<F>(f))](
-                                     auto&& promise, auto&&... args) mutable noexcept {
+            std::forward<E>(executor), [_f = std::make_optional(std::forward<F>(f))](
+                                           auto&& promise, auto&&... args) mutable noexcept {
                 assert(_f && "packaged task invoked twice");
                 try {
                     auto tmp = invoke_void_to_monostate_result(
@@ -1325,9 +1332,9 @@ auto package(E executor, F&& f)
 /// Returns a future of type T that is already ready with a `broken_promise` error (e.g. for
 /// canceled work).
 template <class T, class E>
-auto future_with_broken_promise(E executor) -> detail::reduced_t<T> {
+auto future_with_broken_promise(E&& executor) -> detail::reduced_t<T> {
     auto p = std::make_shared<detail::shared_base<typename detail::reduced_t<T>::result_type>>(
-        std::move(executor));
+        std::forward<E>(executor));
     p->_exception = std::make_exception_ptr(future_error(future_error_codes::broken_promise));
     p->_ready = true;
 
@@ -1525,9 +1532,11 @@ void attach_when_arg_(E&& executor, std::shared_ptr<P>& shared, T a) {
 }
 
 template <class E, class P, class... Ts, std::size_t... I>
-void attach_when_args_(std::index_sequence<I...>, E&& executor, std::shared_ptr<P>& p, Ts... a) {
-    (void)std::initializer_list<int>{
-        (attach_when_arg_<I>(std::forward<E>(executor), p, std::move(a)), 0)...};
+void attach_when_args_(std::index_sequence<I...>,
+                       const E& executor,
+                       std::shared_ptr<P>& p,
+                       Ts... a) {
+    (void)std::initializer_list<int>{(attach_when_arg_<I>(executor, p, std::move(a)), 0)...};
 }
 
 template <class E, class P, class... Ts>
@@ -1810,14 +1819,14 @@ struct common_context : CR {
 
 template <class C, class E, class T>
 void attach_tasks(size_t index, E&& executor, const std::shared_ptr<C>& context, T&& a) {
-    auto&& hold = std::forward<T>(a).recover(
-        std::forward<E>(executor), [_context = make_weak_ptr(context), _i = index](const auto& x) {
+    auto hold = std::forward<T>(a).recover(
+        std::forward<E>(executor), [_context = make_weak_ptr(context), _i = index](auto&& x) {
             auto p = _context.lock();
             if (!p) return;
             if (auto ex = x.exception()) {
                 p->failure(std::move(ex), _i);
             } else {
-                p->done(std::move(x), _i);
+                p->done(std::forward<decltype(x)>(x), _i);
             }
         });
 
@@ -2085,7 +2094,8 @@ struct proxy_fire_and_forget {
 /// Proxy coroutine: runs co_await on the inner awaiter (already produced from the awaitable via
 /// get_awaiter) then invokes executor(resume_cb). Fire-and-forget: self-destroys at completion
 /// (final_suspend is suspend_never). Inner must be the awaiter from a single get_awaiter(awaitable)
-/// so operator co_await() is not invoked twice on the same awaitable.
+/// so operator co_await() is not invoked twice on the same awaitable. Owns the executor across
+/// suspension.
 template <class A, class Inner, class E, class F>
 proxy_fire_and_forget resume_on_proxy_coro(E executor,
                                            F resume_cb,
@@ -2105,7 +2115,8 @@ proxy_fire_and_forget resume_on_proxy_coro(E executor,
     executor(std::move(resume_cb));
 }
 
-/// Controlled-path proxy coroutine: writes to awaiter storage only while weak_state is alive.
+/// Controlled-path proxy coroutine: owns the executor across suspension and writes to awaiter
+/// storage only while weak_state is alive.
 template <class A, class Inner, class E, class F, class WeakPtr>
 proxy_fire_and_forget resume_on_proxy_coro_controlled(
     E executor,
@@ -2326,7 +2337,8 @@ struct resume_on_any_awaiter_with_control {
 
 /// Operand for `co_await cancelable(awaitable)` and `co_await cancelable()` (no arguments). Only
 /// `stlab::future` promise types define `await_transform` for it (otherwise `co_await` is
-/// ill-formed). The `void` specialization is produced by `cancelable()`; other `A` wrap an awaitable.
+/// ill-formed). The `void` specialization is produced by `cancelable()`; other `A` wrap an
+/// awaitable.
 template <class A>
 struct cancelable_requires_stlab_future_coroutine {
     A _awaitable;

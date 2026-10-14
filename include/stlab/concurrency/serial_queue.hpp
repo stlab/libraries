@@ -85,7 +85,7 @@ class serial_instance_t : public std::enable_shared_from_this<serial_instance_t>
     }
 
     auto empty() -> bool {
-        bool empty;
+        bool empty{false};
 
         scope<lock_t>(_m, [&]() {
             empty = _queue.empty();

@@ -7,8 +7,6 @@
 #include <stlab/concurrency/await.hpp>
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/config.hpp>
-#include <stlab/execution/config.hpp>
 #include <stlab/pre_exit.hpp>
 
 #include <utility>

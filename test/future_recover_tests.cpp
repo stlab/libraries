@@ -8,6 +8,7 @@
 
 #include <exception>
 #include <mutex>
+#include <type_traits>
 #include <utility>
 
 #include <doctest/doctest.h>
@@ -16,6 +17,7 @@
 #include <stlab/concurrency/executor_base.hpp>
 #include <stlab/concurrency/future.hpp>
 #include <stlab/concurrency/immediate_executor.hpp>
+#include <stlab/concurrency/task.hpp>
 #include <stlab/test/model.hpp>
 #include <stlab/utility.hpp>
 
@@ -29,6 +31,37 @@ namespace {
 int get_c0() { return custom_scheduler<0>::usage_counter(); }
 int get_c1() { return custom_scheduler<1>::usage_counter(); }
 } // namespace
+
+TEST_CASE_TEMPLATE("future_recover_retains_rvalue_executor_until_scheduling", T, int, move_only) {
+    auto [promise, input] = package<T()>(immediate_executor, [] { return T{42}; });
+    int calls = 0;
+    executor_t executor = [&](task<void() noexcept> f) {
+        ++calls;
+        std::move(f)();
+    };
+
+    bool ready = false;
+    SUBCASE("already ready") {
+        ready = true;
+        promise();
+    }
+    SUBCASE("not yet ready") {}
+
+    auto result = std::move(input).recover(std::move(executor), [](future<T> value) {
+        auto extracted = std::move(value).get_try();
+        REQUIRE(extracted.has_value());
+        if constexpr (std::is_same_v<T, int>) {
+            return *extracted;
+        } else {
+            return extracted->member();
+        }
+    });
+
+    REQUIRE(result.is_ready() == ready);
+    if (!ready) promise();
+    REQUIRE(result.get_ready() == 42);
+    REQUIRE(calls == 1);
+}
 
 // ----------------------------------------------------------------------------
 //                                  void
